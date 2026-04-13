@@ -71,7 +71,7 @@
                 systems = import inputs.systems;
                 compat.enable = false;
                 envs.dev.ghcid.enable = false;
-                # hix's HLS build can't be patched (overrides don't reach transitive deps like cabal-add)
+                # hix's HLS build can't be patched (overrides don't seem to reach transitive deps like cabal-add)
                 # so we disable it and inject a manually-patched HLS in buildInputs below
                 envs.dev.hls.enable = false;
                 outputs.devShells = {
@@ -100,12 +100,14 @@
                           rawPkgs = import inputs.nixpkgs { system = config.system; };
                           hlsPkgs = rawPkgs.haskell.packages.ghc9123.override {
                             overrides = hfinal: hprev: {
+                              # cabal-add test fails due to nix sandboxing
                               cabal-add = rawPkgs.haskell.lib.dontCheck hprev.cabal-add;
+                              # ditto
                               fourmolu = rawPkgs.haskell.lib.dontCheck hprev.fourmolu;
+                              # dependency bounds bad
                               haskell-language-server = rawPkgs.haskell.lib.dontCheck (
                                 rawPkgs.haskell.lib.doJailbreak hprev.haskell-language-server
                               );
-                              # mkDerivation = args: hprev.mkDerivation (args // { doCheck = false; });
                             };
                           };
                         in
@@ -146,15 +148,11 @@
                     effectful-plugin = jailbreak;
                     co-log-effectful = jailbreak (unbreak);
 
-                    ghc-trace-events = force;
                     boring = jailbreak;
                     some = jailbreak;
                     hie-compat = jailbreak;
                     ghcide = jailbreak;
                     opentelemetry = jailbreak;
-                    # Disable cabal-add tests (posix_spawnp fails in macOS nix sandbox)
-                    cabal-add = notest;
-                    hls-cabal-plugin = notest;
                   };
                 packages = {
                   elara = {
