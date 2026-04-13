@@ -1,11 +1,19 @@
 {-# LANGUAGE DataKinds #-}
 
-module Elara.Parse.Expression (exprParser, locatedExpr, letPreamble, element, reservedWords) where
+module Elara.Parse.Expression (
+    ExpressionGrammar (..),
+    locatedExpr,
+    letPreamble,
+    expression,
+    element,
+    reservedWords,
+)
+where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Extensions
-import Elara.AST.Name (VarName (..), nameText)
+import Elara.AST.Name (MaybeQualified (..), Name (..), VarName (..), nameText)
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion', sourceRegion, spanningRegion', withLocationOf)
@@ -18,10 +26,17 @@ import Elara.Parse.Indents
 import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLiteral, unitLiteral)
 import Elara.Parse.Names (conName, opId, opName, unqualifiedVarName, varId, varName, varOrConName)
 import Elara.Parse.Pattern
-import Elara.Parse.Primitives (Parser, inParens, located, token_, withPredicate)
+import Elara.Parse.Primitives (Parser, located, token_, withPredicate)
 import Elara.Prim qualified as Prim
 import Text.Megaparsec (MonadParsec (eof), choice, customFailure, sepEndBy, try, (<?>))
 import Prelude hiding (Op)
+
+-- | Data type putting all expression parsers together to avoid deadlocks in CAF initialisation.
+data ExpressionGrammar = ExpressionGrammar
+    { pElement :: Parser FrontendExpr
+    , pExpression :: Parser FrontendExpr
+    -- ^ the main expression parser
+    }
 
 -- | Helper to get the SourceRegion from a new-style Expr
 exprRegion :: FrontendExpr -> SourceRegion
@@ -32,31 +47,53 @@ locatedExpr p = do
     Located loc node <- located p
     pure $ Expr loc () node
 
-exprParser :: Parser FrontendExpr
-exprParser =
+{- | The main recursive expression parser.
+Adds function application, cons, and binary operators on top of the basic 'term's.
+-}
+expression :: ExpressionGrammar -> Parser FrontendExpr
+expression grammar =
     makeExprParser
-        expression
+        (term grammar)
         [ [InfixL functionCall]
         , [InfixL cons]
         , [InfixR binOp]
         ]
         <?> "expression"
 
+-- | Parser of terms, i.e. expressions that don't require left recursion.
+term :: ExpressionGrammar -> Parser FrontendExpr
+term grammar =
+    choice
+        [ try unit
+        , parensOrTuple grammar <?> "parenthesized or tuple expression"
+        , list grammar <?> "list"
+        , ifElse grammar <?> "if expression"
+        , letInExpression grammar <?> "let-in expression"
+        , lambda grammar <?> "lambda expression"
+        , match grammar <?> "match expression"
+        , float <?> "float"
+        , int <?> "int"
+        , charL <?> "char"
+        , string <?> "string"
+        , variable <?> "variable"
+        , constructor <?> "constructor"
+        ]
+        <?> "expression"
+
 {- | A top level element, comprised of either an expression or a let declaration
-Note that top level let declarations are not parsed here, but in the "Elara.Parse.Declaration" module
+Note that top level let declarations are not parsed here, but in the "Elara.Parse.Declaration" module.
 -}
-element :: Parser FrontendExpr
-element =
-    try exprParser <|> statement
+element :: ExpressionGrammar -> Parser FrontendExpr
+element grammar = choice [try (pExpression grammar), statement grammar]
 
 {- | This is not a "statement" in an imperative sense, but is used to parse let expressions that are not at the top level.
-| The reason for having this distinction is that if let's were considered a normal expression, then something like
-| @let x = let y = 1@ would be considered valid code, which it is not. Having a separate parser means local let bindings can only be allowed
-| in places where they are valid, such as in the body of a function.
+The reason for having this distinction is that if let's were considered a normal expression, then something like
+@let x = let y = 1@ would be considered valid code, which it is not. Having a separate parser means local let bindings can only be allowed
+in places where they are valid, such as in the body of a function.
 -}
-statement :: Parser FrontendExpr
-statement =
-    letStatement <?> "let statement"
+statement :: ExpressionGrammar -> Parser FrontendExpr
+statement grammar =
+    letStatement grammar <?> "let statement"
 
 binOp, cons, functionCall :: Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
 
@@ -70,7 +107,8 @@ cons = infixOp consName (\op l r -> EExtension (FrontendBinaryOperator (BinaryOp
     consName = do
         l <- located (token_ TokenDoubleColon)
         let Located loc _ = l
-        pure $ InfixedOp loc (Prim.cons `withLocationOf` l)
+        let consValue = MaybeQualified (NameType "Cons") (Just Prim.primModuleName)
+        pure $ InfixedOp loc (consValue `withLocationOf` l)
 
 -- | Parser for function application (treated as an infix operator with no operator)
 functionCall = infixOp pass (\_ f x -> EApp NoExtension f x)
@@ -89,7 +127,9 @@ infixOp opParser mkExpr = do
         let region = enclosingRegion' (exprRegion l) (exprRegion r)
          in Expr region () (mkExpr op l r)
 
--- This isn't actually used in `expressionTerm` as `varName` also covers (+) operators, but this is used when parsing infix applications
+{- | This isn't actually used in 'expressionTerm' as 'varName' also covers @(+)@ operators,
+but this is used when parsing infix applications
+-}
 operator :: Parser FrontendBinaryOperator
 operator = (asciiOp <|> infixOp) <?> "operator"
   where
@@ -105,34 +145,31 @@ operator = (asciiOp <|> infixOp) <?> "operator"
             pure op
         pure $ InfixedOp loc inner
 
-expression :: Parser FrontendExpr
-expression =
-    choice
-        [ try unit
-        , try tuple <?> "tuple expression"
-        , try parensExpr <?> "parenthesized expression"
-        , list <?> "list"
-        , ifElse <?> "if expression"
-        , letInExpression <?> "let-in expression"
-        , lambda <?> "lambda expression"
-        , match <?> "match expression"
-        , float <?> "float"
-        , int <?> "int"
-        , charL <?> "char"
-        , string <?> "string"
-        , variable <?> "variable"
-        , constructor <?> "constructor"
-        ]
-        <?> "expression"
-
 -- | Reserved words, used to backtrack accordingly
 reservedWords :: Set Text
 reservedWords = Set.fromList ["if", "else", "then", "def", "let", "in", "class"]
 
-parensExpr :: Parser FrontendExpr
-parensExpr = do
-    Located loc e <- located (inParens (exprParser <* optional lineSeparator))
-    pure $ Expr loc () (EExtension (FrontendInParens (InParensExpression e)))
+{- | Parse a parenthesized expression or a tuple in a single pass.
+We consume '(' once, parse the first expression, then branch on ',' or ')'.
+This allows us to avoid exponential backtracking when parsing nested tuples
+-}
+parensOrTuple :: ExpressionGrammar -> Parser FrontendExpr
+parensOrTuple grammar = do
+    Located loc res <- located $ do
+        token_ TokenLeftParen
+        first <- grammar.pExpression <?> "expression in parentheses or tuple"
+        optional (try (optional lineSeparator *> token_ TokenComma)) >>= \case
+            Nothing -> do
+                optional lineSeparator
+                token_ TokenRightParen
+                pure $ Left first
+            Just () -> do
+                rest <- sepEndBy1' grammar.pExpression (token_ TokenComma)
+                token_ TokenRightParen <?> "')' to close tuple"
+                pure $ Right (AtLeast2List.fromHeadAndTail first rest)
+    pure $ case res of
+        Left e -> Expr loc () (EExtension (FrontendInParens (InParensExpression e)))
+        Right items -> Expr loc () (EExtension (FrontendTuple (TupleExpression items)))
 
 variable :: Parser FrontendExpr
 variable =
@@ -168,10 +205,10 @@ string = locatedExpr (EString <$> stringLiteral) <?> "string"
 charL :: Parser FrontendExpr
 charL = locatedExpr (EChar <$> charLiteral) <?> "char"
 
-match :: Parser FrontendExpr
-match = locatedExpr $ do
+match :: ExpressionGrammar -> Parser FrontendExpr
+match grammar = locatedExpr $ do
     token_ TokenMatch
-    expr <- exprBlock element <?> "expression after 'match'"
+    expr <- exprBlock grammar.pElement <?> "expression after 'match'"
     token_ TokenWith <?> "'with' keyword after match expression"
 
     let emptyMatchBody =
@@ -187,11 +224,11 @@ match = locatedExpr $ do
         case' <- patParser
         token_ TokenRightArrow
 
-        expr <- exprBlock (element <?> "match case expression")
+        expr <- exprBlock (grammar.pElement <?> "match case expression")
         pure (case', expr)
 
-lambda :: Parser FrontendExpr
-lambda = locatedExpr $ do
+lambda :: ExpressionGrammar -> Parser FrontendExpr
+lambda grammar = locatedExpr $ do
     bsLoc <- located (token_ TokenBackslash)
 
     args <- located (many patParser)
@@ -203,29 +240,29 @@ lambda = locatedExpr $ do
                 *> customFailure
                     (EmptyLambda emptyLambdaLoc)
 
-    res <- failEmptyBody <|> exprBlock element
+    res <- failEmptyBody <|> exprBlock grammar.pElement <?> "lambda body"
     let Located _ patterns = args
     pure $ EExtension (FrontendMultiLam patterns res)
 
-ifElse :: Parser FrontendExpr
-ifElse = locatedExpr $ do
+ifElse :: ExpressionGrammar -> Parser FrontendExpr
+ifElse grammar = locatedExpr $ do
     token_ TokenIf
-    condition <- exprParser <?> "condition after 'if'"
+    condition <- grammar.pExpression <?> "condition after 'if'"
     _ <- optional lineSeparator
     token_ TokenThen <?> "'then' keyword after condition"
-    thenBranch <- exprBlock element <?> "expression after 'then'"
+    thenBranch <- exprBlock grammar.pElement <?> "expression after 'then'"
     _ <- optional lineSeparator
     token_ TokenElse <?> "'else' branch"
-    elseBranch <- exprBlock element <?> "expression after 'else'"
+    elseBranch <- exprBlock grammar.pElement <?> "expression after 'else'"
     pure (EIf condition thenBranch elseBranch)
 
-letPreamble :: Parser (Located VarName, [FrontendPattern], FrontendExpr)
-letPreamble = do
+letPreamble :: ExpressionGrammar -> Parser (Located VarName, [FrontendPattern], FrontendExpr)
+letPreamble grammar = do
     token_ TokenLet
     (name, patterns) <- try infixDef <|> prefixDef
     token_ TokenEquals
 
-    e <- exprBlock element
+    e <- exprBlock grammar.pElement
     pure (name, patterns, e)
   where
     prefixDef :: Parser (Located VarName, [FrontendPattern])
@@ -249,37 +286,28 @@ letPreamble = do
             )
                 <?> "backticked name"
 
-letInExpression :: Parser FrontendExpr
-letInExpression = locatedExpr $ do
-    (name, patterns, e) <- letPreamble
+letInExpression :: ExpressionGrammar -> Parser FrontendExpr
+letInExpression grammar = locatedExpr $ do
+    (name, patterns, e) <- letPreamble grammar
     optional lineSeparator
     token_ TokenIn <?> "'in' keyword after let binding"
 
-    body <- exprBlock element <?> "expression after 'in'"
+    body <- exprBlock grammar.pElement <?> "expression after 'in'"
     pure $ case patterns of
         [] -> ELetIn NoExtension name e body
         _ -> EExtension (FrontendLetInWithPatterns name patterns e body)
 
-letStatement :: Parser FrontendExpr
-letStatement = locatedExpr $ do
-    (name, patterns, e) <- letPreamble
+letStatement :: ExpressionGrammar -> Parser FrontendExpr
+letStatement grammar = locatedExpr $ do
+    (name, patterns, e) <- letPreamble grammar
     pure $ case patterns of
         [] -> ELet NoExtension name e
         _ -> EExtension (FrontendLetWithPatterns name patterns e)
 
-tuple :: Parser FrontendExpr
-tuple = locatedExpr $ do
-    token_ TokenLeftParen
-    firstElement <- exprParser
-    token_ TokenComma
-    otherElements <- sepEndBy1' exprParser (token_ TokenComma)
-    token_ TokenRightParen <?> "')' to close tuple"
-    pure $ EExtension (FrontendTuple (TupleExpression (AtLeast2List.fromHeadAndTail firstElement otherElements)))
-
-list :: Parser FrontendExpr
-list = locatedExpr $ do
+list :: ExpressionGrammar -> Parser FrontendExpr
+list grammar = locatedExpr $ do
     token_ TokenLeftBracket
 
-    elements <- sepEndBy exprParser (token_ TokenComma)
+    elements <- sepEndBy grammar.pElement (token_ TokenComma)
     token_ TokenRightBracket <?> "']' to close list"
     pure $ EExtension (FrontendList (ListExpression elements))

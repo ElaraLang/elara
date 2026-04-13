@@ -37,6 +37,7 @@ getParsedFileQuery ::
 getParsedFileQuery fp = do
     (FileContents filePath contents) <- runErrorOrReport $ fetch (GetFileContents fp)
     lexemes <- runErrorOrReport @LexerError $ fetch (LexedFile fp)
+
     let tokenStream = createTokenStream contents lexemes
     parseResult <- inject $ runParserT moduleParser filePath tokenStream
     let firstError = first WParseErrorBundle parseResult

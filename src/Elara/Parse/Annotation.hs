@@ -6,7 +6,7 @@ import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Error (ElaraParseError (..))
-import Elara.Parse.Expression (exprParser)
+import Elara.Parse.Grammar
 import Elara.Parse.Indents (lineSeparator)
 import Elara.Parse.Names (conName)
 import Elara.Parse.Primitives

@@ -23,8 +23,7 @@ atomicPatParser =
         [ try literalPattern
         , varPattern
         , wildcardPattern
-        , try tuplePattern
-        , inParens rpat
+        , parensOrTuplePattern
         , unaryConstructorPattern
         , listPattern
         ]
@@ -68,14 +67,25 @@ listPattern = locatedPattern $ do
     token_ TokenRightBracket
     pure $ PExtension (ListPattern elements)
 
-tuplePattern :: Parser FrontendPattern
-tuplePattern = locatedPattern $ do
-    elements <- inParens $ do
-        first <- patParser
-        token_ TokenComma
-        rest <- sepBy1' patParser (token_ TokenComma)
-        pure (first <| rest)
-    pure $ PExtension (TuplePattern elements)
+{- | Parse a parenthesized pattern or a tuple pattern in a single pass.
+Consumes '(' once, parses the first pattern, then branches on ',' vs ')'.
+-}
+parensOrTuplePattern :: Parser FrontendPattern
+parensOrTuplePattern = do
+    Located loc res <- located $ do
+        token_ TokenLeftParen
+        inner <- rpat
+        optional (token_ TokenComma) >>= \case
+            Nothing -> do
+                token_ TokenRightParen
+                pure $ Left inner
+            Just () -> do
+                rest <- sepBy1' patParser (token_ TokenComma)
+                token_ TokenRightParen
+                pure $ Right (inner <| rest)
+    case res of
+        Left p -> pure p
+        Right elements -> pure $ Pattern loc Nothing (PExtension (TuplePattern elements))
 
 unaryConstructorPattern :: Parser FrontendPattern
 unaryConstructorPattern = locatedPattern $ do

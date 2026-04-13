@@ -30,7 +30,7 @@ spec = describe "Parses patterns correctly" $ do
     constructorPatterns
 
 terminalPatterns :: Spec
-terminalPatterns = parallel $ describe "Parses terminal patterns correctly" $ do
+terminalPatterns = describe "Parses terminal patterns correctly" $ do
     it "Parses arbitrary var patterns correctly" $ property $ do
         expr <- forAll genLowerAlphaText
         expr `shouldParsePattern` mkPat (PVar (NormalVarName (LowerAlphaName expr)))
