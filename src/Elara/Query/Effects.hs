@@ -34,7 +34,6 @@ type ConsQueryEffects es =
         ': Error SomeReportableError
         ': DiagnosticWriter (Doc AnsiStyle)
         ': UniqueGen
-        ': StructuredDebug
         ': ConsMinimumQueryEffects es
 
 type QueryEffects :: [Effect] -> Constraint
@@ -43,5 +42,5 @@ type QueryEffects es =
     , Error SomeReportableError :> es
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , UniqueGen :> es
-    , StructuredDebug :> es
+    , HasMinimumQueryEffects es
     )
