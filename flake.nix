@@ -67,10 +67,13 @@
             hixFlake = hix.lib.flake (
               { config, ... }:
               {
-                compiler = "ghc912";
+                compiler = "ghc9123";
                 systems = import inputs.systems;
                 compat.enable = false;
                 envs.dev.ghcid.enable = false;
+                # hix's HLS build can't be patched (overrides don't reach transitive deps like cabal-add)
+                # so we disable it and inject a manually-patched HLS in buildInputs below
+                envs.dev.hls.enable = false;
                 outputs.devShells = {
                   # extending the default devshell to add the pre-commit hooks and some other nice things
                   default = config.pkgs.mkShell {
@@ -86,8 +89,28 @@
 
                       mdbook
                       mdbook-d2
+                      mdbook-variables
                       d2
                       nixd
+
+                      # lots of hls tests break from nix sandboxing
+                      # let's just disable them all hehe
+                      (
+                        let
+                          rawPkgs = import inputs.nixpkgs { system = config.system; };
+                          hlsPkgs = rawPkgs.haskell.packages.ghc9123.override {
+                            overrides = hfinal: hprev: {
+                              cabal-add = rawPkgs.haskell.lib.dontCheck hprev.cabal-add;
+                              fourmolu = rawPkgs.haskell.lib.dontCheck hprev.fourmolu;
+                              haskell-language-server = rawPkgs.haskell.lib.dontCheck (
+                                rawPkgs.haskell.lib.doJailbreak hprev.haskell-language-server
+                              );
+                              # mkDerivation = args: hprev.mkDerivation (args // { doCheck = false; });
+                            };
+                          };
+                        in
+                        hlsPkgs.haskell-language-server
+                      )
                     ];
                   };
                 };
@@ -98,6 +121,7 @@
                     hackage,
                     enable,
                     notest,
+                    force,
                     unbreak,
                     jailbreak,
                     ...
@@ -121,6 +145,16 @@
                     effectful-core = jailbreak;
                     effectful-plugin = jailbreak;
                     co-log-effectful = jailbreak (unbreak);
+
+                    ghc-trace-events = force;
+                    boring = jailbreak;
+                    some = jailbreak;
+                    hie-compat = jailbreak;
+                    ghcide = jailbreak;
+                    opentelemetry = jailbreak;
+                    # Disable cabal-add tests (posix_spawnp fails in macOS nix sandbox)
+                    cabal-add = notest;
+                    hls-cabal-plugin = notest;
                   };
                 packages = {
                   elara = {
@@ -138,7 +172,9 @@
                         maintainer = "Alexander Wood <alexljwood24@hotmail.co.uk>";
                         homepage = "https://github.com/ElaraLang/elara#readme";
                         synopsis = "See README for more info";
+                        github = "ElaraLang/elara";
                       };
+
                       language = "GHC2024";
                       prelude = {
                         enable = true;

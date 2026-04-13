@@ -9,12 +9,17 @@ version:        0.1.0
 synopsis:       See README for more info
 description:    See README for more info
 homepage:       https://github.com/ElaraLang/elara#readme
+bug-reports:    https://github.com/ElaraLang/elara/issues
 author:         Alexander Wood
 maintainer:     Alexander Wood <alexljwood24@hotmail.co.uk>
 copyright:      2022 Alexander Wood
 license:        MIT
 license-file:   LICENSE
 build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/ElaraLang/elara
 
 library
   exposed-modules:
