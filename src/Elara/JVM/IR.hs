@@ -159,17 +159,15 @@ data CallType
 
 {- | JVM-level primitive operations.
 
-'CorePrim' wraps a backend-agnostic 'Prim.PrimOp' that was lowered from a
-'Core.PrimOp' node.  'UndefinedError' and 'PatternMatchFailedError' are
-JVM-specific operations synthesised during lowering (they have no
-representation in Core).
+'CorePrim' wraps a backend-agnostic 'Prim.PrimOp'.
+'UndefinedError' and 'PatternMatchFailedError' are JVM-specific operations synthesised during lowering
 -}
 data PrimOp
     = -- | A backend-agnostic primitive lowered from Core.
       CorePrim Prim.PrimOp
-    | -- | Synthesised for @undefined@ calls; not representable in Core.
+    | -- | Synthesised for @undefined@ calls
       UndefinedError
-    | -- | Synthesised for non-exhaustive pattern matches; not representable in Core.
+    | -- | Synthesised for non-exhaustive pattern matches
       PatternMatchFailedError
     deriving (Show, Generic)
 
@@ -187,7 +185,7 @@ instance Pretty Module where
             [ "/* Module:" <+> pretty name <+> "*/"
             , ""
             ]
-                ++ map pretty classes
+                <> map pretty classes
 
 instance Pretty Class where
     pretty (Class name super fields methods constructors) =

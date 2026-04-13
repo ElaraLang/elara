@@ -46,7 +46,7 @@ lowerType t = case t of
             Core.TyAlias inner ->
                 lowerType inner
 
--- | Map an opaque primitive directly to its JVM type — no string lookups needed.
+-- | Map an opaque primitive directly to its JVM type
 lowerPrimType :: OpaquePrim -> JVM.FieldType
 lowerPrimType = \case
     PrimInt -> JVM.ObjectFieldType "java.lang.Integer"
