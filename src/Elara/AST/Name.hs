@@ -38,10 +38,6 @@ data VarName
 instance IsString VarName where
     fromString = NormalVarName . fromString
 
---
--- Newtype wrappers over 'Data.Text'
---
-
 {- | A lowercase alphanumeric name. Could be used for variables or type variables
 Since type variables can't be operators though, we don't use 'VarName' for them
 -}
@@ -80,9 +76,7 @@ class NameLike name where
 
 {- | The name of a top-level declaration, preserving whether it is a value or type binding.
 
-Unlike 'Name', this retains the original 'VarName' or 'TypeName' so callers can
-dispatch into the correct renaming-state map (keyed by 'VarName' / 'TypeName')
-without having to reconstruct a wrapper from the erased payload.
+Unlike 'Name', this retains the original 'VarName' or 'TypeName' to avoid losing information.
 -}
 data DeclName
     = DeclVar VarName
