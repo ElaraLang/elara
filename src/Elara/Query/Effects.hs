@@ -6,7 +6,6 @@ module Elara.Query.Effects where
 
 import Data.Kind (Constraint)
 import Effectful
-import Effectful.Concurrent
 import Effectful.Error.Static
 import Effectful.FileSystem
 import Elara.Data.Pretty
@@ -21,12 +20,10 @@ even a "pure" one
 -}
 type ConsMinimumQueryEffects :: [Effect] -> [Effect]
 type ConsMinimumQueryEffects es =
-    Concurrent ': StructuredDebug ': es
+    StructuredDebug ': es
 
 type HasMinimumQueryEffects es =
-    ( Concurrent :> es
-    , StructuredDebug :> es
-    )
+    (StructuredDebug :> es)
 
 type StandardQueryEffects = ConsQueryEffects '[]
 
@@ -43,7 +40,6 @@ type ConsQueryEffects es =
 type QueryEffects :: [Effect] -> Constraint
 type QueryEffects es =
     ( FileSystem :> es
-    , Concurrent :> es
     , Error SomeReportableError :> es
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , UniqueGen :> es

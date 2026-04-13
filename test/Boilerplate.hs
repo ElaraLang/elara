@@ -31,7 +31,6 @@ import Control.Exception (throwIO)
 import Data.Dependent.HashMap qualified as DHashMap
 import Data.Map qualified as Map
 import Effectful
-import Effectful.Concurrent
 import Effectful.Error.Static (Error, runError, throwError)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Reader.Static (runReader)
@@ -54,7 +53,6 @@ import Elara.Lexer.Token qualified
 import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (StructuredDebug, ignoreStructuredDebug)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle (..))
-import Elara.Parse.Expression
 import Elara.Parse.Grammar
 import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
@@ -156,7 +154,7 @@ loadShuntedExprIO source = finaliseEffects $ loadShuntedExpr' source
 -- | Run effects needed for query-based tests
 runQueryEffects ::
     IOE :> r =>
-    Eff (Rock.Rock Elara.Query.Query : Concurrent : FileSystem : UniqueGen : StructuredDebug : r) a ->
+    Eff (Rock.Rock Elara.Query.Query : FileSystem : UniqueGen : StructuredDebug : r) a ->
     Eff r a
 runQueryEffects eff = do
     startedVar <- liftIO $ newMVar DHashMap.empty
@@ -164,7 +162,6 @@ runQueryEffects eff = do
     ignoreStructuredDebug
         . uniqueGenToGlobalIO
         . runFileSystem
-        . runConcurrent
         . Rock.runRock (Rock.Memo.memoiseWithCycleDetection startedVar depsVar testRules)
         $ eff
 

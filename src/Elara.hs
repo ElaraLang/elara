@@ -26,14 +26,12 @@ module Elara (
 )
 where
 
-import Control.Concurrent (ThreadId)
 import Data.Dependent.HashMap qualified as DHashMap
 import Data.Generics.Product (field')
 import Data.HashMap.Strict qualified as HashMap
 import Data.Set qualified as Set
 import Effectful (Eff, IOE, Subset, (:>))
 import Effectful.Colog
-import Effectful.Concurrent (Concurrent, runConcurrent)
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Elara.AST.Instances ()
@@ -166,18 +164,17 @@ withCompilerEnv settings action = do
         runFileSystem $
             uniqueGenToGlobalIO $
                 (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
-                    runConcurrent $
-                        runErrorOrReport @ModulePathError $
-                            Rock.runRock
-                                ( if shouldTraceQueries
-                                    then
-                                        Rock.Memo.tracingRules
-                                            currentQueryVar
-                                            edgesVar
-                                            (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings))
-                                    else Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings)
-                                )
-                                action
+                    runErrorOrReport @ModulePathError $
+                        Rock.runRock
+                            ( if shouldTraceQueries
+                                then
+                                    Rock.Memo.tracingRules
+                                        currentQueryVar
+                                        edgesVar
+                                        (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings))
+                                else Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings)
+                            )
+                            action
     when shouldTraceQueries $ do
         edges <- liftIO $ readIORef edgesVar
         liftIO $ createDirectoryIfMissing True settings.outputDir
@@ -192,7 +189,6 @@ resolveModules ::
     , Error SomeReportableError :> es
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , StructuredDebug :> es
-    , Concurrent :> es
     , FileSystem :> es
     , UniqueGen :> es
     , IOE :> es
@@ -217,7 +213,6 @@ dumpStages ::
     , Error SomeReportableError :> es
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , StructuredDebug :> es
-    , Concurrent :> es
     , FileSystem :> es
     , UniqueGen :> es
     , IOE :> es
@@ -282,7 +277,6 @@ emitJVM ::
     , Error SomeReportableError :> es
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , StructuredDebug :> es
-    , Concurrent :> es
     , FileSystem :> es
     , UniqueGen :> es
     , IOE :> es
@@ -310,7 +304,6 @@ runInterpreter ::
     , Error SomeReportableError :> es
     , DiagnosticWriter (Doc AnsiStyle) :> es
     , StructuredDebug :> es
-    , Concurrent :> es
     , FileSystem :> es
     , UniqueGen :> es
     , IOE :> es
