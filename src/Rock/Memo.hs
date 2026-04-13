@@ -11,7 +11,6 @@ import Data.Dependent.HashMap qualified as DHashMap
 import Data.GADT.Compare (GEq)
 import Data.HashMap.Lazy qualified as HashMap
 import Data.Hashable
-import Data.IORef qualified as IORef
 import Data.List (isSuffixOf)
 import Data.List.NonEmpty ((<|))
 import Data.Some
@@ -25,6 +24,9 @@ import Text.Show (Show (..))
 import Unsafe.Coerce (unsafeCoerce)
 import Prelude
 
+{- | Force the contents of a 'DHashMap' to be evaluated to normal form.
+Not sure if this is actually necessary, but there aren't really any benefits to keeping it lazy
+-}
 forceDHashMap :: DHashMap k v -> IO (DHashMap k v)
 forceDHashMap m = evaluateWHNF (DHashMap.size m `seq` m)
 
@@ -34,6 +36,7 @@ the exception in its own context, preventing thread-bound effect issues.
 -}
 data QueryResult a = Succeeded !a | Failed !E.SomeException
 
+-- | A variable holding the result of a memoised query, allowing waiting threads to block until the result is available
 newtype ResultVar a = ResultVar (MVar.MVar (QueryResult a))
 
 -- * Implicit memoisation
