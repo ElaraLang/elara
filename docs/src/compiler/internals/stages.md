@@ -4,3 +4,5 @@ The compiler is divided into a series of stages, each responsible for a specific
 
 The stages are as follows:
 1. **Lexing**: The source code is tokenized into a stream of tokens. This stage is implemented in [Lexing](./stages/lexing.md).
+2. **Parsing**: [Parsing](./stages/parsing.md)
+3. **Desugaring**: [Desugaring](./stages/desugaring.md)

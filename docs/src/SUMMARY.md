@@ -28,4 +28,8 @@
 
 - [Stages](./compiler/internals/stages.md)
   - [Lexing](./compiler/internals/stages/lexing.md)
+  - [Parsing](./compiler/internals/stages/parsing.md)
+  - [Desugaring](./compiler/internals/stages/desugaring.md)
+  - [Renaming](./compiler/internals/stages/renaming.md)
+  - [Shunting](./compiler/internals/stages/shunting.md)
   - [ToCore](./compiler/internals/stages/to-core.md)
