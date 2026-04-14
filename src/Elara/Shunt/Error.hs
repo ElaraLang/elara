@@ -62,12 +62,12 @@ instance ReportableError ShuntError where
                 , Note "This is a compiler limitation and may be lifted in future versions"
                 ]
 
-data ShuntWarning
-    = UnknownPrecedence OpTable (Located Name)
+newtype ShuntWarning
+    = UnknownPrecedence (Located (Qualified Name))
     deriving (Show, Eq, Ord)
 
 instance ReportableError ShuntWarning where
-    report (UnknownPrecedence opTable operatorName) = do
+    report (UnknownPrecedence operatorName) = do
         let opSrc = sourceRegionToDiagnosePosition $ operatorName ^. sourceRegion
         writeReport $
             Warn
@@ -75,8 +75,7 @@ instance ReportableError ShuntWarning where
                 ( vsep
                     [ "Unknown precedence/associativity for operator" <+> pretty operatorName
                         <> ". The system will assume it has the highest precedence (9) and left associativity, but you should specify it manually. "
-                    , "Known Operators:" <+> prettyOpTable opTable
                     ]
                 )
                 [(opSrc, This "operator declared here")]
-                [Hint "Define the precedence and associativity of the operator explicitly. There is currently no way of doing this lol"]
+                [Hint "Define the precedence and associativity of the operator explicitly, using #Fixity and #Associativity annotations"]

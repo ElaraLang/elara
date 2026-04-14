@@ -137,7 +137,7 @@ runGetOpInfoQuery ::
              ]
         )
         (Maybe OpInfo)
-runGetOpInfoQuery (Global (IgnoreLocation (Located _ declName))) = do
+runGetOpInfoQuery (Global (IgnoreLocation locatedName@(Located _ declName))) = do
     fixityAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @NewR.Renamed (declName, fixityAnnotationName)
     assocAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @NewR.Renamed (declName, associativityAnnotationName)
     fixity <- case fixityAnns of
@@ -147,6 +147,9 @@ runGetOpInfoQuery (Global (IgnoreLocation (Located _ declName))) = do
                 Just (ConstInt n) | n >= 0 && n <= 9 -> pure $ Just (mkPrecedence (fromInteger n))
                 _invalid -> pure Nothing
         _invalid -> pure Nothing
+
+    whenNothing_ fixity $
+        Eff.tell (one (UnknownPrecedence locatedName))
 
     assoc <- case assocAnns of
         [] -> pure Nothing
