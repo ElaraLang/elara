@@ -26,6 +26,7 @@ data RealPosition = Position
     deriving (Show, Eq, Ord, Data, Generic)
 
 instance Hashable RealPosition
+
 data Position
     = RealPosition !RealPosition
     | GeneratedPosition
@@ -37,6 +38,7 @@ data RealSourceRegion = UnsafeMkSourceRegion
     , _endPos :: !RealPosition
     }
     deriving (Show, Eq, Ord, Data, Generic)
+
 instance Hashable RealSourceRegion
 
 data SourceRegion
@@ -192,7 +194,8 @@ This function will throw an error if the regions are in different files.
 -}
 enclosingRegion :: HasCallStack => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
 enclosingRegion a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
-enclosingRegion (UnsafeMkSourceRegion fp start _) (UnsafeMkSourceRegion _ _ end) = mkSourceRegionIn fp (min start end) (max start end)
+enclosingRegion (UnsafeMkSourceRegion fp start1 end1) (UnsafeMkSourceRegion _ start2 end2) =
+    mkSourceRegionIn fp (min start1 start2) (max end1 end2)
 
 {- | Get the region that contains both of the given regions.
 This function will throw an error if the regions are in different files.
