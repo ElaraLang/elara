@@ -3,14 +3,13 @@ module Elara.Parse.Declaration where
 import Elara.AST.Name (ModuleName)
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Frontend
-import Elara.AST.Region (Located (..), SourceRegion, unlocated)
+import Elara.AST.Region (HasSourceRegion (sourceRegion), Located (..), SourceRegion, unlocated)
 import Elara.AST.Types
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Logging (logDebug)
 import Elara.Parse.Annotation (annotations)
 import Elara.Parse.Combinators (sepBy1')
-import Elara.Parse.Expression (letPreamble)
 import Elara.Parse.Grammar (exprParser, letPreambleParser)
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, ignoringIndents, located, token_)
@@ -59,7 +58,7 @@ defDec modName anns = locatedDecl $ do
 letDec :: Located ModuleName -> [Annotation SourceRegion Frontend] -> Parser FrontendDeclaration
 letDec modName anns = locatedDecl $ do
     (name, patterns, e) <- letPreambleParser
-    let valueLocation = sconcat (exprRegion e :| (patternRegion <$> patterns))
+    let valueLocation = name ^. sourceRegion <> exprRegion e <> mconcat (map patternRegion patterns)
         value = DeclarationBody valueLocation (ValueDeclaration name e patterns Nothing NoExtension anns)
     pure (Declaration' modName value)
 
