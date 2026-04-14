@@ -31,6 +31,5 @@ Backends are free to treat _both_ kinds of primitives as they see fit. For examp
 
 To maintain binary compatibility, backends must not rewrite public APIs that reference these primitives, but are free to rewrite internal code as they see fit. For example, a public function that returns `Bool` must return an actual `Bool`, but internal code that uses `Bool` can be rewritten to use JVM primitives and then re-boxed to `Bool` before being returned.
 
-<div class="note">
-This policy may be revisited in the future and replaced with things like monomorphisation
-</div>
+> [!NOTE]
+> This policy may be revisited in the future and replaced with things like monomorphisation
