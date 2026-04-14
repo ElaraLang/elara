@@ -209,7 +209,7 @@ memoiseWithCycleDetection ::
     IORef (HashMap ThreadId ThreadId) ->
     Rules f ->
     Rules f
-memoiseWithCycleDetection startedVar depsVar rules = rules'
+memoiseWithCycleDetection startedVar depsVar rules = withFrozenCallStack rules'
   where
     rules' key = do
         let !hk = HideEffects key
@@ -231,16 +231,16 @@ memoiseWithCycleDetection startedVar depsVar rules = rules'
                         Right existingEntry ->
                             unEff (waitFor existingEntry) env
                         Left () -> do
-                            result <- E.try $ restore $ unEff (rules key) env
-                            case (result :: Either E.SomeException _) of
-                                Left ex
+                            result <- E.tryWithContext $ restore $ unEff (rules key) env
+                            case result of
+                                Left exWithCtx@(E.ExceptionWithContext _ctx ex)
                                     | Just (Cyclic childTrace) <- fromException ex -> do
                                         let cycleEx = Cyclic (Some hk <| childTrace)
                                         putMVar valueVar (CycleFailed (toException cycleEx))
                                         E.throwIO cycleEx
                                     | otherwise -> do
                                         putMVar valueVar (CycleFailed ex)
-                                        E.throwIO ex
+                                        E.rethrowIO exWithCtx
                                 Right value -> do
                                     putMVar valueVar (CycleSucceeded value)
                                     MVar.modifyMVar_ startedVar $ \started'' -> forceDHashMap $ DHashMap.insert hk (Done value) started''
