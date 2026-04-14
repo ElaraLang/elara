@@ -202,9 +202,9 @@ This function will throw an error if the regions are in different files.
 If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be a 'GeneratedRegion'.
 -}
 enclosingRegion' :: HasCallStack => SourceRegion -> SourceRegion -> SourceRegion
+enclosingRegion' (GeneratedRegion{}) b = b
+enclosingRegion' a (GeneratedRegion{}) = a
 enclosingRegion' a b | a ^. path /= b ^. path = error ("enclosingRegion: regions are in different files: " <> showPretty a <> " & " <> showPretty b)
-enclosingRegion' (GeneratedRegion fp) _ = GeneratedRegion fp
-enclosingRegion' _ (GeneratedRegion fp) = GeneratedRegion fp
 enclosingRegion' (RealSourceRegion a) (RealSourceRegion b) = RealSourceRegion $ enclosingRegion a b
 
 spanningRegion :: NonEmpty RealSourceRegion -> RealSourceRegion
@@ -238,7 +238,7 @@ instance Monoid SourceRegion where
 
 instance Applicative Located where
     pure = Located (GeneratedRegion generatedFileName)
-    Located region f <*> Located region' x = Located (region <> region') (f x)
+    Located region f <*> Located region' x = Located (region `enclosingRegion'` region') (f x)
 
 instance Pretty a => Pretty (Located a) where
     pretty (Located _ x) = pretty x

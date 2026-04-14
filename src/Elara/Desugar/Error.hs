@@ -87,9 +87,13 @@ data PartialDeclaration
         DesugaredType
         (Maybe [New.Annotation SourceRegion Desugared])
     | JustLet
+        -- | Name of the declaration
         (Located VarName)
+        -- | The *overall* region of the *entire* declaration, not just the body!
         SourceRegion
+        -- | The desugared expression of the let binding
         DesugaredExpr
+        -- | Any annotations on the let binding
         (Maybe [New.Annotation SourceRegion Desugared])
     | AllDecl (Located VarName) SourceRegion DesugaredType DesugaredExpr [New.Annotation SourceRegion Desugared]
     | Immediate Name (New.DeclarationBody SourceRegion Desugared)

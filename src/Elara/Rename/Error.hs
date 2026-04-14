@@ -33,7 +33,7 @@ data RenameError
       For example, @type Foo = a@ would trigger this, because @a@ is not bound anywhere
       -}
       UnknownTypeVariable LowerAlphaName
-    | {- | A name was used that isn't in scope — neither defined in the current module nor imported.
+    | {- | A name was used that isn't in scope, either because it doesn't exist or because it wasn't imported.
       Carries the unknown name, the module being renamed (for import suggestions), and the full known-names map (for typo hints)
       -}
       forall name.
@@ -57,7 +57,7 @@ data RenameError
         (New.Expr SourceRegion NewD.Desugared)
         -- | The surrounding declaration, if any, for better error location
         (Maybe (New.DeclarationBody SourceRegion NewD.Desugared))
-    | -- | The current module couldn't be determined (internal compiler error — should not occur in normal use)
+    | -- | The current module couldn't be determined (internal compiler error, should not occur in normal use)
       UnknownCurrentModule
     | {- | A type alias directly or indirectly refers to itself, which is forbidden.
       The first argument is the alias being defined; the second is the use site where the cycle is detected

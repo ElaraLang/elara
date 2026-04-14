@@ -6,7 +6,7 @@ This stage handles:
 1. Renaming all variables, types, and type variables, adding module qualification or unique suffixes to avoid name clashes
 2. Desugaring any "first-class" pattern matches into normal match expressions (eg '\[] -> 1' to '\x -> match x with [] -> 1')
 3. Desugaring blocks into let-in chains (and monad operations soon), eg 'let y = 1; y + 1' to 'let y = 1 in y + 1'
- Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
+Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
 -}
 module Elara.Rename (getRenamedModule, renameExpr, InnerRename) where
 
@@ -49,7 +49,7 @@ import Elara.Query.Errors ()
 import Elara.Rename.Error
 import Elara.Rename.Imports (expositionToLocatedName, isExposition, isImportedBy)
 import Elara.Rename.State
-import Print (showColored)
+import Print (debugPretty, showColored)
 import Rock qualified
 
 type Rename r =
@@ -298,18 +298,27 @@ addDeclarationToContext ::
     Rename r =>
     New.Declaration SourceRegion NewD.Desugared ->
     Eff r ()
-addDeclarationToContext decl@(New.Declaration _ (New.Declaration' declMN body)) = do
+addDeclarationToContext decl@(New.Declaration dloc (New.Declaration' declMN body)) = do
+    let New.DeclarationBody _ body' = body
+    let nameLoc = case body' of
+            New.ValueDeclaration n _ _ _ _ _ -> n ^. sourceRegion
+            New.TypeDeclarationBody n _ _ _ _ _ -> n ^. sourceRegion
+            New.DeclBodyExtension v -> absurd v
+
+    -- create a global var ref for a given name
+    -- uses the declaration's module name for qualification
+    -- and the var ref's location refers to just the declaration name
     let global :: name -> VarRef name
         global vn =
             let mn = declMN ^. unlocated
-             in Global (Qualified vn mn `withLocationOf` declMN)
+             in Global (Qualified vn mn `withLocationOf` nameLoc)
+
     case declarationName decl of
         DeclVar vn -> Eff.modify $ over (the @"varNames") $ insertMerging vn (global vn)
         DeclType tn -> Eff.modify $ over (the @"typeNames") $ insertMerging tn (global tn)
 
     logDebug $ "Added declaration to context: " <> pretty (declarationName decl)
 
-    let New.DeclarationBody _ body' = body
     case body' of
         -- Add all the constructor names to context
         New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ -> for_ ctors $ \(cn, _) ->
