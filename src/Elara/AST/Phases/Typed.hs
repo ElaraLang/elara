@@ -3,6 +3,7 @@
 
 module Elara.AST.Phases.Typed where
 
+import Elara.AST.Location
 import Elara.AST.Name (OpName, Qualified, TypeName, VarName)
 import Elara.AST.Phase
 import Elara.AST.Pretty
@@ -20,17 +21,17 @@ import Elara.TypeInfer.Unique (UniqueTyVar)
 type data Typed
 
 instance ElaraPhase Typed where
-    type ValueOccurrence Typed loc = Locate loc (VarRef VarName)
-    type ConstructorOccurrence Typed loc = Locate loc (Qualified TypeName)
-    type TypeOccurrence Typed loc = Locate loc (Qualified TypeName)
-    type OperatorOccurrence Typed loc = Locate loc (VarRef OpName)
-    type InfixedOccurrence Typed loc = VarRef VarName
+    type ValueOccurrence Typed loc = LocateNode VarNode loc (VarRef VarName)
+    type ConstructorOccurrence Typed loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeOccurrence Typed loc = LocateNode TypeNode loc (Qualified TypeName)
+    type OperatorOccurrence Typed loc = LocateNode VarNode loc (VarRef OpName)
+    type InfixedOccurrence Typed loc = LocateNode VarNode loc (VarRef VarName)
 
-    type ValueBinder Typed loc = Locate loc (Unique VarName)
-    type TopValueBinder Typed loc = Locate loc (Qualified VarName)
-    type TopTypeBinder Typed loc = Locate loc (Qualified TypeName)
-    type TypeVariable Typed loc = Locate loc UniqueTyVar
-    type ConstructorBinder Typed loc = Locate loc (Qualified TypeName)
+    type ValueBinder Typed loc = LocateNode VarNode loc (Unique VarName)
+    type TopValueBinder Typed loc = LocateNode VarNode loc (Qualified VarName)
+    type TopTypeBinder Typed loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeVariable Typed loc = LocateNode TypeNode loc UniqueTyVar
+    type ConstructorBinder Typed loc = LocateNode TypeNode loc (Qualified TypeName)
     type LambdaBinder Typed loc = TypedLambdaParam (Unique VarName) loc Typed
 
     type ExpressionMeta Typed loc = Monotype SourceRegion

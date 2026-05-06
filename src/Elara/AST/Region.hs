@@ -176,8 +176,11 @@ makePrisms ''IgnoreLocation
 generatedSourceRegionFrom :: Located a -> SourceRegion
 generatedSourceRegionFrom = generatedSourceRegion . view (sourceRegion % path)
 
-unlocated :: Lens (Located a) (Located b) a b
-unlocated = lensVL $ \f (Located region x) -> fmap (Located region) (f x)
+class LocatedElement w where
+    unlocated :: Lens (w a) (w b) a b
+
+instance LocatedElement Located where
+    unlocated = lensVL $ \f (Located region x) -> fmap (Located region) (f x)
 
 -- | Attach the location of the second argument to the first argument
 withLocationOf :: HasSourceRegion b => a -> b -> Located a
@@ -186,49 +189,12 @@ withLocationOf a b = Located (b ^. sourceRegion) a
 merge :: (HasSourceRegion a, HasSourceRegion b) => (a -> b -> c) -> a -> b -> Located c
 merge fn l1 l2 =
     Located
-        (spanningRegion' (l1 ^. sourceRegion :| [l2 ^. sourceRegion]))
+        (spanningRegion (l1 ^. sourceRegion :| [l2 ^. sourceRegion]))
         (fn l1 l2)
-
-{- | Get the region that contains both of the given regions.
-This function will throw an error if the regions are in different files.
--}
-enclosingRegion :: HasCallStack => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
-enclosingRegion a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
-enclosingRegion (UnsafeMkSourceRegion fp start1 end1) (UnsafeMkSourceRegion _ start2 end2) =
-    mkSourceRegionIn fp (min start1 start2) (max end1 end2)
-
-{- | Get the region that contains both of the given regions.
-This function will throw an error if the regions are in different files.
-If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be a 'GeneratedRegion'.
--}
-enclosingRegion' :: HasCallStack => SourceRegion -> SourceRegion -> SourceRegion
-enclosingRegion' (GeneratedRegion{}) b = b
-enclosingRegion' a (GeneratedRegion{}) = a
-enclosingRegion' a b | a ^. path /= b ^. path = error ("enclosingRegion: regions are in different files: " <> showPretty a <> " & " <> showPretty b)
-enclosingRegion' (RealSourceRegion a) (RealSourceRegion b) = RealSourceRegion $ enclosingRegion a b
-
-spanningRegion :: NonEmpty RealSourceRegion -> RealSourceRegion
-spanningRegion regions = do
-    let file = the $ catMaybes $ regions ^.. traversed % path
-    let start = fromJust $ minimumOf (traversed % startPos) regions
-    let end = fromJust $ maximumOf (traversed % endPos) regions
-    mkSourceRegionIn (Just file) start end
-
-{- | Get the region that contains all of the given regions.
-This function will throw an error if the regions are in different files.
-If all the given 'SourceRegion's are 'GeneratedRegion's, then the result will be a 'GeneratedRegion'. Otherwise, the 'GeneratedRegion's will be ignored.
--}
-spanningRegion' :: NonEmpty SourceRegion -> SourceRegion
-spanningRegion' regions = do
-    let file = the $ catMaybes $ regions ^.. traversed % path
-    let realRegions = regions ^.. traversed % _RealSourceRegion
-    case nonEmpty realRegions of
-        Nothing -> GeneratedRegion file
-        Just realRegions' -> RealSourceRegion $ spanningRegion realRegions'
 
 instance Semigroup SourceRegion where
     (<>) :: SourceRegion -> SourceRegion -> SourceRegion
-    (<>) = enclosingRegion'
+    (<>) = enclosingRegion
 
 instance Semigroup RealSourceRegion where
     (<>) = enclosingRegion
@@ -238,7 +204,7 @@ instance Monoid SourceRegion where
 
 instance Applicative Located where
     pure = Located (GeneratedRegion generatedFileName)
-    Located region f <*> Located region' x = Located (region `enclosingRegion'` region') (f x)
+    Located region f <*> Located region' x = Located (region `enclosingRegion` region') (f x)
 
 instance Pretty a => Pretty (Located a) where
     pretty (Located _ x) = pretty x
@@ -270,3 +236,45 @@ instance ToJSON SourceRegion
 instance ToJSON RealSourceRegion
 
 instance ToJSON RealPosition
+
+class Semigroup region => IsRegion region where
+    {- | Get the region that contains all of the given regions.
+    This function will throw an error if the regions are in different files.
+    If all the given 'SourceRegion's are 'GeneratedRegion's, then the result will be a 'GeneratedRegion'. Otherwise, the 'GeneratedRegion's will be ignored.
+    -}
+    spanningRegion :: NonEmpty region -> region
+
+    {- | Get the region that contains both of the given regions.
+    This function will throw an error if the regions are in different files.
+    If either of the given 'SourceRegion's is a 'GeneratedRegion', then the result will be the other region.
+    If both are 'GeneratedRegion's, then the result will be a 'GeneratedRegion'.
+    -}
+    enclosingRegion :: region -> region -> region
+
+instance IsRegion SourceRegion where
+    spanningRegion :: NonEmpty SourceRegion -> SourceRegion
+    spanningRegion regions = do
+        let file = the $ catMaybes $ regions ^.. traversed % path
+        let realRegions = regions ^.. traversed % _RealSourceRegion
+        case nonEmpty realRegions of
+            Nothing -> GeneratedRegion file
+            Just realRegions' -> RealSourceRegion $ spanningRegion realRegions'
+
+    enclosingRegion :: HasCallStack => SourceRegion -> SourceRegion -> SourceRegion
+    enclosingRegion (GeneratedRegion{}) b = b
+    enclosingRegion a (GeneratedRegion{}) = a
+    enclosingRegion a b | a ^. path /= b ^. path = error ("enclosingRegion: regions are in different files: " <> showPretty a <> " & " <> showPretty b)
+    enclosingRegion (RealSourceRegion a) (RealSourceRegion b) = RealSourceRegion $ enclosingRegion a b
+
+instance IsRegion RealSourceRegion where
+    spanningRegion :: NonEmpty RealSourceRegion -> RealSourceRegion
+    spanningRegion regions = do
+        let file = the $ catMaybes $ regions ^.. traversed % path
+        let start = fromJust $ minimumOf (traversed % startPos) regions
+        let end = fromJust $ maximumOf (traversed % endPos) regions
+        mkSourceRegionIn (Just file) start end
+
+    enclosingRegion :: HasCallStack => RealSourceRegion -> RealSourceRegion -> RealSourceRegion
+    enclosingRegion a b | a ^. path /= b ^. path = error "enclosingRegion: regions are in different files"
+    enclosingRegion (UnsafeMkSourceRegion fp start1 end1) (UnsafeMkSourceRegion _ start2 end2) =
+        mkSourceRegionIn fp (min start1 start2) (max end1 end2)

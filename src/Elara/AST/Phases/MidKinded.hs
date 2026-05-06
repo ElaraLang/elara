@@ -2,6 +2,7 @@
 
 module Elara.AST.Phases.MidKinded where
 
+import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Phase
 import Elara.AST.Region (SourceRegion)
@@ -12,17 +13,17 @@ import Elara.Data.Unique (Unique, UniqueId)
 data MidKinded
 
 instance ElaraPhase MidKinded where
-    type ValueOccurrence MidKinded loc = Locate loc (VarRef VarName)
-    type ConstructorOccurrence MidKinded loc = Locate loc (Qualified TypeName)
-    type TypeOccurrence MidKinded loc = Locate loc (Qualified TypeName)
-    type OperatorOccurrence MidKinded loc = Locate loc (VarRef OpName)
+    type ValueOccurrence MidKinded loc = LocateNode VarNode loc (VarRef VarName)
+    type ConstructorOccurrence MidKinded loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeOccurrence MidKinded loc = LocateNode TypeNode loc (Qualified TypeName)
+    type OperatorOccurrence MidKinded loc = LocateNode VarNode loc (VarRef OpName)
     type InfixedOccurrence MidKinded loc = VarRef VarName
 
-    type ValueBinder MidKinded loc = Locate loc (Unique VarName)
-    type TopValueBinder MidKinded loc = Locate loc (Qualified VarName)
-    type TopTypeBinder MidKinded loc = Locate loc (Qualified TypeName)
-    type TypeVariable MidKinded loc = Locate loc (Unique LowerAlphaName)
-    type ConstructorBinder MidKinded loc = Locate loc (Qualified TypeName)
+    type ValueBinder MidKinded loc = LocateNode VarNode loc (Unique VarName)
+    type TopValueBinder MidKinded loc = LocateNode VarNode loc (Qualified VarName)
+    type TopTypeBinder MidKinded loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeVariable MidKinded loc = LocateNode TypeNode loc (Unique LowerAlphaName)
+    type ConstructorBinder MidKinded loc = LocateNode TypeNode loc (Qualified TypeName)
     type LambdaBinder MidKinded loc = TypedLambdaParam (Unique VarName) loc MidKinded
 
     type ExpressionMeta MidKinded loc = Maybe (Type loc MidKinded)

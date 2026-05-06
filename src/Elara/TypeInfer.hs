@@ -6,13 +6,15 @@ import Data.Generics.Product (HasType (typed))
 import Data.Graph (SCC, flattenSCC)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
+import Data.String (fromString)
 import Effectful
 import Effectful.Error.Static
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local (runWriter)
+import Elara.AST.Location
 import Elara.AST.Module
-import Elara.AST.Name (LowerAlphaName, ModuleName, Name (..), NameLike (nameText), Qualified (..), ToName (..), TypeName, VarName, unqualified)
+import Elara.AST.Name (LowerAlphaName (..), ModuleName (..), Name (..), NameLike (nameText), Qualified (..), ToName (..), TypeName, VarName (..), unqualified)
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Kinded (KindedType)
@@ -31,8 +33,8 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug, debugWith, logDebug, logDebugWith)
-import Elara.Query (Query (..), QueryType (..), SupportsQuery)
+import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
+import Elara.Query (Query (..), QueryEffectsOf, QueryType (..), SupportsQuery, WithRock)
 import Elara.Query.Effects
 import Elara.Rules.Generic ()
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
@@ -175,7 +177,7 @@ runGetTypeAliasQuery name = do
             _ -> False
 
 seedConstructorsFor :: (SupportsQuery QueryModuleByName Shunted, HasCallStack, _) => ModuleName -> Eff r ()
-seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
+seedConstructorsFor moduleName = logDebugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
     -- Fetch all declarations in the module
     mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
     let Module _ m' = mod
@@ -186,7 +188,7 @@ seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty mo
     for_ typeDecls $ \(name, _, _, _) -> Kind.preRegisterType (name ^. unlocated)
 
     -- For each type declaration, add its constructors to the environment
-    for_ typeDecls $ \(name, typeVars, declBody, _anns) -> debugWith ("Seeding declaration: " <> pretty name) $ do
+    for_ typeDecls $ \(name, typeVars, declBody, _anns) -> logDebugWith ("Seeding declaration: " <> pretty name) $ do
         (_, decl') <- inferKind (name ^. unlocated) typeVars declBody
         case decl' of
             New.Alias t -> do
@@ -195,19 +197,20 @@ seedConstructorsFor moduleName = debugWith ("seedConstructorsFor: " <> pretty mo
                 pass -- we don't need to do anything with an alias i think
             New.ADT ctors -> do
                 let tyVars' = fmap createTypeVar typeVars
-                let typeConstructorType = TypeConstructor (name ^. sourceRegion) (name ^. unlocated) (fmap (TypeVar (name ^. sourceRegion) . UnificationVar) tyVars')
+                let nameLoc = unwrapLoc (getLocation name)
+                let typeConstructorType = TypeConstructor nameLoc (name ^. unlocated) (fmap (TypeVar nameLoc . UnificationVar) tyVars')
 
                 let inferCtor (ctorName, t :: [KindedType]) = do
                         t' <- traverse astTypeToInferTypeWithKind t
                         let ctorType =
-                                foldr (Function (name ^. sourceRegion) . fst) typeConstructorType t'
-                        addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall (name ^. sourceRegion) tyVars' (EmptyConstraint (monotypeLoc ctorType)) ctorType))
+                                foldr (Function nameLoc . fst) typeConstructorType t'
+                        addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall nameLoc tyVars' (EmptyConstraint (monotypeLoc ctorType)) ctorType))
 
                         pure (ctorName, t')
 
                 for_ ctors inferCtor
   where
-    extractTypeDecl :: New.Declaration SourceRegion Shunted -> Maybe (Located (Qualified TypeName), [Located (Unique LowerAlphaName)], New.TypeDeclaration SourceRegion Shunted, [New.Annotation SourceRegion Shunted])
+    extractTypeDecl :: New.Declaration SourceRegion Shunted -> Maybe (TaggedLocate TypeNode SourceRegion (Qualified TypeName), [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)], New.TypeDeclaration SourceRegion Shunted, [New.Annotation SourceRegion Shunted])
     extractTypeDecl (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
         case body' of
             New.TypeDeclarationBody name typeVars declBody _ _ anns -> Just (name, typeVars, declBody, anns)
@@ -254,7 +257,10 @@ seedSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qua
 seedSCC scc = do
     logDebug $ "Seeding SCC: " <> pretty (flattenSCC scc)
     for_ scc $ \component -> do
-        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
+        decl :: New.Declaration SourceRegion Shunted <-
+            runErrorOrReport @ShuntError $
+                Rock.fetch $
+                    Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
         seedDeclaration decl
 
 inferSCC ::
@@ -266,7 +272,10 @@ inferSCC scc = do
     prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)
     logDebug $ "Seeding SCC complete. Environment:\n" <> prettyState
     inferred <- for scc $ \component -> do
-        decl <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
+        decl <-
+            runErrorOrReport @ShuntError $
+                Rock.fetch $
+                    Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
         inferred <- inferDeclarationScheme decl
         pure (component, inferred)
 
@@ -288,7 +297,8 @@ runTypeCheckedExprQuery name = do
 
 runTypeCheckedDeclarationQuery :: Qualified Name -> Eff (ConsQueryEffects (Rock.Rock Query : r)) TypedDeclaration
 runTypeCheckedDeclarationQuery name = do
-    shuntedDecl <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted name)
+    let q = Elara.Query.RequiredDeclarationByName @Shunted
+    shuntedDecl <- runErrorOrReport @ShuntError $ Rock.fetch (q name)
     let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ shuntedBody')) = shuntedDecl
     (typedDecl, _) <- runInferEffects $ evalState initialInferState $ case shuntedBody' of
         New.ValueDeclaration valueName expr _ _ _ _ -> do
@@ -302,9 +312,7 @@ runTypeCheckedDeclarationQuery name = do
             for_ deps $ \dep -> do
                 -- Only seed if it's not part of the current recursive cycle
                 unless (dep `Set.member` sccSet) $ do
-                    -- Fetch the type from Rock (cached)
                     t <- Rock.fetch (Elara.Query.TypeOf (TermVarKey dep))
-                    -- Add to the local inference state
                     addType' (TermVarKey dep) t
 
             -- Values might use constructors,
@@ -318,7 +326,9 @@ runTypeCheckedDeclarationQuery name = do
             -- infer the entire SCC together to solve mutual recursion constraints.
             inferredDecls <- for scc $ \sccMemberName -> do
                 -- Fetch member source
-                memberDecl <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> sccMemberName))
+                memberDecl <-
+                    runErrorOrReport @ShuntError $
+                        Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> sccMemberName))
                 inferDeclaration memberDecl
 
             case find (\d -> declarationName d == (name ^. unqualified)) inferredDecls of
@@ -342,7 +352,7 @@ declarationName (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ bo
 -- | Collect all constructor references from a shunted expression
 collectConstructors :: NewS.ShuntedExpr -> [Qualified TypeName]
 collectConstructors (New.Expr _ _ e') = case e' of
-    New.ECon _ (Located _ qtn) -> [qtn]
+    New.ECon _ (TaggedLocate _ qtn) -> [qtn]
     New.EVar _ _ -> []
     New.EInt _ -> []
     New.EFloat _ -> []
@@ -363,7 +373,7 @@ collectConstructors (New.Expr _ _ e') = case e' of
 -- | Collect constructor references from a shunted pattern
 collectPatternConstructors :: NewS.ShuntedPattern -> [Qualified TypeName]
 collectPatternConstructors (New.Pattern _ _ p') = case p' of
-    New.PCon (Located _ qtn) pats -> qtn : concatMap collectPatternConstructors pats
+    New.PCon (TaggedLocate _ qtn) pats -> qtn : concatMap collectPatternConstructors pats
     _ -> []
 
 inferModule ::
@@ -388,8 +398,8 @@ seedDeclaration (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ bo
             logDebug $ "Expected type for " <> pretty valueName <> ": " <> pretty expectedType
             expected <- case expectedType of
                 Just t -> pure t
-                Nothing -> Lifted . TypeVar (valueName ^. sourceRegion) . UnificationVar <$> makeUniqueTyVar
-            -- When we have an expected type (e.g., from a user annotation), skolemise
+                Nothing -> Lifted . TypeVar (getLocation $ stripTag valueName) . UnificationVar <$> makeUniqueTyVar
+            -- When we have an expected type (e.g. from a user annotation), skolemise
             -- its quantified variables so they cannot unify with concrete types.
             expectedAsMono <- skolemise expected
             logDebug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
@@ -449,13 +459,13 @@ inferDeclaration (New.Declaration dloc (New.Declaration' mn (New.DeclarationBody
                         )
                 New.ADT ctors -> do
                     let tyVars' = fmapToSnd createTypeVar tyVars
-                    let typeConstructorType = TypeConstructor (name ^. sourceRegion) (name ^. unlocated) (fmap (\(tyVarLocation, tyVar) -> TypeVar (tyVarLocation ^. sourceRegion) $ UnificationVar tyVar) tyVars')
+                    let typeConstructorType = TypeConstructor (getLocation $ stripTag name) (name ^. unlocated) (fmap (\(tyVarLocation, tyVar) -> TypeVar (getLocation $ stripTag tyVarLocation) $ UnificationVar tyVar) tyVars')
 
                     let inferCtor (ctorName, t :: [KindedType]) = do
                             t' <- traverse astTypeToInferTypeWithKind t
                             let ctorType =
-                                    foldr (Function (ctorName ^. sourceRegion) . fst) typeConstructorType t'
-                            addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall (ctorName ^. sourceRegion) (snd <$> tyVars') (EmptyConstraint (monotypeLoc ctorType)) ctorType))
+                                    foldr (Function (getLocation $ stripTag ctorName) . fst) typeConstructorType t'
+                            addType' (DataConKey (stripTag ctorName ^. unlocated)) (Polytype (Forall (getLocation $ stripTag ctorName) (snd <$> tyVars') (EmptyConstraint (monotypeLoc ctorType)) ctorType))
 
                             pure (ctorName, t')
 
@@ -473,13 +483,10 @@ inferDeclaration (New.Declaration dloc (New.Declaration' mn (New.DeclarationBody
                         )
         New.DeclBodyExtension v -> absurd v
 
-createTypeVar :: Located (Unique LowerAlphaName) -> UniqueTyVar
-createTypeVar (Located _ u) = fmap (Just . nameText) u
+createTypeVar :: TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName) -> UniqueTyVar
+createTypeVar (TaggedLocate _ u) = fmap (Just . nameText) u
 
-{- | Convert a kinded type declaration to a typed type declaration
-The only difference is the TypeVariable: Kinded uses Located (Unique LowerAlphaName),
-Typed uses Located UniqueTyVar. TypeMeta and ConstructorBinder are the same.
--}
+-- | Convert a kinded type declaration to a typed type declaration
 kindedToTypedTypeDecl :: New.TypeDeclaration SourceRegion NewK.Kinded -> New.TypeDeclaration SourceRegion Typed
 kindedToTypedTypeDecl (New.ADT ctors) = New.ADT (secondF (fmap kindedToTypedType) ctors)
 kindedToTypedTypeDecl (New.Alias t) = New.Alias (kindedToTypedType t)
@@ -517,7 +524,9 @@ inferAnnotationArg (New.AnnotationArg e) = do
     (finalConstraint, subst) <- solveConstraint mempty (fuv t <> fuv constraint) constraint
     case finalConstraint of
         EmptyConstraint _ -> pass
-        _ -> throwError $ UnresolvedConstraint undefined finalConstraint
+        _ ->
+            let fallbackName = Qualified "annotation" (ModuleName (pure "<annotation>"))
+             in throwError $ UnresolvedConstraint fallbackName finalConstraint
 
     pure $ New.AnnotationArg (getExpr (substituteAll subst (SubstitutableExpr typedExpr)))
 
@@ -533,7 +542,7 @@ inferValue valueName valueExpr expectedType = do
     let exprLoc = exprLocation valueExpr
     expected <- case expectedType of
         Just t -> pure t
-        Nothing -> Lifted . TypeVar exprLoc . UnificationVar <$> makeUniqueTyVar
+        Nothing -> Lifted . TypeVar (getLocation exprLoc) . UnificationVar <$> makeUniqueTyVar
     -- When we have an expected type (e.g., from a user annotation), skolemise
     -- its quantified variables so they cannot unify with concrete types.
     expectedAsMono <- skolemise expected
@@ -562,7 +571,7 @@ inferValue valueName valueExpr expectedType = do
     pure (getExpr (substituteAll subst (SubstitutableExpr typedExpr)), generalized)
 
 -- | Get the location of an expression
-exprLocation :: New.Expr loc p -> loc
+exprLocation :: New.Expr loc p -> NodeLoc ExprNode loc
 exprLocation (New.Expr loc _ _) = loc
 
 -- Replace all quantified variables in a type scheme with rigid skolem variables.
@@ -680,8 +689,8 @@ substituteAllLambdaBinder s (TypedLambdaParam v meta) = TypedLambdaParam v (subs
 -- | Substitute a type variable in an AST type (New.Type SourceRegion Typed)
 substituteAstType :: UniqueTyVar -> Monotype SourceRegion -> NewT.TypedType -> NewT.TypedType
 substituteAstType tv t (New.Type loc kind t') = case t' of
-    New.TVar (Located _ tv')
-        | tv == tv' -> monotypeToAstType loc kind t
+    New.TVar (TaggedLocate _ tv')
+        | tv == tv' -> monotypeToAstType (unwrapLoc loc) kind t
     _ -> New.Type loc kind (substituteAstType' tv t t')
 
 substituteAstType' :: UniqueTyVar -> Monotype SourceRegion -> NewT.TypedType' -> NewT.TypedType'
@@ -702,11 +711,19 @@ substituteAllAstType (Substitution s) ty = foldl' (\acc (tv, t) -> substituteAst
 -- | Convert a Monotype to an AST Type for the Typed phase
 monotypeToAstType :: SourceRegion -> ElaraKind -> Monotype SourceRegion -> NewT.TypedType
 monotypeToAstType loc kind = \case
-    TypeVar _ tv -> New.Type loc kind (New.TVar (Located loc (typeVarToUniqueTyVar tv)))
-    Function _ a b -> New.Type loc kind (New.TFun (monotypeToAstType loc kind a) (monotypeToAstType loc kind b))
+    TypeVar _ tv ->
+        let typeLoc = wrap @TypeNode loc
+         in New.Type typeLoc kind (New.TVar (TaggedLocate typeLoc (typeVarToUniqueTyVar tv)))
+    Function _ a b ->
+        let typeLoc = wrap @TypeNode loc
+         in New.Type typeLoc kind (New.TFun (monotypeToAstType loc kind a) (monotypeToAstType loc kind b))
     TypeConstructor _ qn args -> case args of
-        [] -> New.Type loc kind (New.TUserDefined (Located loc qn))
-        _ -> foldl' (\acc arg -> New.Type loc kind (New.TApp acc (monotypeToAstType loc kind arg))) (New.Type loc kind (New.TUserDefined (Located loc qn))) args
+        [] ->
+            let typeLoc = wrap @TypeNode loc
+             in New.Type typeLoc kind (New.TUserDefined (TaggedLocate typeLoc qn))
+        _ ->
+            let typeLoc = wrap @TypeNode loc
+             in foldl' (\acc arg -> New.Type typeLoc kind (New.TApp acc (monotypeToAstType loc kind arg))) (New.Type typeLoc kind (New.TUserDefined (TaggedLocate typeLoc qn))) args
 
 typeVarToUniqueTyVar :: TypeVariable -> UniqueTyVar
 typeVarToUniqueTyVar (UnificationVar tv) = tv

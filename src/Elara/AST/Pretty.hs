@@ -5,6 +5,7 @@
 module Elara.AST.Pretty where
 
 import Elara.AST.Extensions
+import Elara.AST.Location
 import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (LowerAlphaName, ModuleName)
 import Elara.AST.Phase
@@ -28,7 +29,7 @@ type PrettyPhaseLoc p loc =
     , Pretty (TopTypeBinder p loc)
     , Pretty (TypeVariable p loc)
     , Pretty (ConstructorBinder p loc)
-    , Pretty (Locate loc LowerAlphaName)
+    , Pretty (LocateNode VarNode loc LowerAlphaName)
     )
 
 class PrettyPhase p where
@@ -192,7 +193,7 @@ prettyType' = \case
     TUserDefined name -> prettyTypeOccurrence @p @loc name
     TRecord fields -> "{" <+> hsep (punctuate "," (map prettyField (toList fields))) <+> "}"
       where
-        prettyField :: (Locate loc LowerAlphaName, Type loc p) -> Doc AnsiStyle
+        prettyField :: (LocateNode VarNode loc LowerAlphaName, Type loc p) -> Doc AnsiStyle
         prettyField (name, ty) = pretty name <+> ":" <+> prettyType ty
     TList t -> "[" <+> prettyType t <+> "]"
     TExtension ext -> prettyTypeSyntaxExtension @p @loc ext
@@ -274,7 +275,7 @@ prettyDeclaration (Declaration _ (Declaration' _ (DeclarationBody _ body))) =
     prettyDeclarationBody @loc @p body
 
 -- | Pretty-print a module with all its declarations
-prettyModule :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc, Pretty (Locate loc ModuleName)) => Module loc p -> Doc AnsiStyle
+prettyModule :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc, Pretty (LocateNode ModuleNode loc ModuleName)) => Module loc p -> Doc AnsiStyle
 prettyModule (Module _ m) =
     "module"
         <+> pretty (moduleName m)

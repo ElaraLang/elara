@@ -28,6 +28,7 @@ library
       Elara
       Elara.AST.Extensions
       Elara.AST.Instances
+      Elara.AST.Location
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Phase
@@ -68,6 +69,7 @@ library
       Elara.Data.Unique.Effect
       Elara.Data.Unwrap
       Elara.Desugar
+      Elara.Desugar.Common
       Elara.Desugar.Error
       Elara.Error
       Elara.Error.Codes

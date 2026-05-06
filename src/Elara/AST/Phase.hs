@@ -8,19 +8,22 @@ along with adding their own phase-specific extension syntax and metadata.
 module Elara.AST.Phase where
 
 import Data.Kind qualified as Kind
-import Elara.AST.Region (Located, SourceRegion)
+import Elara.AST.Location
+import Elara.AST.Region (SourceRegion)
 
 -- | Marker for extension fields that carry no additional data
 data NoExtension = NoExtension
     deriving (Show, Eq, Ord, Generic)
 
 {- | Conditionally wrap a value in 'Located' based on the location type.
-When @loc ~ SourceRegion@, wraps in 'Located' (which carries 'SourceRegion').
+When @loc ~ SourceRegion@, wraps in 'TaggedLocate' (which carries 'SourceRegion').
 When @loc ~ ()@, the value is bare (no location wrapper).
+
+Also tagged with an 'AstNode' that is used io
 -}
-type family Locate (loc :: Kind.Type) (a :: Kind.Type) :: Kind.Type where
-    Locate () a = a
-    Locate SourceRegion a = Located a
+type family LocateNode (n :: AstNode) (loc :: Kind.Type) (a :: Kind.Type) :: Kind.Type where
+    LocateNode _ () a = a
+    LocateNode n SourceRegion a = TaggedLocate n SourceRegion a
 
 -- | The main phase class. Each compilation stage provides an instance.
 class ElaraPhase p where

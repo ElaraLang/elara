@@ -27,7 +27,7 @@ with scrutinees: @[x, y]@
 We look at **Column 0** (the head) to decide what to do with variable @x@.
 1. We see a constructor @Just@. We must generate a @match x with ...@.
 2. We create a branch for @Just@. Inside this branch, @x@ is unwrapped into @payload@.
-   We transform the matrix for this branch ("Specialization"):
+   We transform the matrix for this branch ("Specialisation"):
    - Row 1 matches @Just a@. The pattern @Just a@ becomes @a@.
    - Row 2 is a wildcard @_@. It matches @Just@ too! We expand @_@ into @wildcard_payload@.
 
@@ -48,6 +48,7 @@ import Data.Matrix qualified as Mat
 import Data.Text (toLower)
 import Data.Text qualified as T
 import Effectful (Eff, (:>))
+import Elara.AST.Location
 import Elara.AST.Name (NameLike (..), Qualified (..), TypeName (..), VarName)
 import Elara.AST.Phases.Typed (TypedPattern)
 import Elara.AST.Region
@@ -61,7 +62,7 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Logging
 
--- | Normalized pattern representation for the matrix
+-- | Normalised pattern representation for the matrix
 data NPat
     = -- | wildcard pattern
       PWild
@@ -75,7 +76,7 @@ data NPat
 
 instance Pretty NPat
 
-{- | The Pattern Matrix, parametrized over the type of the RHS expressions.
+{- | The Pattern Matrix, parametrised over the type of the RHS expressions.
 Invariant: @nrows pmPats == length pmRhs == length pmBinds@
 -}
 data PMatrix a = PMatrix
@@ -115,7 +116,6 @@ buildMatrix1 branches =
         binds = replicate (length branches) []
      in PMatrix{pmPats = pats, pmRhs = rhs, pmBinds = binds}
 
--- | Convert a TypedPattern into our normalized NPat form.
 toNPat :: TypedPattern -> NPat
 toNPat (New.Pattern _ _ pat) = go pat
   where
@@ -126,8 +126,8 @@ toNPat (New.Pattern _ _ pat) = go pat
         New.PChar c -> PLit (Core.Char c)
         New.PUnit -> PLit Core.Unit
         New.PWildcard -> PWild
-        New.PVar (Located _ uvn) -> PVar uvn
-        New.PCon (Located _ qn) ps ->
+        New.PVar (TaggedLocate _ uvn) -> PVar uvn
+        New.PCon (TaggedLocate _ qn) ps ->
             PCon qn (map toNPat ps)
         New.PExtension v -> absurd v
 

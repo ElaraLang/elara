@@ -2,9 +2,10 @@ module Elara.TypeInfer.Convert where
 
 import Effectful (Eff, (:>))
 import Effectful.Error.Static
+import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phases.Kinded (KindedType, KindedType')
-import Elara.AST.Region (Located (..), SourceRegion, unlocated)
+import Elara.AST.Region (SourceRegion, unlocated)
 import Elara.AST.Types qualified as New
 import Elara.Data.Kind
 import Elara.Data.Pretty
@@ -14,10 +15,9 @@ import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Type
 
 -- | Collect free type variables from a type
-freeTypeVars :: KindedType -> [Located (Unique LowerAlphaName)]
+freeTypeVars :: KindedType -> [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 freeTypeVars (New.Type _ _ t') = freeTypeVars' t'
   where
-    freeTypeVars' :: KindedType' -> [Located (Unique LowerAlphaName)]
     freeTypeVars' (New.TVar v) = [v]
     freeTypeVars' (New.TFun t1 t2) = freeTypeVars t1 <> freeTypeVars t2
     freeTypeVars' New.TUnit = []
@@ -31,22 +31,24 @@ astTypeToGeneralisedInferType :: Error TypeConvertError :> r => KindedType -> Ef
 astTypeToGeneralisedInferType t@(New.Type loc _kind t') = do
     let ftvs = ordNub $ freeTypeVars t
     let skolems = fmap (view unlocated . convertTyVar) ftvs
-    asInferType <- astTypeToInferType' loc t'
+    let loc' = getLocation loc
+    asInferType <- astTypeToInferType' loc' t'
 
     case skolems of
         [] -> pure $ Lifted asInferType
-        _ -> pure $ Polytype (Forall loc skolems (EmptyConstraint loc) asInferType)
+        _ -> pure $ Polytype (Forall loc' skolems (EmptyConstraint loc') asInferType)
 
 astTypeToInferType :: Error TypeConvertError :> r => KindedType -> Eff r (Monotype SourceRegion)
 astTypeToInferType (New.Type loc _kind t') = do
-    astTypeToInferType' loc t'
+    astTypeToInferType' (getLocation loc) t'
 
 astTypeToInferTypeWithKind :: Error TypeConvertError :> r => KindedType -> Eff r (Monotype SourceRegion, ElaraKind)
 astTypeToInferTypeWithKind (New.Type loc kind t') = do
-    asInferType <- astTypeToInferType' loc t'
+    asInferType <- astTypeToInferType' (getLocation loc) t'
     pure (asInferType, kind)
 
-convertTyVar :: Located (Unique LowerAlphaName) -> Located UniqueTyVar
+-- convertTyVar :: Located (Unique LowerAlphaName) -> Located UniqueTyVar
+convertTyVar :: TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName) -> TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
 convertTyVar = fmap (fmap (Just . nameText))
 
 astTypeToInferType' :: Error TypeConvertError :> r => SourceRegion -> KindedType' -> Eff r (Monotype SourceRegion)

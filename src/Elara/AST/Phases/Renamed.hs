@@ -20,6 +20,7 @@ module Elara.AST.Phases.Renamed (
 where
 
 import Elara.AST.Extensions
+import Elara.AST.Location (AstNode (TypeNode, VarNode))
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified (..), TypeName (..), VarName (..))
 import Elara.AST.Phase
 import Elara.AST.Pretty
@@ -41,18 +42,18 @@ data Renamed
 
 instance ElaraPhase Renamed where
     -- Occurrences (now qualified/resolved)
-    type ValueOccurrence Renamed loc = Locate loc (VarRef VarName)
-    type ConstructorOccurrence Renamed loc = Locate loc (Qualified TypeName)
-    type TypeOccurrence Renamed loc = Locate loc (Qualified TypeName)
-    type OperatorOccurrence Renamed loc = Locate loc (VarRef OpName)
+    type ValueOccurrence Renamed loc = LocateNode VarNode loc (VarRef VarName)
+    type ConstructorOccurrence Renamed loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeOccurrence Renamed loc = LocateNode TypeNode loc (Qualified TypeName)
+    type OperatorOccurrence Renamed loc = LocateNode VarNode loc (VarRef OpName)
     type InfixedOccurrence Renamed loc = VarRef Name
 
     -- Binders (uniquified)
-    type ValueBinder Renamed loc = Locate loc (Unique VarName)
-    type TopValueBinder Renamed loc = Locate loc (Qualified VarName)
-    type TopTypeBinder Renamed loc = Locate loc (Qualified TypeName)
-    type TypeVariable Renamed loc = Locate loc (Unique LowerAlphaName)
-    type ConstructorBinder Renamed loc = Locate loc (Qualified TypeName)
+    type ValueBinder Renamed loc = LocateNode VarNode loc (Unique VarName)
+    type TopValueBinder Renamed loc = LocateNode VarNode loc (Qualified VarName)
+    type TopTypeBinder Renamed loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeVariable Renamed loc = LocateNode TypeNode loc (Unique LowerAlphaName)
+    type ConstructorBinder Renamed loc = LocateNode TypeNode loc (Qualified TypeName)
     type LambdaBinder Renamed loc = TypedLambdaParam (Unique VarName) loc Renamed
 
     -- Metadata

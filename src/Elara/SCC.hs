@@ -6,6 +6,7 @@ import Data.Graph (SCC (..), stronglyConnComp)
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Effectful
+import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Shunted (Shunted)
@@ -89,7 +90,7 @@ sccContainingRoot g@ReachableSubgraph{root} =
 -- | Collect free variable references from an expression (manual recursion replacing cosmosOf plate)
 valueDependencies :: NewS.ShuntedExpr -> HashSet (Qualified VarName)
 valueDependencies (New.Expr _ _ e') = case e' of
-    New.EVar NoExtension (Located _ (Global (Located _ qn))) -> one qn
+    New.EVar NoExtension (TaggedLocate _ (Global (Located _ qn))) -> one qn
     New.EVar _ _ -> mempty
     New.ECon _ _ -> mempty
     New.EInt _ -> mempty
@@ -115,7 +116,7 @@ patternDependencies _ = mempty
 -- | Collect type dependencies from a shunted type
 typeDependencies :: NewS.ShuntedType -> HashSet (Qualified Name)
 typeDependencies (New.Type _ _ t') = case t' of
-    New.TUserDefined (Located _ e) -> one (NameType <$> e)
+    New.TUserDefined (TaggedLocate _ e) -> one (NameType <$> e)
     New.TFun t1 t2 -> typeDependencies t1 <> typeDependencies t2
     New.TApp t1 t2 -> typeDependencies t1 <> typeDependencies t2
     New.TList t -> typeDependencies t

@@ -5,6 +5,7 @@ import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 import Data.Text.Metrics (levenshtein)
 import Elara.AST.Instances ()
+import Elara.AST.Location
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
 import Elara.AST.Phases.Desugared qualified as NewD
@@ -173,13 +174,13 @@ instance ReportableError RenameError where
                 ("Unknown" <+> nameKind <+> "name: " <> pretty n)
                 [(n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")]
                 (namesThatMightveBeenIntendedButNotImported <> possibleTypos)
-    report (BlockEndsWithLet (New.Expr loc _ _) decl) =
+    report (BlockEndsWithLet (New.Expr (ExprLoc loc) _ _) decl) =
         writeReport $
             Err
                 (Just Codes.blockEndsWithLet)
                 "Block ends with a let binding"
                 ( (sourceRegionToDiagnosePosition loc, This "this let has no body")
-                    : maybe [] (\(New.DeclarationBody dloc _) -> [(sourceRegionToDiagnosePosition dloc, Where "inside this declaration")]) decl
+                    : maybe [] (\(New.DeclarationBody dloc _) -> [(sourceRegionToDiagnosePosition $ unwrapLoc dloc, Where "inside this declaration")]) decl
                 )
                 [ Note "Blocks must end with an expression, not a let binding."
                 , Hint "Perhaps you meant to use a let ... in construct?"

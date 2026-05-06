@@ -2,5 +2,9 @@ import Prelude
 import Elara.Prim
 import String
 
+let x = "beans"
+
 let main = 
-    getArgs >>= (String.join ", " >> println)
+    match x with
+        "beans" -> println "BEANS"
+        _ -> println "not beans"

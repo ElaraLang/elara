@@ -10,7 +10,9 @@ import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
 import Data.Set qualified as Set (toList)
 import Elara.AST.Instances ()
+import Elara.AST.Location
 import Elara.AST.Name (MaybeQualified, ModuleName, VarName)
+import Elara.AST.Phase
 import Elara.AST.Phases.Frontend (FrontendExpr)
 import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
@@ -32,7 +34,10 @@ data ElaraParseError
     | EmptyLambda SourceRegion
     | InfixPrecTooHigh (Located Integer)
     | InvalidConstantExpression {wholeExpr :: FrontendExpr, offendingSection :: FrontendExpr}
-    | ModuleNameMismatch {expectedName :: ModuleName, declaredName :: Located ModuleName}
+    | ModuleNameMismatch
+        { expectedName :: ModuleName
+        , declaredName :: Located ModuleName
+        }
     deriving (Eq, Show, Ord)
 
 parseErrorSources :: ElaraParseError -> [SourceRegion]

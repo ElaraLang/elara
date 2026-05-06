@@ -16,16 +16,14 @@ Description: This module defines the queries used in the Elara compiler.
 -}
 module Elara.Query where
 
-import Effectful
-import Effectful.FileSystem (FileSystem)
-import Elara.Query.TH
-
 import Data.Data (type (:~:) (Refl))
 import Data.GADT.Compare
 import Data.Graph (SCC)
 import Data.Kind (Constraint)
 import Data.Kind qualified as Kind
+import Effectful
 import Effectful.Error.Static (Error)
+import Effectful.FileSystem (FileSystem)
 import Effectful.Writer.Static.Local
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
@@ -56,6 +54,7 @@ import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
 import Elara.Query.Effects
 import Elara.Query.Errors
+import Elara.Query.TH
 import Elara.ReadFile (FileContents, ModulePathError, ReadFileError)
 import Elara.Rename.Error (RenameError)
 import Elara.SCC.Type (ReachableSubgraph, SCCKey)
@@ -244,7 +243,10 @@ class
 
     type QuerySpecificEffectsOf q ast = StandardQueryError ast
 
-    query :: HasCallStack => QueryArgsOf q ast -> Eff (QueryEffectsOf q ast) (QueryReturnTypeOf q ast)
+    query ::
+        HasCallStack =>
+        QueryArgsOf q ast ->
+        Eff (QueryEffectsOf q ast) (QueryReturnTypeOf q ast)
 
 type family SupportsQueries (qs :: [QueryType]) ast = (c :: Constraint) where
     SupportsQueries '[] ast = ()

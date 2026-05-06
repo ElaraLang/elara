@@ -35,9 +35,10 @@ import Effectful.Colog
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Elara.AST.Instances ()
+import Elara.AST.Location (stripTag)
 import Elara.AST.Module qualified as New
 import Elara.AST.Name (ModuleName, NameLike, nameText)
-import Elara.AST.Phase (Locate)
+import Elara.AST.Phase
 import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
@@ -245,8 +246,8 @@ dumpStages settings resolved = do
         coreNameFunc :: CoreModule bind -> Text
         coreNameFunc m = m ^. field' @"name" % to nameText
 
-        newModuleNameFunc :: NameLike (Locate loc ModuleName) => New.Module loc p -> Text
-        newModuleNameFunc (New.Module _ m) = New.moduleName m ^. to nameText
+        newModuleNameFunc :: New.Module SourceRegion p -> Text
+        newModuleNameFunc (New.Module _ m) = nameText $ stripTag (New.moduleName m)
 
     dumpGraphInfo' @(WParseErrorBundle _ _) newModuleNameFunc Elara.Query.ParsedModule DumpParsed "parsed" ".parsed.elr"
     dumpGraphInfo' @DesugarError newModuleNameFunc Elara.Query.DesugaredModule DumpDesugared "desugared" ".desugared.elr"

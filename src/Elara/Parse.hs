@@ -3,6 +3,7 @@ module Elara.Parse (getParsedModuleQuery, getParsedFileQuery) where
 import Effectful (Eff, inject)
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
+import Elara.AST.Location (HasLocation (getLocation), UnwrapNodeLoc (unwrapLoc), stripTag)
 import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.Phases.Frontend (Frontend)
@@ -60,10 +61,10 @@ getParsedModuleQuery mn = do
     let (Module _ modInner) = parsed
     let nameLoc = moduleName modInner
     let declaredName = nameLoc ^. unlocated
-    -- Check if the module declaration is implicit (zero-width region with "Main")
-    let isImplicit = case nameLoc ^. sourceRegion of
-            RealSourceRegion r -> r ^. startPos == r ^. endPos && declaredName == ModuleName ("Main" :| [])
+    -- Check if the module declaration is implicit (generated) or explicit (from source)
+    let isImplicit = case unwrapLoc (getLocation nameLoc) of
             GeneratedRegion _ -> True
+            RealSourceRegion _ -> False
     -- If explicit declaration exists and doesn't match, throw an error
     if not isImplicit && declaredName /= mn
         then do
@@ -72,12 +73,12 @@ getParsedModuleQuery mn = do
             lexemes <- runErrorOrReport @LexerError $ fetch (LexedFile fp)
             let tokenStream = createTokenStream contents lexemes
             let offset = 0 -- Module declaration is typically at the start
-            let parseError = MP.FancyError offset $ one $ MP.ErrorCustom $ ModuleNameMismatch mn nameLoc
+            let parseError = MP.FancyError offset $ one $ MP.ErrorCustom $ ModuleNameMismatch mn (stripTag nameLoc)
             let posState = MP.PosState tokenStream offset (MP.initialPos filePath) MP.defaultTabWidth ""
             throwError $ WParseErrorBundle $ MP.ParseErrorBundle (one parseError) posState
         else do
             let (Module loc _) = parsed
-            pure $ Module loc (modInner{moduleName = Located (nameLoc ^. sourceRegion) mn})
+            pure $ Module loc (modInner{moduleName = mn <$ nameLoc})
 
 createTokenStream :: Text -> [Lexeme] -> TokenStream
 createTokenStream i tokens = TokenStream i tokens False 0

@@ -36,6 +36,7 @@ import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
+import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Phase
 import Elara.AST.Phases.Kinded qualified as NewK
@@ -80,7 +81,7 @@ data ConstraintOrigin
     | -- | Generic primitive constraint, e.g. "Unit must be of kind Type". This should be replaced with more specific origins where possible.
       PrimitiveConstraint Text
     | -- | The declaration of a user defined type
-      UserDefinedTypeConstraint (Located (Qualified TypeName))
+      UserDefinedTypeConstraint (TaggedLocate TypeNode SourceRegion (Qualified TypeName))
     deriving (Show, Eq, Generic)
 
 instance Pretty ConstraintOrigin where
@@ -96,7 +97,7 @@ instance Pretty ConstraintOrigin where
 
 originPositions :: ConstraintOrigin -> [(Position, Marker (Doc AnsiStyle))]
 originPositions = \case
-    FunctionApplication (New.Type loc _ _) _ -> [(sourceRegionToDiagnosePosition loc, This "Function application")]
+    FunctionApplication (New.Type loc _ _) _ -> [(sourceRegionToDiagnosePosition $ getLocation loc, This "Function application")]
     _ -> []
 
 data InferState = InferState

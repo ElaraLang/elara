@@ -1,6 +1,7 @@
 module Elara.Parse.Annotation where
 
 import Elara.AST.Extensions (InParensExtension (..), ListExprExtension (..), TupleExprExtension (..))
+import Elara.AST.Location
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
@@ -18,7 +19,7 @@ annotations = many annotation
 annotation :: Parser (Annotation SourceRegion Frontend)
 annotation = do
     token_ TokenHash
-    annName <- located conName
+    annName <- tagLocated @TypeNode <$> located conName
 
     args <- many constExpr
 

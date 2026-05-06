@@ -3,6 +3,7 @@ allowing for mutually recursive parsers without risk of deadlocks 🥲
 -}
 module Elara.Parse.Grammar (exprParser, element, letPreambleParser) where
 
+import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region
@@ -22,5 +23,5 @@ exprParser = grammarKnot.pExpression
 element :: Parser FrontendExpr
 element = grammarKnot.pElement
 
-letPreambleParser :: Parser (Located VarName, [FrontendPattern], FrontendExpr)
+letPreambleParser :: Parser (TaggedLocate VarNode SourceRegion VarName, [FrontendPattern], FrontendExpr)
 letPreambleParser = Expr.letPreamble grammarKnot

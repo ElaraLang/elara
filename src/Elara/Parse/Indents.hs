@@ -1,8 +1,9 @@
 module Elara.Parse.Indents where
 
+import Elara.AST.Location
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.Region qualified as Region (spanningRegion')
+import Elara.AST.Region qualified as Region (spanningRegion)
 import Elara.AST.Types (Expr (..), Expr' (..))
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
@@ -41,12 +42,12 @@ block mergeFunction single exprParser =
 exprBlock :: Parser FrontendExpr -> Parser FrontendExpr
 exprBlock = block merge identity
   where
-    exprRegion :: FrontendExpr -> SourceRegion
+    exprRegion :: FrontendExpr -> NodeLoc ExprNode SourceRegion
     exprRegion (Expr loc _ _) = loc
 
     merge :: NonEmpty FrontendExpr -> FrontendExpr
     merge expressions = case expressions of
         single :| [] -> single
         _ -> do
-            let region = Region.spanningRegion' (exprRegion <$> expressions)
+            let region = Region.spanningRegion (exprRegion <$> expressions)
             Expr region () (EBlock expressions)

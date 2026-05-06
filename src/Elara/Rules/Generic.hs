@@ -5,6 +5,7 @@ module Elara.Rules.Generic where
 
 import Effectful
 import Effectful.Exception
+import Elara.AST.Location
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
 import Elara.AST.Phase (ElaraPhase (..))
@@ -20,8 +21,8 @@ import Rock qualified
 -- | Helper to get the name from a declaration (works for phases with Located Qualified binders)
 declarationName ::
     ( ElaraPhase p
-    , TopValueBinder p loc ~ Located (Qualified VarName)
-    , TopTypeBinder p loc ~ Located (Qualified TypeName)
+    , TopValueBinder p loc ~ TaggedLocate VarNode loc (Qualified VarName)
+    , TopTypeBinder p loc ~ TaggedLocate TypeNode loc (Qualified TypeName)
     ) =>
     New.Declaration loc p -> Name
 declarationName (New.Declaration _ (New.Declaration' _ body)) =
@@ -37,8 +38,8 @@ instance
     , Rock.Rock Query :> QueryEffectsOf QueryDeclarationByName ast
     , Typeable ast
     , ElaraPhase ast
-    , TopValueBinder ast SourceRegion ~ Located (Qualified VarName)
-    , TopTypeBinder ast SourceRegion ~ Located (Qualified TypeName)
+    , TopValueBinder ast SourceRegion ~ TaggedLocate VarNode SourceRegion (Qualified VarName)
+    , TopTypeBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     , Subset
         (QueryEffectsOf QueryModuleByName ast)
         (QueryEffectsOf QueryDeclarationByName ast)
@@ -59,8 +60,8 @@ instance
 
 instance
     ( HasMinimumQueryEffects (QueryEffectsOf QueryConstructorDeclaration ast)
-    , ConstructorOccurrence ast SourceRegion ~ Located (Qualified TypeName)
-    , ConstructorBinder ast SourceRegion ~ Located (Qualified TypeName)
+    , ConstructorOccurrence ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
+    , ConstructorBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     , ElaraPhase ast
     , Subset
         (QueryEffectsOf QueryModuleByName ast)
@@ -73,10 +74,11 @@ instance
     ) =>
     SupportsQuery QueryConstructorDeclaration ast
     where
-    query qn@(Located _ (Qualified typeName modName)) = do
+    query locatedQn = do
+        let Qualified typeName modName = locatedQn ^. unlocated
         NewModule.Module _ m' <- Rock.fetch $ ModuleByName @ast modName
         let matchingBodies =
-                filter (hasConstructor qn) m'.moduleDeclarations
+                filter (hasConstructor locatedQn) m'.moduleDeclarations
 
         case matchingBodies of
             [decl] -> pure decl
@@ -84,12 +86,19 @@ instance
             _ -> throwIO $ DuplicateDeclAfterDesugar modName (toName typeName)
 
 -- | Check if a declaration contains a type declaration with the given constructor name
-hasConstructor :: (ElaraPhase ast, ConstructorBinder ast SourceRegion ~ Located (Qualified TypeName)) => Located (Qualified TypeName) -> New.Declaration SourceRegion ast -> Bool
-hasConstructor (Located _ qn) (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
-    case body' of
-        New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ ->
-            any (\(Located _ cn, _) -> cn == qn) ctors
-        _ -> False
+hasConstructor ::
+    ( ElaraPhase ast
+    , ConstructorBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
+    ) =>
+    TaggedLocate TypeNode SourceRegion (Qualified TypeName) ->
+    New.Declaration SourceRegion ast ->
+    Bool
+hasConstructor qnLoc (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
+    let qn = qnLoc ^. unlocated
+     in case body' of
+            New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ ->
+                any (\(cnLoc, _) -> (cnLoc ^. unlocated) == qn) ctors
+            _ -> False
 
 instance
     ( SupportsQuery QueryDeclarationByName ast

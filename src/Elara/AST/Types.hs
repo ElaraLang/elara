@@ -2,11 +2,12 @@
 
 module Elara.AST.Types where
 
+import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, ModuleName)
 import Elara.AST.Phase
 
 -- | Expression node with location and metadata
-data Expr loc p = Expr !loc !(ExpressionMeta p loc) (Expr' loc p)
+data Expr loc p = Expr !(NodeLoc ExprNode loc) !(ExpressionMeta p loc) (Expr' loc p)
     deriving (Generic)
 
 -- | Expression syntax
@@ -31,7 +32,7 @@ data Expr' loc p
     deriving (Generic)
 
 -- | Pattern node with location and metadata
-data Pattern loc p = Pattern !loc !(PatternMeta p loc) (Pattern' loc p)
+data Pattern loc p = Pattern !(NodeLoc PatternNode loc) !(PatternMeta p loc) (Pattern' loc p)
     deriving (Generic)
 
 -- | Pattern syntax
@@ -48,7 +49,7 @@ data Pattern' loc p
     deriving (Generic)
 
 -- | Type node with location and metadata
-data Type loc p = Type !loc !(TypeMeta p loc) (Type' loc p)
+data Type loc p = Type !(NodeLoc TypeNode loc) !(TypeMeta p loc) (Type' loc p)
     deriving (Generic)
 
 -- | Type syntax
@@ -58,7 +59,7 @@ data Type' loc p
     | TUnit
     | TApp (Type loc p) (Type loc p)
     | TUserDefined (TypeOccurrence p loc)
-    | TRecord (NonEmpty (Locate loc LowerAlphaName, Type loc p))
+    | TRecord (NonEmpty (LocateNode VarNode loc LowerAlphaName, Type loc p))
     | TList (Type loc p)
     | TExtension (TypeSyntaxExtension p loc)
     deriving (Generic)
@@ -87,18 +88,18 @@ newtype AnnotationArg loc p = AnnotationArg (Expr loc p)
     deriving (Generic)
 
 -- | Top-level declaration with location
-data Declaration loc p = Declaration !loc (Declaration' loc p)
+data Declaration loc p = Declaration !(NodeLoc DeclNode loc) (Declaration' loc p)
     deriving (Generic)
 
 -- | Declaration content
 data Declaration' loc p = Declaration'
-    { declModuleName :: Locate loc ModuleName
+    { declModuleName :: LocateNode ModuleNode loc ModuleName
     , declBody :: DeclarationBody loc p
     }
     deriving (Generic)
 
 -- | Declaration body with location
-data DeclarationBody loc p = DeclarationBody !loc (DeclarationBody' loc p)
+data DeclarationBody loc p = DeclarationBody !(NodeLoc DeclNode loc) (DeclarationBody' loc p)
     deriving (Generic)
 
 -- | Lambda binder with optional type annotation, used from Renamed onward

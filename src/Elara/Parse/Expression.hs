@@ -13,10 +13,11 @@ where
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Elara.AST.Extensions
+import Elara.AST.Location
 import Elara.AST.Name (MaybeQualified (..), Name (..), VarName (..), nameText)
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Frontend
-import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion', sourceRegion, spanningRegion', withLocationOf)
+import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion, sourceRegion, spanningRegion, withLocationOf)
 import Elara.AST.Types
 import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
@@ -38,14 +39,13 @@ data ExpressionGrammar = ExpressionGrammar
     -- ^ the main expression parser
     }
 
--- | Helper to get the SourceRegion from a new-style Expr
-exprRegion :: FrontendExpr -> SourceRegion
+exprRegion :: Expr loc p -> NodeLoc ExprNode loc
 exprRegion (Expr loc _ _) = loc
 
 locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
 locatedExpr p = do
     Located loc node <- located p
-    pure $ Expr loc () node
+    pure $ Expr (ExprLoc loc) () node
 
 {- | The main recursive expression parser.
 Adds function application, cons, and binary operators on top of the basic 'term's.
@@ -108,7 +108,7 @@ cons = infixOp consName (\op l r -> EExtension (FrontendBinaryOperator (BinaryOp
         l <- located (token_ TokenDoubleColon)
         let Located loc _ = l
         let consValue = MaybeQualified (NameType "Cons") (Just Prim.primModuleName)
-        pure $ InfixedOp loc (consValue `withLocationOf` l)
+        pure $ InfixedOp loc (tagLocated @VarNode $ consValue `withLocationOf` l)
 
 -- | Parser for function application (treated as an infix operator with no operator)
 functionCall = infixOp pass (\_ f x -> EApp NoExtension f x)
@@ -124,7 +124,7 @@ infixOp ::
 infixOp opParser mkExpr = do
     op <- opParser
     pure $ \l r ->
-        let region = enclosingRegion' (exprRegion l) (exprRegion r)
+        let region = enclosingRegion (exprRegion l) (exprRegion r)
          in Expr region () (mkExpr op l r)
 
 {- | This isn't actually used in 'expressionTerm' as 'varName' also covers @(+)@ operators,
@@ -136,11 +136,11 @@ operator = (asciiOp <|> infixOp) <?> "operator"
     asciiOp :: Parser FrontendBinaryOperator
     asciiOp = do
         Located loc op <- located (located opName)
-        pure $ SymOp loc op
+        pure $ SymOp loc (tagLocated @VarNode op)
     infixOp = do
         Located loc inner <- located $ do
             token_ TokenBacktick
-            op <- located varOrConName
+            op <- tagLocated @VarNode <$> located varOrConName
             token_ TokenBacktick
             pure op
         pure $ InfixedOp loc inner
@@ -168,20 +168,20 @@ parensOrTuple grammar = do
                 token_ TokenRightParen <?> "')' to close tuple"
                 pure $ Right (AtLeast2List.fromHeadAndTail first rest)
     pure $ case res of
-        Left e -> Expr loc () (EExtension (FrontendInParens (InParensExpression e)))
-        Right items -> Expr loc () (EExtension (FrontendTuple (TupleExpression items)))
+        Left e -> Expr (ExprLoc loc) () (EExtension (FrontendInParens (InParensExpression e)))
+        Right items -> Expr (ExprLoc loc) () (EExtension (FrontendTuple (TupleExpression items)))
 
 variable :: Parser FrontendExpr
 variable =
     locatedExpr $
-        EVar NoExtension <$> withPredicate (not . validName) KeywordUsedAsName (located varName)
+        EVar NoExtension . tagLocated @VarNode <$> withPredicate (not . validName) KeywordUsedAsName (located varName)
   where
     validName var = nameText var `Set.member` reservedWords
 
 constructor :: Parser FrontendExpr
 constructor = locatedExpr $ do
     con <- located (failIfDotAfter conName)
-    pure $ ECon NoExtension con
+    pure $ ECon NoExtension (tagLocated @TypeNode con)
   where
     failIfDotAfter :: Parser a -> Parser a
     failIfDotAfter p = do
@@ -234,7 +234,7 @@ lambda grammar = locatedExpr $ do
     args <- located (many patParser)
     arrLoc <- located (token_ TokenRightArrow <?> "'->' after lambda parameters")
 
-    let emptyLambdaLoc = spanningRegion' (args ^. sourceRegion :| [bsLoc ^. sourceRegion, arrLoc ^. sourceRegion])
+    let emptyLambdaLoc = spanningRegion (args ^. sourceRegion :| [bsLoc ^. sourceRegion, arrLoc ^. sourceRegion])
     let failEmptyBody =
             eof
                 *> customFailure
@@ -256,14 +256,14 @@ ifElse grammar = locatedExpr $ do
     elseBranch <- exprBlock grammar.pElement <?> "expression after 'else'"
     pure (EIf condition thenBranch elseBranch)
 
-letPreamble :: ExpressionGrammar -> Parser (Located VarName, [FrontendPattern], FrontendExpr)
+letPreamble :: ExpressionGrammar -> Parser (TaggedLocate VarNode SourceRegion VarName, [FrontendPattern], FrontendExpr)
 letPreamble grammar = do
     token_ TokenLet
     (name, patterns) <- try infixDef <|> prefixDef
     token_ TokenEquals
 
     e <- exprBlock grammar.pElement
-    pure (name, patterns, e)
+    pure (tagLocated @VarNode name, patterns, e)
   where
     prefixDef :: Parser (Located VarName, [FrontendPattern])
     prefixDef = do

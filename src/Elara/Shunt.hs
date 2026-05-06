@@ -31,6 +31,7 @@ import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
 import Elara.AST.Extensions (BinaryOperatorExtension (..), InParensExtension (..))
+import Elara.AST.Location
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..))
 import Elara.AST.Phase (NoExtension (..))
@@ -38,7 +39,7 @@ import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
 import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Phases.Shunted qualified as NewS
-import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), enclosingRegion', unlocated)
+import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), enclosingRegion, unlocated)
 import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.ConstExpr
@@ -138,8 +139,9 @@ runGetOpInfoQuery ::
         )
         (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation locatedName@(Located _ declName))) = do
-    fixityAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @NewR.Renamed (declName, fixityAnnotationName)
-    assocAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @NewR.Renamed (declName, associativityAnnotationName)
+    annotations <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotations @NewR.Renamed declName
+    let fixityAnns = filter (\(New.Annotation annotName _args) -> annotName ^. unlocated == fixityAnnotationName) annotations
+    let assocAnns = filter (\(New.Annotation annotName _args) -> annotName ^. unlocated == associativityAnnotationName) annotations
     fixity <- case fixityAnns of
         [] -> pure Nothing
         [New.Annotation _ [fixityArg]] ->
@@ -239,10 +241,8 @@ fixExpr e = do
     shuntExpr fixed
 
 -- | Convert an operator to its qualified 'Name' for lookup
-opNameOf (New.SymOp _ (Located _ opRef)) =
-    case opRef of
-        Global (Located l (Qualified n m)) -> Global (IgnoreLocation (Located l (Qualified (NameOp n) m)))
-        Local (Located l (Unique n i)) -> Local (IgnoreLocation (Located l (Unique (NameOp n) i)))
+opNameOf (New.SymOp _ (TaggedLocate _ opRef)) =
+    ignoreLocation (withName opRef)
 opNameOf (New.InfixedOp _ vn) = ignoreLocation vn
 
 {- | Fix the operators in an expression to the correct precedence.
@@ -259,7 +259,7 @@ fixOperators = reassoc
     reassoc (New.Expr loc meta (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r)))) = do
         l' <- fixOperators l
         r' <- fixOperators r
-        e' <- reassoc' loc operator l' r'
+        e' <- reassoc' (unwrapLoc loc) operator l' r'
         pure (New.Expr loc meta e')
     reassoc e = pure e
 
@@ -277,7 +277,7 @@ fixOperators = reassoc
       where
         assocLeft = do
             reassociated' <- reassoc' sr o1 e1 e2
-            let reassociated = New.Expr sr Nothing reassociated'
+            let reassociated = New.Expr (wrap @ExprNode sr) Nothing reassociated'
             pure (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression o2 reassociated e3)))
 
         assocRight = pure (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression o1 e1 r)))
@@ -302,7 +302,7 @@ shuntExpr ::
     NewR.RenamedExpr ->
     Eff r NewS.ShuntedExpr
 shuntExpr (New.Expr loc meta e') = do
-    (shunted, meta') <- shuntExpr' loc e'
+    (shunted, meta') <- shuntExpr' (unwrapLoc loc) e'
     pure $ New.Expr loc (phaseCoerce <$> meta <|> meta') shunted
   where
     shuntExpr' :: SourceRegion -> NewR.RenamedExpr' -> Eff r (NewS.ShuntedExpr', Maybe NewS.ShuntedType)
@@ -352,9 +352,9 @@ shuntExpr (New.Expr loc meta e') = do
         l' <- fixExpr l
         r' <- fixExpr r
         let (opExpr', opLoc) = operatorToExpr operator
-        let opVar = New.Expr opLoc Nothing opExpr'
-        let callLoc = enclosingRegion' opLoc (exprLoc l')
-        let leftCall = New.Expr callLoc Nothing (New.EApp NoExtension opVar l')
+        let opVar = New.Expr (wrap @ExprNode opLoc) Nothing opExpr'
+        let callLoc = enclosingRegion opLoc (unwrapLoc (exprLoc l'))
+        let leftCall = New.Expr (wrap @ExprNode callLoc) Nothing (New.EApp NoExtension opVar l')
         pure (New.EApp NoExtension leftCall r', Nothing)
     shuntExpr' _ (New.EExtension (RenamedInParens (InParensExpression e))) = do
         -- Remove parens and just return the inner expression
@@ -363,29 +363,27 @@ shuntExpr (New.Expr loc meta e') = do
 
 -- | Convert an operator reference into an expression (for turning binary ops into function calls)
 operatorToExpr :: New.BinaryOperator SourceRegion NewR.Renamed -> (NewS.ShuntedExpr', SourceRegion)
-operatorToExpr (New.SymOp opLoc (Located _ opRef)) =
+operatorToExpr (New.SymOp opLoc (TaggedLocate _ opRef)) =
     let varRef = case opRef of
-            Global (Located l (Qualified n m)) ->
-                Located l (Global (Located l (Qualified (OperatorVarName n) m)))
-            Local (Located l (Unique n i)) ->
-                Located l (Local (Located l (Unique (OperatorVarName n) i)))
-     in (New.EVar NoExtension varRef, opLoc)
+            Global (Located l (Qualified n m)) -> Global (Located l (Qualified (OperatorVarName n) m))
+            Local (Located l (Unique n i)) -> Local (Located l (Unique (OperatorVarName n) i))
+     in (New.EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) varRef), opLoc)
 operatorToExpr (New.InfixedOp opLoc inName) =
     case inName of
         Global (Located l (Qualified (NameValue n) m)) ->
-            (New.EVar NoExtension (Located l (Global (Located l (Qualified (NormalVarName n) m)))), opLoc)
+            (New.EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Global (Located l (Qualified (NormalVarName n) m)))), opLoc)
         Global (Located l (Qualified (NameOp n) m)) ->
-            (New.EVar NoExtension (Located l (Global (Located l (Qualified (OperatorVarName n) m)))), opLoc)
-        Global (Located l (Qualified (NameType n) m)) ->
-            (New.ECon NoExtension (Located l (Qualified n m)), opLoc)
+            (New.EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Global (Located l (Qualified (OperatorVarName n) m)))), opLoc)
+        Global (Located _ (Qualified (NameType n) m)) ->
+            (New.ECon NoExtension (TaggedLocate (wrap @TypeNode opLoc) (Qualified n m)), opLoc)
         Local (Located l (Unique (NameValue n) i)) ->
-            (New.EVar NoExtension (Located l (Local (Located l (Unique (NormalVarName n) i)))), opLoc)
+            (New.EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Local (Located l (Unique (NormalVarName n) i)))), opLoc)
         Local (Located l (Unique (NameOp n) i)) ->
-            (New.EVar NoExtension (Located l (Local (Located l (Unique (OperatorVarName n) i)))), opLoc)
+            (New.EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Local (Located l (Unique (OperatorVarName n) i)))), opLoc)
         Local (Located _ (Unique (NameType _) _)) -> error "Shouldn't have local con names"
 
 -- | Get the location of an expression
-exprLoc :: New.Expr SourceRegion p -> SourceRegion
+exprLoc :: New.Expr SourceRegion p -> NodeLoc ExprNode SourceRegion
 exprLoc (New.Expr loc _ _) = loc
 
 -- | Shunt a pattern (trivial conversion since Renamed and Shunted patterns are structurally identical)

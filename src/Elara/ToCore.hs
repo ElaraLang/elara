@@ -9,9 +9,10 @@ import Data.Map qualified as M
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
+import Elara.AST.Location
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (ModuleName, Name (..), NameLike (..), Qualified (..), TypeName (..), VarName)
-import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phase (LocateNode, NoExtension (..))
 import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
 import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr', TypedPattern)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
@@ -121,13 +122,13 @@ knownTypeToCon = \case
     KnownWiredIn WiredInOrdering -> orderingCon
     KnownWiredIn WiredInUnit -> unitCon
 
-lookupCtor :: ToCoreC r => Located (Qualified TypeName) -> Eff r DataCon
+lookupCtor :: ToCoreC r => LocateNode TypeNode SourceRegion (Qualified TypeName) -> Eff r DataCon
 lookupCtor qn = do
     table <- get @CtorSymbolTable
     let plainName = nameText <$> qn ^. unlocated
     case M.lookup plainName table.dataCons of
         Just ctor -> pure ctor
-        Nothing -> Rock.fetch (Elara.Query.GetDataCon (qn ^. unlocated)) ?:! throwError (UnknownConstructor qn table)
+        Nothing -> Rock.fetch (Elara.Query.GetDataCon (qn ^. unlocated)) ?:! throwError (UnknownConstructor (stripTag qn) table)
 
 registerCtor :: ToCoreC r => DataCon -> Eff r ()
 registerCtor ctor = modify (\s -> s{dataCons = M.insert (ctor ^. field @"name") ctor s.dataCons})
@@ -178,7 +179,7 @@ createTyConFromTyped (New.Declaration _ (New.Declaration' _ (New.DeclarationBody
     case body' of
         New.TypeDeclarationBody n _tvs (New.ADT ctors) _maybeTy _metadata _annotations -> do
             let typeName = nameText <$> (n ^. unlocated)
-            let ctorNames = fmap (\(Located _ cn, _) -> fmap nameText cn) (toList ctors)
+            let ctorNames = fmap (\(TaggedLocate _ cn, _) -> fmap nameText cn) (toList ctors)
             pure $ Core.TyCon typeName (TyADT ctorNames)
         New.TypeDeclarationBody n _tvs (New.Alias t) _maybeTy _metadata _annotations -> do
             let typeName = nameText <$> (n ^. unlocated)
@@ -260,7 +261,7 @@ moduleToCore m'@(NewModule.Module _ m) = logDebugWith ("Converting module: " <> 
                 let tyCon =
                         TyCon
                             (nameText <$> n ^. unlocated)
-                            (TyADT (fmap (\(Located _ cn, _) -> fmap nameText cn) (toList ctors)))
+                            (TyADT (fmap (\(TaggedLocate _ cn, _) -> fmap nameText cn) (toList ctors)))
                 registerTyCon tyCon
             New.TypeDeclarationBody n _tvs (New.Alias t) _maybeTy _metadata _annotations -> do
                 tCore <- astTypeToCore t
@@ -277,11 +278,11 @@ moduleToCore m'@(NewModule.Module _ m) = logDebugWith ("Converting module: " <> 
                         TyCon
                             cleanedTypeDeclName
                             ( TyADT
-                                (fmap (\(Located _ cn, _) -> fmap nameText cn) (toList ctors))
+                                (fmap (\(TaggedLocate _ cn, _) -> fmap nameText cn) (toList ctors))
                             )
                 logDebug (pretty tyCon)
                 registerTyCon tyCon
-                ctors' <- for (toList ctors) $ \(Located _ ctorName, ctorArgs) -> do
+                ctors' <- for (toList ctors) $ \(TaggedLocate _ ctorName, ctorArgs) -> do
                     ctorArgs' <- traverse astTypeToCore ctorArgs
                     let ctorType =
                             foldr
@@ -357,11 +358,11 @@ At the Typed phase, TypeMeta is ElaraKind and TypeVariable is Located UniqueTyVa
 -}
 astTypeToCore :: HasCallStack => InnerToCoreC r => New.Type SourceRegion Typed -> Eff r Core.Type
 astTypeToCore (New.Type _ _ t') = case t' of
-    New.TVar (Located _ tv) -> pure $ Core.TyVarTy $ TypeVariable tv TypeKind
+    New.TVar (TaggedLocate _ tv) -> pure $ Core.TyVarTy $ TypeVariable tv TypeKind
     New.TFun t1 t2 -> Core.FuncTy <$> astTypeToCore t1 <*> astTypeToCore t2
     New.TUnit -> pure $ Core.ConTy unitCon
     New.TApp t1 t2 -> Core.AppTy <$> astTypeToCore t1 <*> astTypeToCore t2
-    New.TUserDefined (Located _ qn) -> case lookupByQualifiedTypeName qn of
+    New.TUserDefined (TaggedLocate _ qn) -> case lookupByQualifiedTypeName qn of
         Just kt -> pure $ Core.ConTy (knownTypeToCon kt)
         Nothing -> do
             let name = nameText <$> qn
@@ -413,11 +414,11 @@ toCore le@(New.Expr _ t e) = do
         New.EString s -> pure $ Lit (Core.String s)
         New.EChar c -> pure $ Lit (Core.Char c)
         New.EUnit -> pure $ Lit Core.Unit
-        New.EVar t (Located _ vr@(Global (Located _ _))) -> do
+        New.EVar t (TaggedLocate _ vr@(Global (Located _ _))) -> do
             t' <- eitherTypeToCore t
             let stripped = stripVarRefLoc vr
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripped) t' Nothing)
-        New.EVar t (Located _ v@(Local (Located _ _))) -> do
+        New.EVar t (TaggedLocate _ v@(Local (Located _ _))) -> do
             t' <- eitherTypeToCore t
             let stripped = stripVarRefLoc v
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripped) t' Nothing)
@@ -473,7 +474,7 @@ isRecursive :: Unique VarName -> TypedExpr -> Bool
 isRecursive vn = go
   where
     go (New.Expr _ _ e') = case e' of
-        New.EVar _ (Located _ (Local (Located _ n))) -> n == vn
+        New.EVar _ (TaggedLocate _ (Local (Located _ n))) -> n == vn
         New.EVar _ _ -> False
         New.ELam _ _ body -> go body
         New.EApp _ e1 e2 -> go e1 || go e2
@@ -519,7 +520,7 @@ desugarMatch e pats = do
     pure $ Core.Let (NonRecursive (s0, e')) compiled
 
 mkBindName :: InnerToCoreC r => TypedExpr -> Eff r Var
-mkBindName (New.Expr _ _ (New.EVar varType (Located _ vn))) = do
+mkBindName (New.Expr _ _ (New.EVar varType (TaggedLocate _ vn))) = do
     t' <- eitherTypeToCore varType
     unique <- makeUnique (nameText $ varRefVal vn)
     pure (Core.Id (Local unique) t' Nothing)

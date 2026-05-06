@@ -3,8 +3,9 @@
 
 module Elara.AST.Module where
 
+import Elara.AST.Location
 import Elara.AST.Name (ModuleName)
-import Elara.AST.Phase (ElaraPhase (..), Locate)
+import Elara.AST.Phase (ElaraPhase (..), LocateNode)
 import Elara.AST.Types (Declaration)
 
 -- | Module with location and phase parameters
@@ -12,7 +13,7 @@ data Module loc p = Module !loc (Module' loc p)
     deriving (Generic)
 
 data Module' loc p = Module'
-    { moduleName :: Locate loc ModuleName
+    { moduleName :: LocateNode ModuleNode loc ModuleName
     , moduleExposing :: Exposing loc p
     , moduleImports :: [Import loc p]
     , moduleDeclarations :: [Declaration loc p]
@@ -23,8 +24,8 @@ data Import loc p = Import !loc (Import' loc p)
     deriving (Generic)
 
 data Import' loc p = Import'
-    { importModuleName :: Locate loc ModuleName
-    , importAs :: Maybe (Locate loc ModuleName)
+    { importModuleName :: LocateNode ModuleNode loc ModuleName
+    , importAs :: Maybe (LocateNode ModuleNode loc ModuleName)
     , importQualified :: Bool
     , importExposingOrHiding :: ImportExposingOrHiding loc p
     {- ^ Whether this import has an exposing or hiding clause, and if so, what it exposes or hides.

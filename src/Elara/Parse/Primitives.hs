@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE RequiredTypeArguments #-}
 
 module Elara.Parse.Primitives (
     Parser,
     fmapLocated,
     located,
+    taggedLocated,
     optionallyInParens,
     inParens,
     inBraces,
@@ -20,6 +22,7 @@ module Elara.Parse.Primitives (
 where
 
 import Effectful
+import Elara.AST.Location
 import Elara.AST.Region
 import Elara.Lexer.Token
 import Elara.Logging (StructuredDebug)
@@ -56,8 +59,12 @@ located p = do
     let tokensDiff = take diff startTokens
     let tokensRegion = case tokensDiff of
             [] -> error "empty?"
-            x : xs -> spanningRegion' (view sourceRegion <$> x :| xs)
+            x : xs -> spanningRegion (view sourceRegion <$> x :| xs)
     pure $ Located tokensRegion val
+
+-- | A parser that records the location information of the tokens it consumes, and wraps it in a 'TaggedLocate'
+taggedLocated :: forall n -> WrapNode n => Parser a -> Parser (TaggedLocate n SourceRegion a)
+taggedLocated n = fmapLocated (tagLocated @n)
 
 fmapLocated :: (Located a -> b) -> Parser a -> Parser b
 fmapLocated f = (f <$>) . located
@@ -86,7 +93,7 @@ token_ = void . token
 locatedTokens' :: NonEmpty Token -> Parser SourceRegion
 locatedTokens' tokenList = do
     ts <- traverse lexeme tokenList
-    pure $ spanningRegion' (view sourceRegion <$> ts)
+    pure $ spanningRegion (view sourceRegion <$> ts)
 
 inParens :: Parser a -> Parser a
 inParens = between (token_ TokenLeftParen) (token_ TokenRightParen)

@@ -1,6 +1,6 @@
 module Elara.Parse.Combinators (sepBy1', sepEndBy1', liftedBinary) where
 
-import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion)
+import Elara.AST.Region (Located (Located), enclosingRegion, sourceRegion)
 import Elara.Parse.Primitives (Parser)
 import Text.Megaparsec (try)
 
@@ -26,6 +26,6 @@ sepEndBy1' p sep = do
 liftedBinary op f _Expr = do
     op' <- op
     let create l r =
-            let region = enclosingRegion' (l ^. _Expr % sourceRegion) (r ^. _Expr % sourceRegion)
+            let region = enclosingRegion (l ^. _Expr % sourceRegion) (r ^. _Expr % sourceRegion)
              in Located region (f op' l r) ^. re _Expr
     pure create
