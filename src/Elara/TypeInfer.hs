@@ -6,7 +6,6 @@ import Data.Generics.Product (HasType (typed))
 import Data.Graph (SCC, flattenSCC)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
-import Data.String (fromString)
 import Effectful
 import Effectful.Error.Static
 import Effectful.Reader.Static (runReader)
@@ -24,7 +23,7 @@ import Elara.AST.Phases.Shunted (Shunted)
 import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr')
 import Elara.AST.Phases.Typed qualified as NewT
-import Elara.AST.Region (HasSourceRegion (..), Located (Located), SourceRegion, unlocated)
+import Elara.AST.Region (SourceRegion, unlocated)
 import Elara.AST.Types qualified as New
 import Elara.Data.Kind (ElaraKind, KindVar)
 import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe)
@@ -34,7 +33,7 @@ import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
-import Elara.Query (Query (..), QueryEffectsOf, QueryType (..), SupportsQuery, WithRock)
+import Elara.Query (Query (..), QueryType (..), SupportsQuery)
 import Elara.Query.Effects
 import Elara.Rules.Generic ()
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
