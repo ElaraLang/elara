@@ -1,24 +1,28 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | AST agnostic implementations of rules
-module Elara.Rules.Generic where
+module Elara.Rules.Generic (
+    genericGetDeclarationByName,
+    genericGetRequiredDeclarationByName,
+    genericGetConstructorDeclaration,
+    genericGetDeclarationAnnotations,
+    genericGetDeclarationAnnotationsOfType,
+)
+where
 
 import Effectful
 import Effectful.Exception
-import Elara.AST.Location
+import Elara.AST.Location (TaggedLocate, TypeNode, VarNode)
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
 import Elara.AST.Phase (ElaraPhase (..))
-import Elara.AST.Region (Located (..), SourceRegion, unlocated)
+import Elara.AST.Region (SourceRegion, unlocated)
 import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
 import Elara.Error.Internal
-import Elara.Query
-import Elara.Query.Effects
-import Elara.Query.Errors
-import Rock qualified
 
--- | Helper to get the name from a declaration (works for phases with Located Qualified binders)
+-- | Get the name from a declaration
 declarationName ::
     ( ElaraPhase p
     , TopValueBinder p loc ~ TaggedLocate VarNode loc (Qualified VarName)
@@ -31,59 +35,6 @@ declarationName (New.Declaration _ (New.Declaration' _ body)) =
             New.ValueDeclaration n _ _ _ _ _ -> toName (n ^. unlocated)
             New.TypeDeclarationBody n _ _ _ _ _ -> toName (n ^. unlocated)
             New.DeclBodyExtension _ -> error "declarationName: unexpected extension"
-
-instance
-    ( SupportsQuery QueryModuleByName ast
-    , HasMinimumQueryEffects (QueryEffectsOf QueryDeclarationByName ast)
-    , Rock.Rock Query :> QueryEffectsOf QueryDeclarationByName ast
-    , Typeable ast
-    , ElaraPhase ast
-    , TopValueBinder ast SourceRegion ~ TaggedLocate VarNode SourceRegion (Qualified VarName)
-    , TopTypeBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
-    , Subset
-        (QueryEffectsOf QueryModuleByName ast)
-        (QueryEffectsOf QueryDeclarationByName ast)
-    , QueryReturnTypeOf QueryModuleByName ast ~ NewModule.Module SourceRegion ast
-    ) =>
-    SupportsQuery QueryDeclarationByName ast
-    where
-    type QuerySpecificEffectsOf QueryDeclarationByName ast = StandardQueryError ast
-    query (Qualified name modName) = do
-        NewModule.Module _ m' <- Rock.fetch $ ModuleByName @ast modName
-        let matchingBodies =
-                filter (\d -> declarationName d == name) m'.moduleDeclarations
-
-        case matchingBodies of
-            [] -> pure Nothing
-            [decl] -> pure (Just decl)
-            _ -> throwIO $ DuplicateDeclAfterDesugar modName name
-
-instance
-    ( HasMinimumQueryEffects (QueryEffectsOf QueryConstructorDeclaration ast)
-    , ConstructorOccurrence ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
-    , ConstructorBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
-    , ElaraPhase ast
-    , Subset
-        (QueryEffectsOf QueryModuleByName ast)
-        (QueryEffectsOf QueryConstructorDeclaration ast)
-    , SupportsQuery QueryModuleByName ast
-    , Typeable ast
-    , Rock.Rock Query :> QueryEffectsOf QueryConstructorDeclaration ast
-    , QueryReturnTypeOf QueryConstructorDeclaration ast ~ New.Declaration SourceRegion ast
-    , QueryReturnTypeOf QueryModuleByName ast ~ NewModule.Module SourceRegion ast
-    ) =>
-    SupportsQuery QueryConstructorDeclaration ast
-    where
-    query locatedQn = do
-        let Qualified typeName modName = locatedQn ^. unlocated
-        NewModule.Module _ m' <- Rock.fetch $ ModuleByName @ast modName
-        let matchingBodies =
-                filter (hasConstructor locatedQn) m'.moduleDeclarations
-
-        case matchingBodies of
-            [decl] -> pure decl
-            [] -> throwIO $ RequiredDeclNotFound (toName <$> Qualified typeName modName)
-            _ -> throwIO $ DuplicateDeclAfterDesugar modName (toName typeName)
 
 -- | Check if a declaration contains a type declaration with the given constructor name
 hasConstructor ::
@@ -100,56 +51,94 @@ hasConstructor qnLoc (New.Declaration _ (New.Declaration' _ (New.DeclarationBody
                 any (\(cnLoc, _) -> (cnLoc ^. unlocated) == qn) ctors
             _ -> False
 
-instance
-    ( SupportsQuery QueryDeclarationByName ast
-    , Subset
-        (QueryEffectsOf QueryDeclarationByName ast)
-        (QueryEffectsOf QueryRequiredDeclarationByName ast)
-    , HasMinimumQueryEffects (QueryEffectsOf QueryRequiredDeclarationByName ast)
-    , Rock.Rock Query :> QueryEffectsOf QueryRequiredDeclarationByName ast
-    , Typeable ast
+-- | Generic implementation for fetching a declaration by name
+genericGetDeclarationByName ::
+    forall ast es.
+    ( ElaraPhase ast
+    , TopValueBinder ast SourceRegion ~ TaggedLocate VarNode SourceRegion (Qualified VarName)
+    , TopTypeBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     ) =>
-    SupportsQuery QueryRequiredDeclarationByName ast
-    where
-    type QuerySpecificEffectsOf QueryRequiredDeclarationByName ast = QuerySpecificEffectsOf QueryDeclarationByName ast
-    query name = do
-        mDecl <- Rock.fetch $ DeclarationByName @ast name
-        case mDecl of
-            Just decl -> pure decl
-            Nothing -> throwIO $ RequiredDeclNotFound name
+    -- | injected fetcher
+    (ModuleName -> Eff es (NewModule.Module SourceRegion ast)) ->
+    Qualified Name ->
+    Eff es (Maybe (New.Declaration SourceRegion ast))
+genericGetDeclarationByName fetchMod (Qualified name modName) = do
+    NewModule.Module _ m' <- fetchMod modName
+    let matchingBodies = filter (\d -> declarationName d == name) m'.moduleDeclarations
+    case matchingBodies of
+        [] -> pure Nothing
+        [decl] -> pure (Just decl)
+        _ -> throwIO $ DuplicateDeclAfterDesugar modName name
 
-instance
-    ( SupportsQuery QueryRequiredDeclarationByName ast
-    , Typeable ast
+-- | Generic implementation for fetching a constructor declaration
+genericGetConstructorDeclaration ::
+    forall ast es.
+    ( ElaraPhase ast
+    , ConstructorBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
+    , ConstructorOccurrence ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
+    ) =>
+    -- | injected fetcher
+    (ModuleName -> Eff es (NewModule.Module SourceRegion ast)) ->
+    ConstructorOccurrence ast SourceRegion ->
+    Eff es (New.Declaration SourceRegion ast)
+genericGetConstructorDeclaration fetchMod locatedQn = do
+    let Qualified typeName modName = locatedQn ^. unlocated
+    NewModule.Module _ m' <- fetchMod modName
+    let matchingBodies = filter (hasConstructor locatedQn) m'.moduleDeclarations
+    case matchingBodies of
+        [decl] -> pure decl
+        [] -> throwIO $ RequiredDeclNotFound (toName <$> Qualified typeName modName)
+        _ -> throwIO $ DuplicateDeclAfterDesugar modName (toName typeName)
+
+-- | Generic implementation for fetching a required declaration
+genericGetRequiredDeclarationByName ::
+    forall ast es.
+    ElaraPhase ast =>
+    -- | injected fetcher
+    (Qualified Name -> Eff es (Maybe (New.Declaration SourceRegion ast))) ->
+    Qualified Name ->
+    Eff es (New.Declaration SourceRegion ast)
+genericGetRequiredDeclarationByName fetchDecl name = do
+    mDecl <- fetchDecl name
+    case mDecl of
+        Just decl -> pure decl
+        Nothing -> throwIO $ RequiredDeclNotFound name
+
+-- | Generic implementation for fetching annotations on a declaration
+genericGetDeclarationAnnotations ::
+    forall ast es.
+    ( ElaraPhase ast
     , DeclBodyExtension ast SourceRegion ~ Void
     ) =>
-    SupportsQuery DeclarationAnnotations ast
-    where
-    query qn = do
-        New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) <- Rock.fetch $ RequiredDeclarationByName @ast qn
-        case body' of
-            New.ValueDeclaration _ _ _ _ _ anns -> pure anns
-            New.TypeDeclarationBody _ _ _ _ _ anns -> pure anns
-            New.DeclBodyExtension v -> absurd v
+    -- | injected fetcher
+    (Qualified Name -> Eff es (New.Declaration SourceRegion ast)) ->
+    Qualified Name ->
+    Eff es [New.Annotation SourceRegion ast]
+genericGetDeclarationAnnotations fetchReqDecl qn = do
+    New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) <- fetchReqDecl qn
+    case body' of
+        New.ValueDeclaration _ _ _ _ _ anns -> pure anns
+        New.TypeDeclarationBody _ _ _ _ _ anns -> pure anns
+        New.DeclBodyExtension v -> absurd v
 
-instance
-    ( Typeable ast
-    , SupportsQuery DeclarationAnnotations ast
-    , SupportsQuery QueryConstructorDeclaration ast
-    , ElaraPhase ast
-    , ConstructorOccurrence ast SourceRegion ~ Located (Qualified TypeName)
-    , TypeOccurrence ast SourceRegion ~ Located (Qualified TypeName)
-    , TopTypeBinder ast SourceRegion ~ Located (Qualified TypeName)
+-- | Generic implementation for fetching annotations of a specific type on a declaration
+genericGetDeclarationAnnotationsOfType ::
+    forall ast es.
+    ( ElaraPhase ast
+    , TypeOccurrence ast SourceRegion ~ ConstructorOccurrence ast SourceRegion
+    , TopTypeBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     ) =>
-    SupportsQuery DeclarationAnnotationsOfType ast
-    where
-    type QuerySpecificEffectsOf DeclarationAnnotationsOfType ast = StandardQueryError ast
-    query (Qualified name modName, annName) = do
-        annotations <- Rock.fetch $ DeclarationAnnotations @ast (Qualified name modName)
-
-        fmap catMaybes $ for annotations $ \(New.Annotation annotName _args) -> do
-            annotDecl <- Rock.fetch (ConstructorDeclaration @ast annotName)
-            let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) = annotDecl
-            case body' of
-                New.TypeDeclarationBody tName _ _ _ _ _ | tName ^. unlocated == annName -> pure (Just (New.Annotation annotName _args))
-                _ -> pure Nothing
+    -- | injected fetchAnns
+    (Qualified Name -> Eff es [New.Annotation SourceRegion ast]) ->
+    -- | injected fetchCtor
+    (ConstructorOccurrence ast SourceRegion -> Eff es (New.Declaration SourceRegion ast)) ->
+    (Qualified Name, Qualified TypeName) ->
+    Eff es [New.Annotation SourceRegion ast]
+genericGetDeclarationAnnotationsOfType fetchAnns fetchCtor (Qualified name modName, annName) = do
+    annotations <- fetchAnns (Qualified name modName)
+    fmap catMaybes $ for annotations $ \(New.Annotation annotName _args) -> do
+        annotDecl <- fetchCtor annotName
+        let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) = annotDecl
+        case body' of
+            New.TypeDeclarationBody tName _ _ _ _ _ | tName ^. unlocated == annName -> pure (Just (New.Annotation annotName _args))
+            _ -> pure Nothing

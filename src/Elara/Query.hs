@@ -19,7 +19,7 @@ module Elara.Query where
 import Data.Data (type (:~:) (Refl))
 import Data.GADT.Compare
 import Data.Graph (SCC)
-import Data.Kind (Constraint)
+import Data.Kind (Constraint, Type)
 import Data.Kind qualified as Kind
 import Effectful
 import Effectful.Error.Static (Error)
@@ -72,11 +72,41 @@ import Rock (Rock)
 type WithRock effects =
     Rock.Rock Elara.Query.Query ': effects
 
-{- | The effects required to run a specific query
-| This should probably be moved to the 'SupportsQuery' class as an associated type
--}
-type family QueryEffectsOf (q :: QueryType) ast = es where
-    QueryEffectsOf q ast = WithRock (ConsQueryEffects (QuerySpecificEffectsOf q ast))
+data ASTQueryType = QModule | QDecl | QReqDecl | QCtor | QAnn | QAnnType
+
+class (Typeable ast, ElaraPhase ast) => RunPhase ast where
+    type ASTQueryEffects (ast :: Type) (q :: ASTQueryType) :: [Effect]
+    type ASTQueryEffects (ast :: Type) (q :: ASTQueryType) = StandardQueryError ast
+
+    getModuleByName ::
+        HasCallStack =>
+        ModuleName ->
+        Eff (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QModule))) (NewModule.Module SourceRegion ast)
+
+    getDeclarationByName ::
+        HasCallStack =>
+        Qualified Name ->
+        Eff (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QDecl))) (Maybe (New.Declaration SourceRegion ast))
+
+    getRequiredDeclarationByName ::
+        HasCallStack =>
+        Qualified Name ->
+        Eff (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QReqDecl))) (New.Declaration SourceRegion ast)
+
+    getConstructorDeclaration ::
+        HasCallStack =>
+        ConstructorOccurrence ast SourceRegion ->
+        Eff (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QCtor))) (New.Declaration SourceRegion ast)
+
+    getDeclarationAnnotations ::
+        HasCallStack =>
+        Qualified Name ->
+        Eff (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QAnn))) [New.Annotation SourceRegion ast]
+
+    getDeclarationAnnotationsOfType ::
+        HasCallStack =>
+        (Qualified Name, Qualified TypeName) ->
+        Eff (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QAnnType))) [New.Annotation SourceRegion ast]
 
 data Query (es :: [Effect]) a where
     -- \* Input Queries
@@ -111,55 +141,32 @@ data Query (es :: [Effect]) a where
     ShuntedModule ::
         ModuleName ->
         Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) (NewModule.Module SourceRegion NewS.Shunted)
-    -- | Lookup a module by name
+    -- \* Phase-Polymorphic AST Queries
     ModuleByName ::
-        forall ast.
-        ( Typeable ast
-        , SupportsQuery QueryModuleByName ast
-        , HasMinimumQueryEffects (QueryEffectsOf QueryModuleByName ast)
-        ) =>
-        ModuleName -> Query (QueryEffectsOf QueryModuleByName ast) (QueryReturnTypeOf QueryModuleByName ast)
-    --  | Lookup a declaration by name, which may not exist
+        (RunPhase ast, Typeable ast) =>
+        ModuleName ->
+        Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QModule))) (NewModule.Module SourceRegion ast)
     DeclarationByName ::
-        forall ast.
-        ( Typeable ast
-        , SupportsQuery QueryDeclarationByName ast
-        ) =>
-        QueryArgsOf QueryDeclarationByName ast ->
-        Query
-            (QueryEffectsOf QueryDeclarationByName ast)
-            (QueryReturnTypeOf QueryDeclarationByName ast)
-    --  | Lookup a declaration by name, which must exist, throwing an 'InternalError' if not found
+        (RunPhase ast, Typeable ast) =>
+        Qualified Name ->
+        Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QDecl))) (Maybe (New.Declaration SourceRegion ast))
     RequiredDeclarationByName ::
-        forall ast.
-        ( Typeable ast
-        , SupportsQuery QueryRequiredDeclarationByName ast
-        ) =>
-        QueryArgsOf QueryRequiredDeclarationByName ast ->
-        Query
-            (QueryEffectsOf QueryRequiredDeclarationByName ast)
-            (QueryReturnTypeOf QueryRequiredDeclarationByName ast)
-    -- | Looks up the declaration for a data constructor
+        (RunPhase ast, Typeable ast) =>
+        Qualified Name ->
+        Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QReqDecl))) (New.Declaration SourceRegion ast)
     ConstructorDeclaration ::
-        forall ast.
-        (Typeable ast, Show (ConstructorOccurrence ast SourceRegion), Ord (ConstructorOccurrence ast SourceRegion), Hashable (ConstructorOccurrence ast SourceRegion), ElaraPhase ast, SupportsQuery QueryConstructorDeclaration ast) =>
-        QueryArgsOf QueryConstructorDeclaration ast ->
-        Query (QueryEffectsOf QueryConstructorDeclaration ast) (QueryReturnTypeOf QueryConstructorDeclaration ast)
+        (RunPhase ast, Typeable ast, Show (ConstructorOccurrence ast SourceRegion), Ord (ConstructorOccurrence ast SourceRegion), Hashable (ConstructorOccurrence ast SourceRegion)) =>
+        ConstructorOccurrence ast SourceRegion ->
+        Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QCtor))) (New.Declaration SourceRegion ast)
     DeclarationAnnotations ::
-        forall ast.
-        (Typeable ast, SupportsQuery DeclarationAnnotations ast) =>
-        QueryArgsOf QueryDeclarationByName ast ->
-        Query (QueryEffectsOf DeclarationAnnotations ast) (QueryReturnTypeOf DeclarationAnnotations ast)
+        (RunPhase ast, Typeable ast) =>
+        Qualified Name ->
+        Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QAnn))) [New.Annotation SourceRegion ast]
     DeclarationAnnotationsOfType ::
-        forall ast.
-        ( Typeable ast
-        , SupportsQuery DeclarationAnnotationsOfType ast
-        ) =>
-        QueryArgsOf DeclarationAnnotationsOfType ast ->
-        Query
-            (QueryEffectsOf DeclarationAnnotationsOfType ast)
-            (QueryReturnTypeOf DeclarationAnnotationsOfType ast)
-    -- \* Shunting Queries
+        (RunPhase ast, Typeable ast) =>
+        (Qualified Name, Qualified TypeName) ->
+        Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QAnnType))) [New.Annotation SourceRegion ast]
+    --    \* Shunting Queries
     GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) (Maybe OpInfo)
     GetOpTableIn :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) OpTable
     -- \* Pre-Inference Queries
@@ -178,11 +185,8 @@ data Query (es :: [Effect]) a where
     GetTypeAlias ::
         -- | The name of the type alias
         Qualified TypeName ->
-        {- | The type alias's type variables and body, if it exists
-        \* To Core Queries
-        -}
+        -- | The type alias's type variables and body, if it exists
         Query (WithRock (ConsQueryEffects '[])) (Maybe ([UniqueTyVar], Infer.Type SourceRegion))
-    -- \* Core Queries
     GetCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     GetTyCon :: Qualified Text -> Query (WithRock (ConsQueryEffects '[])) (Maybe TyCon)
     GetDataCon :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe DataCon)
@@ -194,66 +198,9 @@ data Query (es :: [Effect]) a where
     GetFinalisedCoreModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (CoreModule CoreBind)
     -- \* JVM Backend Queries
 
-    -- | Core → JVM IR (per module)
     GetJVMIRModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error JVMLoweringError])) IR.Module
-    -- | JVM IR → ClassFiles (per module)
     GetJVMClassFiles :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error JVMLoweringError])) [ClassFile]
-    -- | ClassFiles → Serialized bytes (per module)
     GetJVMClassBytes :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error JVMLoweringError, Error CodeConverterError])) [(FilePath, LByteString)]
-
--- | List of query kinds at the type level
-type data QueryType
-    = QueryRequiredDeclarationByName
-    | QueryDeclarationByName
-    | QueryModuleByName
-    | QueryConstructorDeclaration
-    | DeclarationAnnotations
-    | DeclarationAnnotationsOfType
-
-type family QueryReturnTypeOf (q :: QueryType) ast = r where
-    QueryReturnTypeOf QueryDeclarationByName ast = Maybe (New.Declaration SourceRegion ast)
-    QueryReturnTypeOf QueryRequiredDeclarationByName ast = New.Declaration SourceRegion ast
-    QueryReturnTypeOf QueryModuleByName ast = NewModule.Module SourceRegion ast
-    QueryReturnTypeOf QueryConstructorDeclaration ast = New.Declaration SourceRegion ast
-    QueryReturnTypeOf DeclarationAnnotations ast = [New.Annotation SourceRegion ast]
-    QueryReturnTypeOf DeclarationAnnotationsOfType ast = [New.Annotation SourceRegion ast]
-
-type family QueryArgsOf (q :: QueryType) ast where
-    QueryArgsOf QueryDeclarationByName ast = Qualified Name
-    QueryArgsOf QueryRequiredDeclarationByName ast = Qualified Name
-    QueryArgsOf QueryModuleByName ast = ModuleName
-    QueryArgsOf QueryConstructorDeclaration ast = ConstructorOccurrence ast SourceRegion
-    QueryArgsOf DeclarationAnnotations ast = Qualified Name
-    -- \| Args are (declaration name, type name)
-    QueryArgsOf DeclarationAnnotationsOfType ast =
-        ( Qualified Name
-        , Qualified TypeName
-        )
-
-class
-    ( Typeable ast
-    , HasMinimumQueryEffects (QueryEffectsOf q ast)
-    ) =>
-    SupportsQuery (q :: QueryType) (ast :: Kind.Type)
-    where
-    {- | Effects that are "unique" to this query.
-    Effects included in 'MinimumQueryEffects' should not be included here as they are expected to always be present
-    -}
-    type QuerySpecificEffectsOf q ast :: [Effect]
-
-    type QuerySpecificEffectsOf q ast = StandardQueryError ast
-
-    query ::
-        HasCallStack =>
-        QueryArgsOf q ast ->
-        Eff (QueryEffectsOf q ast) (QueryReturnTypeOf q ast)
-
-type family SupportsQueries (qs :: [QueryType]) ast = (c :: Constraint) where
-    SupportsQueries '[] ast = ()
-    SupportsQueries (q ': qs) ast =
-        ( SupportsQuery q ast
-        , SupportsQueries qs ast
-        )
 
 instance GEq (Query es) => Eq (Query es a) where
     x == y = case geq x y of

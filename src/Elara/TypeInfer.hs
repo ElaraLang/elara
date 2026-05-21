@@ -33,9 +33,9 @@ import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (runErrorOrReport)
 import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
-import Elara.Query (Query (..), QueryType (..), SupportsQuery)
+import Elara.Query (Query (..), RunPhase (..))
 import Elara.Query.Effects
-import Elara.Rules.Generic ()
+import Elara.Rules.Generic
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
 import Elara.Shunt ()
 import Elara.Shunt.Error (ShuntError)
@@ -72,25 +72,22 @@ type InferPipelineEffects r =
     , Infer SourceRegion r
     )
 
-runGetTypeCheckedModuleQuery ::
-    SupportsQuery QueryModuleByName Shunted =>
-    ModuleName ->
-    Eff
-        ( ConsQueryEffects
-            '[ Rock.Rock Elara.Query.Query
-             ]
-        )
-        (Module SourceRegion Typed)
-runGetTypeCheckedModuleQuery mn = do
-    shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted mn
-    r <- runInferEffects $ evalState initialInferState (inferModule shunted)
-    pure (fst r)
+instance RunPhase Typed where
+    getModuleByName mn = do
+        shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted mn
+        r <- runInferEffects $ evalState initialInferState (inferModule shunted)
+        pure (fst r)
+
+    getDeclarationByName = genericGetDeclarationByName @Typed getModuleByName
+    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Typed getDeclarationByName
+    getConstructorDeclaration = genericGetConstructorDeclaration @Typed getModuleByName
+    getDeclarationAnnotations = genericGetDeclarationAnnotations @Typed getRequiredDeclarationByName
+    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Typed getDeclarationAnnotations getConstructorDeclaration
 
 -- | Run the 'TypeOf' query to get the type of a term or data constructor
 runTypeOfQuery ::
     forall loc.
     loc ~ SourceRegion =>
-    (SupportsQuery QueryRequiredDeclarationByName Shunted, SupportsQuery QueryModuleByName Shunted) =>
     TypeEnvKey loc ->
     Eff
         ( ConsQueryEffects
@@ -112,14 +109,13 @@ runTypeOfQuery key = runErrorOrReport @(InferError loc) $
                                         -- Infer dependencies first to populate the environment
                                         for_ sccs seedSCC
                                         for_ sccs inferSCC
-                                        -- Read from the environment (now populated) without re-querying
+                                        -- Read from the now populated environment  without re-querying
                                         lookupType (TermVarKey varName)
                                     DataConKey con -> do
                                         seedConstructorsFor (qualifier con)
-                                        -- Read from the environment (now populated) without re-querying
                                         lookupType (DataConKey con)
 
-runKindOfQuery :: SupportsQuery QueryModuleByName Shunted => Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
+runKindOfQuery :: Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
 runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ do
     logDebug $ "runKindOfQuery: " <> pretty qtn
     -- First, try to look up the kind variable directly
@@ -136,7 +132,6 @@ runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ 
 
 runGetTypeAliasQuery ::
     forall r.
-    SupportsQuery QueryModuleByName Shunted =>
     Qualified TypeName ->
     Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe ([UniqueTyVar], Type SourceRegion))
 runGetTypeAliasQuery name = do
@@ -175,7 +170,7 @@ runGetTypeAliasQuery name = do
             New.TypeDeclarationBody n _ _ _ _ _ -> (n ^. (unlocated % unqualified)) == tn
             _ -> False
 
-seedConstructorsFor :: (SupportsQuery QueryModuleByName Shunted, HasCallStack, _) => ModuleName -> Eff r ()
+seedConstructorsFor :: (HasCallStack, _) => ModuleName -> Eff r ()
 seedConstructorsFor moduleName = logDebugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
     -- Fetch all declarations in the module
     mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
@@ -245,14 +240,13 @@ runInferEffects =
         . inject
 
 runInferSCCQuery ::
-    SupportsQuery QueryRequiredDeclarationByName Shunted =>
     SCCKey ->
     Eff
         (ConsQueryEffects (Rock.Rock Query : r))
         (Map (Qualified VarName) (Polytype SourceRegion))
 runInferSCCQuery key = fst <$> runInferEffects (evalState initialInferState $ inferSCC (sccKeyToSCC key))
 
-seedSCC :: (SupportsQuery QueryRequiredDeclarationByName Shunted, _) => SCC (Qualified VarName) -> Eff r ()
+seedSCC :: _ => SCC (Qualified VarName) -> Eff r ()
 seedSCC scc = do
     logDebug $ "Seeding SCC: " <> pretty (flattenSCC scc)
     for_ scc $ \component -> do
@@ -263,9 +257,7 @@ seedSCC scc = do
         seedDeclaration decl
 
 inferSCC ::
-    ( SupportsQuery QueryRequiredDeclarationByName Shunted
-    , _
-    ) =>
+    _ =>
     SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
 inferSCC scc = do
     prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)

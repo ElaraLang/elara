@@ -5,6 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+-- | Errors, Warnings, and Diagnostics
 module Elara.Error (
     ReportableError (..),
     SomeReportableError (..),
@@ -73,3 +74,29 @@ runErrorOrReport e = withFrozenCallStack $ do
             let ?callStack = callStack -- silly
              in Eff.throwError_ (SomeReportableError err)
         Right a -> pure a
+
+class ReportableWarning w where
+    warningCode :: w -> Maybe ErrorCode
+    warningCode = const Nothing
+
+    getWarningReport :: w -> Maybe (Report (Doc AnsiStyle))
+    getWarningReport = const Nothing
+
+    reportWarning :: DiagnosticWriter (Doc AnsiStyle) :> r => w -> Eff r ()
+    default reportWarning :: (Pretty w, DiagnosticWriter (Doc AnsiStyle) :> r) => w -> Eff r ()
+    reportWarning = defaultReportWarning
+
+defaultReportWarning ::
+    (ReportableWarning w, Pretty w, DiagnosticWriter (Doc AnsiStyle) :> r) =>
+    w -> Eff r ()
+defaultReportWarning w =
+    let code = (\x -> x) <$> warningCode w
+        report = getWarningReport w
+     in writeReport (fromMaybe (Warn code (pretty w) [] []) report)
+
+data SomeReportableWarning = forall x. ReportableWarning x => SomeReportableWarning x
+
+instance ReportableWarning SomeReportableWarning where
+    warningCode (SomeReportableWarning w) = warningCode w
+    getWarningReport (SomeReportableWarning w) = getWarningReport w
+    reportWarning (SomeReportableWarning w) = reportWarning w

@@ -8,17 +8,18 @@ This stage handles:
 3. Desugaring blocks into let-in chains (and monad operations soon), eg 'let y = 1; y + 1' to 'let y = 1 in y + 1'
 Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
 -}
-module Elara.Rename (getRenamedModule, renameExpr, InnerRename) where
+module Elara.Rename (renameExpr, InnerRename) where
 
 import Data.Generics.Product hiding (list)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Effectful (Eff, inject, (:>))
+import Effectful (Eff, (:>))
 import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Effectful.Reader.Static qualified as Eff
 import Effectful.State.Extra
 import Effectful.State.Static.Local qualified as Eff
+import Effectful.State.Static.Local qualified as Local
 import Elara.AST.Extensions
 import Elara.AST.Location
 import Elara.AST.Module qualified as NewModule
@@ -26,7 +27,7 @@ import Elara.AST.Name (DeclName (..), LowerAlphaName (..), MaybeQualified (Maybe
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Desugared (DesugaredExpressionExtension (..))
 import Elara.AST.Phases.Desugared qualified as NewD
-import Elara.AST.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
+import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..), TypedLambdaParam (..))
 import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Region (Located (Located), SourceRegion (..), enclosingRegion, generatedSourceRegion, sourceRegion, spanningRegion, unlocated, withLocationOf)
 import Elara.AST.Types qualified as New
@@ -41,13 +42,13 @@ import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Prim qualified as Prim
 import Elara.Prim.Rename (primitiveRenameState)
-import Elara.Query (QueryType (..), SupportsQuery (..))
-import Elara.Query qualified
+import Elara.Query
 import Elara.Query.Effects
 import Elara.Query.Errors ()
 import Elara.Rename.Error
 import Elara.Rename.Imports (expositionToLocatedName, isExposition, isImportedBy)
 import Elara.Rename.State
+import Elara.Rules.Generic
 import Print (showColored)
 import Rock qualified
 
@@ -71,25 +72,19 @@ type InnerRename r =
     , HasCallStack
     )
 
--- | Run the @'Elara.Query.RenamedModule'@ query, renaming a module by its name
-getRenamedModule ::
-    ModuleName ->
-    Eff
-        (ConsQueryEffects '[Eff.Error RenameError, Eff.State RenameState, Rock.Rock Elara.Query.Query])
-        (NewModule.Module SourceRegion NewR.Renamed)
-getRenamedModule mn = do
-    m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
-    let NewModule.Module _ m' = m
-    let actualName = m'.moduleName ^. unlocated
-    when (actualName /= mn) $ throwError $ ModuleNameMismatch (Located (GeneratedRegion "Renaming Entry Point") mn) (actualName `withLocationOf` stripTag m'.moduleName)
-    rename m
+instance RunPhase Renamed where
+    getModuleByName mn = do
+        m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
+        let NewModule.Module _ m' = m
+        let actualName = m'.moduleName ^. unlocated
+        when (actualName /= mn) $ throwError $ ModuleNameMismatch (Located (GeneratedRegion "Renaming Entry Point") mn) (actualName `withLocationOf` stripTag m'.moduleName)
+        Local.evalState primitiveRenameState $ rename m
 
-instance SupportsQuery QueryModuleByName NewR.Renamed where
-    type QuerySpecificEffectsOf QueryModuleByName NewR.Renamed = '[Eff.Error RenameError]
-    query mn =
-        Eff.evalState primitiveRenameState $
-            inject $
-                getRenamedModule mn
+    getDeclarationByName = genericGetDeclarationByName @Renamed getModuleByName
+    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Renamed getDeclarationByName
+    getConstructorDeclaration = genericGetConstructorDeclaration @Renamed getModuleByName
+    getDeclarationAnnotations = genericGetDeclarationAnnotations @Renamed getRequiredDeclarationByName
+    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Renamed getDeclarationAnnotations getConstructorDeclaration
 
 qualifyIn :: Rename r => ModuleName -> MaybeQualified name -> Eff r (Qualified name)
 qualifyIn mn (MaybeQualified n (Just m)) = do
