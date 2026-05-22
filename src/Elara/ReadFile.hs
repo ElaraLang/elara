@@ -12,7 +12,6 @@ import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
 import Elara.Settings
-import Error.Diagnose hiding (addFile)
 import Print (showPretty)
 import System.FilePath (takeExtension, (</>))
 
@@ -26,37 +25,32 @@ data ModulePathError
     | MultipleModulePaths !ModuleName ![FilePath]
     deriving (Show)
 
-instance ReportableError ReadFileError where
-    report (DecodeError path _) =
-        writeReport $
-            Err
-                (Just Codes.fileReadError)
-                ("Couldn't read file " <> pretty path)
-                []
-                []
-    report (FileNotFound path) =
-        writeReport $
-            Err
-                (Just Codes.fileNotFound)
-                ("File not found: " <> Style.bold (Style.moduleName (pretty path)))
-                []
-                []
+instance Exception ReadFileError
 
-instance ReportableError ModulePathError where
-    report (ModuleNotFound mn paths) =
-        writeReport $
-            Err
-                (Just Codes.fileNotFound)
-                ("Module not found: " <> pretty mn)
-                []
-                [Note $ "Looked in: " <> pretty (showPretty paths)]
-    report (MultipleModulePaths mn paths) =
-        writeReport $
-            Err
-                (Just Codes.ambiguousModulePath)
-                ("Multiple paths found for module: " <> pretty mn)
-                []
-                [Note $ "Found in: " <> pretty (showPretty paths)]
+instance ElaraDiagnostic ReadFileError where
+    diagnosticMessage (DecodeError path _) = "Couldn't read file " <> pretty path
+    diagnosticMessage (FileNotFound path) = "File not found: " <> Style.bold (Style.moduleName (pretty path))
+    diagnosticCode (DecodeError _ _) = Just Codes.fileReadError
+    diagnosticCode (FileNotFound _) = Just Codes.fileNotFound
+    diagnosticMarkers _ = []
+    diagnosticNotes _ = []
+
+instance Exception ModulePathError
+
+instance ElaraDiagnostic ModulePathError where
+    diagnosticMessage (ModuleNotFound mn _) = "Module not found: " <> pretty mn
+    diagnosticMessage (MultipleModulePaths mn _) = "Multiple paths found for module: " <> pretty mn
+    diagnosticCode (ModuleNotFound _ _) = Just Codes.fileNotFound
+    diagnosticCode (MultipleModulePaths _ _) = Just Codes.ambiguousModulePath
+    diagnosticMarkers _ = []
+    diagnosticNotes (ModuleNotFound _ paths) = [Elara.Error.Note $ "Looked in: " <> pretty (showPretty paths)]
+    diagnosticNotes (MultipleModulePaths _ paths) = [Elara.Error.Note $ "Found in: " <> pretty (showPretty paths)]
+
+instance Pretty ReadFileError where
+    pretty = diagnosticMessage
+
+instance Pretty ModulePathError where
+    pretty = diagnosticMessage
 
 getInputFiles :: CompilerSettings -> Eff '[FileSystem] (HashSet FilePath)
 getInputFiles settings = do
@@ -88,8 +82,7 @@ findElaraFiles' root = do
             pure $ concat paths
 
 runGetFileContentsQuery ::
-    ( DiagnosticWriter (Doc AnsiStyle) :> es
-    , FileSystem :> es
+    ( FileSystem :> es
     , Error ReadFileError :> es
     , HasCallStack
     ) =>
@@ -100,7 +93,6 @@ runGetFileContentsQuery fp = do
             FileNotFound fp
     contents <- Eff.readFile fp
     let contentsText = decodeUtf8 contents
-    addFile fp (toString contentsText)
     pure $ FileContents fp contentsText
 
 data FileContents = FileContents

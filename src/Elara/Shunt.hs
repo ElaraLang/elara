@@ -28,6 +28,7 @@ module Elara.Shunt (
 where
 
 import Data.Generics.Wrapped
+import Data.Set qualified as Set
 import Effectful (Eff, (:>))
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
@@ -44,7 +45,7 @@ import Elara.AST.Types
 import Elara.AST.VarRef
 import Elara.ConstExpr
 import Elara.Data.Unique (Unique (Unique))
-import Elara.Error (runErrorOrReport)
+import Elara.Error (ElaraError, ElaraWarning, reportElaraWarning, runErrorAsElaraError)
 import Elara.Prim (associativityAnnotationName, fixityAnnotationName, leftAssociativeAnnotationName, nonAssociativeAnnotationName, rightAssociativeAnnotationName)
 import Elara.Query (Query (..), RunPhase (..))
 import Elara.Query.Effects
@@ -88,10 +89,11 @@ defaultAssociativity :: Associativity
 defaultAssociativity = LeftAssociative
 
 instance RunPhase Shunted where
-    type ASTQueryEffects Shunted q = '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError]
+    type ASTQueryEffects Shunted q = '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Eff.Error ElaraError, Eff.Writer [ElaraWarning]]
 
     getModuleByName mn = do
-        renamed <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule mn
+        (renamed, warnings) <- Eff.runWriter @[ElaraWarning] $ runErrorAsElaraError @RenameError $ Rock.fetch $ Elara.Query.ModuleByName @Renamed mn
+        traverse_ reportElaraWarning warnings
         shuntWith opLookupQueries renamed
 
     getDeclarationByName = genericGetDeclarationByName @Shunted getModuleByName
@@ -124,11 +126,18 @@ runGetOpInfoQuery ::
             '[ Eff.Writer (Set ShuntWarning)
              , Eff.Error ShuntError
              , Rock Elara.Query.Query
+             , Eff.Error ElaraError
+             , Eff.Writer [ElaraWarning]
              ]
         )
         (Maybe OpInfo)
 runGetOpInfoQuery (Global (IgnoreLocation locatedName@(Located _ declName))) = do
-    annotations <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotations @Renamed declName
+    (annotations, warnings) <-
+        Eff.runWriter @[ElaraWarning] $
+            runErrorAsElaraError @RenameError $
+                Rock.fetch $
+                    Elara.Query.DeclarationAnnotations @Renamed declName
+    traverse_ reportElaraWarning warnings
     let fixityAnns = filter (\(Annotation annotName _args) -> annotName ^. unlocated == fixityAnnotationName) annotations
     let assocAnns = filter (\(Annotation annotName _args) -> annotName ^. unlocated == associativityAnnotationName) annotations
     fixity <- case fixityAnns of
@@ -140,7 +149,7 @@ runGetOpInfoQuery (Global (IgnoreLocation locatedName@(Located _ declName))) = d
         _invalid -> pure Nothing
 
     whenNothing_ fixity $
-        Eff.tell (one (UnknownPrecedence locatedName))
+        Eff.tell (one @(Set _) (UnknownPrecedence locatedName))
 
     assoc <- case assocAnns of
         [] -> pure Nothing

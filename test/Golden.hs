@@ -8,9 +8,10 @@ import Effectful.Colog (runLogAction)
 import Effectful.State.Static.Local (execState, modify)
 import Elara qualified
 import Elara.Data.Pretty (AnsiStyle, Doc)
+import Elara.Error.Diagnose
 import Elara.Interpreter qualified as Interpreter
 import Elara.Settings (CompilerSettings (..), defaultSettings)
-import Error.Diagnose (TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')
+import Error.Diagnose (TabSize (..), WithUnicode (..), prettyDiagnostic')
 import Prettyprinter (defaultLayoutOptions, layoutSmart)
 import Prettyprinter.Render.Text qualified as Text
 import Test.Syd (GoldenTest, Spec, describe, goldenStringFile, it)
@@ -119,6 +120,7 @@ runGolden settings goldenName = do
                             execState ([] :: [Text]) $
                                 Interpreter.interpretInterpreterOutput (modify . (:)) $
                                     Interpreter.runInterpreter Interpreter.run
+
         pure (toString $ unlines $ reverse output)
 
 -- | Run a golden test that expects compiler failure, comparing the diagnostic output
@@ -130,15 +132,16 @@ runGoldenError settings goldenName = do
                 { mainFile = Just (inputPrefix <> goldenName <> ".elr")
                 }
     goldenStringFile ("test/test_resources/golden_outputs/" <> goldenName <> ".txt") $ do
-        (diagnostics, _result) <-
+        (reports, _result) <-
             finaliseEffects $
                 runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc AnsiStyle)) $
                     Elara.withCompilerEnv compilerSettings $
                         execState ([] :: [Text]) $
                             Interpreter.interpretInterpreterOutput (modify . (:)) $
                                 Interpreter.runInterpreter Interpreter.run
-        unless (hasReports diagnostics) $
+        when (null reports) $
             error "Expected compiler error but compilation succeeded"
-        let rendered = prettyDiagnostic' WithUnicode (TabSize 4) diagnostics
+        diag <- reportsToDiagnostic reports
+        let rendered = prettyDiagnostic' WithUnicode (TabSize 4) diag
         let plainText = Text.renderStrict $ layoutSmart defaultLayoutOptions rendered
         pure (toString plainText)

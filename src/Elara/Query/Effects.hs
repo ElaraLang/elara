@@ -8,6 +8,7 @@ import Data.Kind (Constraint)
 import Effectful
 import Effectful.Error.Static
 import Effectful.FileSystem
+import Effectful.Writer.Static.Local
 import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Error
@@ -31,16 +32,16 @@ type StandardQueryEffects = ConsQueryEffects '[]
 type ConsQueryEffects :: [Effect] -> [Effect]
 type ConsQueryEffects es =
     FileSystem
-        ': Error SomeReportableError
-        ': DiagnosticWriter (Doc AnsiStyle)
+        ': Error ElaraError
+        ': Writer [ElaraWarning]
         ': UniqueGen
         ': ConsMinimumQueryEffects es
 
 type QueryEffects :: [Effect] -> Constraint
 type QueryEffects es =
     ( FileSystem :> es
-    , Error SomeReportableError :> es
-    , DiagnosticWriter (Doc AnsiStyle) :> es
+    , Error ElaraError :> es
+    , Writer [ElaraWarning] :> es
     , UniqueGen :> es
     , HasMinimumQueryEffects es
     )

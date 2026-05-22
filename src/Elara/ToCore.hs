@@ -26,7 +26,9 @@ import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..), vcat, (<+>))
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
-import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
+import Elara.Error (ElaraDiagnostic (..), ElaraError (..), ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..), runErrorAsElaraError)
+import Elara.Error.Codes qualified as Codes
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging
 import Elara.Prim (KnownType (..), OpaquePrim (..), WiredInPrim (..), lookupByQualifiedTypeName, mkPrimQual)
 import Elara.Prim qualified as Prim
@@ -34,6 +36,7 @@ import Elara.Prim.Core
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
 import Elara.ToCore.Match qualified as Match
+import Elara.TypeInfer ()
 import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique (UniqueTyVar)
 import Elara.Utils (uncurry3)
@@ -51,43 +54,37 @@ data ToCoreError
     | UnknownVariable !(Located (Qualified Name))
     deriving (Show)
 
-instance ReportableError ToCoreError where
-    report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
-    report (UnknownConstructor (Located _ qn) syms) =
-        writeReport $
-            Err
-                (Just "UnknownDataConstructor")
-                ( vcat
-                    [ pretty qn
-                    , "Known constructors:"
-                    , vcat $ pretty <$> M.keys syms.dataCons
-                    ]
-                )
-                []
-                []
-    report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
-    report (UnknownTypeConstructor qn syms) =
-        writeReport $
-            Err
-                (Just "UnknownTypeConstructor")
-                ( vcat
-                    [ pretty qn
-                    , "Known constructors:"
-                    , vcat $ pretty <$> M.keys syms.tyCons
-                    ]
-                )
-                []
-                []
-    report (UnknownLambdaType _t) = writeReport $ Err (Just "UnknownLambdaType") todo [] []
-    report (UnsolvedTypeSnuckIn _t) = do
-        writeReport $
-            Err
-                (Just "UnsolvedTypeSnuckIn")
-                (vcat [todo, pretty $ prettyCallStack callStack])
-                [ todo
-                ]
-                []
-    report (UnknownVariable (Located _ qn)) = writeReport $ Err (Just "UnknownVariable") (pretty qn) [] []
+instance Exception ToCoreError
+
+instance ElaraDiagnostic ToCoreError where
+    diagnosticMessage (LetInTopLevel _) = "Let in top level"
+    diagnosticMessage (UnknownConstructor (Located _ qn) _) = "Unknown constructor: " <> pretty qn
+    diagnosticMessage (UnknownPrimConstructor qn) = "Unknown primitive constructor: " <> pretty qn
+    diagnosticMessage (UnknownTypeConstructor qn _) = "Unknown type constructor: " <> pretty qn
+    diagnosticMessage (UnknownLambdaType _) = "Unknown lambda type"
+    diagnosticMessage (UnsolvedTypeSnuckIn _) = "Unsolved type snuck in"
+    diagnosticMessage (UnknownVariable (Located _ qn)) = "Unknown variable: " <> pretty qn
+
+    diagnosticCode (LetInTopLevel _) = Just Codes.letInTopLevel
+    diagnosticCode (UnknownConstructor _ _) = Just Codes.unknownDataConstructor
+    diagnosticCode (UnknownPrimConstructor _) = Just Codes.unknownPrimConstructor
+    diagnosticCode (UnknownTypeConstructor _ _) = Just Codes.unknownTypeConstructor
+    diagnosticCode (UnknownLambdaType _) = Just Codes.unknownLambdaType
+    diagnosticCode (UnsolvedTypeSnuckIn _) = Just Codes.unsolvedTypeSnuckIn
+    diagnosticCode (UnknownVariable _) = Just Codes.unknownVariable
+
+    diagnosticMarkers (LetInTopLevel (New.Expr loc _ _)) = [ElaraMarker (unwrapLoc loc) PrimaryMarker "Let-binding here"]
+    diagnosticMarkers (UnknownConstructor (Located loc _) _) = [ElaraMarker loc PrimaryMarker "Unknown constructor"]
+    diagnosticMarkers (UnknownVariable (Located loc _)) = [ElaraMarker loc PrimaryMarker "Unknown variable"]
+    diagnosticMarkers _ = []
+
+    diagnosticNotes (UnknownConstructor _ syms) = [Elara.Error.Note ("Known constructors:" <+> vcat (pretty <$> M.keys syms.dataCons))]
+    diagnosticNotes (UnknownTypeConstructor _ syms) = [Elara.Error.Note ("Known constructors:" <+> vcat (pretty <$> M.keys syms.tyCons))]
+    diagnosticNotes (UnsolvedTypeSnuckIn _) = [Elara.Error.Note (pretty $ prettyCallStack callStack)]
+    diagnosticNotes _ = []
+
+instance Pretty ToCoreError where
+    pretty = diagnosticMessage
 
 data CtorSymbolTable = CtorSymbolTable
     { dataCons :: Map (Qualified Text) DataCon
@@ -162,14 +159,14 @@ runGetDataConQuery qn = logDebugWith ("runGetDataConQuery: " <> pretty qn) $ do
     pure matchingDataCon
 
 runGetTyConQuery ::
-    Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe TyCon)
+    Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError]) (Maybe TyCon)
 runGetTyConQuery qn = case lookupByQualifiedTypeName (TypeName <$> qn) of
     Just kt -> pure $ Just (knownTypeToCon kt)
     Nothing -> logDebugWith ("runGetTyConQuery: " <> pretty qn) $ do
         let name = NameType . TypeName <$> qn
         typedDecl <- Rock.fetch (Elara.Query.TypeCheckedDeclaration name)
         Just
-            <$> ( runErrorOrReport @ToCoreError $
+            <$> ( runErrorAsElaraError @ToCoreError $
                     evalState primCtorSymbolTable $
                         createTyConFromTyped typedDecl
                 )
@@ -191,6 +188,7 @@ createTyConFromTyped (New.Declaration _ (New.Declaration' _ (New.DeclarationBody
 type ToCoreC r =
     ( State CtorSymbolTable :> r
     , Error ToCoreError :> r
+    , Error ElaraError :> r
     , UniqueGen :> r
     , StructuredDebug :> r
     , QueryEffects r
@@ -200,6 +198,7 @@ type ToCoreC r =
 type InnerToCoreC r =
     ( State CtorSymbolTable :> r
     , Error ToCoreError :> r
+    , Error ElaraError :> r
     , UniqueGen :> r
     , StructuredDebug :> r
     , QueryEffects r
@@ -207,10 +206,10 @@ type InnerToCoreC r =
     )
 
 runGetCoreModuleQuery ::
-    ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)
+    ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError]) (CoreModule CoreBind)
 runGetCoreModuleQuery mn = do
-    typedModule <- Rock.fetch (Elara.Query.TypeCheckedModule mn)
-    runErrorOrReport @ToCoreError $
+    typedModule <- Rock.fetch (Elara.Query.ModuleByName @Typed mn)
+    runErrorAsElaraError @ToCoreError $
         evalState primCtorSymbolTable $
             moduleToCore typedModule
 

@@ -14,15 +14,17 @@ import Elara.AST.Location
 import Elara.AST.Name (MaybeQualified, ModuleName, VarName)
 import Elara.AST.Phase
 import Elara.AST.Phases.Frontend (FrontendExpr)
-import Elara.AST.Region (Located, SourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Region (Located, SourceRegion, diagnosePositionToSourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Lexer.Token (Lexeme)
 import Elara.Parse.Stream (TokenStream)
-import Error.Diagnose
+import Error.Diagnose hiding (Hint, Note)
+import Error.Diagnose qualified as Diag
 import Error.Diagnose.Compat.Megaparsec (HasHints (..))
-import TODO (todo)
+
 import Text.Megaparsec (unPos)
 import Text.Megaparsec qualified as MP
 import Text.Megaparsec.Error
@@ -45,29 +47,29 @@ parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]
 parseErrorSources (EmptyRecord sr) = [sr]
 parseErrorSources (EmptyLambda sr) = [sr]
 parseErrorSources (InfixPrecTooHigh l) = [view sourceRegion l]
-parseErrorSources (InvalidConstantExpression _a _b) = [todo]
+parseErrorSources (InvalidConstantExpression _a _b) = []
 parseErrorSources (ModuleNameMismatch _ declaredLoc) = [view sourceRegion declaredLoc]
 
 instance HasHints ElaraParseError (Doc AnsiStyle) where
     hints (KeywordUsedAsName kw) =
-        [ Note (view (unlocated % to pretty) kw <+> "is a keyword which can only be used in certain contexts. However, it was used as a name here.")
-        , Hint "Try using a different name"
+        [ Diag.Note (view (unlocated % to pretty) kw <+> "is a keyword which can only be used in certain contexts. However, it was used as a name here.")
+        , Diag.Hint "Try using a different name"
         ]
     hints (EmptyRecord _) =
-        [ Note "Record types cannot be empty."
-        , Hint "Try adding a field to the record type e.g. { x : Int }"
-        , Hint "You may be looking for the unit type, which is written as ()"
+        [ Diag.Note "Record types cannot be empty."
+        , Diag.Hint "Try adding a field to the record type e.g. { x : Int }"
+        , Diag.Hint "You may be looking for the unit type, which is written as ()"
         ]
     hints (EmptyLambda _) =
-        [Note "Lambda expressions cannot be empty."]
+        [Diag.Note "Lambda expressions cannot be empty."]
     hints (InfixPrecTooHigh _) =
-        [Note "The precedence of an infix operator must be between 0 and 9."]
+        [Diag.Note "The precedence of an infix operator must be between 0 and 9."]
     hints (InvalidConstantExpression _ _) =
-        [Note "This expression cannot be evaluated at compile time."]
+        [Diag.Note "This expression cannot be evaluated at compile time."]
     hints (ModuleNameMismatch expected declared) =
-        [ Note ("Module name" <+> squotes (pretty (view unlocated declared)) <+> "does not match the expected name" <+> squotes (pretty expected) <+> "inferred from the file path.")
-        , Hint ("Either rename the file to match" <+> squotes (pretty (view unlocated declared)) <+> "or update the module declaration to" <+> squotes (pretty expected))
-        , Hint "You can also remove the module declaration entirely, and the name will be inferred from the file path."
+        [ Diag.Note ("Module name" <+> squotes (pretty (view unlocated declared)) <+> "does not match the expected name" <+> squotes (pretty expected) <+> "inferred from the file path.")
+        , Diag.Hint ("Either rename the file to match" <+> squotes (pretty (view unlocated declared)) <+> "or update the module declaration to" <+> squotes (pretty expected))
+        , Diag.Hint "You can also remove the module declaration entirely, and the name will be inferred from the file path."
         ]
 
 instance ShowErrorComponent ElaraParseError where
@@ -84,17 +86,65 @@ deriving instance (Show s, Show (MP.Token s), Show e) => Show (WParseErrorBundle
 
 deriving instance (Eq s, Eq (MP.Token s), Eq e) => Eq (WParseErrorBundle s e)
 
-instance ReportableError (WParseErrorBundle TokenStream ElaraParseError) where
-    report (WParseErrorBundle e) =
-        writeDiagnostic $
-            diagnosticFromBundle (const True) (Just Codes.genericParseError) (pretty $ errorBundlePretty e) Nothing e
+instance (Show s, Show (MP.Token s), Show e, Typeable s, Typeable (MP.Token s), Typeable e) => Exception (WParseErrorBundle s e)
+
+instance Pretty (WParseErrorBundle TokenStream ElaraParseError) where
+    pretty = diagnosticMessage
+
+instance ElaraDiagnostic (WParseErrorBundle TokenStream ElaraParseError) where
+    diagnosticMessage (WParseErrorBundle e) = Elara.Data.Pretty.pretty (errorBundlePretty e)
+    diagnosticCode _ = Just Codes.genericParseError
+    diagnosticReports (WParseErrorBundle e) =
+        let codeDoc = reAnnotate (const mempty) (pretty Codes.genericParseError)
+            diag = diagnosticFromBundle (const True) (Just codeDoc) (pretty $ errorBundlePretty e) Nothing e
+         in fmap diagReportToElaraReport (Diag.reportsOf diag)
+
+diagReportToElaraReport :: Diag.Report (Doc AnsiStyle) -> ElaraReport
+diagReportToElaraReport r =
+    case r of
+        Diag.Err _ msg markers notes ->
+            ElaraReport
+                { reportSeverity = ErrorSeverity
+                , reportCode = Nothing -- Can't easily convert back from Doc to ErrorCode
+                , reportMessage = msg
+                , reportMarkers = fmap diagMarkerToElaraMarker markers
+                , reportNotes = fmap diagNoteToElaraNote notes
+                }
+        Diag.Warn _ msg markers notes ->
+            ElaraReport
+                { reportSeverity = WarningSeverity
+                , reportCode = Nothing
+                , reportMessage = msg
+                , reportMarkers = fmap diagMarkerToElaraMarker markers
+                , reportNotes = fmap diagNoteToElaraNote notes
+                }
+
+diagMarkerToElaraMarker :: (Diag.Position, Diag.Marker (Doc AnsiStyle)) -> ElaraMarker
+diagMarkerToElaraMarker (pos, marker) =
+    ElaraMarker
+        { markerRegion = diagnosePositionToSourceRegion pos
+        , markerType = case marker of
+            Diag.This{} -> PrimaryMarker
+            Diag.Where{} -> SecondaryMarker
+            Diag.Maybe{} -> InfoMarker
+            Diag.Blank -> InfoMarker
+        , markerMessage = case marker of
+            Diag.This m -> m
+            Diag.Where m -> m
+            Diag.Maybe m -> m
+            Diag.Blank -> ""
+        }
+
+diagNoteToElaraNote :: Diag.Note (Doc AnsiStyle) -> ElaraNote
+diagNoteToElaraNote (Diag.Note msg) = Elara.Error.Note msg
+diagNoteToElaraNote (Diag.Hint msg) = Elara.Error.Hint msg
 
 {- | This is a slightly modified version of 'errorDiagnosticFromBundle' from the 'diagnose' package.
 It adds the ability to highlight a region of the source code rather than a single point for error highlighting.
 -}
 diagnosticFromBundle ::
     forall msg s e.
-    (MP.Token s ~ Lexeme, e ~ ElaraParseError, IsString msg, HasHints e msg, MP.ShowErrorComponent e, MP.VisualStream s, MP.TraversableStream s) =>
+    (MP.Token s ~ Lexeme, e ~ ElaraParseError, IsString msg, Pretty msg, HasHints e msg, MP.ShowErrorComponent e, MP.VisualStream s, MP.TraversableStream s) =>
     -- | How to decide whether this is an error or a warning diagnostic
     (MP.ParseError s e -> Bool) ->
     -- | An optional error code
@@ -102,29 +152,29 @@ diagnosticFromBundle ::
     -- | The error message of the diagnostic
     msg ->
     -- | Default hints when trivial errors are reported
-    Maybe [Note msg] ->
+    Maybe [Diag.Note msg] ->
     -- | The bundle to create a diagnostic from
     MP.ParseErrorBundle s ElaraParseError ->
-    Diagnostic msg
+    Diag.Diagnostic msg
 diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErrorBundle{..} =
-    foldl addReport mempty (toLabeledPosition <$> bundleErrors)
+    foldl Diag.addReport mempty (toLabeledPosition <$> bundleErrors)
   where
-    toLabeledPosition :: MP.ParseError s e -> Report msg
+    toLabeledPosition :: MP.ParseError s e -> Diag.Report msg
     toLabeledPosition error =
         let (_, pos) = MP.reachOffset (MP.errorOffset error) bundlePosState
             source = maybe (fromSourcePos (errorLength error) (MP.pstateSourcePos pos)) sourceRegionToDiagnosePosition (listToMaybe (errorRegion error))
             msgs = fromString <$> lines (MP.parseErrorTextPretty error)
          in flip
-                (if isError error then Err code msg else Warn code msg)
+                (if isError error then Diag.Err code msg else Diag.Warn code msg)
                 (errorHints error)
                 if
-                    | [m] <- msgs -> [(source, This m)]
-                    | [m1, m2] <- msgs -> [(source, This m1), (source, Where m2)]
-                    | otherwise -> [(source, This $ fromString "<<Unknown error>>")]
+                    | [m] <- msgs -> [(source, Diag.This m)]
+                    | [m1, m2] <- msgs -> [(source, Diag.This m1), (source, Diag.Where m2)]
+                    | otherwise -> [(source, Diag.This $ fromString "<<Unknown error>>")]
 
     errorRegion :: MP.ParseError s ElaraParseError -> [SourceRegion]
-    errorRegion (MP.TrivialError _ (Just (Tokens ts)) _) = toList $ view sourceRegion <$> ts
-    errorRegion (MP.TrivialError _ (Just (Label _)) _) = []
+    errorRegion (MP.TrivialError _ (Just (MP.Tokens ts)) _) = toList $ view sourceRegion <$> ts
+    errorRegion (MP.TrivialError _ (Just (MP.Label _)) _) = []
     errorRegion (MP.TrivialError _ (Just MP.EndOfInput) _) = []
     errorRegion (MP.TrivialError _ Nothing _) = []
     errorRegion (MP.FancyError _ errs) =
@@ -148,7 +198,7 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
             end = second (+ size) start
          in Position start end sourceName
 
-    errorHints :: MP.ParseError s e -> [Note msg]
+    errorHints :: MP.ParseError s e -> [Diag.Note msg]
     errorHints MP.TrivialError{} = trivialHints
     errorHints (MP.FancyError _ errs) =
         Set.toList errs >>= \case

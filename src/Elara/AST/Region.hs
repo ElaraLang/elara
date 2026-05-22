@@ -133,9 +133,13 @@ positionToDiagnosePosition :: FilePath -> RealPosition -> Diag.Position
 positionToDiagnosePosition fp (Position ln cn) =
     Diag.Position
         { Diag.begin = (ln, cn)
-        , Diag.end = (ln, cn + 1)
+        , Diag.end = (ln, cn)
         , Diag.file = fp
         }
+
+diagnosePositionToSourceRegion :: Diag.Position -> SourceRegion
+diagnosePositionToSourceRegion (Diag.Position (startLine, startCol) (endLine, endCol) fp) =
+    RealSourceRegion $ UnsafeMkSourceRegion (Just fp) (Position startLine startCol) (Position endLine endCol)
 
 data Located a = Located SourceRegion a
     deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data, Generic)

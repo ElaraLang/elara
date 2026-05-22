@@ -48,6 +48,7 @@ import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
 import Elara.Desugar (desugarExpr)
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
+import Elara.Error.Diagnose
 import Elara.Lexer.Reader
 import Elara.Lexer.Token qualified
 import Elara.Lexer.Utils (LexerError)
@@ -68,13 +69,11 @@ import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Elara.Shunt.Operator
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
-import Error.Diagnose (Report (..))
 import Error.Diagnose.Diagnostic
 import Hedgehog
 import Hedgehog.Internal.Property (failDiff, failWith)
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
-import Print (printPretty)
 import Region (qualifiedTest, testLocated, testRegion)
 import Rock qualified
 import Rock.Memo qualified
@@ -86,69 +85,66 @@ import Text.Show
 -- | Load and rename an expression from source text
 loadRenamedExpr' ::
     forall w.
-    ( DiagnosticWriter (Doc AnsiStyle) :> w
-    , IOE :> w
-    , Error SomeReportableError :> w
+    ( IOE :> w
+    , Error ElaraError :> w
+    , Eff.Writer [ElaraWarning] :> w
     ) =>
     Text ->
     Eff w NewR.RenamedExpr
 loadRenamedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
-    Elara.Error.addFile fp (toString source)
-    tokens <- runErrorOrReport @LexerError $ readTokensWith (FileContents fp source)
-    parsed <- runErrorOrReport @(WParseErrorBundle _ _) $ do
+    tokens <- runErrorAsElaraError @LexerError $ readTokensWith (FileContents fp source)
+    parsed <- runErrorAsElaraError @(WParseErrorBundle _ _) $ do
         parseResult <- inject $ parseExprWith exprParser fp source tokens
         case parseResult of
             Left err -> throwError err
             Right p -> pure p
-    newDesugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
+    newDesugared <- runErrorAsElaraError @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
 
     runReader Nothing $
         runReader (Nothing @(NewModule.Module SourceRegion NewD.Desugared)) $
             evalState operatorRenameState $
-                runErrorOrReport @RenameError $
+                runErrorAsElaraError @RenameError $
                     renameExpr newDesugared
 
 -- | Load and rename an expression (IO version)
-loadRenamedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe NewR.RenamedExpr)
+loadRenamedExprIO :: Text -> IO ([ElaraReport], Maybe NewR.RenamedExpr)
 loadRenamedExprIO source = finaliseEffects $ loadRenamedExpr' source
 
 -- | Load, rename, and shunt an expression using the fake operator table
 loadShuntedExpr' ::
     forall w.
-    ( DiagnosticWriter (Doc AnsiStyle) :> w
-    , IOE :> w
-    , Error SomeReportableError :> w
+    ( IOE :> w
+    , Error ElaraError :> w
+    , Eff.Writer [ElaraWarning] :> w
     ) =>
     Text ->
     Eff w NewS.ShuntedExpr
 loadShuntedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
-    Elara.Error.addFile fp (toString source)
-    tokens <- runErrorOrReport @LexerError $ readTokensWith (FileContents fp source)
-    parsed <- runErrorOrReport @(WParseErrorBundle _ _) $ do
+    tokens <- runErrorAsElaraError @LexerError $ readTokensWith (FileContents fp source)
+    parsed <- runErrorAsElaraError @(WParseErrorBundle _ _) $ do
         parseResult <- inject $ parseExprWith exprParser fp source tokens
         case parseResult of
             Left err -> throwError err
             Right p -> pure p
-    newDesugared <- runErrorOrReport @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
+    newDesugared <- runErrorAsElaraError @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
 
     newRenamed <-
         runReader Nothing $
             runReader (Nothing @(NewModule.Module SourceRegion NewD.Desugared)) $
                 evalState operatorRenameState $
-                    runErrorOrReport @RenameError $
+                    runErrorAsElaraError @RenameError $
                         renameExpr newDesugared
 
     -- Shunt the expression using the fake operator table
-    runErrorOrReport @ShuntError $
-        fmap fst $
-            Eff.runWriter @(Set ShuntWarning) $
-                let ?lookup = fakeOpLookup
-                 in fixExpr newRenamed
+    runErrorAsElaraError @ShuntError $
+        runWriterAsElaraWarning @ShuntWarning $
+            let ?lookup = fakeOpLookup
+             in fixExpr newRenamed
 
--- | Load and shunt an expression (IO version)
-loadShuntedExprIO :: Text -> IO (Diagnostic (Doc AnsiStyle), Maybe NewS.ShuntedExpr)
+-- | Load and shunt an expression and run all the effects
+loadShuntedExprIO :: Text -> IO ([ElaraReport], Maybe NewS.ShuntedExpr)
 loadShuntedExprIO source = finaliseEffects $ loadShuntedExpr' source
 
 -- | Run effects needed for query-based tests
@@ -167,33 +163,30 @@ runQueryEffects eff = do
 
 -- | Finalise effects and collect diagnostics
 finaliseEffects ::
-    Eff [Error SomeReportableError, DiagnosticWriter (Doc AnsiStyle), IOE] a ->
-    IO (Diagnostic (Doc AnsiStyle), Maybe a)
-finaliseEffects eff = do
-    (diagnostics, r) <- runEff $ runDiagnosticWriter $ do
-        result <- runError @SomeReportableError $ eff
-        case result of
-            Left (callStack, err) -> do
-                Elara.Error.report err
-                printPretty callStack
-                pure Nothing
-            Right r -> pure (Just r)
-    pure (diagnostics, r)
+    Eff [Eff.Writer [ElaraWarning], Error ElaraError, IOE] a ->
+    IO ([ElaraReport], Maybe a)
+finaliseEffects eff = runEff $ do
+    result <- runError @ElaraError $ Eff.runWriter @[ElaraWarning] eff
+    case result of
+        Left (callStack, err) -> do
+            pure (diagnosticReports err, Nothing)
+        Right (res, warnings) -> do
+            let reports = concatMap diagnosticReports warnings
+            pure (reports, Just res)
 
--- | Assert that a pipeline result succeeds (for sydtest)
-pipelineResShouldSucceed :: _ => IO (Diagnostic (Doc AnsiStyle), Maybe b) -> IO b
+-- | Assert that a pipeline result succeeds
+pipelineResShouldSucceed :: _ => IO ([ElaraReport], Maybe b) -> IO b
 pipelineResShouldSucceed m = do
-    (d, x) <- m
-    let hasErrors diag =
-            any (\case Err{} -> True; Warn{} -> False) $ reportsOf diag
-    when (hasErrors d) $
-        expectationFailure $
-            toString $
-                prettyToText $
-                    prettyDiagnostic' WithUnicode (TabSize 4) d
+    (reports, x) <- m
+    let hasErrors = any (\r -> reportSeverity r == ErrorSeverity) reports
+
+    when hasErrors $ do
+        diag <- reportsToDiagnostic reports
+        expectationFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) diag
+
     case x of
         Just ok -> pure ok
-        Nothing -> expectationFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
+        Nothing -> expectationFailure "Pipeline failed without returning a result."
 
 -- | Assert that a pipeline result succeeds (for hedgehog)
 evalPipelineRes :: (MonadIO m, MonadTest m) => IO (Diagnostic (Doc AnsiStyle), Maybe b) -> m b

@@ -5,7 +5,10 @@ module Elara.SCC where
 import Data.Graph (SCC (..), stronglyConnComp)
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
+import Data.Set qualified as Set
 import Effectful
+import Effectful.Error.Static (Error)
+import Effectful.Writer.Static.Local (Writer, runWriter)
 import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phase (NoExtension (..))
@@ -14,24 +17,23 @@ import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region (Located (..), unlocated)
 import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
-import Elara.Error (runErrorOrReport)
-import Elara.Query (QueryType (QueryRequiredDeclarationByName), SupportsQuery)
+import Elara.Error (ElaraError, ElaraWarning, reportElaraWarning, runErrorAsElaraError)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Elara.SCC.Type
 import Elara.Shunt ()
-import Elara.Shunt.Error (ShuntError)
+import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Optics (view)
 import Rock qualified
 
 runFreeVarsQuery ::
-    SupportsQuery QueryRequiredDeclarationByName Shunted =>
     Qualified VarName ->
     Eff
-        (ConsQueryEffects '[Rock.Rock Elara.Query.Query])
+        (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError, Writer [ElaraWarning]])
         (HashSet (Qualified VarName))
 runFreeVarsQuery name = do
-    declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> name))
+    (declaration, warnings) <- runWriter @(Set ShuntWarning) $ runErrorAsElaraError @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> name))
+    traverse_ reportElaraWarning (Set.toList warnings)
 
     let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body)) = declaration
 

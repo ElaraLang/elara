@@ -49,11 +49,13 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error
+import Elara.Error.Codes qualified as Codes
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging (debugWith, logDebug)
 import Elara.Prim (primKindCheckContext)
 import Elara.Query qualified
 import Elara.Query.Effects (QueryEffects)
-import Error.Diagnose
+import Error.Diagnose hiding (Hint, Note)
 import Optics (set, traverseOf_)
 import Rock qualified
 
@@ -138,52 +140,41 @@ data KindInferError
 
 instance Pretty KindInferError
 
-instance ReportableError KindInferError where
-    report (UnknownKind name kinds) =
-        writeReport $
-            Err
-                (Just "Unknown Kind of Type")
-                ( vsep
-                    [ "Unknown kind of type" <+> pretty name
-                    , "We know kinds for:" <+> pretty (Map.keysSet kinds)
-                    , pretty $ prettyCallStack callStack
-                    ]
-                )
-                []
-                []
-    report (CannotUnify a b origin) =
-        writeReport $
-            Err
-                (Just "Cannot Unify Kinds")
-                (vsep ["Cannot unify kinds" <+> pretty a <+> "and" <+> pretty b, "Origin:" <+> pretty origin])
-                (originPositions origin)
-                []
-    report (NotFunctionKind k) =
-        writeReport $
-            Err
-                (Just "Not Function Kind")
-                (vsep ["Expected a function kind, got" <+> pretty k])
-                []
-                []
-    report (UnboundVar var env) =
-        writeReport $
-            Err
-                (Just "Unbound Variable")
-                ( vsep
-                    [ "Unbound variable" <+> pretty var
-                    , "Known variables:" <+> pretty (Map.keysSet env)
-                    , pretty $ prettyCallStack callStack
-                    ]
-                )
-                []
-                []
-    report (OccursCheckFailed var kind) =
-        writeReport $
-            Err
-                (Just "Occurs Check Failed")
-                (vsep ["Occurs check failed for" <+> pretty var <+> "and" <+> pretty kind])
-                []
-                []
+instance Exception KindInferError
+
+instance ElaraDiagnostic KindInferError where
+    diagnosticMessage (UnknownKind name kinds) =
+        vsep
+            [ "Unknown kind of type" <+> pretty name
+            , "We know kinds for:" <+> pretty (Map.keysSet kinds)
+            ]
+    diagnosticMessage (CannotUnify a b origin) =
+        vsep ["Cannot unify kinds" <+> pretty a <+> "and" <+> pretty b, "Origin:" <+> pretty origin]
+    diagnosticMessage (NotFunctionKind k) =
+        "Expected a function kind, got" <+> pretty k
+    diagnosticMessage (UnboundVar var env) =
+        vsep
+            [ "Unbound variable" <+> pretty var
+            , "Known variables:" <+> pretty (Map.keysSet env)
+            ]
+    diagnosticMessage (OccursCheckFailed var kind) =
+        "Occurs check failed for" <+> pretty var <+> "and" <+> pretty kind
+
+    diagnosticCode (UnknownKind _ _) = Just Codes.unknownKind
+    diagnosticCode (CannotUnify{}) = Just Codes.cannotUnifyKinds
+    diagnosticCode (NotFunctionKind _) = Just Codes.notFunctionKind
+    diagnosticCode (UnboundVar _ _) = Just Codes.unboundKindVar
+    diagnosticCode (OccursCheckFailed _ _) = Just Codes.occursCheckFailedKind
+
+    diagnosticMarkers (CannotUnify _ _ origin) =
+        case origin of
+            FunctionApplication (New.Type loc _ _) _ -> [ElaraMarker (getLocation loc) PrimaryMarker "Function application"]
+            _ -> []
+    diagnosticMarkers _ = []
+
+    diagnosticNotes (UnknownKind _ _) = [Note (pretty $ prettyCallStack callStack)]
+    diagnosticNotes (UnboundVar _ _) = [Note (pretty $ prettyCallStack callStack)]
+    diagnosticNotes _ = []
 
 declareTypeVar :: State InferState :> r => Unique LowerAlphaName -> KindVar -> Eff r ()
 declareTypeVar var kindVar = modify (over (field @"env") (Map.insert (Right var) kindVar))

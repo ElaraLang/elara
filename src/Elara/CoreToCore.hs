@@ -16,7 +16,7 @@ import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF
 import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
-import Elara.Error (runErrorOrReport)
+import Elara.Error (runErrorAsElaraError)
 import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
 import Rock qualified
@@ -98,8 +98,8 @@ runGetANFCoreModuleQuery mn = do
 
 runGetFinalisedCoreModuleQuery :: HasCallStack => ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)
 runGetFinalisedCoreModuleQuery mn = do
-    coreModule <- runErrorOrReport @ClosureLiftError $ Rock.fetch (Elara.Query.GetClosureLiftedModule mn)
-    runErrorOrReport @TypeCheckError $ typeCheckCoreModule coreModule
+    coreModule <- runErrorAsElaraError @ClosureLiftError $ Rock.fetch (Elara.Query.GetClosureLiftedModule mn)
+    runErrorAsElaraError @TypeCheckError $ typeCheckCoreModule coreModule
     pure (unANF coreModule)
 
 moduleToANF ::

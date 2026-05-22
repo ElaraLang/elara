@@ -22,11 +22,14 @@ isInt n e = case unExpr e of
     New.EInt m -> n == m
     _ -> False
 
+expectShunted :: Text -> IO ShuntedExpr
+expectShunted source = pipelineResShouldSucceed (loadShuntedExprIO source)
+
 spec :: Spec
 spec = describe "Shunts operators correctly" $ do
     it "Shunts simple operators into prefix calls" $ do
         -- 1 + 2 should become ((+) 1) 2
-        expr <- pipelineResShouldSucceed $ loadShuntedExprIO "1 + 2"
+        expr <- expectShunted "1 + 2"
         -- expr == FunctionCall ((+) 1) 2
         case asFunctionCall expr of
             Just (plusOne, two) -> do
@@ -44,7 +47,7 @@ spec = describe "Shunts operators correctly" $ do
 
     it "Shunts repeated operators with left associativity" $ do
         -- 1 + 2 + 3 with left assoc should become ((+) ((+) 1 2) 3)
-        expr <- pipelineResShouldSucceed $ loadShuntedExprIO "1 + 2 + 3"
+        expr <- expectShunted "1 + 2 + 3"
         -- expr == FunctionCall (FunctionCall (+) ((+) 1 2)) 3
         case asFunctionCall expr of
             Just (inner, three) -> do
@@ -62,7 +65,7 @@ spec = describe "Shunts operators correctly" $ do
     it "Respects higher precedence of * over +" $ do
         -- 1 + 2 * 3 should become ((+) 1 ((*) 2 3))
         -- Because * binds tighter, it should be the inner call
-        expr <- pipelineResShouldSucceed $ loadShuntedExprIO "1 + 2 * 3"
+        expr <- expectShunted "1 + 2 * 3"
         -- expr == FunctionCall (FunctionCall (+) 1) ((*) 2 3)
         case asFunctionCall expr of
             Just (plusOne, timesExpr) -> do
@@ -79,7 +82,7 @@ spec = describe "Shunts operators correctly" $ do
     it "Respects parentheses overriding precedence" $ do
         -- (1 + 2) * 3 should become ((*) ((+) 1 2) 3)
         -- \* is the outermost call, with (+ 1 2) as argument
-        expr <- pipelineResShouldSucceed $ loadShuntedExprIO "(1 + 2) * 3"
+        expr <- expectShunted "(1 + 2) * 3"
         -- expr == FunctionCall (FunctionCall (*) (+ 1 2)) 3
         case asFunctionCall expr of
             Just (timesInner, three) -> do
@@ -96,7 +99,7 @@ spec = describe "Shunts operators correctly" $ do
 
     it "Handles equality operator at lower precedence" $ do
         -- 1 == 2 should become ((==) 1 2)
-        expr <- pipelineResShouldSucceed $ loadShuntedExprIO "1 == 2"
+        expr <- expectShunted "1 == 2"
         case asFunctionCall expr of
             Just (eqOne, two) -> do
                 isInt 2 two `shouldBe` True

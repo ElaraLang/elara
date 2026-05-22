@@ -3,64 +3,68 @@ module Elara.Desugar.Error where
 import Elara.AST.Instances ()
 import Elara.AST.Location
 import Elara.AST.Name
-import Elara.AST.Phases.Desugared
+import Elara.AST.Phases.Desugared (Desugared, DesugaredPattern, DesugaredType)
 import Elara.AST.Phases.Frontend qualified as Frontend
 import Elara.AST.Region
-import Elara.AST.Types
-import Elara.Data.Pretty
+import Elara.AST.Types qualified as New
+import Elara.Data.Pretty (Pretty (..), viaShow, (<+>))
 import Elara.Desugar.Common
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
-import Error.Diagnose hiding (Annotation)
+import Elara.Error.Diagnose (toDiagnoseReports)
+import Elara.Lexer.Token (Lexeme)
+import Error.Diagnose hiding (Annotation, Hint, Note)
 
 data DesugarError
     = DefWithoutLet DesugaredType
-    | InfixWithoutDeclaration (Located Name) SourceRegion [Annotation SourceRegion Desugared]
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
-    | TuplePatternTooShort (Pattern SourceRegion Frontend.Frontend)
+    | InfixWithoutDeclaration (Located Name) (Located (Qualified Name)) Lexeme
+    | TuplePatternTooShort (New.Pattern SourceRegion Frontend.Frontend)
     deriving (Typeable, Show, Generic)
 
 instance Exception DesugarError
 
 instance Pretty DesugarError where
-    pretty = viaShow
+    pretty = diagnosticMessage
 
-instance ReportableError DesugarError where
-    getReport (DefWithoutLet ty) =
-        let Type sr _ _ = ty
-         in Just $
-                Err
-                    (Just Codes.defWithoutLet)
-                    ("Def without let at" <+> pretty sr)
-                    [ (sourceRegionToDiagnosePosition $ unwrapLoc sr, This "Def without let here")
-                    ]
-                    [ Note "A 'def' must always be followed by a let binding"
-                    , Hint "Try adding a 'let' binding after the 'def'"
-                    ]
-    getReport (DuplicateDeclaration a b) =
-        Just $
-            Err
-                (Just Codes.duplicateDefinition)
-                ("Duplicate declaration names:" <+> pretty a)
-                [ (sourceRegionToDiagnosePosition $ unwrapLoc $ partialDeclarationSourceRegion b, This "Name is used here")
-                , (sourceRegionToDiagnosePosition $ unwrapLoc $ partialDeclarationSourceRegion a, This "And also here")
-                ]
-                [ Note "Having multiple variables with the same name makes it impossible to tell which one you want to use!"
-                , Hint "Rename one of the declarations"
-                ]
-    getReport (PartialNamesNotEqual a b) =
-        Just $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
-    getReport (InfixWithoutDeclaration n _ l) =
-        Just $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
-    getReport (TuplePatternTooShort p) =
-        let Pattern sr _ _ = p
-         in Just $
-                Err
-                    (Just Codes.tuplePatternTooShort)
-                    "Tuple patterns must have at least 2 elements"
-                    [(sourceRegionToDiagnosePosition $ unwrapLoc sr, This "This tuple pattern is too short")]
-                    [ Note "A tuple pattern must have at least 2 elements, e.g. (x, y)"
-                    , Note "This is likely an internal error."
-                    , Hint "If you want an empty tuple, use ()"
-                    ]
+instance ElaraDiagnostic DesugarError where
+    diagnosticMessage (DefWithoutLet _) = "Def without let"
+    diagnosticMessage (DuplicateDeclaration a _) = "Duplicate declaration names:" <+> Elara.Data.Pretty.pretty a
+    diagnosticMessage (PartialNamesNotEqual a b) = "Partial names not equal: " <+> Elara.Data.Pretty.pretty a <+> "and" <+> Elara.Data.Pretty.pretty b
+    diagnosticMessage (InfixWithoutDeclaration n _ l) = "Operator fixity declaration without corresponding body: " <+> Elara.Data.Pretty.pretty n <+> "," <+> show l
+    diagnosticMessage (TuplePatternTooShort _) = "Tuple patterns must have at least 2 elements"
+
+    diagnosticCode (DefWithoutLet _) = Just Codes.defWithoutLet
+    diagnosticCode (DuplicateDeclaration _ _) = Just Codes.duplicateDefinition
+    diagnosticCode (PartialNamesNotEqual _ _) = Just Codes.partialNamesNotEqual
+    diagnosticCode (InfixWithoutDeclaration{}) = Just Codes.infixDeclarationWithoutValue
+    diagnosticCode (TuplePatternTooShort _) = Just Codes.tuplePatternTooShort
+
+    diagnosticMarkers (DefWithoutLet ty) =
+        let New.Type sr _ _ = ty
+         in [ElaraMarker (unwrapLoc sr) PrimaryMarker "Def without let here"]
+    diagnosticMarkers (DuplicateDeclaration a b) =
+        [ ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion b) PrimaryMarker "Name is used here"
+        , ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion a) PrimaryMarker "And also here"
+        ]
+    diagnosticMarkers (PartialNamesNotEqual a _) = [ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion a) PrimaryMarker "Partial names not equal"]
+    diagnosticMarkers (InfixWithoutDeclaration n _ _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "Operator fixity declaration without corresponding body"]
+    diagnosticMarkers (TuplePatternTooShort p) =
+        let New.Pattern sr _ _ = p
+         in [ElaraMarker (unwrapLoc sr) PrimaryMarker "This tuple pattern is too short"]
+
+    diagnosticNotes (DefWithoutLet _) =
+        [ Elara.Error.Note "A 'def' must always be followed by a let binding"
+        , Elara.Error.Hint "Try adding a 'let' binding after the 'def'"
+        ]
+    diagnosticNotes (DuplicateDeclaration _ _) =
+        [ Elara.Error.Note "Having multiple variables with the same name makes it impossible to tell which one you want to use!"
+        , Elara.Error.Hint "Rename one of the declarations"
+        ]
+    diagnosticNotes (TuplePatternTooShort _) =
+        [ Elara.Error.Note "A tuple pattern must have at least 2 elements, e.g. (x, y)"
+        , Elara.Error.Note "This is likely an internal error."
+        , Elara.Error.Hint "If you want an empty tuple, use ()"
+        ]
+    diagnosticNotes _ = []

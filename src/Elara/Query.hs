@@ -44,7 +44,7 @@ import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind (KindVar)
 import Elara.Data.Pretty
 import Elara.Desugar.Error (DesugarError)
-import Elara.Error (DiagnosticWriter)
+import Elara.Error
 import Elara.JVM.Error (JVMLoweringError)
 import Elara.JVM.IR qualified as IR
 import Elara.Lexer.Token
@@ -118,7 +118,7 @@ data Query (es :: [Effect]) a where
     -- | Query to get the module index (bidirectional mapping between file paths and module names)
     ModuleIndex :: Query (WithRock (ConsMinimumQueryEffects '[FileSystem])) ModuleIndex
     -- | Query to get the contents of a specific file
-    GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem, Error ReadFileError, DiagnosticWriter (Doc AnsiStyle)])) FileContents
+    GetFileContents :: FilePath -> Query (WithRock (ConsMinimumQueryEffects '[FileSystem, Error ReadFileError])) FileContents
     -- | Query to get the file path of a module
     ModulePath :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error ModulePathError])) FilePath
     -- \* Lexing and Parsing Queries
@@ -137,10 +137,6 @@ data Query (es :: [Effect]) a where
     DesugaredModule ::
         ModuleName ->
         Query (WithRock (ConsQueryEffects '[Error DesugarError])) (NewModule.Module SourceRegion NewD.Desugared)
-    RenamedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[Error RenameError])) (NewModule.Module SourceRegion NewR.Renamed)
-    ShuntedModule ::
-        ModuleName ->
-        Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) (NewModule.Module SourceRegion NewS.Shunted)
     -- \* Phase-Polymorphic AST Queries
     ModuleByName ::
         (RunPhase ast, Typeable ast) =>
@@ -176,7 +172,6 @@ data Query (es :: [Effect]) a where
     GetSCCsOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) [SCC (Qualified VarName)]
     SCCKeyOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) SCCKey
     -- \* Type and Kind Inference Queries
-    TypeCheckedModule :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) (NewModule.Module SourceRegion Typed)
     TypeCheckedExpr :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) TypedExpr
     TypeOf :: loc ~ SourceRegion => TypeEnvKey loc -> Query (WithRock (ConsQueryEffects '[])) (Infer.Type loc)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))

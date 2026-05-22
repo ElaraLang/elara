@@ -11,7 +11,7 @@ import Effectful.Error.Static
 import Effectful.State.Extra (use', (.=))
 import Effectful.State.Static.Local
 import Elara.Data.Pretty
-import Elara.Error (runErrorOrReport)
+import Elara.Error (runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
 import Elara.Query (Query (GetFileContents))
 import Elara.Query.Effects
@@ -65,7 +65,7 @@ readTokensWith (FileContents fp s) = do
 
 getLexedFile :: FilePath -> Eff (ConsQueryEffects '[Error LexerError, Rock.Rock Query]) [Lexeme]
 getLexedFile fp = do
-    fileContents <- runErrorOrReport $ Rock.fetch (GetFileContents fp)
+    fileContents <- runErrorAsElaraError $ Rock.fetch (GetFileContents fp)
     readTokensWith fileContents
 
 lexer :: (Lexeme -> LexMonad a) -> LexMonad a

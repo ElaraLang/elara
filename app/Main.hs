@@ -13,12 +13,14 @@ import Control.Exception as E
 import Data.Set qualified as Set
 import Effectful (runEff)
 import Effectful.Error.Static (runError)
+import Effectful.Writer.Static.Local (runWriter)
 import Elara qualified
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Error
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
 import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
@@ -141,13 +143,11 @@ instance HasCodec RunTarget where
 
 toCompilerSettings :: Dispatch -> Settings -> CompilerSettings
 toCompilerSettings dispatch Settings{..} =
-    let
-        dumps = Set.fromList dumpTargets
+    let dumps = Set.fromList dumpTargets
         mainFile = case dispatch of
             DispatchBuild fp _ -> Just fp
             DispatchRun fp _ -> Just fp
-     in
-        CompilerSettings
+     in CompilerSettings
             { dumpTargets = dumps
             , mainFile = mainFile
             , sourceDirs = sourceDirs
@@ -183,16 +183,25 @@ main = do
     run :: Elara.CompileAction -> CompilerSettings -> IO ()
     run action compilerSettings = do
         start <- getCPUTime
-        (diagnostics, mResult) <- runEff $ runDiagnosticWriter $ do
-            result <- runError @SomeReportableError $ uniqueGenToGlobalIO $ runLogToStdoutAndFile $ Elara.compile compilerSettings action
-            case result of
-                Left (callStack, err) -> do
-                    report err
-                    printPretty callStack
-                    pure Nothing
-                Right r -> pure (Just r)
+        (reports, mResult) <- runEff $ do
+            (elaraResult, warnings) <-
+                runWriter @[ElaraWarning] $
+                    runError @ElaraError $
+                        uniqueGenToGlobalIO $
+                            runLogToStdoutAndFile $
+                                Elara.compile compilerSettings action
 
-        printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diagnostics
+            let warnReports = concatMap diagnosticReports warnings
+
+            case elaraResult of
+                Left (callStack, err) -> do
+                    liftIO $ printPretty callStack
+                    pure (warnReports <> diagnosticReports err, Nothing)
+                Right r -> pure (warnReports, Just r)
+
+        unless (null reports) $ do
+            diag <- reportsToDiagnostic reports
+            printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diag
 
         whenJust mResult $ \result -> do
             when (action == Elara.CompileAndRun Elara.JVM) $

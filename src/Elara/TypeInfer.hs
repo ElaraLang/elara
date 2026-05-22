@@ -10,7 +10,7 @@ import Effectful
 import Effectful.Error.Static
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local
-import Effectful.Writer.Static.Local (runWriter)
+import Effectful.Writer.Static.Local (Writer, runWriter)
 import Elara.AST.Location
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName (..), ModuleName (..), Name (..), NameLike (nameText), Qualified (..), ToName (..), TypeName, VarName (..), unqualified)
@@ -31,18 +31,18 @@ import Elara.Data.Kind.Infer qualified as Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
-import Elara.Error (runErrorOrReport)
+import Elara.Error (ElaraError (..), ElaraWarning (..), reportElaraWarning, runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
 import Elara.Query (Query (..), RunPhase (..))
 import Elara.Query.Effects
 import Elara.Rules.Generic
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
 import Elara.Shunt ()
-import Elara.Shunt.Error (ShuntError)
+import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Context (emptyContextStack)
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)
-import Elara.TypeInfer.Environment (InferError, TypeEnvKey (..), TypeEnvironment, addType', emptyLocalTypeEnvironment, emptyTypeEnvironment)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addType', emptyLocalTypeEnvironment, emptyTypeEnvironment)
 import Elara.TypeInfer.Error (UnifyError (..))
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
@@ -69,12 +69,15 @@ type InferPipelineEffects r =
     , Error (UnifyError SourceRegion) :> r
     , Error TypeConvertError :> r
     , Error KindInferError :> r
+    , Error ElaraError :> r
     , Infer SourceRegion r
+    , Writer [ElaraWarning] :> r
     )
 
 instance RunPhase Typed where
     getModuleByName mn = do
-        shunted <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted mn
+        (shunted, warnings) <- runWriter @(Set ShuntWarning) $ runErrorAsElaraError @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted mn
+        traverse_ reportElaraWarning (Set.toList warnings)
         r <- runInferEffects $ evalState initialInferState (inferModule shunted)
         pure (fst r)
 
@@ -91,31 +94,23 @@ runTypeOfQuery ::
     TypeEnvKey loc ->
     Eff
         ( ConsQueryEffects
-            '[Rock.Rock Elara.Query.Query]
+            '[Rock.Rock Elara.Query.Query, Error ElaraError, Writer [ElaraWarning]]
         )
         (Type loc)
-runTypeOfQuery key = runErrorOrReport @(InferError loc) $
-    runErrorOrReport @(UnifyError loc) $
-        runErrorOrReport @KindInferError $
-            runErrorOrReport @TypeConvertError $
-                evalState emptyLocalTypeEnvironment $
-                    evalState initialInferState $
-                        evalState emptyTypeEnvironment $
-                            runReader emptyContextStack $
-                                case key of
-                                    TermVarKey varName -> logDebugWith ("TypeOf: " <> pretty varName) $ do
-                                        sccs <- Rock.fetch $ GetSCCsOf varName
-                                        logDebug $ "SCCs for " <> pretty varName <> ": " <> pretty (fmap flattenSCC sccs)
-                                        -- Infer dependencies first to populate the environment
-                                        for_ sccs seedSCC
-                                        for_ sccs inferSCC
-                                        -- Read from the now populated environment  without re-querying
-                                        lookupType (TermVarKey varName)
-                                    DataConKey con -> do
-                                        seedConstructorsFor (qualifier con)
-                                        lookupType (DataConKey con)
+runTypeOfQuery key = fmap fst $ runInferEffects $ evalState initialInferState $ case key of
+    TermVarKey varName -> logDebugWith ("TypeOf: " <> pretty varName) $ do
+        sccs <- Rock.fetch $ GetSCCsOf varName
+        logDebug $ "SCCs for " <> pretty varName <> ": " <> pretty (fmap flattenSCC sccs)
+        -- Infer dependencies first to populate the environment
+        for_ sccs seedSCC
+        for_ sccs inferSCC
+        -- Read from the now populated environment  without re-querying
+        lookupType (TermVarKey varName)
+    DataConKey con -> do
+        seedConstructorsFor (qualifier con)
+        lookupType (DataConKey con)
 
-runKindOfQuery :: Qualified TypeName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe KindVar)
+runKindOfQuery :: Qualified TypeName -> Eff (ConsQueryEffects '[Rock.Rock Query, Error ElaraError, Writer [ElaraWarning]]) (Maybe KindVar)
 runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ do
     logDebug $ "runKindOfQuery: " <> pretty qtn
     -- First, try to look up the kind variable directly
@@ -133,10 +128,11 @@ runKindOfQuery qtn = fmap fst $ runInferEffects $ evalState initialInferState $ 
 runGetTypeAliasQuery ::
     forall r.
     Qualified TypeName ->
-    Eff (ConsQueryEffects (Rock.Rock Query : r)) (Maybe ([UniqueTyVar], Type SourceRegion))
+    Eff (ConsQueryEffects (Rock.Rock Query : Error ElaraError : Writer [ElaraWarning] : r)) (Maybe ([UniqueTyVar], Type SourceRegion))
 runGetTypeAliasQuery name = do
     let modName = qualifier name
-    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted modName
+    (mod, warnings) <- runWriter @(Set ShuntWarning) $ runErrorAsElaraError @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted modName
+    traverse_ reportElaraWarning (Set.toList warnings)
 
     let Module _ m' = mod
     let targetTypeName = name ^. unqualified
@@ -170,10 +166,11 @@ runGetTypeAliasQuery name = do
             New.TypeDeclarationBody n _ _ _ _ _ -> (n ^. (unlocated % unqualified)) == tn
             _ -> False
 
-seedConstructorsFor :: (HasCallStack, _) => ModuleName -> Eff r ()
+seedConstructorsFor :: (HasCallStack, QueryEffects r, Error ElaraError :> r, Writer [ElaraWarning] :> r, Rock.Rock Query :> r, StructuredDebug :> r, State Kind.InferState :> r, State (TypeEnvironment SourceRegion) :> r, State (LocalTypeEnvironment SourceRegion) :> r, Error KindInferError :> r, Error TypeConvertError :> r, Error (UnifyError SourceRegion) :> r) => ModuleName -> Eff r ()
 seedConstructorsFor moduleName = logDebugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
     -- Fetch all declarations in the module
-    mod <- runErrorOrReport @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
+    (mod, warnings) <- runWriter @(Set ShuntWarning) $ runErrorAsElaraError @ShuntError $ Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
+    traverse_ reportElaraWarning (Set.toList warnings)
     let Module _ m' = mod
 
     -- Extract type declarations
@@ -212,27 +209,23 @@ seedConstructorsFor moduleName = logDebugWith ("seedConstructorsFor: " <> pretty
 
 runInferEffects ::
     forall r a loc.
-    Pretty loc =>
-    QueryEffects r =>
-    Rock.Rock Query :> r =>
-    Eq loc =>
-    loc ~ SourceRegion =>
+    (Pretty loc, QueryEffects r, Rock.Rock Query :> r, Eq loc, loc ~ SourceRegion, Error ElaraError :> r, Writer [ElaraWarning] :> r, Exception TypeConvertError) =>
     Eff
         ( InferEffectsCons
             loc
             ( Error (UnifyError loc)
-                ': Error KindInferError
                 ': Error TypeConvertError
+                ': Error KindInferError
                 ': r
             )
         )
         a ->
     Eff r (a, Constraint loc)
 runInferEffects =
-    runErrorOrReport @(InferError _)
-        . runErrorOrReport @(UnifyError _)
-        . runErrorOrReport @KindInferError
-        . runErrorOrReport @TypeConvertError
+    runErrorAsElaraError @(InferError _)
+        . runErrorAsElaraError @(UnifyError _)
+        . runErrorAsElaraError @KindInferError
+        . runErrorAsElaraError @TypeConvertError
         . evalState emptyTypeEnvironment
         . evalState emptyLocalTypeEnvironment
         . runWriter @(Constraint SourceRegion)
@@ -242,31 +235,35 @@ runInferEffects =
 runInferSCCQuery ::
     SCCKey ->
     Eff
-        (ConsQueryEffects (Rock.Rock Query : r))
+        (ConsQueryEffects '[Rock.Rock Query, Error ElaraError, Writer [ElaraWarning]])
         (Map (Qualified VarName) (Polytype SourceRegion))
 runInferSCCQuery key = fst <$> runInferEffects (evalState initialInferState $ inferSCC (sccKeyToSCC key))
 
-seedSCC :: _ => SCC (Qualified VarName) -> Eff r ()
+seedSCC :: (QueryEffects r, Error ElaraError :> r, Writer [ElaraWarning] :> r, Rock.Rock Query :> r, StructuredDebug :> r, Error (UnifyError SourceRegion) :> r, Error KindInferError :> r, Error TypeConvertError :> r, State Kind.InferState :> r, State (TypeEnvironment SourceRegion) :> r, State (LocalTypeEnvironment SourceRegion) :> r, Infer SourceRegion r) => SCC (Qualified VarName) -> Eff r ()
 seedSCC scc = do
     logDebug $ "Seeding SCC: " <> pretty (flattenSCC scc)
     for_ scc $ \component -> do
-        decl :: New.Declaration SourceRegion Shunted <-
-            runErrorOrReport @ShuntError $
-                Rock.fetch $
-                    Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
+        (decl :: New.Declaration SourceRegion Shunted, warnings) <-
+            runWriter @(Set ShuntWarning) $
+                runErrorAsElaraError @ShuntError $
+                    Rock.fetch $
+                        Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
+        traverse_ reportElaraWarning (Set.toList warnings)
         seedDeclaration decl
 
 inferSCC ::
-    _ =>
+    (InferPipelineEffects r, Infer SourceRegion r) =>
     SCC (Qualified VarName) -> Eff r (Map (Qualified VarName) (Polytype SourceRegion))
 inferSCC scc = do
     prettyState <- pretty <$> get @(TypeEnvironment SourceRegion)
     logDebug $ "Seeding SCC complete. Environment:\n" <> prettyState
     inferred <- for scc $ \component -> do
-        decl <-
-            runErrorOrReport @ShuntError $
-                Rock.fetch $
-                    Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
+        (decl, warnings) <-
+            runWriter @(Set ShuntWarning) $
+                runErrorAsElaraError @ShuntError $
+                    Rock.fetch $
+                        Elara.Query.RequiredDeclarationByName @Shunted (toName <$> component)
+        traverse_ reportElaraWarning (Set.toList warnings)
         inferred <- inferDeclarationScheme decl
         pure (component, inferred)
 
@@ -274,7 +271,7 @@ inferSCC scc = do
 
 runTypeCheckedExprQuery :: Qualified VarName -> Eff (ConsQueryEffects (Rock.Rock Query : r)) TypedExpr
 runTypeCheckedExprQuery name = do
-    mod <- Rock.fetch $ TypeCheckedModule (qualifier name)
+    mod <- Rock.fetch $ Elara.Query.ModuleByName @Typed (qualifier name)
     let Module _ m' = mod
     case find (matchesValueName name) m'.moduleDeclarations of
         Just (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ (New.ValueDeclaration _ e _ _ _ _)))) -> pure e
@@ -286,10 +283,11 @@ runTypeCheckedExprQuery name = do
             New.ValueDeclaration n _ _ _ _ _ -> n ^. unlocated == qn
             _ -> False
 
-runTypeCheckedDeclarationQuery :: Qualified Name -> Eff (ConsQueryEffects (Rock.Rock Query : r)) TypedDeclaration
+runTypeCheckedDeclarationQuery :: Qualified Name -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError, Writer [ElaraWarning]]) TypedDeclaration
 runTypeCheckedDeclarationQuery name = do
     let q = Elara.Query.RequiredDeclarationByName @Shunted
-    shuntedDecl <- runErrorOrReport @ShuntError $ Rock.fetch (q name)
+    (shuntedDecl, shuntedWarnings) <- runWriter @(Set ShuntWarning) $ runErrorAsElaraError @ShuntError $ Rock.fetch (q name)
+    traverse_ reportElaraWarning (Set.toList shuntedWarnings)
     let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ shuntedBody')) = shuntedDecl
     (typedDecl, _) <- runInferEffects $ evalState initialInferState $ case shuntedBody' of
         New.ValueDeclaration valueName expr _ _ _ _ -> do
@@ -317,9 +315,11 @@ runTypeCheckedDeclarationQuery name = do
             -- infer the entire SCC together to solve mutual recursion constraints.
             inferredDecls <- for scc $ \sccMemberName -> do
                 -- Fetch member source
-                memberDecl <-
-                    runErrorOrReport @ShuntError $
-                        Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> sccMemberName))
+                (memberDecl, warnings) <-
+                    runWriter @(Set ShuntWarning) $
+                        runErrorAsElaraError @ShuntError $
+                            Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> sccMemberName))
+                traverse_ reportElaraWarning (Set.toList warnings)
                 inferDeclaration memberDecl
 
             case find (\d -> declarationName d == (name ^. unqualified)) inferredDecls of
@@ -380,7 +380,8 @@ inferModule (Module loc m') = do
 
 -- | Add's a declaration's name and expected type to the type environment
 seedDeclaration ::
-    _ =>
+    forall r.
+    (HasCallStack, InferPipelineEffects r, Infer SourceRegion r) =>
     New.Declaration SourceRegion Shunted -> Eff r ()
 seedDeclaration (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
     case body' of
@@ -397,7 +398,7 @@ seedDeclaration (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ bo
             addType' (TermVarKey (valueName ^. unlocated)) expected
         _ -> pass -- TODO
 
-inferDeclarationScheme :: _ => New.Declaration SourceRegion Shunted -> Eff r (Polytype SourceRegion)
+inferDeclarationScheme :: forall r. (InferPipelineEffects r, Infer SourceRegion r) => New.Declaration SourceRegion Shunted -> Eff r (Polytype SourceRegion)
 inferDeclarationScheme (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) = case body' of
     New.ValueDeclaration valueName valueExpr _ _ _ _ -> logDebugWith ("inferDeclarationScheme: " <> pretty valueName) $ do
         expectedType <- lookupType (TermVarKey (valueName ^. unlocated))
@@ -496,7 +497,7 @@ kindedToTypedType' = \case
     New.TList t -> New.TList (kindedToTypedType t)
     New.TExtension v -> absurd v
 
-inferAnnotation :: _ => New.Annotation SourceRegion Shunted -> Eff r (New.Annotation SourceRegion Typed)
+inferAnnotation :: forall r. (InferPipelineEffects r, Infer SourceRegion r) => New.Annotation SourceRegion Shunted -> Eff r (New.Annotation SourceRegion Typed)
 inferAnnotation (New.Annotation name args) = do
     args' <-
         traverse
@@ -505,7 +506,8 @@ inferAnnotation (New.Annotation name args) = do
     pure (New.Annotation name args')
 
 inferAnnotationArg ::
-    _ =>
+    forall r.
+    (InferPipelineEffects r, Infer SourceRegion r) =>
     New.AnnotationArg SourceRegion Shunted ->
     Eff r (New.AnnotationArg SourceRegion Typed)
 inferAnnotationArg (New.AnnotationArg e) = do
@@ -523,7 +525,7 @@ inferAnnotationArg (New.AnnotationArg e) = do
 
 inferValue ::
     forall r.
-    (Error (UnifyError SourceRegion) :> r, _) =>
+    (HasCallStack, InferPipelineEffects r, Infer SourceRegion r) =>
     Qualified VarName ->
     NewS.ShuntedExpr ->
     Maybe (Type SourceRegion) ->

@@ -21,7 +21,7 @@ import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Desugar.Common
 import Elara.Desugar.Error
-import Elara.Error (runErrorOrReport)
+import Elara.Error (runErrorAsElaraError)
 import Elara.Logging
 import Elara.Parse.Error (WParseErrorBundle)
 import Elara.Query qualified
@@ -56,7 +56,7 @@ getDesugaredModule ::
         (ConsQueryEffects '[Eff.Error DesugarError, Rock.Rock Elara.Query.Query])
         (NewModule.Module SourceRegion Desugared)
 getDesugaredModule mn = do
-    parsed <- runErrorOrReport @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule mn
+    parsed <- runErrorAsElaraError @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule mn
     inject $ Eff.evalState (DesugarState mempty) $ desugar parsed
 
 desugar ::
@@ -278,13 +278,13 @@ desugarPattern p@(New.Pattern loc meta p') = do
     desugarPattern' (New.PString s) = pure (New.PString s)
     desugarPattern' (New.PChar c) = pure (New.PChar c)
     desugarPattern' New.PUnit = pure New.PUnit
-    desugarPattern' (New.PExtension ext) = desugarPatternExtension ext
+    desugarPattern' (New.PExtension ext) = desugarPatternExtension p ext
 
-    desugarPatternExtension :: ListTuplePatternExtension SourceRegion Frontend.Frontend -> Desugar (New.Pattern' SourceRegion Desugared)
-    desugarPatternExtension (ListPattern pats) = New.PExtension . ListPattern <$> traverse desugarPattern pats
-    desugarPatternExtension (ConsPattern l r) = (\l' r' -> New.PExtension (ConsPattern l' r')) <$> desugarPattern l <*> desugarPattern r
-    desugarPatternExtension (TuplePattern (_ :| [])) = throwError (TuplePatternTooShort p)
-    desugarPatternExtension (TuplePattern pats) = do
+    desugarPatternExtension :: New.Pattern SourceRegion Frontend.Frontend -> ListTuplePatternExtension SourceRegion Frontend.Frontend -> Desugar (New.Pattern' SourceRegion Desugared)
+    desugarPatternExtension _ (ListPattern pats) = New.PExtension . ListPattern <$> traverse desugarPattern pats
+    desugarPatternExtension _ (ConsPattern l r) = (\l' r' -> New.PExtension (ConsPattern l' r')) <$> desugarPattern l <*> desugarPattern r
+    desugarPatternExtension p (TuplePattern (_ :| [])) = throwError (TuplePatternTooShort p)
+    desugarPatternExtension _ (TuplePattern pats) = do
         pats' <- traverse desugarPattern pats
         pure (New.PExtension (TuplePattern pats'))
 

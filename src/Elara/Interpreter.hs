@@ -17,7 +17,7 @@ import Elara.Core.Module
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
-import Elara.Error (ReportableError, runErrorOrReport)
+import Elara.Error (ElaraDiagnostic (..), ElaraError (..), runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
 import Elara.Prim qualified as Prim
 import Elara.Prim.Core
@@ -25,12 +25,14 @@ import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
 import Elara.ReadFile
 import Elara.Settings
+import GHC.Show (Show (..))
 import Rock qualified
 import Prelude hiding (force)
 
 type Interpreter r =
     ( State ElaraState :> r
     , Error InterpreterError :> r
+    , Error ElaraError :> r
     , QueryEffects r
     , Rock.Rock Elara.Query.Query :> r
     , StructuredDebug :> r
@@ -58,6 +60,7 @@ type InterpreterEffects =
         '[ InterpreterOutput
          , State ElaraState
          , Error InterpreterError
+         , Error ElaraError
          , StructuredDebug
          , Rock.Rock Elara.Query.Query
          , IOE
@@ -93,6 +96,9 @@ data InterpreterError
     | MissingPrimType (Qualified Text)
     deriving (Generic)
 
+instance Show InterpreterError where
+    show = Prelude.show . pretty
+
 data ThunkState = Unevaluated | Evaluating | Evaluated Value
     deriving (Generic)
 
@@ -101,7 +107,10 @@ instance Pretty InterpreterError where
         "Type mismatch: expected" <+> Style.bold (pretty expected) <+> "but got" <+> Style.bold (prettyValueWithType actual)
     pretty x = gpretty x
 
-instance ReportableError InterpreterError
+instance Exception InterpreterError
+
+instance ElaraDiagnostic InterpreterError where
+    diagnosticMessage = pretty
 
 data Value
     = Int Integer
@@ -173,7 +182,7 @@ prettyValueWithType = \case
     ctor@(Ctor c _) -> pretty ctor <+> "::" <+> pretty c.dataConType
     Closure{} -> "Closure"
     RecClosure{} -> "RecClosure"
-    VPrimOp name -> "Primitive operation" <+> pretty (show name)
+    VPrimOp name -> "Primitive operation" <+> pretty (Prelude.show name)
     PartialApplication f a ->
         "Partial application of"
             <+> prettyValueWithType f
@@ -354,7 +363,7 @@ apply f' a' = case f' of
         case a' of
             String s -> pure $ IOAction $ do
                 contents <-
-                    runErrorOrReport @ReadFileError $
+                    runErrorAsElaraError @ReadFileError $
                         Rock.fetch (Elara.Query.GetFileContents (toString s))
                 pure $ String contents.fileContents
             _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
@@ -421,7 +430,7 @@ apply f' a' = case f' of
     VPrimOp op -> do
         if Prim.primOpArity op > 1
             then pure $ PartialApplication f' a'
-            else throwError_ $ UnknownPrimitive (toText (show op))
+            else throwError_ $ UnknownPrimitive (Prelude.show op)
     PartialApplication (VPrimOp Prim.PrimIOBind) fst -> do
         case fst of
             IOAction io -> do
@@ -545,4 +554,4 @@ run = do
 
 runInterpreter eff = do
     let s = ElaraState{localBindings = Map.empty, globalBindings = Map.empty, loadedModules = Set.empty, stateSource = FromGlobal}
-    inject (runErrorOrReport @InterpreterError $ evalState s eff)
+    inject (runErrorAsElaraError @InterpreterError $ evalState s eff)

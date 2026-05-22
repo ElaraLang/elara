@@ -10,7 +10,8 @@ import Elara.AST.Types qualified as New
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
-import Elara.Error (ReportableError (..))
+import Elara.Error (ElaraDiagnostic (..), ElaraError, ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..), ElaraReport (..), ElaraSeverity (..))
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Type
 
@@ -84,6 +85,14 @@ data TypeConvertError
     | NotSupported Text
     deriving (Show, Eq, Generic)
 
-instance Pretty TypeConvertError
+instance Exception TypeConvertError
 
-instance ReportableError TypeConvertError
+instance Pretty TypeConvertError where
+    pretty = diagnosticMessage
+
+instance ElaraDiagnostic TypeConvertError where
+    diagnosticMessage (HigherRankTypesNotSupported _) = "Higher rank types are not supported yet"
+    diagnosticMessage (NotSupported t) = "Not supported:" <+> pretty t
+
+    diagnosticMarkers (HigherRankTypesNotSupported t) = [ElaraMarker (polytypeLoc t) PrimaryMarker "Higher rank type here"]
+    diagnosticMarkers (NotSupported _) = []

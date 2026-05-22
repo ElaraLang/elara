@@ -11,13 +11,13 @@ import Effectful.Error.Static (runErrorNoCallStack)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Effectful.Writer.Static.Local (runWriter)
+import Elara.AST.Location (NodeLoc (..))
 import Elara.AST.Name (Qualified, TypeName)
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (AnsiStyle)
-import Elara.Error (ReportableError (..), SomeReportableError, runErrorOrReport)
-import Elara.Error.Effect (evalDiagnosticWriter)
+import Elara.Error
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.ConstraintGeneration (generateConstraints)
 import Elara.TypeInfer.Context (emptyContextStack)
@@ -41,16 +41,17 @@ spec = describe "Infers types correctly" $ do
     additionalLiteralTests
     Unify.spec
 
-runInfer :: forall loc a. loc ~ SourceRegion => _ -> IO (Either SomeReportableError (a, Constraint loc))
+runInfer :: forall loc a. loc ~ SourceRegion => _ -> IO (Either ElaraError (a, Constraint loc))
 runInfer =
-    runEff
+    fmap fst
+        . runEff
         . runQueryEffects
         . evalState emptyLocalTypeEnvironment
         . evalState fakeTypeEnvironment
-        . evalDiagnosticWriter
-        . runErrorNoCallStack @SomeReportableError
-        . runErrorOrReport @(InferError loc)
-        . runErrorOrReport @(UnifyError loc)
+        . runWriter @[ElaraWarning]
+        . runErrorNoCallStack @ElaraError
+        . runErrorAsElaraError @(InferError loc)
+        . runErrorAsElaraError @(UnifyError loc)
         . runWriter @(Constraint loc)
         . runReader emptyContextStack
 
@@ -129,9 +130,9 @@ additionalLiteralTests = describe "Additional Literal Type Inference" $ do
             isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimString))) ty `shouldBe` True
 
 -- | Helper to assert that inference succeeded
-shouldSucceed :: Either SomeReportableError b -> (b -> IO a3) -> IO a3
+shouldSucceed :: Either ElaraError b -> (b -> IO a3) -> IO a3
 shouldSucceed (Left err) _ =
-    withFrozenCallStack $ expectationFailure $ "Inference failed: " ++ prettyToString ((\x -> x @AnsiStyle) <$> errorCode err)
+    withFrozenCallStack $ expectationFailure $ "Inference failed: " <> prettyToString ((\(ErrorCode x) -> x @AnsiStyle) <$> diagnosticCode err)
 shouldSucceed (Right result) assertion = withFrozenCallStack $ assertion result
 
 -- | Create a 'ShuntedExpr' representing an integer literal
@@ -148,7 +149,7 @@ mkStringExpr s = mkExpr' (New.EString s)
 
 -- | Helper to create a 'ShuntedExpr' from a 'ShuntedExpr''
 mkExpr' :: ShuntedExpr' -> ShuntedExpr
-mkExpr' = New.Expr testRegion Nothing
+mkExpr' = New.Expr (ExprLoc testRegion) Nothing
 
 -- | Helper to create a 'ShuntedExpr' from a constructor taking one argument
 mkExpr :: (a -> ShuntedExpr') -> a -> ShuntedExpr

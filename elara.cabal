@@ -73,7 +73,7 @@ library
       Elara.Desugar.Error
       Elara.Error
       Elara.Error.Codes
-      Elara.Error.Effect
+      Elara.Error.Diagnose
       Elara.Error.Internal
       Elara.Interpreter
       Elara.JVM.Emit

@@ -7,7 +7,6 @@ import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
 import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
-import Elara.Error.Effect (DiagnosticWriter)
 import Elara.Logging
 import Elara.Query qualified
 import Elara.Query.Effects
@@ -24,7 +23,6 @@ type InferEffectsCons loc xs =
         ': Error (InferError loc)
         ': UniqueGen
         ': StructuredDebug
-        ': DiagnosticWriter (Doc AnsiStyle)
         ': Rock.Rock Elara.Query.Query
         ': xs
 

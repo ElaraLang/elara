@@ -37,7 +37,7 @@ import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
-import Elara.Error (runErrorOrReport)
+import Elara.Error (runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Prim qualified as Prim
@@ -74,7 +74,7 @@ type InnerRename r =
 
 instance RunPhase Renamed where
     getModuleByName mn = do
-        m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
+        m <- runErrorAsElaraError @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
         let NewModule.Module _ m' = m
         let actualName = m'.moduleName ^. unlocated
         when (actualName /= mn) $ throwError $ ModuleNameMismatch (Located (GeneratedRegion "Renaming Entry Point") mn) (actualName `withLocationOf` stripTag m'.moduleName)
@@ -242,7 +242,7 @@ getModuleFromName ::
     Eff r (NewModule.Module SourceRegion NewD.Desugared)
 getModuleFromName mn = do
     m <-
-        runErrorOrReport @DesugarError $
+        runErrorAsElaraError @DesugarError $
             Rock.fetch (Elara.Query.DesugaredModule (mn ^. unlocated))
     let NewModule.Module _ m' = m
     let actualName = m'.moduleName ^. unlocated

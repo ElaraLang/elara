@@ -8,7 +8,7 @@ import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.Phases.Frontend (Frontend)
 import Elara.AST.Region
-import Elara.Error (runErrorOrReport)
+import Elara.Error (runErrorAsElaraError)
 import Elara.Lexer.Token (Lexeme)
 import Elara.Lexer.Utils (LexerError)
 import Elara.Parse.Error
@@ -36,8 +36,8 @@ getParsedFileQuery ::
         )
         (Module SourceRegion Frontend)
 getParsedFileQuery fp = do
-    (FileContents filePath contents) <- runErrorOrReport $ fetch (GetFileContents fp)
-    lexemes <- runErrorOrReport @LexerError $ fetch (LexedFile fp)
+    (FileContents filePath contents) <- runErrorAsElaraError $ fetch (GetFileContents fp)
+    lexemes <- runErrorAsElaraError @LexerError $ fetch (LexedFile fp)
 
     let tokenStream = createTokenStream contents lexemes
     parseResult <- inject $ runParserT moduleParser filePath tokenStream
@@ -56,7 +56,7 @@ getParsedModuleQuery ::
         )
         (Module SourceRegion Frontend)
 getParsedModuleQuery mn = do
-    fp <- runErrorOrReport @ModulePathError $ fetch (ModulePath mn)
+    fp <- runErrorAsElaraError @ModulePathError $ fetch (ModulePath mn)
     parsed <- getParsedFileQuery fp
     let (Module _ modInner) = parsed
     let nameLoc = moduleName modInner
@@ -69,8 +69,8 @@ getParsedModuleQuery mn = do
     if not isImplicit && declaredName /= mn
         then do
             -- Reconstruct token stream to create a proper error bundle
-            (FileContents filePath contents) <- runErrorOrReport $ fetch (GetFileContents fp)
-            lexemes <- runErrorOrReport @LexerError $ fetch (LexedFile fp)
+            (FileContents filePath contents) <- runErrorAsElaraError $ fetch (GetFileContents fp)
+            lexemes <- runErrorAsElaraError @LexerError $ fetch (LexedFile fp)
             let tokenStream = createTokenStream contents lexemes
             let offset = 0 -- Module declaration is typically at the start
             let parseError = MP.FancyError offset $ one $ MP.ErrorCustom $ ModuleNameMismatch mn (stripTag nameLoc)

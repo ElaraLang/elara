@@ -8,13 +8,14 @@ module Common (
 
     -- * Effect Runners
     runUnique,
-) where
+)
+where
 
 import Control.Exception.Safe (MonadCatch)
 import Effectful (Eff, IOE, runEff, runPureEff)
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
-import Elara.Error (ReportableError, report, runDiagnosticWriter)
+import Elara.Error
 import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')
 import Hedgehog.Internal.Property (MonadTest, failWith)
 import Orphans ()
@@ -42,15 +43,14 @@ diagShouldFail (d, x) = liftIO $ do
 
 -- | Evaluate a computation that may return a reportable error, failing the test with a pretty-printed
 evalReportableM ::
-    ReportableError e =>
-    (MonadTest m, Show x, MonadCatch m, HasCallStack) =>
+    (MonadTest m, Show x, MonadCatch m, HasCallStack, ElaraDiagnostic e) =>
     m (Either e x) -> m x
 evalReportableM m = do
     r <- m
     case r of
         Left err -> do
-            let (x, _) = runPureEff $ runDiagnosticWriter $ report err
-            failWith Nothing $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) x
+            let msg = diagnosticMessage err
+            failWith Nothing $ toString $ prettyToText msg
         Right ok -> pure ok
 
 -- | Run an effectful computation that requires unique generation

@@ -4,38 +4,41 @@ import Elara.Core qualified as Core
 import Elara.Core.Pretty ()
 import Elara.Data.Pretty
 import Elara.Data.Unique
-import Elara.Error (ReportableError)
+import Elara.Error
+import Elara.Error.Diagnose (toDiagnoseReports)
 
 -- | Errors that can occur during closure lifting
 data ClosureLiftError
     = -- | Type variable where term variable expected
       TyVarInTermPosition Core.Var
-    | -- | Expected a CExpr but got something else
-      ExpectedCExpr Text
-    | -- | Body construction failed during lifting
-      BodyConstructionFailed Core.Var
-    | -- | Expected a function type for closure chain
-      ExpectedFunctionType Core.Var Core.Type
-    | -- | Failed to determine type of lifted lambda
+    | -- | Variable is not bound in the current scope
+      VariableNotFound Core.Var
+    | -- | Cannot determine the type of a variable
       CannotDetermineType Core.Var
-    | -- | Failed to determine lifted name
+    | -- | Cannot determine the lifted name for a unique
       CannotDetermineLiftedName (Unique Text)
-    deriving (Show, Typeable, Generic)
+    | -- | Expected a Core expression, but got something else
+      ExpectedCExpr Text
+    | -- | Expected a function type, but got something else
+      ExpectedFunctionType Core.Var Core.Type
+    deriving (Show, Typeable)
 
 instance Exception ClosureLiftError
 
 instance Pretty ClosureLiftError where
-    pretty (TyVarInTermPosition v) =
-        "Type variable found in term position:" <+> pretty v
-    pretty (ExpectedCExpr ctx) =
-        "Expected CExpr in" <+> pretty ctx
-    pretty (BodyConstructionFailed v) =
-        "Failed to construct body for lifted closure:" <+> pretty v
-    pretty (ExpectedFunctionType v t) =
-        "Expected function type for" <+> pretty v <> ", got:" <+> pretty t
-    pretty (CannotDetermineType v) =
-        "Cannot determine type of:" <+> pretty v
-    pretty (CannotDetermineLiftedName u) =
-        "Cannot determine lifted name for unique:" <+> pretty u
+    pretty = diagnosticMessage
 
-instance ReportableError ClosureLiftError
+instance ElaraDiagnostic ClosureLiftError where
+    diagnosticMessage = \case
+        TyVarInTermPosition v ->
+            "Type variable where term variable expected:" <+> pretty v
+        VariableNotFound v ->
+            "Variable not found:" <+> pretty v
+        CannotDetermineType v ->
+            "Cannot determine type of:" <+> pretty v
+        CannotDetermineLiftedName u ->
+            "Cannot determine lifted name for unique:" <+> pretty u
+        ExpectedCExpr ctx ->
+            "Expected Core expression in context:" <+> pretty ctx
+        ExpectedFunctionType v t ->
+            "Expected function type for variable" <+> pretty v <> ", but got:" <+> pretty t

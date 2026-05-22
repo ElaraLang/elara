@@ -14,13 +14,14 @@ module Elara.TypeInfer.Error (
 import Elara.AST.Name (Qualified, TypeName, VarName)
 import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
 import Elara.Data.Pretty
-import Elara.Error (ReportableError (..), writeReport)
+import Elara.Error (ElaraDiagnostic (..), ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..))
 import Elara.Error.Codes qualified as Codes
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.TypeInfer.Context (ContextStack (..), InferenceContext (..), allContexts, currentContext, pushContext)
 import Elara.TypeInfer.Render (renderMonotype)
 import Elara.TypeInfer.Type (Constraint (..), DataCon, Monotype (..), Type, TypeVariable, constraintLoc, monotypeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar)
-import Error.Diagnose
+import Error.Diagnose hiding (Hint, Note)
 
 -- | The kind of unification error that occurred
 data UnifyErrorKind
@@ -142,95 +143,44 @@ buildMainMessage ctx kind = case currentContext ctx of
         PatternArityMismatch con _ _ -> "Wrong number of pattern arguments for" <+> pretty con
         _ -> "Type mismatch"
 
--- | Build context notes showing the chain of what was being done
-buildContextNotes :: Pretty loc => ContextStack -> Monotype loc -> Monotype loc -> [Note (Doc AnsiStyle)]
-buildContextNotes ctx expected actual =
-    let ctxs = allContexts ctx
-        -- Show the inference context chain
-        contextChain = case ctxs of
-            [] -> []
-            _ -> [Note (vsep (pretty <$> ctxs))]
-        -- Show what types were being unified
-        unifyNote = [Note ("while unifying" <+> renderMonotype expected <+> "with" <+> renderMonotype actual)]
-     in contextChain ++ unifyNote
+-- | Relation that defines 2 types as equal iff they are equal under a substitution of type variables
+instance (Show loc, Pretty loc, Typeable loc) => Exception (UnifyError loc)
 
-instance Pretty loc => ReportableError (UnifyError loc) where
-    report UnifyError{..} =
-        writeReport $
-            Err
-                Nothing
-                (buildMainMessage ueContext ueKind)
-                []
-                []
-    report (UnresolvedConstraint name constraint) =
-        writeReport $
-            Err
-                Nothing
-                ("Unresolved constraint in" <+> pretty name <> ":" <+> pretty constraint)
-                []
-                []
-    report (PolytypeAlias _) =
-        writeReport $
-            Err
-                Nothing
-                "Polytypes cannot be used as type aliases"
-                []
-                []
+instance ElaraDiagnostic (UnifyError SourceRegion) where
+    diagnosticMessage UnifyError{..} = buildMainMessage ueContext ueKind
+    diagnosticMessage (UnresolvedConstraint name constraint) = "Unresolved constraint in" <+> pretty name <> ":" <+> pretty constraint
+    diagnosticMessage (PolytypeAlias _) = "Polytypes cannot be used as type aliases"
 
-instance {-# OVERLAPPING #-} ReportableError (UnifyError SourceRegion) where
-    report UnifyError{..} = do
-        let mainMessage = buildMainMessage ueContext ueKind
+    diagnosticCode UnifyError{..} = case ueKind of
+        TypeMismatch -> Just Codes.typeMismatch
+        TypeConstructorMismatch{} -> Just Codes.typeConstructorMismatch
+        OccursCheck{} -> Just Codes.occursCheckFailed
+        _ -> Nothing
+    diagnosticCode _ = Nothing
 
-        -- Build markers for the error locations
-        let expectedPos = sourceRegionToDiagnosePosition ueExpectedUsage
-        let actualPos = sourceRegionToDiagnosePosition ueActualUsage
+    diagnosticMarkers (UnifyError{..}) =
+        let expectedUsage = ueExpectedUsage :: SourceRegion
+            actualUsage = ueActualUsage :: SourceRegion
+         in [ ElaraMarker expectedUsage SecondaryMarker ("expected" <+> renderMonotype ueExpected)
+            , ElaraMarker actualUsage PrimaryMarker ("but found" <+> renderMonotype ueActual)
+            ]
+    diagnosticMarkers (UnresolvedConstraint _ constraint) = [ElaraMarker (constraintLoc constraint) PrimaryMarker (pretty constraint)]
+    diagnosticMarkers (PolytypeAlias _) = []
 
-        let expectedMarker = (expectedPos, This ("expected" <+> renderMonotype ueExpected))
-        let actualMarker = (actualPos, Where ("but found" <+> renderMonotype ueActual))
-
-        -- Build context notes showing the chain of operations
-        let contextNotes = buildContextNotes ueContext ueExpected ueActual
-
-        -- Add type details as notes
-        let typeNotes =
-                [ Note ("expected type:" <+> renderMonotype ueExpected)
-                , Note ("actual type:  " <+> renderMonotype ueActual)
+    diagnosticNotes (UnifyError{..}) =
+        let contextNotes = fmap (Elara.Error.Note . pretty) (allContexts ueContext)
+            unifyNote = Elara.Error.Note ("while unifying" <+> renderMonotype ueExpected <+> "with" <+> renderMonotype ueActual)
+            typeNotes =
+                [ Elara.Error.Note ("expected type:" <+> renderMonotype ueExpected)
+                , Elara.Error.Note ("actual type:  " <+> renderMonotype ueActual)
                 ]
-
-        -- Add hint based on context
-        let hints = case currentContext ueContext of
+            hints = case currentContext ueContext of
                 Just (CheckingFunctionArgument pos _ _) ->
-                    [Hint ("Check argument" <+> pretty pos <+> "has the correct type")]
+                    [Elara.Error.Hint ("Check argument" <+> pretty pos <+> "has the correct type")]
                 Just (CheckingIfCondition _) ->
-                    [Hint "The condition of an 'if' expression must have type Bool"]
+                    [Elara.Error.Hint "The condition of an 'if' expression must have type Bool"]
                 Just (CheckingIfBranches _ _) ->
-                    [Hint "Both branches of an 'if' must return the same type"]
+                    [Elara.Error.Hint "Both branches of an 'if' must return the same type"]
                 _ -> []
-
-        -- Error code based on kind
-        let errCode = case ueKind of
-                TypeMismatch -> Just Codes.typeMismatch
-                TypeConstructorMismatch{} -> Just Codes.typeConstructorMismatch
-                OccursCheck{} -> Just Codes.occursCheckFailed
-                _ -> Nothing
-
-        writeReport $
-            Err
-                errCode
-                mainMessage
-                [expectedMarker, actualMarker]
-                (contextNotes ++ typeNotes ++ hints)
-    report (UnresolvedConstraint name constraint) =
-        writeReport $
-            Err
-                Nothing
-                ("Unresolved constraint in" <+> pretty name <> ":" <+> pretty constraint)
-                [(sourceRegionToDiagnosePosition (constraintLoc constraint), This (pretty constraint))]
-                []
-    report (PolytypeAlias _) =
-        writeReport $
-            Err
-                Nothing
-                "Polytypes cannot be used as type aliases"
-                []
-                []
+         in contextNotes ++ [unifyNote] ++ typeNotes ++ hints
+    diagnosticNotes _ = []

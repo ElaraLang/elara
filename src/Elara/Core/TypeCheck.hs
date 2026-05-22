@@ -24,6 +24,7 @@ import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Codes qualified as Codes
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim.Core
 import TODO (todo)
@@ -47,13 +48,34 @@ data TypeCheckError
     | PatternMatchMissingBinders {alt :: Core.AltCon, altType :: Core.Type, providedBinders :: [Var], expr :: CoreExpr}
     deriving (Show, Generic)
 
-instance Pretty TypeCheckError
+instance Pretty TypeCheckError where
+    pretty = diagnosticMessage
 
-instance ReportableError TypeCheckError where
-    errorCode = \case
-        UnknownVariable{} -> Just Codes.unknownVariableTC
-        CoreTypeMismatch{} -> Just Codes.coreTypeMismatch
-        _ -> Nothing @Codes.ErrorCode
+instance ElaraDiagnostic TypeCheckError where
+    diagnosticMessage (UnknownVariable v _) = "Unknown variable:" <+> pretty v
+    diagnosticMessage (CoreTypeMismatch expected actual _) =
+        "Core type mismatch. Expected:" <+> pretty expected <+> "but got:" <+> pretty actual
+    diagnosticMessage (CoreTypeMismatchIncompleteExpected expected actual _) =
+        "Core type mismatch. Expected:" <+> pretty expected <+> "but got:" <+> pretty actual
+    diagnosticMessage (UnificationError e1 e2) = "Unification error between" <+> pretty e1 <+> "and" <+> pretty e2
+    diagnosticMessage (InfiniteType v e) = "Infinite type:" <+> pretty v <+> "in" <+> pretty e
+    diagnosticMessage (OccursCheck v e) = "Occurs check failed:" <+> pretty v <+> "in" <+> pretty e
+    diagnosticMessage (PatternMatchMissingBinders{}) = "Pattern match missing binders"
+
+    diagnosticCode (UnknownVariable{}) = Just Codes.unknownVariableTC
+    diagnosticCode (CoreTypeMismatch{}) = Just Codes.coreTypeMismatch
+    diagnosticCode _ = Nothing
+
+    diagnosticNotes (UnknownVariable _ scope) = [Note ("Scope:" <+> pretty (Set.toList scope))]
+    diagnosticNotes (PatternMatchMissingBinders alt altType providedBinders expr) =
+        [ Note ("Constructor:" <+> pretty alt)
+        , Note ("Expected type:" <+> pretty altType)
+        , Note ("Provided binders:" <+> pretty providedBinders)
+        , Note ("Expression:" <+> pretty expr)
+        ]
+    diagnosticNotes _ = []
+
+instance Exception TypeCheckError
 
 newtype TcState = TcState
     { scope :: Set.Set (UnlocatedVarRef Text)
