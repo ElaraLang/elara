@@ -308,6 +308,6 @@ list :: ExpressionGrammar -> Parser FrontendExpr
 list grammar = locatedExpr $ do
     token_ TokenLeftBracket
 
-    elements <- sepEndBy grammar.pElement (token_ TokenComma)
+    elements <- sepEndBy grammar.pExpression (token_ TokenComma)
     token_ TokenRightBracket <?> "']' to close list"
     pure $ EExtension (FrontendList (ListExpression elements))
