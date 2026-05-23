@@ -1,10 +1,4 @@
-import Prelude
 import Elara.Prim
-import String
+import Prelude
 
-let x = "beans"
-
-let main = 
-    match x with
-        "beans" -> println "BEANS"
-        _ -> println "not beans"
+let main = println "Hello world!"

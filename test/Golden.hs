@@ -14,7 +14,7 @@ import Elara.Settings (CompilerSettings (..), defaultSettings)
 import Error.Diagnose (TabSize (..), WithUnicode (..), prettyDiagnostic')
 import Prettyprinter (defaultLayoutOptions, layoutSmart)
 import Prettyprinter.Render.Text qualified as Text
-import Test.Syd (GoldenTest, Spec, describe, goldenStringFile, it)
+import Test.Syd (GoldenTest, Spec, describe, expectationFailure, goldenStringFile, it)
 
 spec :: Spec
 spec = describe "Golden tests" $ do
@@ -140,7 +140,7 @@ runGoldenError settings goldenName = do
                             Interpreter.interpretInterpreterOutput (modify . (:)) $
                                 Interpreter.runInterpreter Interpreter.run
         when (null reports) $
-            error "Expected compiler error but compilation succeeded"
+            expectationFailure "Expected compiler error but compilation succeeded"
         diag <- reportsToDiagnostic reports
         let rendered = prettyDiagnostic' WithUnicode (TabSize 4) diag
         let plainText = Text.renderStrict $ layoutSmart defaultLayoutOptions rendered

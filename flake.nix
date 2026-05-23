@@ -248,8 +248,6 @@
                         "-O0"
                         "-threaded"
                         "-rtsopts"
-                        "-with-rtsopts=-N"
-                        "-with-rtsopts=-K256k"
                       ];
                     };
                     library = {

@@ -43,7 +43,7 @@ diagShouldFail (d, x) = liftIO $ do
 
 -- | Evaluate a computation that may return a reportable error, failing the test with a pretty-printed
 evalReportableM ::
-    (MonadTest m, Show x, MonadCatch m, HasCallStack, ElaraDiagnostic e) =>
+    (MonadTest m, Show x, HasCallStack, ElaraDiagnostic e) =>
     m (Either e x) -> m x
 evalReportableM m = do
     r <- m
