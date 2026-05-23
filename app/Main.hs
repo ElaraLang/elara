@@ -20,7 +20,7 @@ import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
+import Elara.Error.Diagnose (reportsToDiagnostic)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
 import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
