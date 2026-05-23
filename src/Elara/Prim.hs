@@ -162,7 +162,7 @@ lookupByQualifiedTypeName (Qualified tn modName)
     | modName == primModuleName = lookupByInternalName tn
     | otherwise = Nothing
 
--- | Primitive operations, resolved from @elaraPrimitive@ string keys during the ToCore stgae.
+-- | Primitive operations, resolved from @elaraPrimitive@ string keys during the ToCore stage.
 data PrimOp
     = PrimIntAdd
     | PrimIntSubtract
