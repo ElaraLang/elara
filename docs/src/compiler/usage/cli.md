@@ -2,8 +2,8 @@
 
 Elara has a command line interface (CLI) to build and run Elara programs. The CLI is invoked using the `elara` command followed by various options and flags.
 
->![NOTE]
-><strong>With Cabal</strong> When running with Cabal in Development Mode, you should instead use <tt>cabal run elara -- [options]</tt> to interact with the CLI.
+> [!NOTE]
+> <strong>With Cabal</strong> When running with Cabal in Development Mode, you should instead use <tt>cabal run elara -- [options]</tt> to interact with the CLI.
 
 ## Subcommands
 
