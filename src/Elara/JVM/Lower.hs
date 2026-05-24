@@ -16,8 +16,11 @@ import Elara.JVM.Lower.Expr
 import Elara.JVM.Lower.Function
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
+import Elara.Prim (PrimOp (PrimGetArgs))
 import JVM.Data.Abstract.Descriptor (ReturnDescriptor (TypeReturn))
 import JVM.Data.Abstract.Descriptor qualified as JVM
+import JVM.Data.Abstract.Name
+import JVM.Data.Abstract.Type ()
 import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Convert
 import Print (showPretty)
@@ -26,7 +29,7 @@ lowerModule :: Lower r => CoreModule CoreBind -> Eff r IR.Module
 lowerModule (CoreModule name decls) = do
     let moduleClassName = moduleNameToQualifiedClassName name
     let (valueDecls, typeDecls) = partitionDecls decls
-    methods <- concat <$> mapM lowerBindToMethod valueDecls
+    methods <- concat <$> mapM (lowerBindToMethod moduleClassName) valueDecls
     let mainClass =
             IR.Class
                 { IR.className = moduleClassName
@@ -46,15 +49,13 @@ lowerModule (CoreModule name decls) = do
         step (CoreValue b) (vs, ts) = (b : vs, ts)
         step (CoreType t) (vs, ts) = (vs, t : ts)
 
-lowerBindToMethod :: Lower r => CoreBind -> Eff r [IR.Method]
-lowerBindToMethod bind = case bind of
+lowerBindToMethod :: Lower r => QualifiedClassName -> CoreBind -> Eff r [IR.Method]
+lowerBindToMethod moduleClassName bind = case bind of
     NonRecursive (var, body) -> do
-        method <- lowerSingleBind var body
-        pure [method]
+        lowerSingleBind moduleClassName var body
 
     -- recursive bindings are easy on the jvm :)
-    Recursive bindings -> do
-        mapM (uncurry lowerSingleBind) bindings
+    Recursive bindings -> concat <$> mapM (uncurry $ lowerSingleBind moduleClassName) bindings
 
 -- | Helper function to build a static method
 buildStaticMethod ::
@@ -76,20 +77,21 @@ buildStaticMethod name args retType body =
         , IR.methodIsStatic = True
         }
 
--- | Lower a single binding to a method
+-- | Lower a single binding to a method(s)
 lowerSingleBind ::
     Lower r =>
+    QualifiedClassName ->
     Var ->
     CoreExpr ->
-    Eff r IR.Method
-lowerSingleBind (Core.TyVar _) _ =
+    Eff r [IR.Method]
+lowerSingleBind _moduleClassName (Core.TyVar _) _ =
     error "Type variable cannot be bound to a method"
-lowerSingleBind (Core.Id varRef type_ _) body = do
+lowerSingleBind moduleClassName (Core.Id varRef type_ _) body = do
     let methodName = case varRef of
             Global qn -> qn ^. unqualified
             Local t -> uniqueToText identity t
 
-    mPrim <- lowerPrimitiveBinding methodName type_ body
+    mPrim <- lowerPrimitiveBinding moduleClassName methodName type_ body
     case mPrim of
         Just primMethod -> pure primMethod
         Nothing -> do
@@ -103,7 +105,7 @@ lowerSingleBind (Core.Id varRef type_ _) body = do
                     (resultExpr, (mainInstrs, extraBlocks)) <- captureInstructions (lowerExpr lambdaBody)
                     entryLabel <- makeUnique "entry"
                     let blocks = buildMethodBody entryLabel mainInstrs extraBlocks (IR.Return (Just resultExpr))
-                    pure $ buildStaticMethod methodName lambdaArgs retType blocks
+                    pure [buildStaticMethod methodName lambdaArgs retType blocks]
                 CreateClosure -> do
                     -- create a closure that takes the remaining args
                     let remainingArgTys = drop (length lambdaArgs) typeArgs
@@ -129,7 +131,7 @@ lowerSingleBind (Core.Id varRef type_ _) body = do
 
                     entryLabel <- makeUnique "entry"
                     let blocks = buildMethodBody entryLabel mainInstrs extraBlocks (IR.Return (Just finalExpr))
-                    pure $ buildStaticMethod methodName allArgs retType blocks
+                    pure [buildStaticMethod methodName allArgs retType blocks]
                 OverApplication ->
                     error $ "More lambdas than type arguments for " <> methodName
 
@@ -137,14 +139,14 @@ lowerSingleBind (Core.Id varRef type_ _) body = do
 If there are extra blocks, the entry block will jump to the first extra block.
 
 As an example, given:
-    mainInstrs = [inst1, inst2]
-    extraBlocks = [blockA, blockB]
-    returnInstr = returnInst
+   mainInstrs = [inst1, inst2]
+   extraBlocks = [blockA, blockB]
+   returnInstr = returnInst
 
 This will produce:
-    [ Block entryLabel [inst1, inst2, Jump blockALabel]
-    , blockA
-    , Block blockBLabel [ ... , returnInst ]
+   [ Block entryLabel [inst1, inst2, Jump blockALabel]
+   , blockA
+   , Block blockBLabel [ ... , returnInst ]
 -}
 buildMethodBody ::
     -- | Label for the entry block
@@ -171,14 +173,15 @@ buildMethodBody entryLabel mainInstrs extraBlocks returnInstr =
 -- | Lower a primitive binding into a method if applicable
 lowerPrimitiveBinding ::
     Lower r =>
+    QualifiedClassName ->
     -- | The method name, i.e. the name of the binding
     Text ->
     -- | The type of the binding
     Core.Type ->
     -- | The body of the binding
     CoreExpr ->
-    Eff r (Maybe IR.Method)
-lowerPrimitiveBinding methodName type_ body =
+    Eff r (Maybe [IR.Method])
+lowerPrimitiveBinding currentClassName methodName type_ body =
     case body of
         Core.PrimOp op _ -> do
             let prim = IR.CorePrim op
@@ -188,12 +191,107 @@ lowerPrimitiveBinding methodName type_ body =
 
             argNames <- replicateM (length argTys) (makeUnique "arg")
             let methodArgs = zip argNames jvmArgs
-                argExprs = [IR.LocalVar n t | (n, t) <- methodArgs]
-                primExpr = IR.PrimOp prim argExprs
 
-            entry <- makeUnique "prim_entry"
-            let body = [IR.Block entry [IR.Return (Just primExpr)]]
-            pure . Just $ buildStaticMethod methodName methodArgs jvmRet body
+            case op of
+                PrimGetArgs -> do
+                    -- IO<List String>()
+                    entryLabel <- makeUnique "getargs_entry"
+                    condLabel <- makeUnique "getargs_cond"
+                    bodyLabel <- makeUnique "getargs_body"
+                    endLabel <- makeUnique "getargs_end"
+
+                    argsVar <- makeUnique "args_arr"
+                    iVar <- makeUnique "i"
+                    listVar <- makeUnique "list_acc"
+                    strVar <- makeUnique "raw_str"
+
+                    let stringArrTy = JVM.ArrayFieldType elaraStrTy
+                        javaObjTy = JVM.ObjectFieldType "java.lang.Object"
+                        elaraStrTy = JVM.ObjectFieldType "Elara.String"
+                        primInt = JVM.PrimitiveFieldType JVM.Int
+                        ioTy = JVM.ObjectFieldType "Elara.IO"
+                        listTy = JVM.ObjectFieldType "Elara.Prim.List"
+
+                    -- entry block
+                    -- args_arr = Elara.RuntimeSystem.getArgs()
+                    -- list_acc = new Nil()
+                    -- i = args_arr.length - 1
+                    -- goto condLabel
+
+                    let entryInstrs =
+                            [ IR.Assign argsVar stringArrTy $
+                                IR.Call (IR.InvokeStatic "Elara.RuntimeSystem" "getArgs" (JVM.MethodDescriptor [] (TypeReturn stringArrTy))) []
+                            , IR.Assign listVar javaObjTy $
+                                IR.New "Elara.Prim.Nil" []
+                            , IR.Assign iVar primInt $
+                                IR.PrimitiveIntOp IR.PrimSubtract (IR.ArrayLength (IR.LocalVar argsVar stringArrTy)) (IR.PrimitiveLitInt 1)
+                            , IR.Jump condLabel
+                            ]
+
+                    -- condition block:
+                    -- if (i > -1) goto bodyLabel else goto endLabel
+                    let condInstrs =
+                            [ IR.JumpIfPrimitiveBool
+                                (IR.PrimitiveIntOp IR.PrimGT (IR.LocalVar iVar primInt) (IR.PrimitiveLitInt (-1)))
+                                bodyLabel
+                                endLabel
+                            ]
+
+                    -- body block:
+                    -- raw_str = args_arr[i]
+                    -- list_acc = new Cons(raw_str, list_acc)
+                    -- i = i - 1
+                    -- goto condLabel
+
+                    let bodyInstrs =
+                            [ IR.Assign strVar elaraStrTy $
+                                IR.ArrayLoad (IR.LocalVar argsVar stringArrTy) elaraStrTy (IR.LocalVar iVar primInt)
+                            , IR.Assign listVar javaObjTy $
+                                IR.New
+                                    "Elara.Prim.Cons"
+                                    [ (IR.LocalVar strVar elaraStrTy, elaraStrTy)
+                                    , (IR.LocalVar listVar javaObjTy, javaObjTy)
+                                    ]
+                            , IR.Assign iVar primInt $
+                                IR.PrimitiveIntOp IR.PrimSubtract (IR.LocalVar iVar primInt) (IR.PrimitiveLitInt 1)
+                            , IR.Jump condLabel
+                            ]
+
+                    -- end block:
+                    -- return list_acc
+                    let endInstrs =
+                            [IR.Return (Just (IR.LocalVar listVar javaObjTy))]
+
+                    let blocks =
+                            [ IR.Block entryLabel entryInstrs
+                            , IR.Block condLabel condInstrs
+                            , IR.Block bodyLabel bodyInstrs
+                            , IR.Block endLabel endInstrs
+                            ]
+
+                    let implMethodName = methodName <> "_impl"
+                    let implMethod = buildStaticMethod implMethodName [] javaObjTy blocks
+
+                    let closureExpr =
+                            IR.MakeClosure
+                                { closureTargetClass = currentClassName
+                                , closureTargetMethod = implMethodName
+                                , closureTarget = JVM.MethodDescriptor [] (TypeReturn javaObjTy)
+                                , closureInterface = "java.util.function.Supplier"
+                                , capturedValues = []
+                                }
+                    let newIOExpr = IR.New "Elara.IO" [(closureExpr, JVM.ObjectFieldType "java.util.function.Supplier")]
+                    entry <- makeUnique "getargs_wrapper_entry"
+                    let wrapperBlocks = [IR.Block entry [IR.Return (Just newIOExpr)]]
+                    let wrapperMethod = buildStaticMethod methodName methodArgs ioTy wrapperBlocks
+                    pure . Just $ [implMethod, wrapperMethod]
+                other -> do
+                    let argExprs = [IR.LocalVar n t | (n, t) <- methodArgs]
+                        primExpr = IR.PrimOp prim argExprs
+
+                    entry <- makeUnique "prim_entry"
+                    let body = [IR.Block entry [IR.Return (Just primExpr)]]
+                    pure $ Just [buildStaticMethod methodName methodArgs jvmRet body]
         _ -> pure Nothing
 
 -- | Flatten nested lambdas into a list of arguments and the final body expression

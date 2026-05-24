@@ -16,20 +16,20 @@ will be translated to:
 
 however it does not do any complex analysis on the code:
 @ let add x =
-   if x == 0 then \y -> y else \y -> x + y
+  if x == 0 then \y -> y else \y -> x + y
 @
 The higher order function here _can_ be avoided if we rearrange the code into:
 @ let add = \x -> \y ->
-   if x == 0 then y else x + y
+  if x == 0 then y else x + y
 @
 but this responsibility is left to the CoreToCore pass, so the emitter will still produce inefficient code:
 
 @ public static Func add(int x) {
-   if (x == 0) {
-       return (y) -> y;
-   } else {
-       return (y) -> x + y;
-   }
+  if (x == 0) {
+      return (y) -> y;
+  } else {
+      return (y) -> x + y;
+  }
 }
 @
 
@@ -63,6 +63,7 @@ import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Analyse.StackMap (calculateStackMapFrames)
 import JVM.Data.JVMVersion
 import JVM.Data.Raw.Types (U2)
+import Print
 
 -- | Emit an IR Module to a list of ClassFiles
 emitIRModule :: StructuredDebug :> r => IR.Module -> Eff r [ClassFile]
@@ -94,8 +95,7 @@ emitIRClass (IR.Class className super fields methods constructors) = do
 -- | Emit a field to the current class
 emitIRField :: (StructuredDebug :> r, ClassBuilder :> r) => IR.Field -> Eff r ()
 emitIRField (IR.Field fieldName fieldType) = do
-    let
-        fieldInfo =
+    let fieldInfo =
             ClassFileField
                 [FPublic]
                 fieldName
@@ -200,9 +200,14 @@ emitIRInstruction :: EmitCode r => IR.Instruction -> Eff r ()
 emitIRInstruction instr = case instr of
     IR.Assign var t expr -> do
         emitExpr expr
-        emit $ CheckCast (fieldTypeToClassInfoType t) -- ensure correct type, might not always be necessary
+        case t of
+            JVM.PrimitiveFieldType _ -> pass -- no need to checkcast for primitives
+            _ -> emit $ CheckCast (fieldTypeToClassInfoType t) -- ensure correct type, might not always be necessary
         allocation <- findLocalVariable var
-        emit $ AStore allocation
+        case t of
+            JVM.PrimitiveFieldType JVM.Int -> emit $ IStore allocation
+            JVM.PrimitiveFieldType other -> error $ "emitIRInstruction: Unhandled primitive type in Assign: " <> prettyToText other
+            _ -> emit $ AStore allocation
     IR.Return Nothing -> emit JVM.Return
     IR.Return (Just e) -> do
         emitExpr e
@@ -258,6 +263,9 @@ emitExpr expr = case expr of
         emit $ LDC (LDCInt $ fromInteger n) -- TODO: fromInteger bad
         emit $ JVM.InvokeStatic (ClassInfoType "java.lang.Integer") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Int] (TypeReturn $ ObjectFieldType "java.lang.Integer"))
         pure $ Just (ClassInfoType "java.lang.Integer")
+    IR.PrimitiveLitInt n -> do
+        emit $ JVM.LDC (LDCInt $ fromInteger n) -- TODO: fromInteger bad
+        pure $ Just (PrimitiveClassInfoType JVM.Int)
     IR.LitString s -> do
         emit $ JVM.New (ClassInfoType stringTypeName)
         emit JVM.Dup
@@ -283,7 +291,10 @@ emitExpr expr = case expr of
         pure $ Just (fieldTypeToClassInfoType fieldType)
     IR.LocalVar u t -> do
         allocation <- findLocalVariable u
-        emit $ ALoad allocation
+        case t of
+            JVM.PrimitiveFieldType JVM.Int -> emit (ILoad allocation)
+            JVM.PrimitiveFieldType other -> error $ "emitExpr: Unhandled primitive type in LocalVar: " <> prettyToText other
+            _ -> emit (ALoad allocation)
         pure $ Just (fieldTypeToClassInfoType t)
     IR.This _ -> do
         emit $ ALoad 0
@@ -340,6 +351,18 @@ emitExpr expr = case expr of
                             [ObjectFieldType "java.lang.Object", ObjectFieldType "java.lang.Object"]
                             (TypeReturn $ PrimitiveFieldType JVM.Boolean)
                         )
+                primitiveBooleanToElaraBoolean
+            IR.Subtract -> emitBinaryIntOp "minus" lhs rhs
+            IR.Add -> emitBinaryIntOp "add" lhs rhs
+            IR.GreaterThan -> do
+                trueLabel <- newLabel
+                endLabel <- newLabel
+                emit $ JVM.IfICmp (IFGt trueLabel)
+                emit JVM.IConst0
+                emit $ Goto endLabel
+                emit $ JVM.Label trueLabel
+                emit JVM.IConst1
+                emit $ JVM.Label endLabel
                 primitiveBooleanToElaraBoolean
             _ -> error $ "emitExpr: Unhandled binary operator: " <> prettyToText op
     IR.MakeClosure{..} -> do
@@ -449,8 +472,12 @@ emitExpr expr = case expr of
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.PrimOps") "toString" (MethodDescriptor [javaObject] (TypeReturn $ ObjectFieldType stringTypeName))
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.Error") "throwError" (MethodDescriptor [ObjectFieldType stringTypeName] (TypeReturn javaObject))
                 pure $ Just (ClassInfoType "java/lang/Object")
-            (IR.CorePrim Prim.PrimReadFile, _) -> error "emitExpr: PrimReadFile not yet supported in JVM backend"
-            (IR.CorePrim Prim.PrimGetArgs, _) -> error "emitExpr: PrimGetArgs not yet supported in JVM backend"
+            (IR.CorePrim Prim.PrimReadFile, [path]) -> do
+                emitExpr path
+                emit $ JVM.InvokeStatic (ClassInfoType "Elara.PrimOps") "readFile" (MethodDescriptor [ObjectFieldType stringTypeName] (TypeReturn $ ObjectFieldType "Elara/IO"))
+                pure $ Just (ClassInfoType "Elara/IO")
+            (IR.CorePrim Prim.PrimGetArgs, _) -> do
+                error "emitExpr: PrimGetArgs should have been handled by lowering"
             other -> error $ "emitExpr: Unhandled primitive operation: " <> prettyToText other
     IR.New className args -> do
         emit $ JVM.New (ClassInfoType className)
@@ -463,6 +490,48 @@ emitExpr expr = case expr of
         emitExpr expr
         emit $ JVM.CheckCast (fieldTypeToClassInfoType targetType)
         pure $ Just (fieldTypeToClassInfoType targetType)
+    IR.ArrayLength arr -> do
+        emitExpr arr
+        emit JVM.ArrayLength
+        pure $ Just (PrimitiveClassInfoType JVM.Int)
+    IR.ArrayLoad arr arrTy idx -> do
+        emitExpr arr
+        emitExpr idx
+        emit JVM.AALoad
+        pure $ Just (fieldTypeToClassInfoType arrTy)
+    IR.PrimitiveIntOp op a b -> case op of
+        IR.PrimAdd -> do
+            emitExpr a
+            emitExpr b
+            emit JVM.IAdd
+            pure $ Just (PrimitiveClassInfoType JVM.Int)
+        IR.PrimSubtract -> do
+            emitExpr a
+            emitExpr b
+            emit JVM.ISub
+            pure $ Just (PrimitiveClassInfoType JVM.Int)
+        IR.PrimMultiply -> do
+            emitExpr a
+            emitExpr b
+            emit JVM.IMul
+            pure $ Just (PrimitiveClassInfoType JVM.Int)
+        IR.PrimDivide -> do
+            emitExpr a
+            emitExpr b
+            emit JVM.IDiv
+            pure $ Just (PrimitiveClassInfoType JVM.Int)
+        IR.PrimGT -> do
+            emitExpr a
+            emitExpr b
+            trueLabel <- newLabel
+            endLabel <- newLabel
+            emit $ JVM.IfICmp (IFGt trueLabel)
+            emit JVM.IConst0
+            emit $ Goto endLabel
+            emit $ JVM.Label trueLabel
+            emit JVM.IConst1
+            emit $ JVM.Label endLabel
+            pure $ Just (PrimitiveClassInfoType JVM.Boolean)
     _ -> error $ "emitExpr: Unhandled expression: " <> prettyToText expr
 
 -- | Common type aliases for Java types
@@ -555,6 +624,15 @@ emitJVMMainMethod thisClassName = do
 
     (_, codeAttributes, instructions) <-
         runCodeBuilder $ do
+            -- load args
+            emit $ ALoad 0
+            -- call Elara.RuntimeSystem.init(String[] args) : void
+            emit $
+                JVM.InvokeStatic
+                    (ClassInfoType "Elara.RuntimeSystem")
+                    "init"
+                    (MethodDescriptor [ArrayFieldType (ObjectFieldType "java/lang/String")] VoidReturn)
+
             -- Call Elara Main.main() : Elara.IO
             emit $
                 JVM.InvokeStatic
