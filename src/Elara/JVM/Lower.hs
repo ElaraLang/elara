@@ -16,7 +16,7 @@ import Elara.JVM.Lower.Expr
 import Elara.JVM.Lower.Function
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
-import Elara.Prim (PrimOp (PrimGetArgs))
+import Elara.Prim (PrimOp (..))
 import JVM.Data.Abstract.Descriptor (ReturnDescriptor (TypeReturn))
 import JVM.Data.Abstract.Descriptor qualified as JVM
 import JVM.Data.Abstract.Name
@@ -139,14 +139,14 @@ lowerSingleBind moduleClassName (Core.Id varRef type_ _) body = do
 If there are extra blocks, the entry block will jump to the first extra block.
 
 As an example, given:
-   mainInstrs = [inst1, inst2]
-   extraBlocks = [blockA, blockB]
-   returnInstr = returnInst
+  mainInstrs = [inst1, inst2]
+  extraBlocks = [blockA, blockB]
+  returnInstr = returnInst
 
 This will produce:
-   [ Block entryLabel [inst1, inst2, Jump blockALabel]
-   , blockA
-   , Block blockBLabel [ ... , returnInst ]
+  [ Block entryLabel [inst1, inst2, Jump blockALabel]
+  , blockA
+  , Block blockBLabel [ ... , returnInst ]
 -}
 buildMethodBody ::
     -- | Label for the entry block
@@ -277,12 +277,48 @@ lowerPrimitiveBinding currentClassName methodName type_ body =
                                 { closureTargetClass = currentClassName
                                 , closureTargetMethod = implMethodName
                                 , closureTarget = JVM.MethodDescriptor [] (TypeReturn javaObjTy)
-                                , closureInterface = "java.util.function.Supplier"
+                                , closureInterface = "Elara.Func0"
                                 , capturedValues = []
                                 }
-                    let newIOExpr = IR.New "Elara.IO" [(closureExpr, JVM.ObjectFieldType "java.util.function.Supplier")]
+                    let newIOExpr = IR.New "Elara.IO" [(closureExpr, JVM.ObjectFieldType "Elara.Func0")]
                     entry <- makeUnique "getargs_wrapper_entry"
                     let wrapperBlocks = [IR.Block entry [IR.Return (Just newIOExpr)]]
+                    let wrapperMethod = buildStaticMethod methodName methodArgs ioTy wrapperBlocks
+                    pure . Just $ [implMethod, wrapperMethod]
+                PrimPrintln -> do
+                    -- IO<Unit>(String)
+                    let javaObjTy = JVM.ObjectFieldType "java.lang.Object"
+                        printStreamTy = JVM.ObjectFieldType "java.io.PrintStream"
+                        ioTy = JVM.ObjectFieldType "Elara.IO"
+                    (argName, argTy) <- case methodArgs of
+                        [arg] -> pure arg
+                        _ -> error "println expects exactly 1 argument"
+                    let implMethodName = methodName <> "_impl"
+                    implEntry <- makeUnique "println_impl_entry"
+
+                    let outExpr = IR.FieldRef "java.lang.System" "out" printStreamTy -- System.out
+                    let printlnDesc = JVM.MethodDescriptor [javaObjTy] JVM.VoidReturn -- out.println(Object)
+                    let printlnCall = IR.ExprStmt $ IR.Call (IR.InvokeVirtual outExpr "java.io.PrintStream" "println" printlnDesc) [IR.LocalVar argName argTy]
+                    let unitExpr = IR.New "Elara.Prim.Unit" [] -- new Unit()
+                    let implInstrs =
+                            [ printlnCall
+                            , IR.Return (Just unitExpr)
+                            ]
+                    let implMethod = buildStaticMethod implMethodName [(argName, argTy)] javaObjTy [IR.Block implEntry implInstrs]
+
+                        closureExpr =
+                            IR.MakeClosure
+                                { closureTargetClass = currentClassName
+                                , closureTargetMethod = implMethodName
+                                , closureTarget = JVM.MethodDescriptor [argTy] (TypeReturn javaObjTy)
+                                , closureInterface = "Elara.Func0"
+                                , capturedValues = [(IR.LocalVar argName argTy, argTy)]
+                                }
+                    let newIOExpr = IR.New "Elara.IO" [(closureExpr, JVM.ObjectFieldType "Elara.Func0")]
+
+                    wrapperEntry <- makeUnique "println_wrapper_entry"
+
+                    let wrapperBlocks = [IR.Block wrapperEntry [IR.Return (Just newIOExpr)]]
                     let wrapperMethod = buildStaticMethod methodName methodArgs ioTy wrapperBlocks
                     pure . Just $ [implMethod, wrapperMethod]
                 other -> do
