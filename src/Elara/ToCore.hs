@@ -76,11 +76,12 @@ instance ElaraDiagnostic ToCoreError where
     diagnosticMarkers (LetInTopLevel (New.Expr loc _ _)) = [ElaraMarker (unwrapLoc loc) PrimaryMarker "Let-binding here"]
     diagnosticMarkers (UnknownConstructor (Located loc _) _) = [ElaraMarker loc PrimaryMarker "Unknown constructor"]
     diagnosticMarkers (UnknownVariable (Located loc _)) = [ElaraMarker loc PrimaryMarker "Unknown variable"]
+    diagnosticMarkers (UnsolvedTypeSnuckIn (Type.Lifted uv)) = [ElaraMarker (Type.monotypeLoc uv) PrimaryMarker "Unsolved type"]
     diagnosticMarkers _ = []
 
     diagnosticNotes (UnknownConstructor _ syms) = [Elara.Error.Note ("Known constructors:" <+> vcat (pretty <$> M.keys syms.dataCons))]
     diagnosticNotes (UnknownTypeConstructor _ syms) = [Elara.Error.Note ("Known constructors:" <+> vcat (pretty <$> M.keys syms.tyCons))]
-    diagnosticNotes (UnsolvedTypeSnuckIn _) = [Elara.Error.Note (pretty $ prettyCallStack callStack)]
+    diagnosticNotes (UnsolvedTypeSnuckIn _) = [Elara.Error.Note "This is likely a compiler bug that should be reported."]
     diagnosticNotes _ = []
 
 instance Pretty ToCoreError where
@@ -341,7 +342,8 @@ eitherTypeToCore (Type.Lifted t) = typeToCore t
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Eff r Core.Type
 typeToCore (Type.TypeVar _ (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
-typeToCore (Type.TypeVar _ (Type.UnificationVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
+typeToCore uv@(Type.TypeVar _ (Type.UnificationVar _)) =
+    throwError (UnsolvedTypeSnuckIn (Type.Lifted uv))
 typeToCore (Type.Function _ t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCore t2
 typeToCore (Type.TypeConstructor _ qn ts) = do
     let name = fmap (view _Unwrapped) qn
