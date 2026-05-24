@@ -3,6 +3,7 @@ module Golden (spec) where
 
 import Boilerplate (finaliseEffects, pipelineResShouldSucceed)
 import Colog.Core (LogAction (..))
+import Data.Text (stripEnd)
 import Effectful (Eff)
 import Effectful.Colog (runLogAction)
 import Effectful.State.Static.Local (execState, modify)
@@ -14,58 +15,62 @@ import Elara.Settings (CompilerSettings (..), defaultSettings)
 import Error.Diagnose (TabSize (..), WithUnicode (..), prettyDiagnostic')
 import Prettyprinter (defaultLayoutOptions, layoutSmart)
 import Prettyprinter.Render.Text qualified as Text
+import System.Process (readProcess)
 import Test.Syd (GoldenTest, Spec, describe, expectationFailure, goldenStringFile, it)
 
 spec :: Spec
 spec = describe "Golden tests" $ do
-    it "Runs hello world" $ do
-        runGolden defaultSettings "simple-1"
+    let backends = [Elara.Interpreter, Elara.JVM]
+    forM_ backends $ \backend -> describe (show backend) $ do
+        it "Runs hello world" $ do
+            runGolden defaultSettings backend "simple-1"
 
-    it "Counts to ten" $
-        runGolden defaultSettings "count-to-ten"
+        it "Counts to ten" $
+            runGolden defaultSettings backend "count-to-ten"
 
-    it "Computes Fibonacci recursively" $
-        runGolden defaultSettings "recursion"
+        it "Computes Fibonacci recursively" $
+            runGolden defaultSettings backend "recursion"
 
-    it "Currying and partial application" $
-        runGolden defaultSettings "currying"
+        it "Currying and partial application" $
+            runGolden defaultSettings backend "currying"
 
-    it "Tuples and pattern matching on tuples" $
-        runGolden defaultSettings "tuples"
+        it "Tuples and pattern matching on tuples" $
+            runGolden defaultSettings backend "tuples"
 
-    it "Type aliases" $
-        runGolden defaultSettings "type-aliases"
+        it "Type aliases" $
+            runGolden defaultSettings backend "type-aliases"
 
-    it "ADTs with pattern matching" $
-        runGolden defaultSettings "adt-shapes"
+        it "ADTs with pattern matching" $
+            runGolden defaultSettings backend "adt-shapes"
 
-    it "Option type and matching" $
-        runGolden defaultSettings "option-type"
+        it "Option type and matching" $
+            runGolden defaultSettings backend "option-type"
 
-    it "Higher-order functions (identity, const, flip)" $
-        runGolden defaultSettings "higher-order"
+        it "Higher-order functions (identity, const, flip)" $
+            runGolden defaultSettings backend "higher-order"
 
-    it "List operations (map, filter, lambdas)" $
-        runGolden defaultSettings "list-operations"
+        it "List operations (map, filter, lambdas)" $
+            runGolden defaultSettings backend "list-operations"
 
-    it "Closures capturing variables" $
-        runGolden defaultSettings "closures"
+        it "Closures capturing variables" $
+            runGolden defaultSettings backend "closures"
 
-    it "Nested pattern matching on recursive ADT" $
-        runGolden defaultSettings "nested-patterns"
+        it "Nested pattern matching on recursive ADT" $
+            runGolden defaultSettings backend "nested-patterns"
 
-    it "Result type with qualified imports" $
-        runGolden defaultSettings "result-type"
+        it "Result type with qualified imports" $
+            runGolden defaultSettings backend "result-type"
 
-    it "String operations" $
-        runGolden defaultSettings "string-ops"
+        it "String operations" $
+            runGolden defaultSettings backend "string-ops"
 
-    it "IO sequencing with >>" $
-        runGolden defaultSettings "io-sequencing"
+        it "IO sequencing with >>" $
+            runGolden defaultSettings backend "io-sequencing"
 
     -- Note: let-binding shadowing (rebinding x after defining x) crashes with
     -- UnknownVariable. This is a known bug tracked separately.
 
+    -- failing tests fail before codegen anyway, so no point running them across multiple backends
     describe "Error golden tests" $ do
         it "Type mismatch in function argument" $
             runGoldenError defaultSettings "error-type-mismatch"
@@ -104,24 +109,50 @@ spec = describe "Golden tests" $ do
             it "Type alias that refers to itself" $
                 runGoldenError defaultSettings "error-rename-recursive-alias"
 
-runGolden :: CompilerSettings -> FilePath -> GoldenTest String
-runGolden settings goldenName = do
+runGolden :: CompilerSettings -> Elara.Backend -> FilePath -> GoldenTest String
+runGolden settings backend goldenName = do
     let inputPrefix = "test/test_resources/golden_inputs/"
     let compilerSettings =
             settings
                 { mainFile = Just (inputPrefix <> goldenName <> ".elr")
+                , outputDir = "test/build/" <> show backend <> "/" <> goldenName
                 }
     goldenStringFile ("test/test_resources/golden_outputs/" <> goldenName <> ".txt") $ do
-        output <-
-            pipelineResShouldSucceed $
-                finaliseEffects $
-                    runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc AnsiStyle)) $
-                        Elara.withCompilerEnv compilerSettings $
-                            execState ([] :: [Text]) $
-                                Interpreter.interpretInterpreterOutput (modify . (:)) $
-                                    Interpreter.runInterpreter Interpreter.run
+        case backend of
+            Elara.Interpreter -> runInterpreterCapture compilerSettings
+            Elara.JVM -> runJVMCapture compilerSettings
 
-        pure (toString $ unlines $ reverse output)
+runInterpreterCapture :: CompilerSettings -> IO String
+runInterpreterCapture compilerSettings = do
+    output <-
+        pipelineResShouldSucceed $
+            finaliseEffects $
+                runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc AnsiStyle)) $
+                    Elara.withCompilerEnv compilerSettings $
+                        execState ([] :: [Text]) $
+                            Interpreter.interpretInterpreterOutput (modify . (:)) $
+                                Interpreter.runInterpreter Interpreter.run
+
+    pure (toString $ stripEnd $ unlines $ reverse output)
+
+runJVMCapture :: CompilerSettings -> IO String
+runJVMCapture compilerSettings = do
+    -- 1. Run the compiler to emit the .class files
+    _ <-
+        pipelineResShouldSucceed $
+            finaliseEffects $
+                runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc AnsiStyle)) $
+                    Elara.withCompilerEnv compilerSettings $
+                        Elara.compile compilerSettings (Elara.CompileAndEmit Elara.JVM)
+
+    -- 2. Execute the generated bytecode and capture stdout
+    let classPath = compilerSettings.outputDir <> ":jvm-stdlib"
+
+    -- readProcess intercepts stdout instead of printing it to the terminal
+    rawOutput <- readProcess "java" ["-cp", classPath, "Main"] ""
+
+    -- Normalise trailing newlines
+    pure (toString $ stripEnd $ fromString rawOutput)
 
 -- | Run a golden test that expects compiler failure, comparing the diagnostic output
 runGoldenError :: CompilerSettings -> FilePath -> GoldenTest String
