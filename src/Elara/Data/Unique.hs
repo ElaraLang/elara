@@ -5,12 +5,13 @@ module Elara.Data.Unique where
 
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
-import Elara.Data.Pretty
 import GHC.IO (unsafePerformIO)
 import Text.Show (Show (show))
 
+import Elara.Data.Pretty
+
 data Unique a = Unique !a !Int
-    deriving (Show, Functor, Data, Generic, Traversable, Foldable)
+    deriving (Data, Foldable, Functor, Generic, Show, Traversable)
 
 pattern Unique' :: a -> Unique a
 pattern Unique' a <- Unique a _
@@ -27,7 +28,7 @@ unsafeMkUnique :: a -> Int -> Unique a
 unsafeMkUnique = Unique
 
 -- | A @Unique@ where the value is not important.
-newtype UniqueId = UniqueId (Unique ()) deriving (Eq, Ord, Data, Generic)
+newtype UniqueId = UniqueId (Unique ()) deriving (Data, Eq, Generic, Ord)
 
 instance ToJSON c => ToJSON (Unique c)
 

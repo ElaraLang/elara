@@ -16,9 +16,13 @@ where
 
 import Effectful (runPureEff)
 import Effectful.Error.Static (runError)
+import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
+import Hedgehog.Internal.Property (failWith)
+import Test.QuickCheck (Property, counterexample, ioProperty, property)
+import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty, runParserT)
+
 import Elara.AST.Phases.Frontend (Frontend)
 import Elara.AST.Phases.Frontend.Pretty ()
-import Elara.AST.Types qualified as New
 import Elara.Lexer.Reader (readTokensWith)
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle (..), unWParseErrorBundle)
@@ -28,12 +32,10 @@ import Elara.Parse.Pattern (patParser)
 import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
 import Elara.ReadFile (FileContents (..))
-import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
-import Hedgehog.Internal.Property (failWith)
 import Normalise (stripExpr, stripPattern)
 import Print (showPretty)
-import Test.QuickCheck (Property, counterexample, ioProperty, property)
-import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty, runParserT)
+
+import Elara.AST.Types qualified as New
 
 -- | Evaluate an 'Either' containing a parse error, failing the test if it's an error
 evalEitherParseError ::

@@ -7,14 +7,16 @@ module Elara.AST.Region where
 
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
-import Elara.Data.Pretty (Pretty (..))
-import Error.Diagnose.Position qualified as Diag
 import GHC.Exts (the)
 import Optics (FoldableWithIndex, FunctorWithIndex, TraversableWithIndex, maximumOf, minimumOf)
-import Print (showPretty)
 import Relude.Unsafe (fromJust)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
 import Text.Show (Show (show))
+
+import Error.Diagnose.Position qualified as Diag
+
+import Elara.Data.Pretty (Pretty (..))
+import Print (showPretty)
 
 generatedFileName :: String
 generatedFileName = "<generated>"
@@ -23,28 +25,28 @@ data RealPosition = Position
     { _line :: !Int
     , _column :: !Int
     }
-    deriving (Show, Eq, Ord, Data, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 instance Hashable RealPosition
 
 data Position
     = RealPosition !RealPosition
     | GeneratedPosition
-    deriving (Show, Eq, Ord, Data, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 data RealSourceRegion = UnsafeMkSourceRegion
     { _sourceFile :: !(Maybe FilePath)
     , _startPos :: !RealPosition
     , _endPos :: !RealPosition
     }
-    deriving (Show, Eq, Ord, Data, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 instance Hashable RealSourceRegion
 
 data SourceRegion
     = RealSourceRegion !RealSourceRegion
     | GeneratedRegion !FilePath
-    deriving (Show, Eq, Ord, Data, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 instance Hashable SourceRegion
 
@@ -142,7 +144,7 @@ diagnosePositionToSourceRegion (Diag.Position (startLine, startCol) (endLine, en
     RealSourceRegion $ UnsafeMkSourceRegion (Just fp) (Position startLine startCol) (Position endLine endCol)
 
 data Located a = Located SourceRegion a
-    deriving (Show, Eq, Ord, Functor, Traversable, Foldable, Data, Generic)
+    deriving (Data, Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 instance Hashable a => Hashable (Located a)
 
@@ -171,7 +173,7 @@ type family Unlocate g where
 
 -- | Newtype wrapper for 'Located' that ignores the location information for its instances
 newtype IgnoreLocation a = IgnoreLocation (Located a)
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Foldable, Functor, Generic, Traversable)
 
 instance (Eq (IgnoreLocation a), Hashable a) => Hashable (IgnoreLocation a)
 

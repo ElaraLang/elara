@@ -1,12 +1,14 @@
 module Elara.JVM.Error (JVMLoweringError (..)) where
 
+import JVM.Data.Abstract.Descriptor (MethodDescriptor)
+
 import Elara.AST.Name
-import Elara.Core qualified as Core
 import Elara.Core.Pretty ()
 import Elara.Data.Pretty
 import Elara.Error
 import Elara.Error.Diagnose (toDiagnoseReports)
-import JVM.Data.Abstract.Descriptor (MethodDescriptor)
+
+import Elara.Core qualified as Core
 
 -- | Errors that can occur during JVM lowering and code generation
 data JVMLoweringError

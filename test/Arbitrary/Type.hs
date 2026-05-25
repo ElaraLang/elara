@@ -1,12 +1,14 @@
 module Arbitrary.Type where
 
+import Hedgehog (Gen)
+
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+
 import Elara.AST.Name
 import Elara.Data.Unique (unsafeMkUnique)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.Type
-import Hedgehog (Gen)
-import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
 import Region (qualifiedTest)
 
 -- | contrary to what the name suggests, this will NOT be unique :)

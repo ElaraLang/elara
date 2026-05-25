@@ -6,6 +6,7 @@ module Orphans where
 
 import Data.Char (isLower, isUpper)
 import Data.Text (splitOn)
+
 import Elara.AST.Name (MaybeQualified (..), ModuleName (..), Name (NameType, NameValue), Unqualified (..))
 
 instance IsString Name where

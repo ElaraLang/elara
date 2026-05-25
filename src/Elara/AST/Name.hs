@@ -11,16 +11,19 @@ module Elara.AST.Name where
 import Data.Aeson (ToJSON)
 import Data.Data (Data)
 import Data.Generics.Product
+import Text.Show (Show (..))
+
 import Data.Text qualified as T (intercalate)
+
 import Elara.AST.Region (Located, unlocated)
 import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
-import Text.Show (Show (..))
 import Prelude hiding (Show, show)
 
+import Elara.Data.Pretty.Styles qualified as Style
+
 newtype ModuleName = ModuleName (NonEmpty Text)
-    deriving (Show, Eq, Ord, Data, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 appendModule :: ModuleName -> Text -> ModuleName
 appendModule (ModuleName m) n = ModuleName (m <> pure n)
@@ -33,7 +36,7 @@ data VarName
       NormalVarName LowerAlphaName
     | -- | An operator var name. Note that while in the source code, the name must be surrounded in parentheses, this is not the case in the AST!
       OperatorVarName OpName
-    deriving (Ord, Show, Eq, Data, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 instance IsString VarName where
     fromString = NormalVarName . fromString
@@ -42,19 +45,19 @@ instance IsString VarName where
 Since type variables can't be operators though, we don't use 'VarName' for them
 -}
 newtype LowerAlphaName = LowerAlphaName Text
-    deriving (Ord, Show, Eq, Data, IsString, Generic)
+    deriving (Data, Eq, Generic, IsString, Ord, Show)
 
 newtype TypeName = TypeName Text
-    deriving (Ord, Show, Eq, Data, IsString, Generic)
+    deriving (Data, Eq, Generic, IsString, Ord, Show)
 
 newtype OpName = OpName Text
-    deriving (Ord, Show, Eq, Data, IsString, Generic)
+    deriving (Data, Eq, Generic, IsString, Ord, Show)
 
 data Name
     = NameValue LowerAlphaName
     | NameType TypeName
     | NameOp OpName
-    deriving (Show, Eq, Ord, Data, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 instance Hashable Name
 instance Hashable TypeName
@@ -81,7 +84,7 @@ Unlike 'Name', this retains the original 'VarName' or 'TypeName' to avoid losing
 data DeclName
     = DeclVar VarName
     | DeclType TypeName
-    deriving (Show, Eq, Ord, Data, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 class ToName name where
     toName :: name -> Name
@@ -184,13 +187,13 @@ data MaybeQualified name = MaybeQualified
     { _maybeQualifiedName :: name
     , _maybeQualifiedQualifier :: Maybe ModuleName
     }
-    deriving (Ord, Show, Eq, Data, Functor, Foldable, Traversable, Generic)
+    deriving (Data, Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 data Qualified name = Qualified
     { _qualifiedName :: name
     , qualifier :: ModuleName
     }
-    deriving (Show, Eq, Data, Ord, Generic, Functor, Foldable, Traversable)
+    deriving (Data, Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 unqualified :: Lens' (Qualified name) name
 unqualified =
@@ -201,7 +204,7 @@ unqualified =
 newtype Unqualified name = Unqualified
     { _unqualifiedName :: name
     }
-    deriving (Show, Eq, Data, Ord, Functor, Foldable, Traversable, Generic)
+    deriving (Data, Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 instance {-# OVERLAPPABLE #-} Pretty x => Pretty (MaybeQualified x) where
     pretty (MaybeQualified n (Just m)) = pretty m <> "." <> pretty n

@@ -2,6 +2,8 @@
 
 module Elara.Parse.Module where
 
+import Text.Megaparsec (SourcePos (sourceName), getSourcePos, sepEndBy)
+
 import Elara.AST.Location (AstNode (..), tagLocated)
 import Elara.AST.Module (Exposing (..), Exposition (..), Import (..), Import' (..), ImportExposingOrHiding (..), Module (..), Module' (..))
 import Elara.AST.Name
@@ -11,9 +13,9 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Declaration (declaration)
 import Elara.Parse.Indents (lineSeparator)
 import Elara.Parse.Names (opName, varName)
-import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
-import Text.Megaparsec (SourcePos (sourceName), getSourcePos, sepEndBy)
+
+import Elara.Parse.Names qualified as Parse (moduleName)
 
 module' :: Parser (Module SourceRegion Frontend)
 module' = do

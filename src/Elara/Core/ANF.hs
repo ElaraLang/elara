@@ -2,10 +2,12 @@
 module Elara.Core.ANF where
 
 import Data.Data (Data)
+
 import Elara.Core (AltCon, Literal, Type)
+import Prelude hiding (Alt, group)
+
 import Elara.Core.Generic qualified as G
 import Elara.Prim qualified as Prim
-import Prelude hiding (Alt, group)
 
 -- | An atomic expression
 data AExpr b
@@ -15,20 +17,20 @@ data AExpr b
     | TyApp (AExpr b) Type
     | TyLam Type (AExpr b)
     | ANFPrimOp Prim.PrimOp Type
-    deriving (Show, Eq, Data, Typeable, Generic)
+    deriving (Data, Eq, Generic, Show, Typeable)
 
 -- | A combinator expression
 data CExpr b
     = App (AExpr b) (AExpr b)
     | AExpr (AExpr b)
     | Match (AExpr b) (Maybe b) [Alt b]
-    deriving (Show, Eq, Data, Typeable, Generic)
+    deriving (Data, Eq, Generic, Show, Typeable)
 
 -- | A "top level" expression, which is either a let binding or a CExpr
 data Expr b
     = Let (Bind b) (Expr b)
     | CExpr (CExpr b)
-    deriving (Show, Eq, Data, Typeable, Generic)
+    deriving (Data, Eq, Generic, Show, Typeable)
 
 type Bind b = G.Bind b CExpr
 

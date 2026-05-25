@@ -19,6 +19,9 @@ module Elara.AST.Phases.Renamed (
 )
 where
 
+import Prettyprinter (Doc)
+import Prettyprinter.Render.Terminal (AnsiStyle)
+
 import Elara.AST.Extensions
 import Elara.AST.Location (AstNode (TypeNode, VarNode))
 import Elara.AST.Name (LowerAlphaName, Name (..), OpName, Qualified (..), TypeName (..), VarName (..))
@@ -29,8 +32,6 @@ import Elara.AST.Types
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique)
-import Prettyprinter (Doc)
-import Prettyprinter.Render.Terminal (AnsiStyle)
 
 {- | Renamed AST stage. Key changes from Desugared:
 * All names are fully qualified or uniquified

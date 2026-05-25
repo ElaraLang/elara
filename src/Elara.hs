@@ -26,22 +26,29 @@ module Elara (
 )
 where
 
-import Data.Dependent.HashMap qualified as DHashMap
 import Data.Generics.Product (field')
-import Data.HashMap.Strict qualified as HashMap
-import Data.Set qualified as Set
 import Effectful (Eff, IOE, Subset, inject, (:>))
 import Effectful.Colog
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Writer.Static.Local (Writer)
+import Error.Diagnose (Report (..))
+import JVM.Data.Abstract.ClassFile (ClassFile (..))
+import JVM.Data.Convert.Monad (CodeConverterError)
+import Prettyprinter.Render.Text
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath (takeBaseName, takeDirectory)
+import System.IO (hSetEncoding, utf8)
+
+import Data.Dependent.HashMap qualified as DHashMap
+import Data.HashMap.Strict qualified as HashMap
+import Data.Set qualified as Set
+
 import Elara.AST.Instances ()
 import Elara.AST.Location (stripTag)
-import Elara.AST.Module qualified as New
 import Elara.AST.Name (ModuleName, NameLike, nameText)
 import Elara.AST.Phase
 import Elara.AST.Phases.Renamed (Renamed)
-import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Phases.Typed (Typed)
 import Elara.AST.Region
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
@@ -51,35 +58,31 @@ import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Error.Diagnose
-import Elara.Interpreter qualified as Interpreter
 import Elara.JVM.Error (JVMLoweringError)
-import Elara.JVM.IR qualified as IR
 import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, structuredDebugToLogWith)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream
-import Elara.Query qualified
 import Elara.Query.Effects
 import Elara.ReadFile (ModulePathError)
 import Elara.Rename.Error (RenameError)
-import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
 import Elara.Shunt.Error (ShuntError, ShuntWarning)
-import Error.Diagnose (Report (..))
-import JVM.Data.Abstract.ClassFile (ClassFile (..))
-import JVM.Data.Convert.Monad (CodeConverterError)
-import Prettyprinter.Render.Text
 import Print
+import Prelude hiding (reader)
+
+import Elara.AST.Module qualified as New
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.Interpreter qualified as Interpreter
+import Elara.JVM.IR qualified as IR
+import Elara.Query qualified
+import Elara.Rules qualified
 import Rock qualified
 import Rock.Memo qualified
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath (takeBaseName, takeDirectory)
-import System.IO (hSetEncoding, utf8)
-import Prelude hiding (reader)
 
 -- | Backend target for code generation and execution
 data Backend = Interpreter | JVM
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 -- | What action to take after compilation
 data CompileAction
@@ -89,7 +92,7 @@ data CompileAction
       CompileAndEmit !Backend
     | -- | Compile and execute the emitted code.
       CompileAndRun !Backend
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 -- | Orphan instance, TODO: sort this out by improving h2jvm
 instance Pretty CodeConverterError where

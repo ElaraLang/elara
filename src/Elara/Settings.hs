@@ -12,7 +12,7 @@ data CompilerSettings = CompilerSettings
     , outputDir :: FilePath
     -- ^ Directory for build artifacts (e.g. JVM class files, dump output)
     }
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 data DumpTarget
     = DumpLexed
@@ -25,7 +25,7 @@ data DumpTarget
     | DumpIR
     | DumpJVM
     | DumpQueryGraph
-    deriving (Show, Eq, Ord, Enum, Bounded, Generic)
+    deriving (Bounded, Enum, Eq, Generic, Ord, Show)
 
 -- | Default is simply an empty set
 defaultSettings :: CompilerSettings

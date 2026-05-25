@@ -5,14 +5,16 @@
 module Print where
 
 import Debug.Pretty.Simple (pTraceOptM, pTraceShowOptM)
-import Elara.Data.Pretty
-import Elara.Width qualified as Width
 import Text.Pretty.Simple (
     CheckColorTty (NoCheckColorTty),
     defaultOutputOptionsDarkBg,
     pPrintOpt,
     pShow,
  )
+
+import Elara.Data.Pretty
+
+import Elara.Width qualified as Width
 
 elaraDebug :: Bool
 elaraDebug = False

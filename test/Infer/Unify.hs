@@ -6,10 +6,11 @@ the type representation and equality instead.
 -}
 module Infer.Unify (spec) where
 
+import Test.Syd
+
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.Type (Monotype (..))
 import Region (testRegion)
-import Test.Syd
 
 spec :: Spec
 spec = describe "Type unification" $ do

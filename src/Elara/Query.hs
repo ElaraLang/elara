@@ -20,25 +20,21 @@ import Data.Data (type (:~:) (Refl))
 import Data.GADT.Compare
 import Data.Graph (SCC)
 import Data.Kind (Constraint, Type)
-import Data.Kind qualified as Kind
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem)
 import Effectful.Writer.Static.Local
-import Elara.AST.Module qualified as NewModule
+import JVM.Data.Abstract.ClassFile (ClassFile)
+import JVM.Data.Convert.Monad (CodeConverterError)
+
+import Data.Kind qualified as Kind
+
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Phase (ElaraPhase (..))
-import Elara.AST.Phases.Desugared qualified as NewD
-import Elara.AST.Phases.Frontend qualified as NewF
-import Elara.AST.Phases.Renamed qualified as NewR
-import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Phases.Typed (Typed, TypedExpr)
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (IgnoreLocVarRef)
 import Elara.Core (CoreBind, DataCon, TyCon)
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind (KindVar)
@@ -46,7 +42,6 @@ import Elara.Data.Pretty
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.JVM.Error (JVMLoweringError)
-import Elara.JVM.IR qualified as IR
 import Elara.Lexer.Token
 import Elara.Lexer.Utils (LexerError)
 import Elara.ModuleIndex (ModuleIndex)
@@ -63,11 +58,19 @@ import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Elara.Shunt.Operator (OpInfo, OpTable)
 import Elara.TypeInfer.Environment (TypeEnvKey)
 import Elara.TypeInfer.Type (Polytype)
-import Elara.TypeInfer.Type qualified as Infer
 import Elara.TypeInfer.Unique
-import JVM.Data.Abstract.ClassFile (ClassFile)
-import JVM.Data.Convert.Monad (CodeConverterError)
 import Rock (Rock)
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Frontend qualified as NewF
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.AST.Types qualified as New
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
+import Elara.JVM.IR qualified as IR
+import Elara.TypeInfer.Type qualified as Infer
 
 type WithRock effects =
     Rock.Rock Elara.Query.Query ': effects

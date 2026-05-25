@@ -2,8 +2,10 @@
 module Elara.SCC.Type (sccKeyFromSCC, sccKeyToSCC, SCCKey, ReachableSubgraph (..)) where
 
 import Data.Graph
+
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
+
 import Elara.AST.Name
 import Elara.Data.Pretty
 
@@ -25,7 +27,7 @@ instance Pretty ReachableSubgraph
 
 -- | Content-based, stable identifier for an SCC: canonical sorted unique member list
 newtype SCCKey = SCCKey {members :: Set (Qualified VarName)}
-    deriving (Eq, Ord, Show, Generic)
+    deriving (Eq, Generic, Ord, Show)
 
 instance Hashable SCCKey
 

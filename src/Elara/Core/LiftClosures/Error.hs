@@ -1,11 +1,12 @@
 module Elara.Core.LiftClosures.Error where
 
-import Elara.Core qualified as Core
 import Elara.Core.Pretty ()
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Error
 import Elara.Error.Diagnose (toDiagnoseReports)
+
+import Elara.Core qualified as Core
 
 -- | Errors that can occur during closure lifting
 data ClosureLiftError

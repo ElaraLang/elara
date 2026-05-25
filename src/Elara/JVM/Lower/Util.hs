@@ -2,17 +2,20 @@ module Elara.JVM.Lower.Util where
 
 import Effectful
 import Effectful.Writer.Static.Local
+import JVM.Data.Abstract.Name
+import JVM.Data.Convert (jloName)
+
+import JVM.Data.Abstract.Descriptor qualified as JVM
+import JVM.Data.Abstract.Type qualified as JVM
+
 import Elara.AST.Name
-import Elara.Core qualified as Core
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
-import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower.Monad
 import Elara.Prim (OpaquePrim (..))
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Name
-import JVM.Data.Abstract.Type qualified as JVM
-import JVM.Data.Convert (jloName)
+
+import Elara.Core qualified as Core
+import Elara.JVM.IR qualified as IR
 
 qualifiedTextToClass :: Qualified Text -> QualifiedClassName
 qualifiedTextToClass qn =

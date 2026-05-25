@@ -8,15 +8,17 @@ module Elara.ModuleIndex (
 )
 where
 
-import Data.Map.Strict qualified as Map
-import Data.Text qualified as Text
 import Effectful (Eff)
 import Effectful.FileSystem (FileSystem)
+import System.FilePath (takeBaseName, takeDirectory, takeFileName, (</>))
+
+import Data.Map.Strict qualified as Map
+import Data.Text qualified as Text
+
 import Elara.AST.Name (ModuleName (..))
 import Elara.Data.Pretty
 import Elara.ReadFile (findElaraFiles)
 import Elara.Settings (CompilerSettings (..))
-import System.FilePath (takeBaseName, takeDirectory, takeFileName, (</>))
 
 -- | The style of module path resolution
 data ModuleStyle
@@ -26,7 +28,7 @@ data ModuleStyle
       RustStyle
     | -- | Flat: A.B.C.elr → A.B.C
       FlatStyle
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, Generic, Ord, Show)
 
 instance Pretty ModuleStyle
 
@@ -35,7 +37,7 @@ data ModuleEntry = ModuleEntry
     { entryPath :: !FilePath
     , entryStyle :: !ModuleStyle
     }
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, Generic, Ord, Show)
 
 instance Pretty ModuleEntry
 
@@ -49,7 +51,7 @@ data ModuleIndex = ModuleIndex
     , fileToModule :: !(Map FilePath ModuleName)
     -- ^ Map from file path to inferred module name (original case)
     }
-    deriving (Show, Eq, Generic)
+    deriving (Eq, Generic, Show)
 
 instance Pretty ModuleIndex
 

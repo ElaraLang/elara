@@ -5,7 +5,10 @@
 
 module Elara.AST.Instances where
 
+import GHC.Generics (Rep)
+
 import Data.Kind qualified as Kind
+
 import Elara.AST.Extensions
 import Elara.AST.Location (AstNode (ModuleNode, VarNode))
 import Elara.AST.Module
@@ -18,7 +21,6 @@ import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..))
 import Elara.AST.Pretty
 import Elara.AST.Types
 import Elara.Data.Pretty
-import GHC.Generics (Rep)
 
 -- | Constraint alias for all the type family components needed for Show/Eq/Ord
 type CoreConstraint (c :: Kind.Type -> Kind.Constraint) loc p =

@@ -2,10 +2,12 @@
 
 module Logging where
 
+import Test.Syd
+
 import Data.Text qualified as T
+
 import Elara.Data.Pretty
 import Elara.Logging
-import Test.Syd
 
 -- | Local predicate combining level and namespace filtering logic
 shouldLog :: LogConfig -> LogLevel -> [T.Text] -> Bool

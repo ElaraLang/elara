@@ -2,10 +2,11 @@
 
 module Elara.Error.Diagnose where
 
+import Error.Diagnose qualified as Diag
+
 import Elara.AST.Region (HasPath (path), sourceRegionToDiagnosePosition)
 import Elara.Data.Pretty
 import Elara.Error
-import Error.Diagnose qualified as Diag
 
 -- | Convert an 'ElaraDiagnostic' to a list of 'diagnose' 'Report's.
 toDiagnoseReports :: ElaraDiagnostic e => e -> [Diag.Report (Doc AnsiStyle)]

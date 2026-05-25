@@ -1,6 +1,7 @@
 module Elara.TypeInfer.Unique where
 
 import Effectful
+
 import Elara.Data.Unique (Unique, UniqueId (UniqueId))
 import Elara.Data.Unique.Effect
 

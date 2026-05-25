@@ -8,12 +8,13 @@ along with adding their own phase-specific extension syntax and metadata.
 module Elara.AST.Phase where
 
 import Data.Kind qualified as Kind
+
 import Elara.AST.Location
 import Elara.AST.Region (SourceRegion)
 
 -- | Marker for extension fields that carry no additional data
 data NoExtension = NoExtension
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, Generic, Ord, Show)
 
 {- | Conditionally wrap a value in 'Located' based on the location type.
 When @loc ~ SourceRegion@, wraps in 'TaggedLocate' (which carries 'SourceRegion').

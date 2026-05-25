@@ -2,19 +2,21 @@ module Elara.JVM.Lower.Match where
 
 import Effectful
 import Effectful.Error.Static (throwError)
-import Elara.AST.VarRef (VarRef' (..))
-import Elara.Core qualified as Core
-import Elara.Data.Unique
-import Elara.JVM.Error (JVMLoweringError (..))
-import Elara.JVM.IR qualified as IR
-import Elara.JVM.Lower.Monad
-import Elara.JVM.Lower.Util
+import JVM.Data.Abstract.Type
+
 import JVM.Data.Abstract.Type qualified as JVM
 
+import Elara.AST.VarRef (VarRef' (..))
 import Elara.Core.Analysis
+import Elara.Data.Unique
 import Elara.Data.Unique.Effect
+import Elara.JVM.Error (JVMLoweringError (..))
+import Elara.JVM.Lower.Monad
+import Elara.JVM.Lower.Util
 import Elara.Logging
-import JVM.Data.Abstract.Type
+
+import Elara.Core qualified as Core
+import Elara.JVM.IR qualified as IR
 
 {- | Emits instructions to bind pattern variables from a pattern match alternative.
 For data constructor patterns, it generates field accesses to extract the fields from the

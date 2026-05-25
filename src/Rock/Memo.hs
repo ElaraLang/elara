@@ -4,26 +4,28 @@
 module Rock.Memo (memoise, memoiseWithCycleDetection, withoutMemoisation, memoiseExplicit, tracingRules) where
 
 import Control.Concurrent (ThreadId, myThreadId)
-import Control.Concurrent.MVar qualified as MVar
-import Control.Exception qualified as E
 import Data.Dependent.HashMap (DHashMap)
-import Data.Dependent.HashMap qualified as DHashMap
 import Data.GADT.Compare (GEq)
-import Data.HashMap.Lazy qualified as HashMap
 import Data.Hashable
 import Data.List (isSuffixOf)
-import Data.List qualified as List
 import Data.List.NonEmpty ((<|))
-import Data.Set qualified as Set
 import Data.Some
 import Data.Typeable
 import Effectful (IOE, raise, (:>))
 import Effectful.Internal.Monad (unEff, unsafeEff, unsafeEff_)
+import Text.Show (Show (..))
+import Unsafe.Coerce (unsafeCoerce)
+
+import Control.Concurrent.MVar qualified as MVar
+import Control.Exception qualified as E
+import Data.Dependent.HashMap qualified as DHashMap
+import Data.HashMap.Lazy qualified as HashMap
+import Data.List qualified as List
+import Data.Set qualified as Set
+
 import Elara.Data.Pretty
 import Elara.Logging (StructuredDebug)
 import Rock
-import Text.Show (Show (..))
-import Unsafe.Coerce (unsafeCoerce)
 import Prelude
 
 {- | Force the contents of a 'DHashMap' to be evaluated to normal form.

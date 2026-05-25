@@ -2,6 +2,8 @@ module Elara.Parse.Pattern (patParser) where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.List.NonEmpty ((<|))
+import Text.Megaparsec (choice, sepEndBy, try, (<?>))
+
 import Elara.AST.Extensions (ListTuplePatternExtension (..))
 import Elara.AST.Location
 import Elara.AST.Name (TypeName (TypeName), VarName (NormalVarName))
@@ -13,7 +15,6 @@ import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Literal
 import Elara.Parse.Names (conName, varId)
 import Elara.Parse.Primitives (Parser, inParens, located, token_)
-import Text.Megaparsec (choice, sepEndBy, try, (<?>))
 
 patternRegion :: FrontendPattern -> NodeLoc PatternNode SourceRegion
 patternRegion (Pattern loc _ _) = loc

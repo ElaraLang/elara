@@ -4,9 +4,10 @@ module Elara.Rename.Imports (isImportedBy, isExposition, expositionToLocatedName
 import Elara.AST.Location
 import Elara.AST.Module
 import Elara.AST.Name (MaybeQualified (..), ModuleName, Name (..), Qualified (..), VarName (..))
-import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Region
 import Elara.AST.VarRef
+
+import Elara.AST.Phases.Desugared qualified as NewD
 
 {- | Tests whether an 'Exposition' entry matches a given 'Name' from a module.
 

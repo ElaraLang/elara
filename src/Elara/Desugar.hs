@@ -2,32 +2,35 @@
 
 module Elara.Desugar where
 
-import Data.Map qualified as M
 import Effectful (Eff, inject)
 import Effectful.Error.Static (throwError)
+
+import Data.Map qualified as M
 import Effectful.Error.Static qualified as Eff
-import Effectful.State.Extra
 import Effectful.State.Static.Local qualified as Eff
+
+import Effectful.State.Extra
 import Elara.AST.Extensions
 import Elara.AST.Location
-import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name hiding (name)
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Desugared
-import Elara.AST.Phases.Frontend qualified as Frontend
 import Elara.AST.Region
-import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Desugar.Common
 import Elara.Desugar.Error
 import Elara.Error (runErrorAsElaraError)
 import Elara.Logging
 import Elara.Parse.Error (WParseErrorBundle)
-import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
-import Rock qualified
 import Prelude hiding (Op)
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phases.Frontend qualified as Frontend
+import Elara.AST.Types qualified as New
+import Elara.Query qualified
+import Rock qualified
 
 instance PhaseCoerce (NewModule.Exposing loc Frontend.Frontend) (NewModule.Exposing loc Desugared)
 
@@ -46,7 +49,7 @@ type DesugarPipelineEffects = '[Eff.State DesugarState, Eff.Error DesugarError, 
 newtype DesugarState = DesugarState
     { _partialDeclarations :: Map Name PartialDeclaration
     }
-    deriving (Show, Pretty, Semigroup, Monoid)
+    deriving (Monoid, Pretty, Semigroup, Show)
 
 makeLenses ''DesugarState
 

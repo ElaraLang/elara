@@ -1,21 +1,23 @@
 module Elara.Lexer.Reader where
 
+import Effectful (Eff, inject, (:>))
+import Effectful.Error.Static
+import Effectful.State.Static.Local
+
+import Data.Text qualified as Text
+
+import Effectful.State.Extra (use', (.=))
 import Elara.AST.Region (Located (Located), SourceRegion (..), unlocated)
+import Elara.Data.Pretty
+import Elara.Error (runErrorAsElaraError)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
-
-import Data.Text qualified as Text
-import Effectful (Eff, inject, (:>))
-import Effectful.Error.Static
-import Effectful.State.Extra (use', (.=))
-import Effectful.State.Static.Local
-import Elara.Data.Pretty
-import Elara.Error (runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
 import Elara.Query (Query (GetFileContents))
 import Elara.Query.Effects
 import Elara.ReadFile (FileContents (FileContents))
+
 import Rock qualified
 
 readToken :: LexMonad Lexeme

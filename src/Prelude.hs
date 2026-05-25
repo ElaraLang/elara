@@ -33,8 +33,6 @@ module Prelude (
 where
 
 import Data.Function ((&))
-import Data.Kind qualified as Kind
-import Data.Map qualified as M
 import Data.Traversable (for)
 import Data.Type.Equality ((:~:))
 import GHC.Generics (Generic (..), K1 (..), M1 (..), U1 (..), V1, (:*:) (..), (:+:) (..))
@@ -105,6 +103,9 @@ import Optics (
 import Optics.Operators ((%~), (.~), (?~), (^.), (^..), (^?))
 import Optics.State.Operators ((?=))
 import Relude hiding (Constraint, Reader, State, Type, ask, evalState, execState, get, gets, id, identity, local, modify, put, runReader, runState)
+
+import Data.Kind qualified as Kind
+import Data.Map qualified as M
 import Relude qualified (id)
 import "generic-optics" Data.Generics.Sum qualified as GenericsSum
 

@@ -26,21 +26,28 @@ module Boilerplate (
 )
 where
 
-import Common (diagShouldSucceed)
 import Control.Exception (throwIO)
-import Data.Dependent.HashMap qualified as DHashMap
-import Data.Map qualified as Map
 import Effectful
 import Effectful.Error.Static (Error, runError, throwError)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
+import Error.Diagnose.Diagnostic
+import Hedgehog
+import Hedgehog.Internal.Property (failDiff, failWith)
+import Language.Haskell.TH
+import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
+import Test.Syd (expectationFailure)
+import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
+import Text.Megaparsec (runParserT)
+import Text.Show
+
+import Data.Dependent.HashMap qualified as DHashMap
+import Data.Map qualified as Map
 import Effectful.Writer.Static.Local qualified as Eff
-import Elara.AST.Module qualified as NewModule
+
+import Common (diagShouldSucceed)
 import Elara.AST.Name hiding (Name)
-import Elara.AST.Phases.Desugared qualified as NewD
-import Elara.AST.Phases.Renamed qualified as NewR
-import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region
 import Elara.AST.VarRef
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
@@ -50,7 +57,6 @@ import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Error.Diagnose
 import Elara.Lexer.Reader
-import Elara.Lexer.Token qualified
 import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (StructuredDebug, ignoreStructuredDebug)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle (..))
@@ -59,7 +65,6 @@ import Elara.Parse.Primitives (Parser)
 import Elara.Parse.Stream (TokenStream (..))
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), knownTypeInfo, primModuleName)
 import Elara.Prim.Rename
-import Elara.Query qualified
 import Elara.ReadFile
 import Elara.Rename (renameExpr)
 import Elara.Rename.Error
@@ -69,18 +74,16 @@ import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Elara.Shunt.Operator
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type
-import Error.Diagnose.Diagnostic
-import Hedgehog
-import Hedgehog.Internal.Property (failDiff, failWith)
-import Language.Haskell.TH
-import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
 import Region (qualifiedTest, testLocated, testRegion)
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.Lexer.Token qualified
+import Elara.Query qualified
 import Rock qualified
 import Rock.Memo qualified
-import Test.Syd (expectationFailure)
-import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
-import Text.Megaparsec (runParserT)
-import Text.Show
 
 -- | Load and rename an expression from source text
 loadRenamedExpr' ::

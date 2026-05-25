@@ -1,10 +1,12 @@
 -- | Operator shunting (precedence resolution) tests
 module Shunt (spec) where
 
+import Test.Syd
+
 import Boilerplate (loadShuntedExprIO, pipelineResShouldSucceed)
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
+
 import Elara.AST.Types qualified as New
-import Test.Syd
 
 -- | Extract the 'ShuntedExpr'' from a 'ShuntedExpr'
 unExpr :: ShuntedExpr -> ShuntedExpr'

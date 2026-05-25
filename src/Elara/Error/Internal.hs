@@ -10,6 +10,6 @@ data InternalError
     | DuplicateDeclAfterDesugar ModuleName Name
     | -- | When we parse an annotation at compile time but its arrangement is invalid
       InvalidAnnotationArrangement
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 instance Exception InternalError

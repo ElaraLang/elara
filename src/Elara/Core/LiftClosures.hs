@@ -6,18 +6,18 @@ module Elara.Core.LiftClosures (
 ) where
 
 import Control.Monad (foldM)
-import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static (Error, throwError)
 import Effectful.Reader.Static
 import Effectful.Writer.Static.Local
+
+import Data.Set qualified as Set
+
 import Elara.AST.Name (ModuleName, Qualified (..))
 import Elara.AST.VarRef
-import Elara.Core qualified as Core
 import Elara.Core.ANF as ANF
 import Elara.Core.Analysis
 import Elara.Core.Generic (Bind (..))
-import Elara.Core.Generic qualified as G
 import Elara.Core.LiftClosures.Error
 import Elara.Core.LiftClosures.Util
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
@@ -26,10 +26,13 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (uniqueToText, uniqueVal)
 import Elara.Data.Unique.Effect (UniqueGen, makeUnique)
 import Elara.Logging (StructuredDebug, traceFn)
-import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
-import Rock qualified
 import Prelude hiding (Alt)
+
+import Elara.Core qualified as Core
+import Elara.Core.Generic qualified as G
+import Elara.Query qualified
+import Rock qualified
 
 data LiftContext = LiftContext
     { lcModuleName :: ModuleName

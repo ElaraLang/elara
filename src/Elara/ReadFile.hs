@@ -1,19 +1,22 @@
 module Elara.ReadFile (FileContents (FileContents, fileContents), ReadFileError, ModulePathError (..), runGetFileContentsQuery, getInputFiles, findElaraFiles) where
 
-import Data.HashSet qualified as HashSet
 import Effectful (Eff, (:>))
 import Effectful.Error.Static (Error, throwError)
 import Effectful.FileSystem (FileSystem, createDirectoryIfMissing, listDirectory)
+import System.FilePath (takeExtension, (</>))
+
+import Data.HashSet qualified as HashSet
 import Effectful.FileSystem qualified as Eff
 import Effectful.FileSystem.IO.ByteString qualified as Eff
+
 import Elara.AST.Name (ModuleName)
 import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
 import Elara.Settings
 import Print (showPretty)
-import System.FilePath (takeExtension, (</>))
+
+import Elara.Data.Pretty.Styles qualified as Style
+import Elara.Error.Codes qualified as Codes
 
 data ReadFileError
     = DecodeError !FilePath !UnicodeException
@@ -99,6 +102,6 @@ data FileContents = FileContents
     { filePath :: !FilePath
     , fileContents :: !Text
     }
-    deriving (Eq, Show, Ord, Generic)
+    deriving (Eq, Generic, Ord, Show)
 
 instance Hashable FileContents

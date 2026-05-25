@@ -1,18 +1,20 @@
 module Elara.Shunt.Error where
 
+import Error.Diagnose hiding (Hint, Note)
+
 import Elara.AST.Instances ()
 import Elara.AST.Name
-import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Region (HasSourceRegion (sourceRegion), Located, SourceRegion, sourceRegionToDiagnosePosition)
-import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Shunt.Operator
-import Error.Diagnose hiding (Hint, Note)
+
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Types qualified as New
+import Elara.Data.Pretty.Styles qualified as Style
+import Elara.Error.Codes qualified as Codes
 
 -- | Helper to get the source region from a binary operator
 binaryOpLoc :: New.BinaryOperator SourceRegion p -> SourceRegion
@@ -69,7 +71,7 @@ instance Pretty ShuntWarning where
 
 newtype ShuntWarning
     = UnknownPrecedence (Located (Qualified Name))
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 instance ElaraDiagnostic ShuntWarning where
     diagnosticSeverity = const WarningSeverity

@@ -1,16 +1,18 @@
 -- | Tests for Core-to-Core optimisation passes
 module CoreToCore (spec) where
 
+import Test.Syd
+
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef (VarRef' (..))
 import Elara.Core (CoreExpr, Expr (..), Literal (..), Var (..))
-import Elara.Core qualified as Core
 import Elara.Core.Generic (Bind (..))
 import Elara.CoreToCore (betaReduce, constantFold, coreToCoreExpr, fullCoreToCoreExpr, pipeInline, subst, uselessLetInline)
 import Elara.Data.Unique (Unique (..))
-import Elara.Prim qualified as Prim
 import Elara.Prim.Core (intCon)
-import Test.Syd
+
+import Elara.Core qualified as Core
+import Elara.Prim qualified as Prim
 
 -- | Create a local variable
 mkVar :: Text -> Core.Type -> Var

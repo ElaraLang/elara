@@ -1,23 +1,26 @@
 module Elara.Rename.Error where
 
 import Data.Generics.Product
+import Data.Text.Metrics (levenshtein)
+import Error.Diagnose hiding (Hint, Note)
+
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Data.Text.Metrics (levenshtein)
+
 import Elara.AST.Instances ()
 import Elara.AST.Location
-import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
-import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Region
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Rename.Imports (isImportedBy)
-import Error.Diagnose hiding (Hint, Note)
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Types qualified as New
+import Elara.Error.Codes qualified as Codes
 
 data RenameError
     = -- | A requested module was not found

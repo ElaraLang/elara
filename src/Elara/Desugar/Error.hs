@@ -1,19 +1,21 @@
 module Elara.Desugar.Error where
 
+import Error.Diagnose hiding (Annotation, Hint, Note)
+
 import Elara.AST.Instances ()
 import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phases.Desugared (Desugared, DesugaredPattern, DesugaredType)
-import Elara.AST.Phases.Frontend qualified as Frontend
 import Elara.AST.Region
-import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (Pretty (..), viaShow, (<+>))
 import Elara.Desugar.Common
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Lexer.Token (Lexeme)
-import Error.Diagnose hiding (Annotation, Hint, Note)
+
+import Elara.AST.Phases.Frontend qualified as Frontend
+import Elara.AST.Types qualified as New
+import Elara.Error.Codes qualified as Codes
 
 data DesugarError
     = DefWithoutLet DesugaredType
@@ -21,7 +23,7 @@ data DesugarError
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
     | InfixWithoutDeclaration (Located Name) (Located (Qualified Name)) Lexeme
     | TuplePatternTooShort (New.Pattern SourceRegion Frontend.Frontend)
-    deriving (Typeable, Show, Generic)
+    deriving (Generic, Show, Typeable)
 
 instance Exception DesugarError
 

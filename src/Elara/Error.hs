@@ -25,14 +25,16 @@ module Elara.Error (
 where
 
 import Effectful (Eff, (:>))
+import Error.Diagnose hiding (Hint, Note)
+
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
+import Error.Diagnose qualified as Diag
+import GHC.Show qualified
+
 import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
 import Elara.Data.Pretty
 import Elara.Error.Codes
-import Error.Diagnose hiding (Hint, Note)
-import Error.Diagnose qualified as Diag
-import GHC.Show qualified
 import Prelude hiding (asks, readFile)
 
 -- | A data-focused diagnostic that can be rendered to various formats (terminal, LSP, etc.)
@@ -58,20 +60,20 @@ class Typeable e => ElaraDiagnostic e where
     diagnosticNotes = const []
 
 data ElaraSeverity = ErrorSeverity | WarningSeverity
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 data ElaraMarker = ElaraMarker
     { markerRegion :: SourceRegion
     , markerType :: ElaraMarkerType
     , markerMessage :: Doc AnsiStyle
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 data ElaraMarkerType = PrimaryMarker | SecondaryMarker | InfoMarker
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 data ElaraNote = Note (Doc AnsiStyle) | Hint (Doc AnsiStyle)
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 data ElaraReport = ElaraReport
     { reportSeverity :: ElaraSeverity
@@ -80,7 +82,7 @@ data ElaraReport = ElaraReport
     , reportMarkers :: [ElaraMarker]
     , reportNotes :: [ElaraNote]
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 -- | A type-erased error that implements 'ElaraDiagnostic' and 'Exception'.
 data ElaraError = forall e. (Exception e, ElaraDiagnostic e) => ElaraError e

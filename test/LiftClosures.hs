@@ -4,10 +4,10 @@ module LiftClosures where
 
 import Effectful
 import Effectful.Error.Static (runError)
+import Test.Syd
+
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef (VarRef' (..))
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..))
 import Elara.Core.LiftClosures
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
@@ -15,7 +15,9 @@ import Elara.Data.Unique (Unique (..))
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.Prim.Core (intCon)
-import Test.Syd
+
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
 
 -- | A simple Int type for tests
 intType :: Core.Type

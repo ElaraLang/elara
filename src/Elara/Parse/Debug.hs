@@ -1,8 +1,9 @@
 module Elara.Parse.Debug where
 
-import Elara.Data.Pretty
 import Text.Megaparsec.Debug (MonadParsecDbg (dbg))
 import Text.Show (Show (..))
+
+import Elara.Data.Pretty
 
 -- | Like 'dbg' but uses a 'Pretty' instance instead of a 'Show' instance
 dbgPretty :: MonadParsecDbg e s m => Pretty a => String -> m a -> m a

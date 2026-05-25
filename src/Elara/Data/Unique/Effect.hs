@@ -6,6 +6,7 @@ import Effectful (Eff, Effect, IOE, (:>))
 import Effectful.Dispatch.Dynamic (interpret)
 import Effectful.State.Static.Shared
 import Effectful.TH (makeEffect)
+
 import Elara.Data.Unique (Unique (..), UniqueId (..), UniqueSupply (..), globalUniqueSupply)
 
 data UniqueGen :: Effect where

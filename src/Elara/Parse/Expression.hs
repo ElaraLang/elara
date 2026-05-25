@@ -11,7 +11,10 @@ module Elara.Parse.Expression (
 where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
+import Text.Megaparsec (MonadParsec (eof), choice, customFailure, sepEndBy, try, (<?>))
+
 import Data.Set qualified as Set
+
 import Elara.AST.Extensions
 import Elara.AST.Location
 import Elara.AST.Name (MaybeQualified (..), Name (..), VarName (..), nameText)
@@ -19,7 +22,6 @@ import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion, sourceRegion, spanningRegion, withLocationOf)
 import Elara.AST.Types
-import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Error
@@ -28,9 +30,10 @@ import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLit
 import Elara.Parse.Names (conName, opId, opName, unqualifiedVarName, varId, varName, varOrConName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (Parser, located, token_, withPredicate)
-import Elara.Prim qualified as Prim
-import Text.Megaparsec (MonadParsec (eof), choice, customFailure, sepEndBy, try, (<?>))
 import Prelude hiding (Op)
+
+import Elara.Data.AtLeast2List qualified as AtLeast2List
+import Elara.Prim qualified as Prim
 
 -- | Data type putting all expression parsers together to avoid deadlocks in CAF initialisation.
 data ExpressionGrammar = ExpressionGrammar

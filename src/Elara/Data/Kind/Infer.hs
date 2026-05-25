@@ -31,32 +31,35 @@ where
 
 import Control.Monad (foldM)
 import Data.Generics.Product (field)
-import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
+import Error.Diagnose hiding (Hint, Note)
+import Optics (set, traverseOf_)
+
+import Data.Map qualified as Map
+import Data.Set qualified as Set
+
 import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Phase
-import Elara.AST.Phases.Kinded qualified as NewK
-import Elara.AST.Phases.MidKinded qualified as NewM
-import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region (Located, SourceRegion, sourceRegionToDiagnosePosition, unlocated)
-import Elara.AST.Types qualified as New
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging (debugWith, logDebug)
 import Elara.Prim (primKindCheckContext)
-import Elara.Query qualified
 import Elara.Query.Effects (QueryEffects)
-import Error.Diagnose hiding (Hint, Note)
-import Optics (set, traverseOf_)
+
+import Elara.AST.Phases.Kinded qualified as NewK
+import Elara.AST.Phases.MidKinded qualified as NewM
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.AST.Types qualified as New
+import Elara.Error.Codes qualified as Codes
+import Elara.Query qualified
 import Rock qualified
 
 {- | Tracks the origin of a kind constraint for better error messages.
@@ -84,7 +87,7 @@ data ConstraintOrigin
       PrimitiveConstraint Text
     | -- | The declaration of a user defined type
       UserDefinedTypeConstraint (TaggedLocate TypeNode SourceRegion (Qualified TypeName))
-    deriving (Show, Eq, Generic)
+    deriving (Eq, Generic, Show)
 
 instance Pretty ConstraintOrigin where
     pretty = \case
@@ -110,7 +113,7 @@ data InferState = InferState
     , constraints :: [(ElaraKind, ElaraKind, ConstraintOrigin)]
     , substitution :: Map KindVar ElaraKind
     }
-    deriving (Eq, Show, Generic)
+    deriving (Eq, Generic, Show)
 
 type KindInfer r =
     ( State InferState :> r

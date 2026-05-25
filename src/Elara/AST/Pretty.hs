@@ -4,18 +4,20 @@
 
 module Elara.AST.Pretty where
 
+import Prettyprinter (Doc, flatAlt, group, hsep, indent, line, nest, parens, punctuate, vsep, (<+>))
+import Prettyprinter.Render.Terminal (AnsiStyle)
+
 import Elara.AST.Extensions
 import Elara.AST.Location
 import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (LowerAlphaName, ModuleName)
 import Elara.AST.Phase
 import Elara.AST.Types
-import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Data.Pretty (Pretty (..), indentDepth)
 import Elara.Pretty.Common (prettyCtorsInline, prettyMatchAlt, prettyMatchAlts)
-import Prettyprinter (Doc, flatAlt, group, hsep, indent, line, nest, parens, punctuate, vsep, (<+>))
-import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (group)
+
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 
 -- | Constraint alias for all the Pretty constraints needed at a given loc
 type PrettyPhaseLoc p loc =

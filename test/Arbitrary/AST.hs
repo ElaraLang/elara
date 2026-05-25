@@ -2,6 +2,11 @@
 
 module Arbitrary.AST where
 
+import Hedgehog hiding (Var)
+
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+
 import Arbitrary.Literals
 import Arbitrary.Names
 import Elara.AST.Extensions
@@ -9,12 +14,10 @@ import Elara.AST.Name
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Frontend
 import Elara.AST.Types
-import Elara.Data.AtLeast2List qualified as AtLeast2List
-import Hedgehog hiding (Var)
-import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
 import Normalise (mkExpr, mkPat)
 import Prelude hiding (Op)
+
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 
 smallRecursive :: [Gen a] -> [Gen a]
 smallRecursive = fmap (Gen.scale (round . (* (0.6 :: Double)) . fromIntegral))

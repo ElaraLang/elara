@@ -3,10 +3,13 @@
 
 module Elara.Rules where
 
-import Data.Text qualified as Text
 import Effectful
 import Effectful.Error.Static (runError, throwError, throwError_)
+import System.FilePath (takeDirectory, (</>))
+
+import Data.Text qualified as Text
 import Effectful.State.Static.Local qualified as Local
+
 import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.Region (Located (..), unlocated)
@@ -14,10 +17,8 @@ import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
 import Elara.Error (ElaraError (..))
-import Elara.JVM.Query qualified
 import Elara.Lexer.Reader (getLexedFile)
 import Elara.ModuleIndex (ModuleEntry (..), buildModuleIndex)
-import Elara.ModuleIndex qualified as ModuleIndex
 import Elara.Parse (getParsedFileQuery, getParsedModuleQuery)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
@@ -30,8 +31,10 @@ import Elara.Settings (CompilerSettings (..), mainFile)
 import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery)
 import Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery)
 import Elara.TypeInfer (runGetTypeAliasQuery, runInferSCCQuery, runKindOfQuery, runTypeCheckedDeclarationQuery, runTypeCheckedExprQuery, runTypeOfQuery)
+
+import Elara.JVM.Query qualified
+import Elara.ModuleIndex qualified as ModuleIndex
 import Rock qualified
-import System.FilePath (takeDirectory, (</>))
 
 rules :: HasCallStack => CompilerSettings -> Rock.Rules Query
 rules compilerSettings key = case key of

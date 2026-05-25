@@ -9,14 +9,15 @@ import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types (TypedLambdaParam (..))
-import Elara.AST.Types qualified as AST
 import Elara.AST.VarRef (VarRef)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique)
 import Elara.TypeInfer.Type (Monotype)
-import Elara.TypeInfer.Type qualified as Infer
 import Elara.TypeInfer.Unique (UniqueTyVar)
+
+import Elara.AST.Types qualified as AST
+import Elara.TypeInfer.Type qualified as Infer
 
 type data Typed
 

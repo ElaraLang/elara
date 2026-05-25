@@ -2,9 +2,11 @@
 
 module Elara.Lexer.Action where
 
-import Data.Text qualified as Text
-import Effectful.State.Extra (modifying, (.=))
 import Effectful.State.Static.Local
+
+import Data.Text qualified as Text
+
+import Effectful.State.Extra (modifying, (.=))
 import Elara.AST.Region (SourceRegion (RealSourceRegion))
 import Elara.Lexer.Token
 import Elara.Lexer.Utils

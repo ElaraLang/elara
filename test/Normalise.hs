@@ -21,12 +21,13 @@ module Normalise (
 )
 where
 
+import Relude.Extra (bimapF)
+
 import Elara.AST.Extensions
 import Elara.AST.Location (NodeLoc (..))
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion, unlocated)
 import Elara.AST.Types
-import Relude.Extra (bimapF)
 
 mkExpr :: Expr' () Frontend -> Expr () Frontend
 mkExpr = Expr (ExprLoc ()) ()

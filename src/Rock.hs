@@ -9,15 +9,15 @@ module Rock where
 
 import Data.GADT.Compare (GEq, geq)
 import Data.GADT.Show (GShow (gshowsPrec))
-
 import Data.Kind (Type)
 import Data.Some
 import Data.Typeable
 import Effectful (Dispatch (Static), DispatchOf, Eff, Effect, IOE, Subset, inject, (:>))
 import Effectful.Dispatch.Static (SideEffects (NoSideEffects), StaticRep, evalStaticRep, getStaticRep)
-import Elara.Logging
 import GHC.Show (Show (..), showChar, showParen, showString)
 import Unsafe.Coerce (unsafeCoerce)
+
+import Elara.Logging
 import Prelude hiding (atomicModifyIORef, newIORef, readIORef)
 
 -- * Types

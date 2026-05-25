@@ -2,15 +2,16 @@ module Elara.Core.ToANF where
 
 import Control.Monad.Cont
 import Effectful
+
 import Elara.AST.VarRef
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (guesstimateExprType)
 import Elara.Core.Generic (Bind (..))
 import Elara.Data.Pretty
-
 import Elara.Data.Unique.Effect
 import Elara.Logging (StructuredDebug, logDebug, logDebugWith, traceFn)
+
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
 
 {- | Convert a Core expression to ANF
 For example:

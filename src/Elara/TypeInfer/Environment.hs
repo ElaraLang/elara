@@ -1,12 +1,16 @@
 module Elara.TypeInfer.Environment where
 
 import Data.GADT.Compare (GCompare (gcompare), GEq (..), GOrdering (..))
-import Data.Map qualified as Map
 import Data.Type.Equality
 import Effectful
 import Effectful.Error.Static
-import Effectful.State.Extra (locally)
 import Effectful.State.Static.Local
+import Error.Diagnose hiding (Hint, Note)
+import Unsafe.Coerce (unsafeCoerce)
+
+import Data.Map qualified as Map
+
+import Effectful.State.Extra (locally)
 import Elara.AST.Name
 import Elara.AST.Region (SourceRegion)
 import Elara.Data.Pretty
@@ -14,8 +18,6 @@ import Elara.Data.Unique
 import Elara.Error
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.TypeInfer.Type
-import Error.Diagnose hiding (Hint, Note)
-import Unsafe.Coerce (unsafeCoerce)
 
 -- | A type environment Γ, which maps type variables and data constructors to types
 newtype TypeEnvironment loc
@@ -35,7 +37,7 @@ data TypeEnvKey loc
       DataConKey DataCon
     | -- | A term variable x
       TermVarKey (Qualified VarName)
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, Generic, Ord, Show)
 
 -- | This is safe I think because phantom type
 instance GEq TypeEnvKey where
@@ -128,7 +130,7 @@ lookupLocalVar name = get >>= lookupLocalVarType name
 data InferError loc
     = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
     | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty loc => Pretty (InferError loc)
 

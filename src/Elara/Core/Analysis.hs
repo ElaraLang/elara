@@ -1,17 +1,20 @@
 module Elara.Core.Analysis where
 
 import Data.List (maximum)
+
 import Data.Map qualified as Map
 import Data.Set qualified as Set
+
 import Elara.Core (CoreExpr, Expr (..), TyCon, Var (..), typeArity)
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), binders)
 import Elara.Data.Pretty
 import Elara.Logging (TraceableFn (..))
-import Elara.Prim qualified as Prim
 import Elara.Prim.Core (charCon, doubleCon, intCon, stringCon, unitCon)
 import Print (showPretty)
+
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
+import Elara.Prim qualified as Prim
 
 estimateArity :: CoreExpr -> Int
 estimateArity (Var (TyVar _)) = error "Type variable in expression"

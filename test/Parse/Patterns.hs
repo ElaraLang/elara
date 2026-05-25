@@ -1,5 +1,11 @@
 module Parse.Patterns where
 
+import Hedgehog
+import Test.Syd
+import Test.Syd.Hedgehog ()
+
+import Hedgehog.Gen qualified as Gen
+
 import Arbitrary.AST (genPattern)
 import Arbitrary.Literals (genDouble, genInteger)
 import Arbitrary.Names (genLowerAlphaText)
@@ -9,14 +15,10 @@ import Elara.AST.Phases.Frontend ()
 import Elara.AST.Phases.Frontend.Pretty ()
 import Elara.AST.Types (Pattern' (..))
 import Elara.Parse.Pattern (patParser)
-import Hedgehog
-import Hedgehog.Gen qualified as Gen
 import Normalise (mkPat, stripPattern)
 import Orphans ()
 import Parse.Common (lexAndParse, shouldFailToParse, shouldParsePattern, trippingParse)
 import Print (showPrettyUnannotated)
-import Test.Syd
-import Test.Syd.Hedgehog ()
 
 spec :: Spec
 spec = describe "Parses patterns correctly" $ do

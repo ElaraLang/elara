@@ -11,26 +11,24 @@ Note that until the monad operations are implemented, we can't fully remove bloc
 module Elara.Rename (renameExpr, InnerRename) where
 
 import Data.Generics.Product hiding (list)
-import Data.List.NonEmpty qualified as NonEmpty
-import Data.Map qualified as Map
 import Effectful (Eff, (:>))
 import Effectful.Error.Static (throwError)
+
+import Data.List.NonEmpty qualified as NonEmpty
+import Data.Map qualified as Map
 import Effectful.Error.Static qualified as Eff
 import Effectful.Reader.Static qualified as Eff
-import Effectful.State.Extra
 import Effectful.State.Static.Local qualified as Eff
 import Effectful.State.Static.Local qualified as Local
+
+import Effectful.State.Extra
 import Elara.AST.Extensions
 import Elara.AST.Location
-import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (DeclName (..), LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (..))
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Desugared (DesugaredExpressionExtension (..))
-import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..), TypedLambdaParam (..))
-import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Region (Located (Located), SourceRegion (..), enclosingRegion, generatedSourceRegion, sourceRegion, spanningRegion, unlocated, withLocationOf)
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (VarRef, VarRef' (Global, Local), withName)
 import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
 import Elara.Data.Pretty
@@ -40,7 +38,6 @@ import Elara.Desugar.Error (DesugarError)
 import Elara.Error (runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), WiredInPrim (..), knownTypeInfo)
-import Elara.Prim qualified as Prim
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
 import Elara.Query.Effects
@@ -50,6 +47,12 @@ import Elara.Rename.Imports (expositionToLocatedName, isExposition, isImportedBy
 import Elara.Rename.State
 import Elara.Rules.Generic
 import Print (showColored)
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Types qualified as New
+import Elara.Prim qualified as Prim
 import Rock qualified
 
 type Rename r =

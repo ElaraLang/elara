@@ -16,6 +16,7 @@ module Elara.AST.PhaseCoerce (
 where
 
 import GHC.Generics (Generic (..), K1 (..), M1 (..), U1 (..), V1, (:*:) (..), (:+:) (..))
+
 import GHC.Generics qualified as G
 
 {- | Coerce a value from one phase to another where the types are structurally identical.

@@ -3,6 +3,7 @@ module Elara.Query.Errors where
 import Effectful
 import Effectful.Error.Static
 import Effectful.Writer.Static.Local
+
 import Elara.AST.Phases.Desugared (Desugared)
 import Elara.AST.Phases.Renamed (Renamed)
 import Elara.AST.Phases.Shunted (Shunted)

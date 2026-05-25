@@ -13,14 +13,16 @@ where
 
 import Effectful
 import Effectful.Exception
+
 import Elara.AST.Location (TaggedLocate, TypeNode, VarNode)
-import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name
 import Elara.AST.Phase (ElaraPhase (..))
 import Elara.AST.Region (SourceRegion, unlocated)
-import Elara.AST.Types qualified as New
 import Elara.Data.Pretty
 import Elara.Error.Internal
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Types qualified as New
 
 -- | Get the name from a declaration
 declarationName ::

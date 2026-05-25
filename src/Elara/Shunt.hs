@@ -28,10 +28,12 @@ module Elara.Shunt (
 where
 
 import Data.Generics.Wrapped
-import Data.Set qualified as Set
 import Effectful (Eff, (:>))
+
+import Data.Set qualified as Set
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
+
 import Elara.AST.Extensions (BinaryOperatorExtension (..), InParensExtension (..))
 import Elara.AST.Location
 import Elara.AST.Module
@@ -55,8 +57,9 @@ import Elara.Rules.Generic
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
 import Rock (Rock)
-import Rock qualified
 import Prelude hiding (modify')
+
+import Rock qualified
 
 instance PhaseCoerce (Type loc Renamed) (Type loc Shunted)
 

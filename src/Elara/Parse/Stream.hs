@@ -4,10 +4,12 @@
 
 module Elara.Parse.Stream where
 
+import Text.Megaparsec
+
 import Data.Text qualified as T
+
 import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
 import Elara.Lexer.Token
-import Text.Megaparsec
 
 data TokenStream = TokenStream
     { tokenStreamInput :: !Text
@@ -19,7 +21,7 @@ data TokenStream = TokenStream
     , tokensConsumed :: !Int
     -- ^ The number of tokens consumed from the stream
     }
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 pattern L :: a -> Located a
 pattern L i <- Located _ i

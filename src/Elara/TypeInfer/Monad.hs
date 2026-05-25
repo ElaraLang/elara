@@ -5,14 +5,16 @@ import Effectful.Error.Static
 import Effectful.Reader.Static
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
+
 import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Logging
-import Elara.Query qualified
 import Elara.Query.Effects
 import Elara.TypeInfer.Context (ContextStack)
 import Elara.TypeInfer.Environment
 import Elara.TypeInfer.Type (Constraint)
+
+import Elara.Query qualified
 import Rock qualified
 
 type InferEffectsCons loc xs =

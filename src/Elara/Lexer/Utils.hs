@@ -35,22 +35,24 @@ import Codec.Binary.UTF8.String (encodeChar)
 import Data.Char
 import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
-import Data.Text qualified as T
-import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), mkSourceRegionIn, positionToDiagnosePosition)
-import Elara.Error
-import Elara.Error.Codes qualified as Codes
-import Elara.Error.Diagnose (toDiagnoseReports)
-import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
-import Error.Diagnose (Marker (..), Note (..), Report (Err))
-
 import Effectful (Eff)
 import Effectful.Error.Static
-import Effectful.State.Extra (use', (%=), (.=))
 import Effectful.State.Static.Local
+import Error.Diagnose (Marker (..), Note (..), Report (Err))
+
+import Data.Text qualified as T
+
+import Effectful.State.Extra (use', (%=), (.=))
+import Elara.AST.Name (ModuleName (..))
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), mkSourceRegionIn, positionToDiagnosePosition)
 import Elara.Data.Pretty hiding (indent)
+import Elara.Error
+import Elara.Error.Diagnose (toDiagnoseReports)
+import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
 import Elara.Logging (StructuredDebug)
 import Prelude hiding (span)
+
+import Elara.Error.Codes qualified as Codes
 
 data AlexInput = AlexInput
     { _filePath :: FilePath
@@ -59,7 +61,7 @@ data AlexInput = AlexInput
     , _rest :: Text
     , _position :: RealPosition
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 instance Pretty AlexInput
 
 data IndentInfo = IndentInfo
@@ -68,7 +70,7 @@ data IndentInfo = IndentInfo
     , _openedAtDepth :: Int
     -- ^ the delimDepth when this indent was opened
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty IndentInfo
 
@@ -93,7 +95,7 @@ data ParseState = ParseState
     , _layoutExpected :: Maybe LayoutExpectation
     -- ^ Tracks if the previous token triggers a layout block
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty ParseState
 
@@ -102,7 +104,7 @@ data LayoutExpectation
       ExpectIndent
     | -- | Starts a new block at the next token (let/where/do)
       ExpectBlock
-    deriving (Eq, Show, Generic)
+    deriving (Eq, Generic, Show)
 instance Pretty LayoutExpectation
 
 makeLenses ''AlexInput
@@ -137,7 +139,7 @@ data LexerError
         ParseState
     | UnterminatedStringLiteral ParseState
     | GenericAlexError AlexInput
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty LexerError
 

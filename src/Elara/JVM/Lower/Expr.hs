@@ -2,22 +2,25 @@ module Elara.JVM.Lower.Expr (lowerExpr) where
 
 import Effectful
 import Effectful.Error.Static (throwError)
+import JVM.Data.Convert (jloName)
+
+import JVM.Data.Abstract.Descriptor qualified as JVM
+import JVM.Data.Abstract.Type qualified as JVM
+
 import Elara.AST.Name (Qualified (..), unqualified)
 import Elara.AST.VarRef
-import Elara.Core qualified as Core
 import Elara.Core.Analysis
-import Elara.Core.Generic qualified as Core
 import Elara.JVM.Error (JVMLoweringError (..))
-import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower.Function
 import Elara.JVM.Lower.Match
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
 import Elara.Logging
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Type qualified as JVM
-import JVM.Data.Convert (jloName)
 import Print (showPretty)
+
+import Elara.Core qualified as Core
+import Elara.Core.Generic qualified as Core
+import Elara.JVM.IR qualified as IR
 
 lowerExpr :: InnerLower r => Core.CoreExpr -> Eff r IR.Expr
 lowerExpr expr = case expr of

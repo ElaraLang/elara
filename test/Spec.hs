@@ -1,3 +1,5 @@
+import Test.Syd (Spec, describe, sydTest)
+
 import CoreToCore qualified
 import Golden qualified
 import Infer qualified
@@ -6,7 +8,6 @@ import LiftClosures qualified
 import Logging qualified
 import Parse qualified
 import Shunt qualified
-import Test.Syd (Spec, describe, sydTest)
 import ToANF qualified
 
 main :: IO ()

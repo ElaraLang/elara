@@ -5,16 +5,18 @@
 module Elara.Core.Module where
 
 import Data.Generics.Product
+
 import Elara.AST.Name (ModuleName, Qualified)
 import Elara.Core (CoreBind, DataCon, Type, TypeVariable)
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Pretty (prettyTy, prettyTypeVariables)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.Pretty.Styles (keyword)
 import Elara.Data.TopologicalGraph (HasDependencies (..))
 import Elara.Pretty.Common (prettyCtorsInline)
+
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
 
 data CoreModule bind = CoreModule
     { name :: !ModuleName

@@ -1,6 +1,7 @@
 module Effectful.Error.Extra where
 
 import Effectful
+
 import Effectful.Error.Static qualified as Eff
 
 fromEither :: (HasCallStack, Eff.Error e :> r, Show e) => Either e a -> Eff r a

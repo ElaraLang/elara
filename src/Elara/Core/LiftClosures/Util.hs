@@ -1,10 +1,12 @@
 module Elara.Core.LiftClosures.Util where
 
 import Data.Set qualified as Set
+
 import Elara.AST.VarRef
-import Elara.Core qualified as Core
 import Elara.Core.ANF as ANF
 import Elara.Core.Analysis
+
+import Elara.Core qualified as Core
 
 -- | Get the type from a Var, or Nothing for TyVar
 varTermType :: Core.Var -> Maybe Core.Type

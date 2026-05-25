@@ -1,33 +1,36 @@
 -- | Simple interpreter for the Core language
 module Elara.Interpreter where
 
-import Data.Map qualified as Map
-import Data.Set qualified as Set
-import Data.Text qualified as Text
 import Effectful
 import Effectful.Dispatch.Dynamic
 import Effectful.Error.Static
 import Effectful.State.Static.Local
+import GHC.Show (Show (..))
+
+import Data.Map qualified as Map
+import Data.Set qualified as Set
+import Data.Text qualified as Text
+
 import Elara.AST.Name (ModuleName (..), Qualified (..))
 import Elara.AST.VarRef
 import Elara.Core hiding (Literal (..))
-import Elara.Core qualified as Core
 import Elara.Core.Generic (Bind (..))
 import Elara.Core.Module
 import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
 import Elara.Error (ElaraDiagnostic (..), ElaraError (..), runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
-import Elara.Prim qualified as Prim
 import Elara.Prim.Core
-import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
 import Elara.ReadFile
 import Elara.Settings
-import GHC.Show (Show (..))
-import Rock qualified
 import Prelude hiding (force)
+
+import Elara.Core qualified as Core
+import Elara.Data.Pretty.Styles qualified as Style
+import Elara.Prim qualified as Prim
+import Elara.Query qualified
+import Rock qualified
 
 type Interpreter r =
     ( State ElaraState :> r

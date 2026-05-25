@@ -11,17 +11,19 @@ module Elara.TypeInfer.Error (
     mkUnifyErrorFromConstraint,
 ) where
 
+import Error.Diagnose hiding (Hint, Note)
+
 import Elara.AST.Name (Qualified, TypeName, VarName)
 import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
 import Elara.Data.Pretty
 import Elara.Error (ElaraDiagnostic (..), ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..))
-import Elara.Error.Codes qualified as Codes
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.TypeInfer.Context (ContextStack (..), InferenceContext (..), allContexts, currentContext, pushContext)
 import Elara.TypeInfer.Render (renderMonotype)
 import Elara.TypeInfer.Type (Constraint (..), DataCon, Monotype (..), Type, TypeVariable, constraintLoc, monotypeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar)
-import Error.Diagnose hiding (Hint, Note)
+
+import Elara.Error.Codes qualified as Codes
 
 -- | The kind of unification error that occurred
 data UnifyErrorKind
@@ -39,7 +41,7 @@ data UnifyErrorKind
       UnifyMismatch
     | -- | Polytypes can't be used as type aliases
       PolytypeAliasError
-    deriving (Generic, Show, Eq)
+    deriving (Eq, Generic, Show)
 
 -- | Enriched unification error with full context for error reporting
 data UnifyError loc

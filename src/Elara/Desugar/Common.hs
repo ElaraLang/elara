@@ -48,7 +48,7 @@ data PartialDeclaration
         DesugaredExpr
         [Annotation SourceRegion Desugared]
     | Immediate (Declaration SourceRegion Desugared)
-    deriving (Typeable, Show, Generic)
+    deriving (Generic, Show, Typeable)
 
 partialDeclarationSourceRegion :: PartialDeclaration -> NodeLoc DeclNode SourceRegion
 partialDeclarationSourceRegion (JustDef _ sr _ _) = sr

@@ -2,10 +2,10 @@
 module ToANF (spec) where
 
 import Effectful
+import Test.Syd
+
 import Elara.AST.Name ()
 import Elara.AST.VarRef (VarRef' (Local))
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..))
 import Elara.Core.Pretty ()
 import Elara.Core.ToANF (fromANF, toANF)
@@ -13,7 +13,9 @@ import Elara.Data.Unique (Unique (..))
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.Prim.Core (intCon)
-import Test.Syd
+
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
 
 intType :: Core.Type
 intType = Core.ConTy intCon

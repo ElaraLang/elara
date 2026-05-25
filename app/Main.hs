@@ -10,28 +10,31 @@ where
 
 import Autodocodec
 import Control.Exception as E
-import Data.Set qualified as Set
 import Effectful (runEff)
 import Effectful.Error.Static (runError)
 import Effectful.Writer.Static.Local (runWriter)
-import Elara qualified
+import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
+import OptEnvConf
+import System.CPUTime
+import System.IO (hSetEncoding, utf8)
+import System.Process (callProcess)
+import Text.Printf
+
+import Data.Set qualified as Set
+
 import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Error
 import Elara.Error.Diagnose (reportsToDiagnostic)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
-import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
-import OptEnvConf
-import Paths_elara qualified as Elara
 import Print (printPretty)
-import System.CPUTime
-import System.IO (hSetEncoding, utf8)
-import System.Process (callProcess)
-import Text.Printf
 import Prelude hiding (reader)
+
+import Elara qualified
+import Elara.Data.Pretty.Styles qualified as Style
+import Paths_elara qualified as Elara
 
 data Settings = Settings
     { dumpTargets :: [DumpTarget]
@@ -98,10 +101,10 @@ instance HasCodec DumpTarget where
 data Dispatch
     = DispatchBuild !FilePath !RunTarget
     | DispatchRun !FilePath !RunTarget
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 data RunTarget = TargetInterpreter | TargetJVM
-    deriving (Show, Eq, Generic)
+    deriving (Eq, Generic, Show)
 
 targetParser :: Parser RunTarget
 targetParser =

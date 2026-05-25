@@ -3,17 +3,19 @@
 
 module Elara.Core.Pretty where
 
+import Prettyprinter.Render.Terminal qualified as Style
+
 import Elara.AST.Name (unqualified)
 import Elara.AST.VarRef
 import Elara.Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..))
 import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Data.Pretty.Styles
 import Elara.Pretty.Common (prettyMatchAlts)
-import Prettyprinter.Render.Terminal qualified as Style
 import Prelude hiding (Alt, group)
+
+import Elara.Core.ANF qualified as ANF
 
 class Pretty v => PrettyVar v where
     prettyVar :: Bool -> Bool -> v -> Doc AnsiStyle

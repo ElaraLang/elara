@@ -12,16 +12,18 @@ module Elara.AST.Phases.Frontend.Pretty (
     prettyPatternRoundTrip,
 ) where
 
+import Prettyprinter hiding (Pretty (..))
+import Prettyprinter.Render.Terminal (AnsiStyle)
+
 import Elara.AST.Extensions
 import Elara.AST.Phase ()
 import Elara.AST.Phases.Frontend
 import Elara.AST.Pretty
 import Elara.AST.Types
-import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Data.Pretty (Pretty (..), escapeChar)
-import Prettyprinter hiding (Pretty (..))
-import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (group)
+
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 
 instance PrettyPhaseLoc Frontend loc => Pretty (Expr loc Frontend) where
     pretty = prettyExprRoundTrip

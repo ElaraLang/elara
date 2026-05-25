@@ -1,19 +1,21 @@
 module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
+import Text.Megaparsec (MonadParsec (try), choice, customFailure, (<?>))
+
 import Elara.AST.Extensions (TupleTypeExtension (..))
 import Elara.AST.Location (AstNode (TypeNode, VarNode), NodeLoc (TypeLoc), TaggedLocate, tag, tagLocated)
 import Elara.AST.Name (LowerAlphaName)
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion)
 import Elara.AST.Types
-import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, inBraces, inParens, located, locatedTokens', token_)
-import Text.Megaparsec (MonadParsec (try), choice, customFailure, (<?>))
+
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 
 typeRegion :: FrontendType -> NodeLoc TypeNode SourceRegion
 typeRegion (Type loc _ _) = loc

@@ -2,6 +2,7 @@ module Elara.Rename.State where
 
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
+
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Data.Unique
@@ -17,7 +18,7 @@ data RenameState = RenameState
     , typeVars :: Map LowerAlphaName (Unique LowerAlphaName)
     -- ^ All the type variables in scope
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 -- | Insert a value into a map of non-empty lists, merging with existing entries.
 insertMerging ::

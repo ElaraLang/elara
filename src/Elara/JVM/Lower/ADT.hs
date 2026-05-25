@@ -2,17 +2,20 @@ module Elara.JVM.Lower.ADT (lowerDataCon) where
 
 import Data.List (zipWith3)
 import Effectful
+import JVM.Data.Abstract.Name
+
+import JVM.Data.Abstract.Descriptor qualified as JVM
+import JVM.Data.Abstract.Type qualified as JVM
+
 import Elara.Core
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
 import Elara.JVM.Emit.Types (stringTypeName)
-import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
+
+import Elara.JVM.IR qualified as IR
 import Elara.Prim qualified as Prim
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Name
-import JVM.Data.Abstract.Type qualified as JVM
 
 type ADTInfo = (QualifiedClassName, [IR.Field])
 

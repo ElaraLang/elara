@@ -4,18 +4,24 @@
 -- | Type inference tests
 module Infer (spec) where
 
-import Boilerplate (fakeTypeEnvironment, runQueryEffects)
-import Common (evalReportableM)
 import Effectful
 import Effectful.Error.Static (runErrorNoCallStack)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Effectful.Writer.Static.Local (runWriter)
+import Hedgehog (Property, annotateShow, evalIO, failure, forAll, property)
+import Test.Syd
+import Test.Syd.Hedgehog ()
+
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+
+import Boilerplate (fakeTypeEnvironment, runQueryEffects)
+import Common (evalReportableM)
 import Elara.AST.Location (NodeLoc (..))
 import Elara.AST.Name (Qualified, TypeName)
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (AnsiStyle)
 import Elara.Error
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
@@ -24,15 +30,12 @@ import Elara.TypeInfer.Context (emptyContextStack)
 import Elara.TypeInfer.Environment (InferError, emptyLocalTypeEnvironment)
 import Elara.TypeInfer.Error (UnifyError)
 import Elara.TypeInfer.Type (Constraint, Monotype (..))
-import Hedgehog (Property, annotateShow, evalIO, failure, forAll, property)
-import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
-import Infer.Unify qualified as Unify
 import Print (prettyToString)
 import Region (testRegion)
-import Test.Syd
-import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
+
+import Elara.AST.Types qualified as New
+import Infer.Unify qualified as Unify
 
 spec :: Spec
 spec = describe "Infers types correctly" $ do

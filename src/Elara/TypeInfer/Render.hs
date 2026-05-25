@@ -10,9 +10,10 @@ module Elara.TypeInfer.Render (
 
 import Elara.AST.Name (Qualified (..), TypeName (..))
 import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Prim (KnownTypeInfo (..), knownTypeInfo, lookupByQualifiedTypeName)
 import Elara.TypeInfer.Type (Monotype (..), Polytype (..), Type (..), TypeVariable (..))
+
+import Elara.Data.Pretty.Styles qualified as Style
 
 -- | Map internal primitive names to user-friendly names
 renderTypeName :: Qualified TypeName -> Doc AnsiStyle

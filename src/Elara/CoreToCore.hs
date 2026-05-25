@@ -6,22 +6,23 @@ This stage performs optimisations and transformations on the Core AST
 module Elara.CoreToCore where
 
 import Effectful (Eff)
+
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core (CoreBind, CoreExpr, Expr (..), Literal (..), Var (..))
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), mapBind, traverseBind)
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF
 import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
 import Elara.Error (runErrorAsElaraError)
-import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects)
-import Rock qualified
 
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
 import Elara.Prim qualified as Prim
+import Elara.Query qualified
+import Rock qualified
 
 type CoreExprPass = CoreExpr -> CoreExpr
 

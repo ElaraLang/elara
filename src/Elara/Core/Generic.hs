@@ -6,7 +6,7 @@ import Relude.Extra (bimapF)
 data Bind b expr
     = Recursive [(b, expr b)]
     | NonRecursive (b, expr b)
-    deriving (Show, Eq, Data, Generic)
+    deriving (Data, Eq, Generic, Show)
 
 binds :: Bind b expr -> [(b, expr b)]
 binds = \case

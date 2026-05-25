@@ -1,14 +1,16 @@
 module Elara.JVM.Emit.State where
 
-import Data.Map qualified as Map
 import Effectful
 import Effectful.State.Static.Local
-import Elara.Data.Pretty
-import Elara.Data.Unique
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, newLabel)
 import JVM.Data.Abstract.Builder.Label
 import JVM.Data.Abstract.Name (QualifiedClassName)
 import JVM.Data.Raw.Types (U2)
+
+import Data.Map qualified as Map
+
+import Elara.Data.Pretty
+import Elara.Data.Unique
 
 data MethodCreationState = MethodCreationState
     { localVariables :: !(Map LVKey U2)
@@ -36,7 +38,7 @@ data LVKey
       UnknownName !Int
     | -- | A local variable that we do know the name of
       KnownName !(Unique Text)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Ord, Show)
 
 instance Pretty LVKey where
     pretty = \case

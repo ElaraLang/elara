@@ -8,7 +8,15 @@ module Elara.Parse.Error where
 
 import Data.Foldable (Foldable (foldl))
 import Data.List (lines)
+import Error.Diagnose hiding (Hint, Note)
+import Error.Diagnose.Compat.Megaparsec (HasHints (..))
+import Text.Megaparsec (unPos)
+import Text.Megaparsec.Error
+
 import Data.Set qualified as Set (toList)
+import Error.Diagnose qualified as Diag
+import Text.Megaparsec qualified as MP
+
 import Elara.AST.Instances ()
 import Elara.AST.Location
 import Elara.AST.Name (MaybeQualified, ModuleName, VarName)
@@ -17,18 +25,12 @@ import Elara.AST.Phases.Frontend (FrontendExpr)
 import Elara.AST.Region (Located, SourceRegion, diagnosePositionToSourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Lexer.Token (Lexeme)
 import Elara.Parse.Stream (TokenStream)
-import Error.Diagnose hiding (Hint, Note)
-import Error.Diagnose qualified as Diag
-import Error.Diagnose.Compat.Megaparsec (HasHints (..))
-
-import Text.Megaparsec (unPos)
-import Text.Megaparsec qualified as MP
-import Text.Megaparsec.Error
 import Prelude hiding (lines)
+
+import Elara.Error.Codes qualified as Codes
 
 data ElaraParseError
     = KeywordUsedAsName (Located (MaybeQualified VarName))
@@ -40,7 +42,7 @@ data ElaraParseError
         { expectedName :: ModuleName
         , declaredName :: Located ModuleName
         }
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Ord, Show)
 
 parseErrorSources :: ElaraParseError -> [SourceRegion]
 parseErrorSources (KeywordUsedAsName l) = [view sourceRegion l]

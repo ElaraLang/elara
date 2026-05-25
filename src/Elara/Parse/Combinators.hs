@@ -1,8 +1,9 @@
 module Elara.Parse.Combinators (sepBy1', sepEndBy1', liftedBinary) where
 
+import Text.Megaparsec (try)
+
 import Elara.AST.Region (Located (Located), enclosingRegion, sourceRegion)
 import Elara.Parse.Primitives (Parser)
-import Text.Megaparsec (try)
 
 {- | Safe version of 'Control.Applicative.Combinators.sepBy1' that backtracks if the parser after the separator fails.
 Could also be considered a lazy version of [sepBy1]

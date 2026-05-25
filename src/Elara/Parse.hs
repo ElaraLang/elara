@@ -2,7 +2,11 @@ module Elara.Parse (getParsedModuleQuery, getParsedFileQuery) where
 
 import Effectful (Eff, inject)
 import Effectful.Error.Static (throwError)
+import Text.Megaparsec (MonadParsec (eof), runParserT)
+
 import Effectful.Error.Static qualified as Eff
+import Text.Megaparsec qualified as MP
+
 import Elara.AST.Location (HasLocation (getLocation), UnwrapNodeLoc (unwrapLoc), stripTag)
 import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
@@ -19,8 +23,6 @@ import Elara.Query (Query (GetFileContents, LexedFile, ModulePath))
 import Elara.Query.Effects (ConsQueryEffects)
 import Elara.ReadFile (FileContents (FileContents), ModulePathError)
 import Rock (Rock, fetch)
-import Text.Megaparsec (MonadParsec (eof), runParserT)
-import Text.Megaparsec qualified as MP
 
 moduleParser :: Parser (Module SourceRegion Frontend)
 moduleParser = module' <* eof

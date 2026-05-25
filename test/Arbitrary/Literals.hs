@@ -1,9 +1,10 @@
 module Arbitrary.Literals where
 
 import Hedgehog
+import Text.Printf
+
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
-import Text.Printf
 import Text.Show qualified as TS (Show (..))
 
 newtype IntLiteral = IntLiteral {unIntLiteral :: Text}

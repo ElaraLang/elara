@@ -54,7 +54,9 @@ module Elara.Prim (
 where
 
 import Data.Data (Data)
+
 import Data.Map.Strict qualified as Map
+
 import Elara.AST.Name (ModuleName (..), Qualified (..), TypeName (..))
 import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourceRegion)
 import Elara.Data.Kind (ElaraKind (..))
@@ -70,7 +72,7 @@ data OpaquePrim
     | PrimString
     | PrimChar
     | PrimIO
-    deriving (Eq, Ord, Show, Enum, Bounded, Data)
+    deriving (Bounded, Data, Enum, Eq, Ord, Show)
 
 {- | Wired-in primitives: defined as normal source code in @stdlib/Elara.Prim.elr@,
 but structurally required for the language to function (e.g. desugaring targets).
@@ -81,7 +83,7 @@ data WiredInPrim
     | WiredInTuple2
     | WiredInOrdering
     | WiredInUnit
-    deriving (Eq, Ord, Show, Enum, Bounded)
+    deriving (Bounded, Enum, Eq, Ord, Show)
 
 -- | All types the compiler needs to reference by name.
 data KnownType
@@ -183,7 +185,7 @@ data PrimOp
     | PrimDebugWithMsg
     | PrimReadFile
     | PrimGetArgs
-    deriving (Eq, Ord, Show, Enum, Bounded, Data, Generic)
+    deriving (Bounded, Data, Enum, Eq, Generic, Ord, Show)
 
 instance Pretty PrimOp
 

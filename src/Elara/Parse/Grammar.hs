@@ -7,8 +7,9 @@ import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region
-import Elara.Parse.Expression qualified as Expr
 import Elara.Parse.Primitives
+
+import Elara.Parse.Expression qualified as Expr
 
 grammarKnot :: Expr.ExpressionGrammar
 grammarKnot =

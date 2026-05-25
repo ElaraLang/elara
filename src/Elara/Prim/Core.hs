@@ -2,6 +2,7 @@
 module Elara.Prim.Core where
 
 import Effectful
+
 import Elara.AST.Name (NameLike (nameText), Qualified (..))
 import Elara.AST.VarRef
 import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..), TypeVariable (TypeVariable), Var (..))

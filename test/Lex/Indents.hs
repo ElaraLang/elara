@@ -2,9 +2,10 @@
 
 module Lex.Indents where
 
-import Lex.Common
 import NeatInterpolation (text)
 import Test.Syd
+
+import Lex.Common
 
 spec :: Spec
 spec = do

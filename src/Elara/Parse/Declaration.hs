@@ -1,5 +1,7 @@
 module Elara.Parse.Declaration where
 
+import Text.Megaparsec (MonadParsec (notFollowedBy), choice, try)
+
 import Elara.AST.Location
 import Elara.AST.Name (ModuleName, VarName)
 import Elara.AST.Phase (ElaraPhase (..), NoExtension (..))
@@ -15,7 +17,6 @@ import Elara.Parse.Grammar (exprParser, letPreambleParser)
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, ignoringIndents, located, taggedLocated, token_)
 import Elara.Parse.Type (type', typeNotApplication)
-import Text.Megaparsec (MonadParsec (notFollowedBy), choice, try)
 
 exprRegion :: Expr loc p -> NodeLoc ExprNode loc
 exprRegion (Expr loc _ _) = loc

@@ -43,24 +43,27 @@ We look at **Column 0** (the head) to decide what to do with variable @x@.
 -}
 module Elara.ToCore.Match (buildMatrix1, compileMatrix) where
 
+import Data.Text (toLower)
+import Effectful (Eff, (:>))
+
 import Data.Map.Strict qualified as M
 import Data.Matrix qualified as Mat
-import Data.Text (toLower)
 import Data.Text qualified as T
-import Effectful (Eff, (:>))
+
 import Elara.AST.Location
 import Elara.AST.Name (NameLike (..), Qualified (..), TypeName (..), VarName)
 import Elara.AST.Phases.Typed (TypedPattern)
 import Elara.AST.Region
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef' (..))
-import Elara.Core qualified as Core
-import Elara.Core.Analysis qualified as Core
-import Elara.Core.Generic qualified as G
 import Elara.Core.Pretty ()
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Logging
+
+import Elara.AST.Types qualified as New
+import Elara.Core qualified as Core
+import Elara.Core.Analysis qualified as Core
+import Elara.Core.Generic qualified as G
 
 -- | Normalised pattern representation for the matrix
 data NPat
@@ -72,7 +75,7 @@ data NPat
       PLit Core.Literal
     | -- | constructor with subpatterns
       PCon (Qualified TypeName) [NPat]
-    deriving (Show, Eq, Generic)
+    deriving (Eq, Generic, Show)
 
 instance Pretty NPat
 
@@ -95,7 +98,7 @@ data PMatrix a = PMatrix
     If row N ends up matching, we emit @'pmRhs' !! N@ wrapped in @let@ bindings for all @'pmBinds' !! N@.
     -}
     }
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 {- | A row view of the matrix used for convenient iteration.
 Tuple contains:

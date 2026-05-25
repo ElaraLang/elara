@@ -9,9 +9,10 @@
 
 module Elara.AST.Location where
 
+import GHC.TypeError
+
 import Elara.AST.Region
 import Elara.Data.Pretty
-import GHC.TypeError
 
 {- | The different kinds of nodes that should have incompatible locations
 to prevent accidentally using the wrong location for a node.
@@ -33,17 +34,17 @@ type data AstNode
 
 data family NodeLoc (n :: AstNode) loc
 
-newtype instance NodeLoc ModuleNode loc = ModuleLoc loc deriving (Show, Eq, Ord, Semigroup, IsRegion, Pretty)
+newtype instance NodeLoc ModuleNode loc = ModuleLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
 
-newtype instance NodeLoc DeclNode loc = DeclLoc loc deriving (Show, Eq, Ord, Semigroup, IsRegion, Pretty)
+newtype instance NodeLoc DeclNode loc = DeclLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
 
-newtype instance NodeLoc ExprNode loc = ExprLoc loc deriving (Show, Eq, Ord, Semigroup, IsRegion, Pretty)
+newtype instance NodeLoc ExprNode loc = ExprLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
 
-newtype instance NodeLoc VarNode loc = VarLoc loc deriving (Show, Eq, Ord, Semigroup, IsRegion, Pretty)
+newtype instance NodeLoc VarNode loc = VarLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
 
-newtype instance NodeLoc TypeNode loc = TypeLoc loc deriving (Show, Eq, Ord, Semigroup, IsRegion, Pretty)
+newtype instance NodeLoc TypeNode loc = TypeLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
 
-newtype instance NodeLoc PatternNode loc = PatLoc loc deriving (Show, Eq, Ord, Semigroup, IsRegion, Pretty)
+newtype instance NodeLoc PatternNode loc = PatLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
 
 class UnwrapNodeLoc (n :: AstNode) loc a where
     unwrapLoc :: NodeLoc n loc -> a
@@ -152,7 +153,7 @@ instance WrapNode TypeNode where wrap = TypeLoc
 
 -- | a version of 'Located' that is tagged with the specific node type it is located for
 data TaggedLocate (n :: AstNode) loc a = TaggedLocate !(NodeLoc n loc) a
-    deriving (Generic, Functor)
+    deriving (Functor, Generic)
 
 instance Pretty a => Pretty (TaggedLocate n loc a) where
     pretty (TaggedLocate _ a) = pretty a

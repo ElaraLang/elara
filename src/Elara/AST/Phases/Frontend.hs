@@ -2,6 +2,9 @@
 
 module Elara.AST.Phases.Frontend where
 
+import Prettyprinter (Doc, flatAlt, group, hsep, line, parens, (<+>))
+import Prettyprinter.Render.Terminal (AnsiStyle)
+
 import Elara.AST.Extensions
 import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName)
@@ -10,8 +13,6 @@ import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
 import Elara.Data.Pretty (Pretty (..))
-import Prettyprinter (Doc, flatAlt, group, hsep, line, parens, (<+>))
-import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (group)
 
 {- | The Frontend AST stage, produced by the parser.

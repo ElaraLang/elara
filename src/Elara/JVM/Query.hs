@@ -12,19 +12,21 @@ module Elara.JVM.Query (
 import Data.Binary.Put (runPut)
 import Data.Binary.Write (writeBinary)
 import Effectful
-import Effectful.Error.Extra (fromEither)
 import Effectful.Error.Static (Error)
-import Elara.AST.Name (ModuleName)
-import Elara.JVM.Emit qualified as Emit
-import Elara.JVM.Error (JVMLoweringError)
-import Elara.JVM.IR qualified as IR
-import Elara.JVM.Lower (lowerModule)
-import Elara.Query (Query (..))
-import Elara.Query.Effects (ConsQueryEffects)
 import JVM.Data.Abstract.ClassFile (ClassFile (..))
 import JVM.Data.Abstract.Name (suitableFilePath)
 import JVM.Data.Convert (convert)
 import JVM.Data.Convert.Monad (CodeConverterError)
+
+import Effectful.Error.Extra (fromEither)
+import Elara.AST.Name (ModuleName)
+import Elara.JVM.Error (JVMLoweringError)
+import Elara.JVM.Lower (lowerModule)
+import Elara.Query (Query (..))
+import Elara.Query.Effects (ConsQueryEffects)
+
+import Elara.JVM.Emit qualified as Emit
+import Elara.JVM.IR qualified as IR
 import Rock qualified
 
 -- | Lower a Core module to JVM IR

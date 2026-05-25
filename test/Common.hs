@@ -13,14 +13,15 @@ where
 
 import Control.Exception.Safe (MonadCatch)
 import Effectful (Eff, IOE, runEff, runPureEff)
+import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')
+import Hedgehog.Internal.Property (MonadTest, failWith)
+import Test.HUnit (assertFailure)
+import Test.Syd (Expectation, shouldBe)
+
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
 import Elara.Error
-import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')
-import Hedgehog.Internal.Property (MonadTest, failWith)
 import Orphans ()
-import Test.HUnit (assertFailure)
-import Test.Syd (Expectation, shouldBe)
 
 (<=>) :: (HasCallStack, Eq a, Show a) => a -> a -> Expectation
 (<=>) = shouldBe

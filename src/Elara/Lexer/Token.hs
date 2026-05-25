@@ -93,7 +93,7 @@ data Token
     | TokenDedent
     | TokenLineSeparator
     | TokenEOF
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, Generic, Ord, Show)
 instance Hashable Token
 
 tokenRepr :: Token -> Text

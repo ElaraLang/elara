@@ -5,10 +5,12 @@ module Elara.JVM.Lower.Monad where
 import Effectful
 import Effectful.Error.Static
 import Effectful.Writer.Static.Local
+
 import Elara.Data.Unique.Effect
 import Elara.JVM.Error (JVMLoweringError)
-import Elara.JVM.IR qualified as IR
 import Elara.Logging
+
+import Elara.JVM.IR qualified as IR
 
 type Lower r = (UniqueGen :> r, StructuredDebug :> r, Error JVMLoweringError :> r)
 
