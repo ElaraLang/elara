@@ -1,2 +1,6 @@
 indentation: 4
 single-constraint-parens: never
+sort-deriving-clauses: true
+sort-derived-classes: true
+comma-style: leading
+import-grouping: by-scope-then-qualified
