@@ -238,12 +238,22 @@ generateConstraints' expr' =
                     recursiveVar <- UnificationVar <$> makeUniqueTyVar
 
                     -- Q ; G |- e1 : t1
-                    (typedVarExpr, varType) <-
-                        withLocalType varName (Lifted $ TypeVar locSr recursiveVar) $
-                            generateConstraints varExpr
+                    ((typedVarExpr, varType), rhsConstraints) <-
+                        listen @(Constraint _) $
+                            withLocalType varName (Lifted $ TypeVar locSr recursiveVar) $
+                                generateConstraints varExpr
 
                     let recursiveConstraint = simpleEquality (unwrapLoc exprLoc) (TypeVar locSr recursiveVar) varType
-                    tell recursiveConstraint
+                    let allRhsConstraints = rhsConstraints <> recursiveConstraint
+
+                    -- solve the rhs constraints immediately
+                    (finalRhsConstraint, rhsSubst) <- solveConstraint mempty (fuv varType <> fuv allRhsConstraints) allRhsConstraints
+
+                    -- emit any remaining constraints
+                    tell finalRhsConstraint
+
+                    -- apply subst before generalising
+                    let solvedVarType = substituteAll rhsSubst varType
 
                     -- TODO: we need to check if e1 is closed here before generalising _everything_
 
@@ -253,11 +263,15 @@ generateConstraints' expr' =
                     (maybeGeneralised, finalTypedVarExpr) <-
                         if not isRecursive
                             then do
-                                (generalised, subst) <- generalise varType
+                                (generalised, genSubst) <- generalise solvedVarType
                                 logDebug (pretty varType <> " -> generalised: " <> pretty generalised)
-                                let substitutedExpr = getExpr (substituteAll subst (SubstitutableExpr typedVarExpr))
+                                let finalSubst = rhsSubst <> genSubst
+                                let substitutedExpr = getExpr (substituteAll finalSubst (SubstitutableExpr typedVarExpr))
                                 pure (Polytype generalised, substitutedExpr)
-                            else pure (Lifted varType, typedVarExpr)
+                            else do
+                                -- even if recursive, apply local solver's substitution
+                                let substitutedExpr = getExpr (substituteAll rhsSubst (SubstitutableExpr typedVarExpr))
+                                pure (Lifted solvedVarType, substitutedExpr)
 
                     (typedBody, bodyType) <-
                         withLocalType varName maybeGeneralised $
