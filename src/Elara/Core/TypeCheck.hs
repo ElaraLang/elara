@@ -8,26 +8,29 @@ It doesn't do any inference! As Core is already typed, it just checks that the t
 -}
 module Elara.Core.TypeCheck (typeCheckCoreModule, TypeCheckError (..)) where
 
-import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static
-import Effectful.State.Extra (locally, scoped)
 import Effectful.State.Static.Local (State, evalState, get, modify)
+
+import Data.Set qualified as Set
+
+import Effectful.State.Extra (locally, scoped)
 import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Var (..))
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (freeTypeVars)
 import Elara.Core.Generic
 import Elara.Core.Module
 import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim.Core
 import TODO (todo)
+
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
+import Elara.Error.Codes qualified as Codes
 
 data TypeCheckError
     = UnknownVariable {unknownVariable :: Var, unknownVariableScope :: Set.Set (UnlocatedVarRef Text)}
@@ -46,7 +49,7 @@ data TypeCheckError
     | InfiniteType Var CoreExpr
     | OccursCheck Var CoreExpr
     | PatternMatchMissingBinders {alt :: Core.AltCon, altType :: Core.Type, providedBinders :: [Var], expr :: CoreExpr}
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty TypeCheckError where
     pretty = diagnosticMessage
@@ -72,6 +75,10 @@ instance ElaraDiagnostic TypeCheckError where
         , Note ("Expected type:" <+> pretty altType)
         , Note ("Provided binders:" <+> pretty providedBinders)
         , Note ("Expression:" <+> pretty expr)
+        ]
+    diagnosticNotes (CoreTypeMismatch _ _ (e1, e2)) =
+        [ Note ("Expression with expected type:" <+> pretty e1)
+        , Note ("Expression with actual type:" <+> pretty e2)
         ]
     diagnosticNotes _ = []
 
@@ -160,7 +167,7 @@ typeCheckC match@(ANF.Match scrutinee of' alts) = scoped $ do
             Core.LitAlt lit -> do
                 let litType = typeCheckLit lit
                 altExprType <- typeCheck altExpr
-                if litType == scrutineeType
+                if litType `equalUnderSubst` scrutineeType
                     then pure altExprType
                     else throwError $ CoreTypeMismatch litType scrutineeType (fromANFCExpr match, fromANF altExpr)
             Core.DataAlt con' -> do
