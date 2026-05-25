@@ -156,9 +156,29 @@
                   };
                 packages = {
                   elara = {
-                    buildInputs = pkgs: [ pkgs.alex ];
+                    buildInputs = pkgs: [
+                      pkgs.alex
+                      pkgs.jdk
+                    ];
                     src = ./.;
                     description = "See README for more info";
+
+                    override =
+                      { overrideAttrs, pkgs, ... }:
+                      drv:
+                      overrideAttrs (old: {
+                        preCheck = ''
+                          ${old.preCheck or ""}
+                          echo "Compiling Java standard library..."
+                          JAVA_FILES=$(${pkgs.findutils}/bin/find jvm-stdlib -name "*.java")
+                          if [ -z "$JAVA_FILES" ]; then
+                            echo "ERROR: No .java files found in jvm-stdlib!"
+                            exit 1
+                          fi
+                          javac $JAVA_FILES
+                        '';
+                      }) drv;
+
                     cabal = {
                       author = "Alexander Wood";
                       build-type = "Simple";
@@ -253,6 +273,10 @@
                     library = {
                       enable = true;
                       source-dirs = "src";
+
+                      dependencies = [
+                        "witch"
+                      ];
 
                       component = {
                         build-tools = [

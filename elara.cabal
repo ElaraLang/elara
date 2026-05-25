@@ -221,6 +221,7 @@ library
     , text-metrics
     , time
     , utf8-string
+    , witch
   mixins:
       base hiding (Prelude)
   default-language: GHC2024

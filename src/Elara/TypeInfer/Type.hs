@@ -43,7 +43,6 @@ import Data.Map qualified as Map
 
 import Elara.AST.Name
 import Elara.AST.Region (SourceRegion, generatedSourceRegion)
-import Elara.AST.Types (Expr (..))
 import Elara.Data.Pretty (Pretty (..), hsep, parens)
 import Elara.TypeInfer.Context (InferenceContext)
 import Elara.TypeInfer.Unique

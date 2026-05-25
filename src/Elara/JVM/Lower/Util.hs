@@ -20,7 +20,7 @@ import Elara.JVM.IR qualified as IR
 qualifiedTextToClass :: Qualified Text -> QualifiedClassName
 qualifiedTextToClass qn =
     let (mod, name) = (qualifier qn, qn ^. unqualified)
-     in QualifiedClassName (moduleNameToPackage mod) (ClassName name)
+     in QualifiedClassName (moduleNameToPackage mod) (parseClassName name)
   where
     moduleNameToPackage (ModuleName parts) = PackageName (toList parts)
 
@@ -67,7 +67,7 @@ fieldNameForIndex i = "f" <> show i
 funcInterfaceName :: Int -> QualifiedClassName
 funcInterfaceName arity =
     let name = if arity == 1 then "Func" else "Func" <> show arity
-     in QualifiedClassName (PackageName ["Elara"]) (ClassName name)
+     in QualifiedClassName (PackageName ["Elara"]) (parseClassName name)
 
 -- | Creates a (Object, Object...) -> Object descriptor for type-erased calls
 erasedMethodDescriptor :: Int -> JVM.MethodDescriptor
@@ -77,7 +77,7 @@ erasedMethodDescriptor arity =
 
 moduleNameToQualifiedClassName :: ModuleName -> QualifiedClassName
 moduleNameToQualifiedClassName (ModuleName name) =
-    QualifiedClassName (PackageName $ init name) (ClassName $ last name)
+    QualifiedClassName (PackageName $ init name) (parseClassName $ last name)
 
 freshVar :: Lower r => Eff r (Unique Text)
 freshVar = makeUnique "v"

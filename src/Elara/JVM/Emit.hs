@@ -16,20 +16,20 @@ will be translated to:
 
 however it does not do any complex analysis on the code:
 @ let add x =
-  if x == 0 then \y -> y else \y -> x + y
+ if x == 0 then \y -> y else \y -> x + y
 @
 The higher order function here _can_ be avoided if we rearrange the code into:
 @ let add = \x -> \y ->
-  if x == 0 then y else x + y
+ if x == 0 then y else x + y
 @
 but this responsibility is left to the CoreToCore pass, so the emitter will still produce inefficient code:
 
 @ public static Func add(int x) {
-  if (x == 0) {
-      return (y) -> y;
-  } else {
-      return (y) -> x + y;
-  }
+ if (x == 0) {
+     return (y) -> y;
+ } else {
+     return (y) -> x + y;
+ }
 }
 @
 
@@ -39,6 +39,7 @@ What this means is that the emitted method's arity will always match the declare
 module Elara.JVM.Emit (emitIRModule) where
 
 import Effectful
+import Effectful.Error.Static (throwError)
 import Effectful.State.Static.Local
 import JVM.Data.Abstract.Builder (ClassBuilder, addAccessFlag, addField, addMethod, runClassBuilder, setName, setSuperClass)
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, newLabel, runCodeBuilder)
@@ -54,7 +55,9 @@ import JVM.Data.Abstract.Type
 import JVM.Data.Analyse.StackMap (calculateStackMapFrames)
 import JVM.Data.JVMVersion
 import JVM.Data.Raw.Types (U2)
+import Witch
 
+import Effectful.Error.Static qualified as Eff
 import JVM.Data.Abstract.Type qualified as JVM
 
 import Elara.Data.Pretty (prettyToText)
@@ -62,19 +65,19 @@ import Elara.Data.Unique
 import Elara.JVM.Emit.Operator (translateOperatorName)
 import Elara.JVM.Emit.State
 import Elara.JVM.Emit.Types (stringTypeName)
+import Elara.JVM.Error
 import Elara.JVM.IR as IR
 import Elara.Logging
-import Print
 
 import Elara.Prim qualified as Prim
 
 -- | Emit an IR Module to a list of ClassFiles
-emitIRModule :: StructuredDebug :> r => IR.Module -> Eff r [ClassFile]
+emitIRModule :: (StructuredDebug :> r, Eff.Error JVMLoweringError :> r) => IR.Module -> Eff r [ClassFile]
 emitIRModule (IR.Module moduleName classes) = do
     for classes $ fmap fst . runClassBuilder moduleName java8 . emitIRClass
 
 -- | Emit a single IR Class to a ClassFile
-emitIRClass :: (StructuredDebug :> r, ClassBuilder :> r) => IR.Class -> Eff r ()
+emitIRClass :: (StructuredDebug :> r, ClassBuilder :> r, Eff.Error JVMLoweringError :> r) => IR.Class -> Eff r ()
 emitIRClass (IR.Class className super fields methods constructors) = do
     setName className
     setSuperClass super
@@ -107,26 +110,24 @@ emitIRField (IR.Field fieldName fieldType) = do
     addField fieldInfo
 
 -- | Emit a method to the current class
-emitIRMethod :: (StructuredDebug :> r, ClassBuilder :> r, HasCallStack) => QualifiedClassName -> IR.Method -> Eff r ()
+emitIRMethod :: (StructuredDebug :> r, ClassBuilder :> r, HasCallStack, Eff.Error JVMLoweringError :> r) => QualifiedClassName -> IR.Method -> Eff r ()
 emitIRMethod thisClassName (IR.Method methodName methodDescriptor methodArgs methodCode isStatic) = do
     let createState = if isStatic then createMethodCreationState else createInstanceMethodCreationState
         accessFlags = if isStatic then [MPublic, MStatic] else [MPublic]
-        maxLocalsModifier = if isStatic then 0 else 1
     (methodCreationState, codeAttributes, instructions) <-
         runCodeBuilder $
             execState
                 (createState (fst <$> methodArgs) thisClassName)
                 (traverse emitIRBlock methodCode)
-    let maxLocals = maxLocalsModifier + methodCreationState.maxLocalVariables
-    addMethod $
+    method <-
         buildClassFileMethod
             (translateOperatorName methodName)
             accessFlags
             methodDescriptor
-            maxLocals
             thisClassName
             codeAttributes
             instructions
+    addMethod method
 
 -- | Create method creation state for instance methods
 createInstanceMethodCreationState ::
@@ -138,55 +139,57 @@ createInstanceMethodCreationState ::
 createInstanceMethodCreationState args thisName =
     MethodCreationState
         (fromList $ zip (KnownName <$> args) [1 ..])
-        (fromIntegral (length args) + 1)
         thisName
         mempty
 
 -- | Emit a constructor to the current class
-emitConstructor :: (StructuredDebug :> r, ClassBuilder :> r) => QualifiedClassName -> IR.Constructor -> Eff r ()
+emitConstructor :: (StructuredDebug :> r, ClassBuilder :> r, Eff.Error JVMLoweringError :> r) => QualifiedClassName -> IR.Constructor -> Eff r ()
 emitConstructor className (IR.Constructor constructorDesc constructorArgs constructorCode) = do
     (emitState, codeAttributes, instructions) <-
         runCodeBuilder $
             execState
                 (createInstanceMethodCreationState (fst <$> constructorArgs) className)
                 (traverse emitIRBlock constructorCode)
-    let maxLocals = 1 + emitState.maxLocalVariables
-    addMethod $ buildClassFileMethod "<init>" [MPublic] constructorDesc maxLocals className codeAttributes instructions
+    method <- buildClassFileMethod "<init>" [MPublic] constructorDesc className codeAttributes instructions
+    addMethod method
 
 -- | Build a ClassFileMethod with the standard Code attribute
 buildClassFileMethod ::
+    Eff.Error JVMLoweringError :> w =>
     -- | Method name
     Text ->
     -- | Access flags
     [MethodAccessFlag] ->
     -- | Method descriptor
     MethodDescriptor ->
-    -- | Max locals
-    U2 ->
     -- | Class name (for stack map calculation)
     QualifiedClassName ->
     -- | Additional code attributes
     [CodeAttribute] ->
     -- | Body of the method
-    [JVM.Instruction] ->
-    ClassFileMethod
-buildClassFileMethod name accessFlags desc maxLocals className codeAttrs instructions =
-    ClassFileMethod
-        { methodAccessFlags = accessFlags
-        , methodName = name
-        , methodDescriptor = desc
-        , methodAttributes =
-            fromList
-                [ Code $
-                    CodeAttributeData
-                        { maxStack = 10 -- TODO: Calculate this properly
-                        , maxLocals = maxLocals
-                        , code = instructions
-                        , exceptionTable = []
-                        , codeAttributes = StackMapTable (calculateStackMapFrames className accessFlags desc instructions) : codeAttrs
-                        }
-                ]
-        }
+    NonEmpty JVM.Instruction ->
+    Eff w ClassFileMethod
+buildClassFileMethod name accessFlags desc className codeAttrs instructions = do
+    let (stackMap, maxStack, maxLocals) = calculateStackMapFrames className accessFlags desc instructions
+    maxStack' <- convertMaxStackOrLocals maxStack MethodTooManyStack
+    maxLocals' <- convertMaxStackOrLocals maxLocals MethodTooManyLocals
+    pure
+        ClassFileMethod
+            { methodAccessFlags = accessFlags
+            , methodName = name
+            , methodDescriptor = desc
+            , methodAttributes =
+                fromList
+                    [ Code $
+                        CodeAttributeData
+                            { maxStack = maxStack'
+                            , maxLocals = maxLocals'
+                            , code = instructions
+                            , exceptionTable = []
+                            , codeAttributes = StackMapTable stackMap : codeAttrs
+                            }
+                    ]
+            }
 
 -- | Effects needed to emit JVM code to a method
 type EmitCode r = (StructuredDebug :> r, CodeBuilder :> r, State MethodCreationState :> r, HasCallStack)
@@ -276,7 +279,7 @@ emitExpr expr = case expr of
         emit $ JVM.InvokeSpecial (ClassInfoType stringTypeName) "<init>" (MethodDescriptor [ObjectFieldType "java.lang.String"] VoidReturn)
         pure $ Just (ClassInfoType stringTypeName)
     IR.LitChar c -> do
-        emit $ LDC (LDCInt $ fromEnum c)
+        emit $ LDC (LDCInt $ unsafeInto $ fromEnum c)
         emit $ JVM.InvokeStatic (ClassInfoType "java.lang.Character") "valueOf" (MethodDescriptor [PrimitiveFieldType JVM.Char] (TypeReturn $ ObjectFieldType "java.lang.Character"))
         pure $ Just (ClassInfoType "java.lang.Character")
     IR.LitBool b -> emitElaraBool b
@@ -611,7 +614,7 @@ emitInvokeDynamic capturedTypes remainingArgTypes returnType implMethodHandle ta
     emit $ InvokeDynamic bootstrapMethod "run" invokedTypeDesc
     pure $ Just (ClassInfoType targetInterface)
 
-emitJVMMainMethod :: (StructuredDebug :> r, ClassBuilder :> r) => QualifiedClassName -> Eff r ()
+emitJVMMainMethod :: (StructuredDebug :> r, ClassBuilder :> r, Eff.Error JVMLoweringError :> r) => QualifiedClassName -> Eff r ()
 emitJVMMainMethod thisClassName = do
     let elaraIOClass :: QualifiedClassName
         elaraIOClass = "Elara/IO"
@@ -652,6 +655,9 @@ emitJVMMainMethod thisClassName = do
 
             emit JVM.Return
 
+    let (stackMap, maxStack, maxLocals) = calculateStackMapFrames thisClassName [MPublic, MStatic] javaMainDesc instructions
+    maxStack' <- convertMaxStackOrLocals maxStack MethodTooManyStack
+    maxLocals' <- convertMaxStackOrLocals maxLocals MethodTooManyLocals
     let methodInfo =
             ClassFileMethod
                 { methodAccessFlags = [MPublic, MStatic]
@@ -661,16 +667,20 @@ emitJVMMainMethod thisClassName = do
                     fromList
                         [ Code $
                             CodeAttributeData
-                                { maxStack = 2 -- IO on stack, then call run
-                                , maxLocals = 1 -- String[] args (unused)
+                                { maxStack = maxStack'
+                                , maxLocals = maxLocals'
                                 , code = instructions
                                 , exceptionTable = []
-                                , codeAttributes = StackMapTable (calculateStackMapFrames thisClassName [MPublic, MStatic] javaMainDesc instructions) : codeAttributes
+                                , codeAttributes = [StackMapTable stackMap]
                                 }
                         ]
                 }
 
     addMethod methodInfo
+
+convertMaxStackOrLocals n errorConstructor
+    | n <= fromIntegral (maxBound :: U2) = pure (unsafeInto n)
+    | otherwise = throwError $ errorConstructor n
 
 -- | Emit an Elara boolean (True or False) onto the stack
 emitElaraBool :: EmitCode r => Bool -> Eff r (Maybe ClassInfoType)

@@ -18,14 +18,11 @@ import Error.Diagnose qualified as Diag
 import Text.Megaparsec qualified as MP
 
 import Elara.AST.Instances ()
-import Elara.AST.Location
 import Elara.AST.Name (MaybeQualified, ModuleName, VarName)
-import Elara.AST.Phase
 import Elara.AST.Phases.Frontend (FrontendExpr)
 import Elara.AST.Region (Located, SourceRegion, diagnosePositionToSourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Lexer.Token (Lexeme)
 import Elara.Parse.Stream (TokenStream)
 import Prelude hiding (lines)

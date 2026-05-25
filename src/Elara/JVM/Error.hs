@@ -6,7 +6,6 @@ import Elara.AST.Name
 import Elara.Core.Pretty ()
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
 
 import Elara.Core qualified as Core
 
@@ -44,6 +43,8 @@ data JVMLoweringError
       UnsupportedExpressionType Core.CoreExpr
     | -- | A non-function was applied to an argument
       AppOfNonFunction Text
+    | MethodTooManyLocals Int
+    | MethodTooManyStack Int
     deriving (Show, Typeable)
 
 instance Exception JVMLoweringError
@@ -81,6 +82,10 @@ instance Pretty JVMLoweringError where
         "Unsupported expression type:" <+> pretty e
     pretty (AppOfNonFunction e) =
         "Application of non-function:" <+> pretty e
+    pretty (MethodTooManyLocals n) =
+        "Method has too many local variables:" <+> pretty n <> ". The JVM limit is 65535."
+    pretty (MethodTooManyStack n) =
+        "Method has too many stack entries:" <+> pretty n <> ". The JVM limit is 65535."
 
 instance ElaraDiagnostic JVMLoweringError where
     diagnosticMessage = pretty
