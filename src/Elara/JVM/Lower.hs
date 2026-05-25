@@ -1,29 +1,32 @@
 module Elara.JVM.Lower (lowerModule) where
 
 import Effectful
+import JVM.Data.Abstract.Descriptor (ReturnDescriptor (TypeReturn))
+import JVM.Data.Abstract.Name
+import JVM.Data.Abstract.Type ()
+import JVM.Data.Convert
+
+import JVM.Data.Abstract.Descriptor qualified as JVM
+import JVM.Data.Abstract.Type qualified as JVM
+
 import Elara.AST.Name (unqualified)
 import Elara.AST.VarRef
 import Elara.Core
-import Elara.Core qualified as Core
 import Elara.Core.Generic
 import Elara.Core.Module
 import Elara.Core.Pretty ()
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect (makeUnique)
-import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower.ADT
 import Elara.JVM.Lower.Expr
 import Elara.JVM.Lower.Function
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
 import Elara.Prim (PrimOp (..))
-import JVM.Data.Abstract.Descriptor (ReturnDescriptor (TypeReturn))
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Name
-import JVM.Data.Abstract.Type ()
-import JVM.Data.Abstract.Type qualified as JVM
-import JVM.Data.Convert
 import Print (showPretty)
+
+import Elara.Core qualified as Core
+import Elara.JVM.IR qualified as IR
 
 lowerModule :: Lower r => CoreModule CoreBind -> Eff r IR.Module
 lowerModule (CoreModule name decls) = do

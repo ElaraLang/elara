@@ -1,22 +1,25 @@
 -- | Golden tests for end-to-end compiler validation
 module Golden (spec) where
 
-import Boilerplate (finaliseEffects, pipelineResShouldSucceed)
 import Colog.Core (LogAction (..))
 import Data.Text (stripEnd)
 import Effectful (Eff)
 import Effectful.Colog (runLogAction)
 import Effectful.State.Static.Local (execState, modify)
-import Elara qualified
-import Elara.Data.Pretty (AnsiStyle, Doc)
-import Elara.Error.Diagnose
-import Elara.Interpreter qualified as Interpreter
-import Elara.Settings (CompilerSettings (..), defaultSettings)
 import Error.Diagnose (TabSize (..), WithUnicode (..), prettyDiagnostic')
 import Prettyprinter (defaultLayoutOptions, layoutSmart)
-import Prettyprinter.Render.Text qualified as Text
 import System.Process (readProcess)
 import Test.Syd (GoldenTest, Spec, describe, expectationFailure, goldenStringFile, it)
+
+import Prettyprinter.Render.Text qualified as Text
+
+import Boilerplate (finaliseEffects, pipelineResShouldSucceed)
+import Elara.Data.Pretty (AnsiStyle, Doc)
+import Elara.Error.Diagnose
+import Elara.Settings (CompilerSettings (..), defaultSettings)
+
+import Elara qualified
+import Elara.Interpreter qualified as Interpreter
 
 spec :: Spec
 spec = describe "Golden tests" $ do

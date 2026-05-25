@@ -1,13 +1,15 @@
 -- | Module for JVM Intermediate Representation.
 module Elara.JVM.IR where
 
-import Elara.Data.Pretty
-import Elara.Data.Unique
-import Elara.Prim qualified as Prim
 import JVM.Data.Abstract.Descriptor qualified as JVM
 import JVM.Data.Abstract.Name qualified as JVM
 import JVM.Data.Abstract.Type qualified as JVM
+
+import Elara.Data.Pretty
+import Elara.Data.Unique
 import Prelude hiding (Op)
+
+import Elara.Prim qualified as Prim
 
 data Module = Module
     { moduleName :: JVM.QualifiedClassName
@@ -183,7 +185,7 @@ data PrimOp
       UndefinedError
     | -- | Synthesised for non-exhaustive pattern matches
       PatternMatchFailedError
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty PrimOp
 

@@ -40,14 +40,6 @@ module Elara.JVM.Emit (emitIRModule) where
 
 import Effectful
 import Effectful.State.Static.Local
-import Elara.Data.Pretty (prettyToText)
-import Elara.Data.Unique
-import Elara.JVM.Emit.Operator (translateOperatorName)
-import Elara.JVM.Emit.State
-import Elara.JVM.Emit.Types (stringTypeName)
-import Elara.JVM.IR as IR
-import Elara.Logging
-import Elara.Prim qualified as Prim
 import JVM.Data.Abstract.Builder (ClassBuilder, addAccessFlag, addField, addMethod, runClassBuilder, setName, setSuperClass)
 import JVM.Data.Abstract.Builder.Code (CodeBuilder, emit, newLabel, runCodeBuilder)
 import JVM.Data.Abstract.ClassFile
@@ -59,11 +51,22 @@ import JVM.Data.Abstract.Descriptor
 import JVM.Data.Abstract.Instruction as JVM
 import JVM.Data.Abstract.Name
 import JVM.Data.Abstract.Type
-import JVM.Data.Abstract.Type qualified as JVM
 import JVM.Data.Analyse.StackMap (calculateStackMapFrames)
 import JVM.Data.JVMVersion
 import JVM.Data.Raw.Types (U2)
+
+import JVM.Data.Abstract.Type qualified as JVM
+
+import Elara.Data.Pretty (prettyToText)
+import Elara.Data.Unique
+import Elara.JVM.Emit.Operator (translateOperatorName)
+import Elara.JVM.Emit.State
+import Elara.JVM.Emit.Types (stringTypeName)
+import Elara.JVM.IR as IR
+import Elara.Logging
 import Print
+
+import Elara.Prim qualified as Prim
 
 -- | Emit an IR Module to a list of ClassFiles
 emitIRModule :: StructuredDebug :> r => IR.Module -> Eff r [ClassFile]
