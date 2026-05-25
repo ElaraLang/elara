@@ -12,11 +12,11 @@ public class PrimOps {
         return value;
     }
 
-    public static String toString(Object obj) {
+    public static Elara.String toString(Object obj) {
         if (obj == null) {
-            return new String("null");
+            return new Elara.String("null");
         } else {
-            return new String(obj.toString());
+            return new Elara.String(obj.toString());
         }
     }
 
