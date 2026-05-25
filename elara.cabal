@@ -151,6 +151,7 @@ library
       Elara.TypeInfer.Generalise
       Elara.TypeInfer.Monad
       Elara.TypeInfer.Render
+      Elara.TypeInfer.Substitute
       Elara.TypeInfer.Syntax
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique

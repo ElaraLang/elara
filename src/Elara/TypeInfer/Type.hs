@@ -40,25 +40,28 @@ where
 
 import Data.Kind qualified as Kind
 import Data.Map qualified as Map
+
 import Elara.AST.Name
 import Elara.AST.Region (SourceRegion, generatedSourceRegion)
+import Elara.AST.Types (Expr (..))
 import Elara.Data.Pretty (Pretty (..), hsep, parens)
-import Elara.Data.Pretty.Styles qualified as Style
 import Elara.TypeInfer.Context (InferenceContext)
 import Elara.TypeInfer.Unique
 
+import Elara.Data.Pretty.Styles qualified as Style
+
 data TypeVariable = UnificationVar UniqueTyVar | SkolemVar UniqueTyVar
-    deriving (Generic, Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 
 -- | A type scheme σ
 data Type loc
     = Polytype !(Polytype loc)
     | Lifted (Monotype loc)
-    deriving (Generic, Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 
 data Polytype loc
     = Forall loc [UniqueTyVar] (Constraint loc) (Monotype loc)
-    deriving (Generic, Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 
 typeLoc :: Type loc -> loc
 typeLoc (Polytype p) = polytypeLoc p
@@ -90,7 +93,7 @@ data Constraint loc
         , eqContext :: Maybe InferenceContext
         -- ^ Why we're comparing these types
         }
-    deriving (Generic, Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 
 constraintLoc :: Constraint loc -> loc
 constraintLoc (EmptyConstraint loc) = loc
@@ -167,7 +170,7 @@ data AxiomScheme loc
         (AxiomScheme loc)
         -- | The axiom
         (AxiomScheme loc)
-    deriving (Generic, Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 
 -- | A monotype τ
 data Monotype (loc :: Kind.Type)
@@ -177,7 +180,7 @@ data Monotype (loc :: Kind.Type)
       TypeConstructor loc (Qualified TypeName) [Monotype loc]
     | -- | A function type τ₁ → τ₂
       Function loc (Monotype loc) (Monotype loc)
-    deriving (Generic, Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 
 instance Generic loc => Plated (Monotype loc) (Monotype loc)
 
@@ -201,8 +204,8 @@ type DataCon = Qualified TypeName
 newtype Substitution loc
     = Substitution
         (Map UniqueTyVar (Monotype loc))
-    deriving newtype (Monoid)
     deriving stock (Eq, Show)
+    deriving newtype (Monoid)
 
 instance Eq loc => Semigroup (Substitution loc) where
     -- When composing s1 <> s2, we need to apply s1 to all types in s2

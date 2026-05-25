@@ -2,11 +2,11 @@ module Elara.TypeInfer.Convert where
 
 import Effectful (Eff, (:>))
 import Effectful.Error.Static
+
 import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phases.Kinded (KindedType, KindedType')
 import Elara.AST.Region (SourceRegion, unlocated)
-import Elara.AST.Types qualified as New
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
@@ -14,6 +14,8 @@ import Elara.Error (ElaraDiagnostic (..), ElaraError, ElaraMarker (..), ElaraMar
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Type
+
+import Elara.AST.Types qualified as New
 
 -- | Collect free type variables from a type
 freeTypeVars :: KindedType -> [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
@@ -70,7 +72,7 @@ astTypeToInferType' loc (New.TApp ctor arg) = do
     arg' <- astTypeToInferType arg
     case ctor' of
         TypeConstructor _ name args -> do
-            pure $ TypeConstructor loc name (args ++ [arg'])
+            pure $ TypeConstructor loc name (args <> [arg'])
         _other -> throwError $ NotSupported "Type constructor application is only supported for type constructors"
 astTypeToInferType' loc (New.TUserDefined name) = do
     pure $ TypeConstructor loc (name ^. unlocated) []
@@ -83,7 +85,7 @@ assertMonotype (Polytype t) = throwError (HigherRankTypesNotSupported t)
 data TypeConvertError
     = HigherRankTypesNotSupported (Polytype SourceRegion)
     | NotSupported Text
-    deriving (Show, Eq, Generic)
+    deriving (Eq, Generic, Show)
 
 instance Exception TypeConvertError
 

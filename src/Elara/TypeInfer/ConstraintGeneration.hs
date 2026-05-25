@@ -15,9 +15,10 @@ import Data.Set (member)
 import Effectful
 import Effectful.Error.Static
 import Effectful.Reader.Static
-import Effectful.State.Extra (scoped)
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
+
+import Effectful.State.Extra (scoped)
 import Elara.AST.Location
 import Elara.AST.Name (Qualified, TypeName, VarName (..))
 import Elara.AST.Phase (NoExtension (..))
@@ -25,14 +26,12 @@ import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedPattern, ShuntedPattern')
 import Elara.AST.Phases.Typed (Typed, TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.Region (Located (Located), SourceRegion)
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Logging (StructuredDebug, debugWithResult, logDebug, logDebugWith)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), knownTypeInfo)
-import Elara.Query qualified
 import Elara.Query.Effects (QueryEffects)
 import Elara.TypeInfer.Context (ContextStack (..), InferenceContext (..))
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupTypeMaybe, withLocalType)
@@ -40,8 +39,12 @@ import Elara.TypeInfer.Error (UnifyError (..), UnifyErrorKind (..), mkUnifyError
 import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
+import Elara.TypeInfer.Substitute
 import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), equalityWithContext, functionMonotypeArgs, functionMonotypeResult, monotypeLoc, reduce, simpleEquality, substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
+
+import Elara.AST.Types qualified as New
+import Elara.Query qualified
 import Rock qualified
 
 -- | Common effects required for Constraint Generation
@@ -247,19 +250,20 @@ generateConstraints' expr' =
                     let isRecursive = isRecursiveIn varName varExpr
 
                     logDebug ("isRecursive?: " <> pretty isRecursive)
-                    maybeGeneralised <-
+                    (maybeGeneralised, finalTypedVarExpr) <-
                         if not isRecursive
                             then do
-                                generalised <- generalise varType
+                                (generalised, subst) <- generalise varType
                                 logDebug (pretty varType <> " -> generalised: " <> pretty generalised)
-                                pure (Polytype generalised)
-                            else pure (Lifted varType)
+                                let substitutedExpr = getExpr (substituteAll subst (SubstitutableExpr typedVarExpr))
+                                pure (Polytype generalised, substitutedExpr)
+                            else pure (Lifted varType, typedVarExpr)
 
                     (typedBody, bodyType) <-
                         withLocalType varName maybeGeneralised $
                             generateConstraints body
 
-                    pure (New.ELetIn NoExtension (TaggedLocate loc varName) typedVarExpr typedBody, bodyType)
+                    pure (New.ELetIn NoExtension (TaggedLocate loc varName) finalTypedVarExpr typedBody, bodyType)
 
                 -- IF
                 New.EIf cond then' else' -> do

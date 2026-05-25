@@ -5,18 +5,19 @@ import Data.Generics.Product (field, field')
 import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped (_Unwrapped)
 import Data.Graph (SCC (..), flattenSCC, stronglyConnComp)
-import Data.Map qualified as M
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
+import Error.Diagnose (Report (..))
+
+import Data.Map qualified as M
+
 import Elara.AST.Location
-import Elara.AST.Module qualified as NewModule
 import Elara.AST.Name (ModuleName, Name (..), NameLike (..), Qualified (..), TypeName (..), VarName)
 import Elara.AST.Phase (LocateNode, NoExtension (..))
 import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
 import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr', TypedPattern)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
@@ -27,22 +28,24 @@ import Elara.Data.Pretty (Pretty (..), vcat, (<+>))
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (ElaraDiagnostic (..), ElaraError (..), ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..), runErrorAsElaraError)
-import Elara.Error.Codes qualified as Codes
 import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging
 import Elara.Prim (KnownType (..), OpaquePrim (..), WiredInPrim (..), lookupByQualifiedTypeName, mkPrimQual)
-import Elara.Prim qualified as Prim
 import Elara.Prim.Core
-import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
-import Elara.ToCore.Match qualified as Match
 import Elara.TypeInfer ()
-import Elara.TypeInfer.Type qualified as Type
 import Elara.TypeInfer.Unique (UniqueTyVar)
 import Elara.Utils (uncurry3)
-import Error.Diagnose (Report (..))
-import Rock qualified
 import TODO (todo)
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Types qualified as New
+import Elara.Error.Codes qualified as Codes
+import Elara.Prim qualified as Prim
+import Elara.Query qualified
+import Elara.ToCore.Match qualified as Match
+import Elara.TypeInfer.Type qualified as Type
+import Rock qualified
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
@@ -62,7 +65,7 @@ instance ElaraDiagnostic ToCoreError where
     diagnosticMessage (UnknownPrimConstructor qn) = "Unknown primitive constructor: " <> pretty qn
     diagnosticMessage (UnknownTypeConstructor qn _) = "Unknown type constructor: " <> pretty qn
     diagnosticMessage (UnknownLambdaType _) = "Unknown lambda type"
-    diagnosticMessage (UnsolvedTypeSnuckIn _) = "Unsolved type snuck in"
+    diagnosticMessage (UnsolvedTypeSnuckIn t) = "Unsolved type snuck in" <+> pretty t
     diagnosticMessage (UnknownVariable (Located _ qn)) = "Unknown variable: " <> pretty qn
 
     diagnosticCode (LetInTopLevel _) = Just Codes.letInTopLevel
@@ -331,8 +334,15 @@ mkTypeVar :: UniqueTyVar -> Core.TypeVariable
 mkTypeVar tv = TypeVariable tv TypeKind
 
 polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Eff r Core.Type
-polytypeToCore (Type.Forall _ tvs _constraints t) = do
-    t' <- typeToCore t
+polytypeToCore (Type.Forall loc tvs _constraints t) = do
+    let protectBoundVars bound = \case
+            Type.TypeVar l (Type.UnificationVar v) | v `elem` bound -> Type.TypeVar l (Type.SkolemVar v)
+            Type.Function l a b -> Type.Function l (protectBoundVars bound a) (protectBoundVars bound b)
+            Type.TypeConstructor l c args -> Type.TypeConstructor l c (fmap (protectBoundVars bound) args)
+            other -> other
+    let tProtected = protectBoundVars tvs t
+
+    t' <- typeToCore tProtected
     let tvs' = fmap mkTypeVar tvs
     pure $ foldr Core.ForAllTy t' tvs'
 

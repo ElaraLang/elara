@@ -1,33 +1,37 @@
 {-# LANGUAGE BlockArguments #-}
 
-module Elara.TypeInfer where
+module Elara.TypeInfer (
+    runTypeOfQuery,
+    runTypeCheckedExprQuery,
+    runTypeCheckedDeclarationQuery,
+    runKindOfQuery,
+    runInferSCCQuery,
+    runGetTypeAliasQuery,
+)
+where
 
 import Data.Generics.Product (HasType (typed))
 import Data.Graph (SCC, flattenSCC)
-import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local (Writer, runWriter)
+import Relude.Extra (fmapToSnd, secondF)
+
+import Data.Set qualified as Set
+
 import Elara.AST.Location
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName (..), ModuleName (..), Name (..), NameLike (nameText), Qualified (..), ToName (..), TypeName, VarName (..), unqualified)
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Kinded (KindedType)
-import Elara.AST.Phases.Kinded qualified as NewK
-import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
 import Elara.AST.Phases.Shunted (Shunted)
-import Elara.AST.Phases.Shunted qualified as NewS
-import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr')
-import Elara.AST.Phases.Typed qualified as NewT
+import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr)
 import Elara.AST.Region (SourceRegion, unlocated)
-import Elara.AST.Types qualified as New
-import Elara.Data.Kind (ElaraKind, KindVar)
+import Elara.Data.Kind (KindVar)
 import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe)
-import Elara.Data.Kind.Infer qualified as Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
@@ -47,9 +51,14 @@ import Elara.TypeInfer.Error (UnifyError (..))
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
+import Elara.TypeInfer.Substitute
 import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (..), monotypeLoc, simpleEquality, typeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
-import Relude.Extra (bimapF, fmapToSnd, secondF)
+
+import Elara.AST.Phases.Kinded qualified as NewK
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.AST.Types qualified as New
+import Elara.Data.Kind.Infer qualified as Kind
 import Rock qualified
 
 instance PhaseCoerce (Exposing loc Shunted) (Exposing loc Typed)
@@ -451,7 +460,7 @@ inferDeclaration (New.Declaration dloc (New.Declaration' mn (New.DeclarationBody
                         )
                 New.ADT ctors -> do
                     let tyVars' = fmapToSnd createTypeVar tyVars
-                    let typeConstructorType = TypeConstructor (getLocation $ stripTag name) (name ^. unlocated) (fmap (\(tyVarLocation, tyVar) -> TypeVar (getLocation $ stripTag tyVarLocation) $ UnificationVar tyVar) tyVars')
+                    let typeConstructorType = TypeConstructor (getLocation $ stripTag name) (name ^. unlocated) (fmap (\(tyVarLocation, tyVar) -> TypeVar (getLocation $ stripTag tyVarLocation) $ SkolemVar tyVar) tyVars')
 
                     let inferCtor (ctorName, t :: [KindedType]) = do
                             t' <- traverse astTypeToInferTypeWithKind t
@@ -557,11 +566,13 @@ inferValue valueName valueExpr expectedType = do
 
     logDebug $ "Substituted type: " <> pretty newType <> " from " <> pretty t <> " with " <> pretty subst
 
-    generalized <- generalise (removeSkolems newType)
+    (generalised, genSubst) <- generalise (removeSkolems newType)
 
-    logDebug $ "Generalized type: " <> pretty generalized <> " from " <> pretty newType
+    let finalSubst = subst <> genSubst
 
-    pure (getExpr (substituteAll subst (SubstitutableExpr typedExpr)), generalized)
+    logDebug $ "Generalised type: " <> pretty generalised <> " from " <> pretty newType
+
+    pure (getExpr (substituteAll finalSubst (SubstitutableExpr typedExpr)), generalised)
 
 -- | Get the location of an expression
 exprLocation :: New.Expr loc p -> NodeLoc ExprNode loc
@@ -578,146 +589,3 @@ skolemise = \case
         let pairs = zip (fmap (view typed) tyVars) (TypeVar loc . SkolemVar <$> tyVars)
             subst = Substitution $ fromList @(Map _ _) pairs
         pure $ substituteAll subst t
-
-newtype SubstitutableExpr loc = SubstitutableExpr {getExpr :: TypedExpr} deriving (Show, Eq, Ord)
-
-instance Substitutable SubstitutableExpr SourceRegion where
-    substitute tv t (SubstitutableExpr expr) =
-        let New.Expr loc meta e' = expr
-            meta' = substitute tv t meta
-            e'' = substituteExpr' tv t e'
-         in SubstitutableExpr (New.Expr loc meta' e'')
-
-    -- overridden default for performance (provides a > 300% speedup by avoiding repeated traversals over potentially large expressions)
-    substituteAll s (SubstitutableExpr expr) =
-        let New.Expr loc meta e' = expr
-            meta' = substituteAll s meta
-            e'' = substituteAllExpr' s e'
-         in SubstitutableExpr (New.Expr loc meta' e'')
-
--- | Substitute a type variable in an expression body
-substituteExpr' :: UniqueTyVar -> Monotype SourceRegion -> TypedExpr' -> TypedExpr'
-substituteExpr' tv t = \case
-    New.EInt i -> New.EInt i
-    New.EFloat f -> New.EFloat f
-    New.EString s -> New.EString s
-    New.EChar c -> New.EChar c
-    New.EUnit -> New.EUnit
-    New.EVar vt v -> New.EVar (substitute tv t vt) v
-    New.ECon ext v -> New.ECon ext v
-    New.ELam ext binder body -> New.ELam ext (substituteLambdaBinder tv t binder) (substituteExpr tv t body)
-    New.EApp ext f x -> New.EApp ext (substituteExpr tv t f) (substituteExpr tv t x)
-    New.ETyApp e ty -> New.ETyApp (substituteExpr tv t e) (substituteAstType tv t ty)
-    New.EIf c th el -> New.EIf (substituteExpr tv t c) (substituteExpr tv t th) (substituteExpr tv t el)
-    New.EMatch e cases -> New.EMatch (substituteExpr tv t e) (bimapF (substitutePattern tv t) (substituteExpr tv t) cases)
-    New.ELetIn ext binder e1 e2 -> New.ELetIn ext binder (substituteExpr tv t e1) (substituteExpr tv t e2)
-    New.ELet ext binder e1 -> New.ELet ext binder (substituteExpr tv t e1)
-    New.EBlock exprs -> New.EBlock (fmap (substituteExpr tv t) exprs)
-    New.EAnn e ty -> New.EAnn (substituteExpr tv t e) (substituteAstType tv t ty)
-    New.EExtension v -> absurd v
-
--- | Bulk substitute in expression body (performance optimized)
-substituteAllExpr' :: Substitution SourceRegion -> TypedExpr' -> TypedExpr'
-substituteAllExpr' s = \case
-    New.EInt i -> New.EInt i
-    New.EFloat f -> New.EFloat f
-    New.EString s' -> New.EString s'
-    New.EChar c -> New.EChar c
-    New.EUnit -> New.EUnit
-    New.EVar vt v -> New.EVar (substituteAll s vt) v
-    New.ECon ext v -> New.ECon ext v
-    New.ELam ext binder body -> New.ELam ext (substituteAllLambdaBinder s binder) (substituteAllExpr s body)
-    New.EApp ext f x -> New.EApp ext (substituteAllExpr s f) (substituteAllExpr s x)
-    New.ETyApp e ty -> New.ETyApp (substituteAllExpr s e) (substituteAllAstType s ty)
-    New.EIf c th el -> New.EIf (substituteAllExpr s c) (substituteAllExpr s th) (substituteAllExpr s el)
-    New.EMatch e cases -> New.EMatch (substituteAllExpr s e) (bimapF (substituteAllPattern s) (substituteAllExpr s) cases)
-    New.ELetIn ext binder e1 e2 -> New.ELetIn ext binder (substituteAllExpr s e1) (substituteAllExpr s e2)
-    New.ELet ext binder e1 -> New.ELet ext binder (substituteAllExpr s e1)
-    New.EBlock exprs -> New.EBlock (fmap (substituteAllExpr s) exprs)
-    New.EAnn e ty -> New.EAnn (substituteAllExpr s e) (substituteAllAstType s ty)
-    New.EExtension v -> absurd v
-
-substituteExpr :: UniqueTyVar -> Monotype SourceRegion -> TypedExpr -> TypedExpr
-substituteExpr tv t (New.Expr loc meta e') = New.Expr loc (substitute tv t meta) (substituteExpr' tv t e')
-
-substituteAllExpr :: Substitution SourceRegion -> TypedExpr -> TypedExpr
-substituteAllExpr s (New.Expr loc meta e') = New.Expr loc (substituteAll s meta) (substituteAllExpr' s e')
-
-substitutePattern :: UniqueTyVar -> Monotype SourceRegion -> NewT.TypedPattern -> NewT.TypedPattern
-substitutePattern tv t (New.Pattern loc meta p') = New.Pattern loc (substitute tv t meta) (substitutePattern' tv t p')
-
-substituteAllPattern :: Substitution SourceRegion -> NewT.TypedPattern -> NewT.TypedPattern
-substituteAllPattern s (New.Pattern loc meta p') = New.Pattern loc (substituteAll s meta) (substituteAllPattern' s p')
-
-substitutePattern' :: UniqueTyVar -> Monotype SourceRegion -> NewT.TypedPattern' -> NewT.TypedPattern'
-substitutePattern' tv t = \case
-    New.PVar v -> New.PVar v
-    New.PCon c ps -> New.PCon c (fmap (substitutePattern tv t) ps)
-    New.PWildcard -> New.PWildcard
-    New.PInt i -> New.PInt i
-    New.PFloat f -> New.PFloat f
-    New.PString s -> New.PString s
-    New.PChar c -> New.PChar c
-    New.PUnit -> New.PUnit
-    New.PExtension v -> absurd v
-
-substituteAllPattern' :: Substitution SourceRegion -> NewT.TypedPattern' -> NewT.TypedPattern'
-substituteAllPattern' s = \case
-    New.PVar v -> New.PVar v
-    New.PCon c ps -> New.PCon c (fmap (substituteAllPattern s) ps)
-    New.PWildcard -> New.PWildcard
-    New.PInt i -> New.PInt i
-    New.PFloat f -> New.PFloat f
-    New.PString s -> New.PString s
-    New.PChar c -> New.PChar c
-    New.PUnit -> New.PUnit
-    New.PExtension v -> absurd v
-
-substituteLambdaBinder :: UniqueTyVar -> Monotype SourceRegion -> TypedLambdaParam (Unique VarName) SourceRegion Typed -> TypedLambdaParam (Unique VarName) SourceRegion Typed
-substituteLambdaBinder tv t (TypedLambdaParam v meta) = TypedLambdaParam v (substitute tv t meta)
-
-substituteAllLambdaBinder :: Substitution SourceRegion -> TypedLambdaParam (Unique VarName) SourceRegion Typed -> TypedLambdaParam (Unique VarName) SourceRegion Typed
-substituteAllLambdaBinder s (TypedLambdaParam v meta) = TypedLambdaParam v (substituteAll s meta)
-
--- | Substitute a type variable in an AST type (New.Type SourceRegion Typed)
-substituteAstType :: UniqueTyVar -> Monotype SourceRegion -> NewT.TypedType -> NewT.TypedType
-substituteAstType tv t (New.Type loc kind t') = case t' of
-    New.TVar (TaggedLocate _ tv')
-        | tv == tv' -> monotypeToAstType (unwrapLoc loc) kind t
-    _ -> New.Type loc kind (substituteAstType' tv t t')
-
-substituteAstType' :: UniqueTyVar -> Monotype SourceRegion -> NewT.TypedType' -> NewT.TypedType'
-substituteAstType' tv t = \case
-    New.TVar v -> New.TVar v -- not matching (matching case handled in substituteAstType)
-    New.TFun a b -> New.TFun (substituteAstType tv t a) (substituteAstType tv t b)
-    New.TUnit -> New.TUnit
-    New.TApp a b -> New.TApp (substituteAstType tv t a) (substituteAstType tv t b)
-    New.TUserDefined n -> New.TUserDefined n
-    New.TRecord fields -> New.TRecord (substituteAstType tv t <<$>> fields)
-    New.TList a -> New.TList (substituteAstType tv t a)
-    New.TExtension v -> absurd v
-
--- | Bulk substitute in an AST type
-substituteAllAstType :: Substitution SourceRegion -> NewT.TypedType -> NewT.TypedType
-substituteAllAstType (Substitution s) ty = foldl' (\acc (tv, t) -> substituteAstType tv t acc) ty (Map.toList s)
-
--- | Convert a Monotype to an AST Type for the Typed phase
-monotypeToAstType :: SourceRegion -> ElaraKind -> Monotype SourceRegion -> NewT.TypedType
-monotypeToAstType loc kind = \case
-    TypeVar _ tv ->
-        let typeLoc = wrap @TypeNode loc
-         in New.Type typeLoc kind (New.TVar (TaggedLocate typeLoc (typeVarToUniqueTyVar tv)))
-    Function _ a b ->
-        let typeLoc = wrap @TypeNode loc
-         in New.Type typeLoc kind (New.TFun (monotypeToAstType loc kind a) (monotypeToAstType loc kind b))
-    TypeConstructor _ qn args -> case args of
-        [] ->
-            let typeLoc = wrap @TypeNode loc
-             in New.Type typeLoc kind (New.TUserDefined (TaggedLocate typeLoc qn))
-        _ ->
-            let typeLoc = wrap @TypeNode loc
-             in foldl' (\acc arg -> New.Type typeLoc kind (New.TApp acc (monotypeToAstType loc kind arg))) (New.Type typeLoc kind (New.TUserDefined (TaggedLocate typeLoc qn))) args
-
-typeVarToUniqueTyVar :: TypeVariable -> UniqueTyVar
-typeVarToUniqueTyVar (UnificationVar tv) = tv
-typeVarToUniqueTyVar (SkolemVar tv) = tv
