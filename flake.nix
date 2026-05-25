@@ -167,14 +167,14 @@
                       { overrideAttrs, pkgs, ... }:
                       drv:
                       overrideAttrs (old: {
+                        unfilteredSrc = ./.;
+
                         preCheck = ''
                           ${old.preCheck or ""}
                           echo "Compiling Java standard library..."
+
                           JAVA_FILES=$(${pkgs.findutils}/bin/find jvm-stdlib -name "*.java")
-                          if [ -z "$JAVA_FILES" ]; then
-                            echo "ERROR: No .java files found in jvm-stdlib!"
-                            exit 1
-                          fi
+
                           javac $JAVA_FILES
                         '';
                       }) drv;
@@ -191,6 +191,10 @@
                         homepage = "https://github.com/ElaraLang/elara#readme";
                         synopsis = "See README for more info";
                         github = "ElaraLang/elara";
+
+                        extra-source-files = [
+                          "jvm-stdlib/**/*.java"
+                        ];
                       };
 
                       language = "GHC2024";

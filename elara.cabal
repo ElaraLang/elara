@@ -16,6 +16,18 @@ copyright:      2022 Alexander Wood
 license:        MIT
 license-file:   LICENSE
 build-type:     Simple
+extra-source-files:
+    jvm-stdlib/Elara/Error.java
+    jvm-stdlib/Elara/Func.java
+    jvm-stdlib/Elara/Func0.java
+    jvm-stdlib/Elara/Func2.java
+    jvm-stdlib/Elara/Func3.java
+    jvm-stdlib/Elara/Int.java
+    jvm-stdlib/Elara/IO.java
+    jvm-stdlib/Elara/Prelude.java
+    jvm-stdlib/Elara/PrimOps.java
+    jvm-stdlib/Elara/RuntimeSystem.java
+    jvm-stdlib/Elara/String.java
 
 source-repository head
   type: git
