@@ -1,13 +1,9 @@
 module Elara.JVM.Lower (lowerModule) where
 
 import Effectful
-import JVM.Data.Abstract.Descriptor (ReturnDescriptor (TypeReturn))
-import JVM.Data.Abstract.Name
-import JVM.Data.Abstract.Type ()
-import JVM.Data.Convert
-
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Type qualified as JVM
+import H2JVM
+import H2JVM.Internal.Convert
+import H2JVM.Name
 
 import Elara.AST.Name (unqualified)
 import Elara.AST.VarRef
@@ -65,16 +61,16 @@ buildStaticMethod ::
     -- | Method name
     Text ->
     -- | Arguments (name and type)
-    [(Unique Text, JVM.FieldType)] ->
+    [(Unique Text, FieldType)] ->
     -- | Return type
-    JVM.FieldType ->
+    FieldType ->
     -- | Method body
     [IR.Block] ->
     IR.Method
 buildStaticMethod name args retType body =
     IR.Method
         { IR.methodName = name
-        , IR.methodDesc = JVM.MethodDescriptor (map snd args) (TypeReturn retType)
+        , IR.methodDesc = MethodDescriptor (map snd args) (TypeReturn retType)
         , IR.methodArgs = args
         , IR.methodBody = body
         , IR.methodIsStatic = True
@@ -208,12 +204,12 @@ lowerPrimitiveBinding currentClassName methodName type_ body =
                     listVar <- makeUnique "list_acc"
                     strVar <- makeUnique "raw_str"
 
-                    let stringArrTy = JVM.ArrayFieldType elaraStrTy
-                        javaObjTy = JVM.ObjectFieldType "java.lang.Object"
-                        elaraStrTy = JVM.ObjectFieldType "Elara.String"
-                        primInt = JVM.PrimitiveFieldType JVM.Int
-                        ioTy = JVM.ObjectFieldType "Elara.IO"
-                        listTy = JVM.ObjectFieldType "Elara.Prim.List"
+                    let stringArrTy = ArrayFieldType elaraStrTy
+                        javaObjTy = ObjectFieldType "java.lang.Object"
+                        elaraStrTy = ObjectFieldType "Elara.String"
+                        primInt = PrimitiveFieldType JInt
+                        ioTy = ObjectFieldType "Elara.IO"
+                        listTy = ObjectFieldType "Elara.Prim.List"
 
                     -- entry block
                     -- args_arr = Elara.RuntimeSystem.getArgs()
@@ -223,7 +219,7 @@ lowerPrimitiveBinding currentClassName methodName type_ body =
 
                     let entryInstrs =
                             [ IR.Assign argsVar stringArrTy $
-                                IR.Call (IR.InvokeStatic "Elara.RuntimeSystem" "getArgs" (JVM.MethodDescriptor [] (TypeReturn stringArrTy))) []
+                                IR.Call (IR.InvokeStatic "Elara.RuntimeSystem" "getArgs" (MethodDescriptor [] (TypeReturn stringArrTy))) []
                             , IR.Assign listVar javaObjTy $
                                 IR.New "Elara.Prim.Nil" []
                             , IR.Assign iVar primInt $
@@ -279,20 +275,20 @@ lowerPrimitiveBinding currentClassName methodName type_ body =
                             IR.MakeClosure
                                 { closureTargetClass = currentClassName
                                 , closureTargetMethod = implMethodName
-                                , closureTarget = JVM.MethodDescriptor [] (TypeReturn javaObjTy)
+                                , closureTarget = MethodDescriptor [] (TypeReturn javaObjTy)
                                 , closureInterface = "Elara.Func0"
                                 , capturedValues = []
                                 }
-                    let newIOExpr = IR.New "Elara.IO" [(closureExpr, JVM.ObjectFieldType "Elara.Func0")]
+                    let newIOExpr = IR.New "Elara.IO" [(closureExpr, ObjectFieldType "Elara.Func0")]
                     entry <- makeUnique "getargs_wrapper_entry"
                     let wrapperBlocks = [IR.Block entry [IR.Return (Just newIOExpr)]]
                     let wrapperMethod = buildStaticMethod methodName methodArgs ioTy wrapperBlocks
                     pure . Just $ [implMethod, wrapperMethod]
                 PrimPrintln -> do
                     -- IO<Unit>(String)
-                    let javaObjTy = JVM.ObjectFieldType "java.lang.Object"
-                        printStreamTy = JVM.ObjectFieldType "java.io.PrintStream"
-                        ioTy = JVM.ObjectFieldType "Elara.IO"
+                    let javaObjTy = ObjectFieldType "java.lang.Object"
+                        printStreamTy = ObjectFieldType "java.io.PrintStream"
+                        ioTy = ObjectFieldType "Elara.IO"
                     (argName, argTy) <- case methodArgs of
                         [arg] -> pure arg
                         _ -> error "println expects exactly 1 argument"
@@ -300,7 +296,7 @@ lowerPrimitiveBinding currentClassName methodName type_ body =
                     implEntry <- makeUnique "println_impl_entry"
 
                     let outExpr = IR.FieldRef "java.lang.System" "out" printStreamTy -- System.out
-                    let printlnDesc = JVM.MethodDescriptor [javaObjTy] JVM.VoidReturn -- out.println(Object)
+                    let printlnDesc = MethodDescriptor [javaObjTy] VoidReturn -- out.println(Object)
                     let printlnCall = IR.ExprStmt $ IR.Call (IR.InvokeVirtual outExpr "java.io.PrintStream" "println" printlnDesc) [IR.LocalVar argName argTy]
                     let unitExpr = IR.New "Elara.Prim.Unit" [] -- new Unit()
                     let implInstrs =
@@ -313,11 +309,11 @@ lowerPrimitiveBinding currentClassName methodName type_ body =
                             IR.MakeClosure
                                 { closureTargetClass = currentClassName
                                 , closureTargetMethod = implMethodName
-                                , closureTarget = JVM.MethodDescriptor [argTy] (TypeReturn javaObjTy)
+                                , closureTarget = MethodDescriptor [argTy] (TypeReturn javaObjTy)
                                 , closureInterface = "Elara.Func0"
                                 , capturedValues = [(IR.LocalVar argName argTy, argTy)]
                                 }
-                    let newIOExpr = IR.New "Elara.IO" [(closureExpr, JVM.ObjectFieldType "Elara.Func0")]
+                    let newIOExpr = IR.New "Elara.IO" [(closureExpr, ObjectFieldType "Elara.Func0")]
 
                     wrapperEntry <- makeUnique "println_wrapper_entry"
 
@@ -334,7 +330,7 @@ lowerPrimitiveBinding currentClassName methodName type_ body =
         _ -> pure Nothing
 
 -- | Flatten nested lambdas into a list of arguments and the final body expression
-flattenLambda :: Lower r => CoreExpr -> Eff r ([(Unique Text, JVM.FieldType)], CoreExpr)
+flattenLambda :: Lower r => CoreExpr -> Eff r ([(Unique Text, FieldType)], CoreExpr)
 flattenLambda (Core.Lam b body) = do
     (restArgs, finalBody) <- flattenLambda body
     case b of
@@ -367,7 +363,7 @@ lowerTypeDecl (CoreTypeDecl name _ _ typeBody) =
                     constructorLabel <- makeUnique "base_constructor_entry"
                     let constructor =
                             IR.Constructor
-                                { IR.constructorDesc = JVM.MethodDescriptor [] JVM.VoidReturn
+                                { IR.constructorDesc = MethodDescriptor [] VoidReturn
                                 , IR.constructorArgs = []
                                 , IR.constructorBody =
                                     [IR.Block constructorLabel constructorCode]

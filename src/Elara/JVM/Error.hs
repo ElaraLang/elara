@@ -1,6 +1,7 @@
 module Elara.JVM.Error (JVMLoweringError (..)) where
 
-import JVM.Data.Abstract.Descriptor (MethodDescriptor)
+import H2JVM (MethodDescriptor)
+import H2JVM.Analyse.StackMap
 
 import Elara.AST.Name
 import Elara.Core.Pretty ()
@@ -45,6 +46,7 @@ data JVMLoweringError
       AppOfNonFunction Text
     | MethodTooManyLocals Int
     | MethodTooManyStack Int
+    | H2JVMError StackMapError
     deriving (Show, Typeable)
 
 instance Exception JVMLoweringError

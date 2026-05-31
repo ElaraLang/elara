@@ -1,9 +1,8 @@
 -- | Module for JVM Intermediate Representation.
 module Elara.JVM.IR where
 
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Name qualified as JVM
-import JVM.Data.Abstract.Type qualified as JVM
+import H2JVM qualified as JVM
+import H2JVM.Type qualified as JVM
 
 import Elara.Data.Pretty
 import Elara.Data.Unique

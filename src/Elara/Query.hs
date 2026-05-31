@@ -19,15 +19,12 @@ module Elara.Query where
 import Data.Data (type (:~:) (Refl))
 import Data.GADT.Compare
 import Data.Graph (SCC)
-import Data.Kind (Constraint, Type)
+import Data.Kind (Type)
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem)
 import Effectful.Writer.Static.Local
-import JVM.Data.Abstract.ClassFile (ClassFile)
-import JVM.Data.Convert.Monad (CodeConverterError)
-
-import Data.Kind qualified as Kind
+import H2JVM
 
 import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Phase (ElaraPhase (..))
@@ -38,9 +35,7 @@ import Elara.Core (CoreBind, DataCon, TyCon)
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Kind (KindVar)
-import Elara.Data.Pretty
 import Elara.Desugar.Error (DesugarError)
-import Elara.Error
 import Elara.JVM.Error (JVMLoweringError)
 import Elara.Lexer.Token
 import Elara.Lexer.Utils (LexerError)
@@ -51,7 +46,6 @@ import Elara.Query.Effects
 import Elara.Query.Errors
 import Elara.Query.TH
 import Elara.ReadFile (FileContents, ModulePathError, ReadFileError)
-import Elara.Rename.Error (RenameError)
 import Elara.SCC.Type (ReachableSubgraph, SCCKey)
 import Elara.Settings (CompilerSettings)
 import Elara.Shunt.Error (ShuntError, ShuntWarning)
@@ -64,8 +58,6 @@ import Rock (Rock)
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Phases.Frontend qualified as NewF
-import Elara.AST.Phases.Renamed qualified as NewR
-import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Types qualified as New
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF

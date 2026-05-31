@@ -2,9 +2,9 @@ module Elara.JVM.Lower.Match where
 
 import Effectful
 import Effectful.Error.Static (throwError)
-import JVM.Data.Abstract.Type
+import H2JVM.Type
 
-import JVM.Data.Abstract.Type qualified as JVM
+import H2JVM.Type qualified as JVM
 
 import Elara.AST.VarRef (VarRef' (..))
 import Elara.Core.Analysis

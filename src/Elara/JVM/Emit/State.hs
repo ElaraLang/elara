@@ -2,10 +2,9 @@ module Elara.JVM.Emit.State where
 
 import Effectful
 import Effectful.State.Static.Local
-import JVM.Data.Abstract.Builder.Code (CodeBuilder, newLabel)
-import JVM.Data.Abstract.Builder.Label
-import JVM.Data.Abstract.Name (QualifiedClassName)
-import JVM.Data.Raw.Types (U2)
+import H2JVM
+import H2JVM.Internal.Raw.Types
+import H2JVM.Name
 import Witch
 
 import Data.Map qualified as Map

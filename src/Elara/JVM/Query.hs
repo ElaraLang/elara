@@ -10,13 +10,10 @@ module Elara.JVM.Query (
 ) where
 
 import Data.Binary.Put (runPut)
-import Data.Binary.Write (writeBinary)
 import Effectful
 import Effectful.Error.Static (Error)
-import JVM.Data.Abstract.ClassFile (ClassFile (..))
-import JVM.Data.Abstract.Name (suitableFilePath)
-import JVM.Data.Convert (convert)
-import JVM.Data.Convert.Monad (CodeConverterError)
+import H2JVM
+import H2JVM.Name
 
 import Effectful.Error.Extra (fromEither)
 import Elara.AST.Name (ModuleName)
@@ -52,6 +49,5 @@ runGetJVMClassBytesQuery ::
 runGetJVMClassBytesQuery mn = do
     classFiles <- Rock.fetch (GetJVMClassFiles mn)
     for classFiles $ \cf -> do
-        converted <- fromEither $ convert cf
-        let bytes = runPut (writeBinary converted)
+        bytes <- fromEither $ classFileBytes cf
         pure (suitableFilePath cf.name, bytes)

@@ -1,6 +1,6 @@
 module Elara.JVM.Emit.Types where
 
-import JVM.Data.Abstract.Name (QualifiedClassName)
+import H2JVM (QualifiedClassName)
 
 stringTypeName :: QualifiedClassName
 stringTypeName = "Elara.String"

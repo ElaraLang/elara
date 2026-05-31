@@ -33,8 +33,7 @@ import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Writer.Static.Local (Writer)
 import Error.Diagnose (Report (..))
-import JVM.Data.Abstract.ClassFile (ClassFile (..))
-import JVM.Data.Convert.Monad (CodeConverterError)
+import H2JVM
 import Prettyprinter.Render.Text
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeBaseName, takeDirectory)

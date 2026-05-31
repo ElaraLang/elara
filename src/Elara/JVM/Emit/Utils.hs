@@ -1,6 +1,6 @@
 module Elara.JVM.Emit.Utils where
 
-import JVM.Data.Abstract.Name
+import H2JVM.Name
 
 import Elara.AST.Name
 
