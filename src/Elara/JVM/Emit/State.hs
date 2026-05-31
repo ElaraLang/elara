@@ -4,7 +4,6 @@ import Effectful
 import Effectful.State.Static.Local
 import H2JVM
 import H2JVM.Internal.Raw.Types
-import H2JVM.Name
 import Witch
 
 import Data.Map qualified as Map

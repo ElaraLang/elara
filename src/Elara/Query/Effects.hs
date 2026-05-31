@@ -10,7 +10,6 @@ import Effectful.Error.Static
 import Effectful.FileSystem
 import Effectful.Writer.Static.Local
 
-import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Error
 import Elara.Logging

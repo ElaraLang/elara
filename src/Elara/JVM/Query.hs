@@ -9,7 +9,6 @@ module Elara.JVM.Query (
     runGetJVMClassBytesQuery,
 ) where
 
-import Data.Binary.Put (runPut)
 import Effectful
 import Effectful.Error.Static (Error)
 import H2JVM

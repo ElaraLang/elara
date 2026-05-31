@@ -25,14 +25,12 @@ module Elara.Error (
 where
 
 import Effectful (Eff, (:>))
-import Error.Diagnose hiding (Hint, Note)
 
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
-import Error.Diagnose qualified as Diag
 import GHC.Show qualified
 
-import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
+import Elara.AST.Region (SourceRegion)
 import Elara.Data.Pretty
 import Elara.Error.Codes
 import Prelude hiding (asks, readFile)

@@ -268,6 +268,7 @@ instance Substitutable Monotype loc where
 
 instance Substitutable Substitution loc where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)
+    substituteAll (Substitution s) a = let subst = foldr (uncurry substitute) a (Map.toList s) in if subst == a then a else substituteAll (Substitution s) subst
 
 instance Eq loc => Substitutable Type loc where
     substitute tv t (Lifted m) = Lifted (substitute tv t m)
