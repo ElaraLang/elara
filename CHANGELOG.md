@@ -82,6 +82,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add support for `hiding` declarations in imports - ([d803bec](https://github.com/ElaraLang/elara/commit/d803bec7a9a637a7b20b536ceec269e2bb060dc5)) 
 - Add support for getArgs and readFile primops in jvm backend - ([1107294](https://github.com/ElaraLang/elara/commit/11072949e9311ba8f3e4f516489c61f6b849bd34)) 
 - Improve support of larger tuples - ([3de4907](https://github.com/ElaraLang/elara/commit/3de49076dfa1aafb3de5be219ee4251b09c18c20)) 
+- :sparkles: add type annotation / ascription syntax - ([7351516](https://github.com/ElaraLang/elara/commit/7351516b2c8f68f4165c522a338a40be8bd0c053)) 
 
 ### 🐛 Bug Fixes
 
@@ -466,6 +467,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Update nix inputs - ([38f9947](https://github.com/ElaraLang/elara/commit/38f99473b5b6eec3f47704bc0834e34df0bcdaed)) 
 - Update nix inputs - ([3105181](https://github.com/ElaraLang/elara/commit/31051818c2b4c6d49b3be61b59e81227c3ccadef)) 
 - Fix Fourmolu not detecting some test files correctly - ([259f47d](https://github.com/ElaraLang/elara/commit/259f47d32d714ea19ce29347a1f2999761fe3a33)) 
+- Update flake inputs - ([465c27d](https://github.com/ElaraLang/elara/commit/465c27d241fa549a94368a2f4075587d8b928abf)) 
 
 ### Unfinished
 
