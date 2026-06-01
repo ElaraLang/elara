@@ -10,7 +10,7 @@ class Ftv a where
     ftv :: a -> Set TypeVariable
 
 instance Ftv (Monotype loc) where
-    ftv (TypeVar _ tv) = one tv
+    ftv (TypeVar _ tv ts) = one tv <> foldMap ftv ts
     ftv (TypeConstructor _ _ ts) = foldMap ftv ts
     ftv (Function _ t1 t2) = ftv t1 <> ftv t2
 
@@ -34,8 +34,8 @@ class Fuv a where
     fuv :: a -> Set UniqueTyVar
 
 instance Fuv (Monotype loc) where
-    fuv (TypeVar _ (SkolemVar _)) = mempty
-    fuv (TypeVar _ (UnificationVar tv)) = one tv
+    fuv (TypeVar _ (SkolemVar _) ts) = foldMap fuv ts
+    fuv (TypeVar _ (UnificationVar tv) ts) = one tv <> foldMap fuv ts
     fuv (TypeConstructor _ _ ts) = foldMap fuv ts
     fuv (Function _ t1 t2) = fuv t1 <> fuv t2
 

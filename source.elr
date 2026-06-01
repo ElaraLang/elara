@@ -1,17 +1,14 @@
 import Prelude
 import Elara.Prim
 
-type Number = Int
+type TestBox a = | TestBox a
+
+type Wrapper f a = | Wrapper (f a)
+
+let mapWrapper f (Wrapper a) = Wrapper (f a)
 
 
--- Type aliases can contain type parameters too
-type Identity s = s
-
-def makeIdentity : a -> Identity a
-let makeIdentity x = x
 
 let main = 
-    let i = (42 : Number)
-    -- i can be used as a normal Int
-    let identity = makeIdentity i
-    toString (identity + 1) |> println
+    let i = Wrapper (TestBox 1)
+    println (mapWrapper (\x -> x + 1) i)

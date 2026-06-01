@@ -336,7 +336,7 @@ mkTypeVar tv = TypeVariable tv TypeKind
 polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Eff r Core.Type
 polytypeToCore (Type.Forall loc tvs _constraints t) = do
     let protectBoundVars bound = \case
-            Type.TypeVar l (Type.UnificationVar v) | v `elem` bound -> Type.TypeVar l (Type.SkolemVar v)
+            Type.TypeVar l (Type.UnificationVar v) tvs | v `elem` bound -> Type.TypeVar l (Type.SkolemVar v) tvs
             Type.Function l a b -> Type.Function l (protectBoundVars bound a) (protectBoundVars bound b)
             Type.TypeConstructor l c args -> Type.TypeConstructor l c (fmap (protectBoundVars bound) args)
             other -> other
@@ -351,8 +351,11 @@ eitherTypeToCore (Type.Polytype p) = polytypeToCore p
 eitherTypeToCore (Type.Lifted t) = typeToCore t
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Eff r Core.Type
-typeToCore (Type.TypeVar _ (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
-typeToCore uv@(Type.TypeVar _ (Type.UnificationVar _)) =
+typeToCore (Type.TypeVar _ (Type.SkolemVar v) tvs) = do
+    let base = Core.TyVarTy $ TypeVariable v TypeKind
+    tvs' <- traverse typeToCore tvs
+    pure $ foldl' Core.AppTy base tvs'
+typeToCore uv@(Type.TypeVar _ (Type.UnificationVar _) _) =
     throwError (UnsolvedTypeSnuckIn (Type.Lifted uv))
 typeToCore (Type.Function _ t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCore t2
 typeToCore (Type.TypeConstructor _ qn ts) = do

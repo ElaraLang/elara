@@ -20,7 +20,7 @@ generalise ty = do
 
     let generalised = Forall (monotypeLoc ty) (toList uniVars) (EmptyConstraint $ monotypeLoc ty) ty
 
-    let substPairs = fmap (\uv -> (uv, TypeVar (monotypeLoc ty) (SkolemVar uv))) (toList uniVars)
+    let substPairs = fmap (\uv -> (uv, TypeVar (monotypeLoc ty) (SkolemVar uv) [])) (toList uniVars)
 
     let astSubst = Substitution (fromList substPairs)
 
@@ -33,7 +33,7 @@ removeSkolems ty = do
     transformOf
         plate
         ( \case
-            TypeVar loc tv@(SkolemVar tv') | tv `member` ftvs -> TypeVar loc (UnificationVar tv')
+            TypeVar loc tv@(SkolemVar tv') tvs | tv `member` ftvs -> TypeVar loc (UnificationVar tv') tvs
             other -> other
         )
         ty

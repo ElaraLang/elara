@@ -139,9 +139,10 @@ substituteAllAstType (Substitution s) ty = foldl' (\acc (tv, t) -> substituteAst
 -- | Convert a Monotype to an AST Type for the Typed phase
 monotypeToAstType :: SourceRegion -> ElaraKind -> Monotype SourceRegion -> TypedType
 monotypeToAstType loc kind = \case
-    TypeVar _ tv ->
+    TypeVar _ tv args ->
         let typeLoc = wrap @TypeNode loc
-         in Type typeLoc kind (TVar (TaggedLocate typeLoc (typeVarToUniqueTyVar tv)))
+            base = Type typeLoc kind (TVar (TaggedLocate typeLoc (typeVarToUniqueTyVar tv)))
+         in foldl' (\acc arg -> Type typeLoc kind (TApp acc (monotypeToAstType loc kind arg))) base args
     Function _ a b ->
         let typeLoc = wrap @TypeNode loc
          in Type typeLoc kind (TFun (monotypeToAstType loc kind a) (monotypeToAstType loc kind b))

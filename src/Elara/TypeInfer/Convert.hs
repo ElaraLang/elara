@@ -57,7 +57,7 @@ convertTyVar = fmap (fmap (Just . nameText))
 
 astTypeToInferType' :: Error TypeConvertError :> r => SourceRegion -> KindedType' -> Eff r (Monotype SourceRegion)
 astTypeToInferType' loc (New.TVar name) = do
-    pure $ TypeVar loc $ UnificationVar $ view unlocated $ convertTyVar name
+    pure $ TypeVar loc (UnificationVar $ view unlocated $ convertTyVar name) []
 astTypeToInferType' loc (New.TFun i o) = do
     i' <- astTypeToInferType i
     o' <- astTypeToInferType o
@@ -74,7 +74,8 @@ astTypeToInferType' loc (New.TApp ctor arg) = do
     case ctor' of
         TypeConstructor _ name args -> do
             pure $ TypeConstructor loc name (args <> [arg'])
-        _other -> throwError $ NotSupported "Type constructor application is only supported for type constructors"
+        TypeVar _vLoc var args -> pure $ TypeVar loc var (args <> [arg'])
+        _other -> throwError $ NotSupported "Type constructor application is only supported for type constructors or type variables"
 astTypeToInferType' loc (New.TUserDefined name) = do
     pure $ TypeConstructor loc (name ^. unlocated) []
 astTypeToInferType' _ (New.TExtension v) = absurd v

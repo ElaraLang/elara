@@ -6,7 +6,8 @@ module Elara.TypeInfer.Render (
     renderMonotype,
     renderType,
     renderPolytype,
-) where
+)
+where
 
 import Elara.AST.Name (Qualified (..), TypeName (..))
 import Elara.Data.Pretty
@@ -24,7 +25,10 @@ renderTypeName qn = case lookupByQualifiedTypeName qn of
 -- | Render a monotype with user-friendly names
 renderMonotype :: Monotype loc -> Doc AnsiStyle
 renderMonotype = \case
-    TypeVar _ tv -> renderTypeVariable tv
+    TypeVar _ tv args ->
+        renderTypeVariable tv <> case args of
+            [] -> mempty
+            _ -> " " <> hsep (renderMonotypeParens <$> args)
     TypeConstructor _ name args ->
         let renderedName = renderTypeName name
          in case args of

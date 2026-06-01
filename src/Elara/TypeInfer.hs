@@ -198,7 +198,11 @@ seedConstructorsFor moduleName = logDebugWith ("seedConstructorsFor: " <> pretty
             New.ADT ctors -> do
                 let tyVars' = fmap createTypeVar typeVars
                 let nameLoc = unwrapLoc (getLocation name)
-                let typeConstructorType = TypeConstructor nameLoc (name ^. unlocated) (fmap (TypeVar nameLoc . UnificationVar) tyVars')
+                let typeConstructorType =
+                        TypeConstructor
+                            nameLoc
+                            (name ^. unlocated)
+                            (fmap ((\tv -> TypeVar nameLoc tv []) . UnificationVar) tyVars')
 
                 let inferCtor (ctorName, t :: [KindedType]) = do
                         t' <- traverse astTypeToInferTypeWithKind t
@@ -399,7 +403,7 @@ seedDeclaration (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ bo
             logDebug $ "Expected type for " <> pretty valueName <> ": " <> pretty expectedType
             expected <- case expectedType of
                 Just t -> pure t
-                Nothing -> Lifted . TypeVar (getLocation $ stripTag valueName) . UnificationVar <$> makeUniqueTyVar
+                Nothing -> Lifted . (\tv -> TypeVar (getLocation $ stripTag valueName) tv []) . UnificationVar <$> makeUniqueTyVar
             -- When we have an expected type (e.g. from a user annotation), skolemise
             -- its quantified variables so they cannot unify with concrete types.
             expectedAsMono <- skolemise expected
@@ -460,7 +464,11 @@ inferDeclaration (New.Declaration dloc (New.Declaration' mn (New.DeclarationBody
                         )
                 New.ADT ctors -> do
                     let tyVars' = fmapToSnd createTypeVar tyVars
-                    let typeConstructorType = TypeConstructor (getLocation $ stripTag name) (name ^. unlocated) (fmap (\(tyVarLocation, tyVar) -> TypeVar (getLocation $ stripTag tyVarLocation) $ SkolemVar tyVar) tyVars')
+                    let typeConstructorType =
+                            TypeConstructor
+                                (getLocation $ stripTag name)
+                                (name ^. unlocated)
+                                (fmap (\(tyVarLocation, tyVar) -> TypeVar (getLocation $ stripTag tyVarLocation) (SkolemVar tyVar) []) tyVars')
 
                     let inferCtor (ctorName, t :: [KindedType]) = do
                             t' <- traverse astTypeToInferTypeWithKind t
@@ -530,7 +538,7 @@ inferValue valueName valueExpr expectedType = do
     let exprLoc = exprLocation valueExpr
     expected <- case expectedType of
         Just t -> pure t
-        Nothing -> Lifted . TypeVar (getLocation exprLoc) . UnificationVar <$> makeUniqueTyVar
+        Nothing -> Lifted . (\tv -> TypeVar (getLocation exprLoc) tv []) . UnificationVar <$> makeUniqueTyVar
     -- When we have an expected type (e.g., from a user annotation), skolemise
     -- its quantified variables so they cannot unify with concrete types.
     expectedAsMono <- skolemise expected
@@ -572,6 +580,6 @@ skolemise = \case
     Lifted t -> pure t
     Polytype (Forall loc tyVars _ t) -> do
         -- Build a substitution mapping each quantified variable α to a rigid skolem #α
-        let pairs = zip (fmap (view typed) tyVars) (TypeVar loc . SkolemVar <$> tyVars)
+        let pairs = zip (fmap (view typed) tyVars) ((\tv -> TypeVar loc tv []) . SkolemVar <$> tyVars)
             subst = Substitution $ fromList @(Map _ _) pairs
         pure $ substituteAll subst t

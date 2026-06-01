@@ -7,7 +7,8 @@ module Elara.TypeInfer.ConstraintGeneration (
     lookupType,
     -- Exported for testing
     unify,
-) where
+)
+where
 
 import Data.Foldable (foldrM)
 import Data.Generics.Product (HasType (typed))
@@ -201,12 +202,12 @@ generateConstraints' expr' =
                     paramTyVar <- UnificationVar <$> makeUniqueTyVar
 
                     let paramLoc = unwrapLoc exprLoc -- use expression location for param
-                    (typedBody, bodyType) <- withLocalType paramName (Lifted $ TypeVar paramLoc paramTyVar) $ generateConstraints body
+                    (typedBody, bodyType) <- withLocalType paramName (Lifted $ TypeVar paramLoc paramTyVar []) $ generateConstraints body
 
-                    let functionType = Function (unwrapLoc exprLoc) (TypeVar paramLoc paramTyVar) bodyType
+                    let functionType = Function (unwrapLoc exprLoc) (TypeVar paramLoc paramTyVar []) bodyType
 
                     pure
-                        ( New.ELam NoExtension (TypedLambdaParam paramName (TypeVar paramLoc paramTyVar)) typedBody
+                        ( New.ELam NoExtension (TypedLambdaParam paramName (TypeVar paramLoc paramTyVar [])) typedBody
                         , functionType
                         )
 
@@ -225,11 +226,11 @@ generateConstraints' expr' =
 
                     -- Create constraint with context about this being a function application
                     let ctx = Just $ CheckingFunctionArgument 1 fnName (unwrapLoc exprLoc)
-                    let equalityConstraint = equalityWithContext (unwrapLoc exprLoc) t1 (Function e1Loc t2 (TypeVar e2Loc resultTyVar)) e1Loc e2Loc ctx
+                    let equalityConstraint = equalityWithContext (unwrapLoc exprLoc) t1 (Function e1Loc t2 (TypeVar e2Loc resultTyVar [])) e1Loc e2Loc ctx
                     logDebug (pretty equalityConstraint)
                     tell equalityConstraint
 
-                    pure (New.EApp NoExtension e1' e2', TypeVar e2Loc resultTyVar)
+                    pure (New.EApp NoExtension e1' e2', TypeVar e2Loc resultTyVar [])
 
                 -- LET
                 {-
@@ -246,10 +247,10 @@ generateConstraints' expr' =
                     -- Q ; G |- e1 : t1
                     ((typedVarExpr, varType), rhsConstraints) <-
                         listen @(Constraint _) $
-                            withLocalType varName (Lifted $ TypeVar locSr recursiveVar) $
+                            withLocalType varName (Lifted $ TypeVar locSr recursiveVar []) $
                                 generateConstraints varExpr
 
-                    let recursiveConstraint = simpleEquality (unwrapLoc exprLoc) (TypeVar locSr recursiveVar) varType
+                    let recursiveConstraint = simpleEquality (unwrapLoc exprLoc) (TypeVar locSr recursiveVar []) varType
                     let allRhsConstraints = rhsConstraints <> recursiveConstraint
 
                     -- solve the rhs constraints immediately
@@ -328,11 +329,11 @@ generateConstraints' expr' =
                         -- t2 ~ tr (all branches must have same type)
                         let bodyLoc = exprRegion body
                         let branchCtx = Just $ CheckingMatchBranch branchIdx bodyLoc
-                        tell (equalityWithContext bodyLoc bodyType (TypeVar eLoc resultTyVar) bodyLoc eLoc branchCtx)
+                        tell (equalityWithContext bodyLoc bodyType (TypeVar eLoc resultTyVar []) bodyLoc eLoc branchCtx)
 
                         pure (typedPattern, typedBody)
 
-                    pure (New.EMatch typedE cases', TypeVar eLoc resultTyVar)
+                    pure (New.EMatch typedE cases', TypeVar eLoc resultTyVar [])
                 New.EBlock exprs -> do
                     vals <- for exprs $ \expr -> generateConstraints expr
 
@@ -344,9 +345,9 @@ generateConstraints' expr' =
                 New.ELet NoExtension (TaggedLocate loc varName) varExpr -> do
                     let locSr = unwrapLoc loc
                     recursiveVar <- UnificationVar <$> makeUniqueTyVar
-                    (typedVarExpr, varType) <- withLocalType varName (Lifted $ TypeVar locSr recursiveVar) $ generateConstraints varExpr
+                    (typedVarExpr, varType) <- withLocalType varName (Lifted $ TypeVar locSr recursiveVar []) $ generateConstraints varExpr
 
-                    let recursiveConstraint = simpleEquality (unwrapLoc exprLoc) (TypeVar locSr recursiveVar) varType
+                    let recursiveConstraint = simpleEquality (unwrapLoc exprLoc) (TypeVar locSr recursiveVar []) varType
                     tell recursiveConstraint
 
                     modify (addLocalType varName (Lifted varType))
@@ -402,9 +403,9 @@ generatePatternConstraints' pattern' over =
                 New.PVar (TaggedLocate loc varName) -> do
                     let locSr = unwrapLoc loc
                     varType <- UnificationVar <$> makeUniqueTyVar
-                    modify (addLocalType varName (Lifted $ TypeVar locSr varType))
+                    modify (addLocalType varName (Lifted $ TypeVar locSr varType []))
 
-                    pure (New.PVar (TaggedLocate loc varName), TypeVar locSr varType)
+                    pure (New.PVar (TaggedLocate loc varName), TypeVar locSr varType [])
                 New.PCon ctor'@(TaggedLocate _loc ctor) args -> do
                     -- lookup the signature of the constructor
                     t <- lookupType (DataConKey ctor)
@@ -444,7 +445,7 @@ instantiate :: forall r loc. ConstraintGenEffects r loc => Type loc -> Eff r (Mo
 instantiate (Lifted t) = pure (t, [])
 instantiate pt@(Polytype (Forall loc tyVars constraint t)) = logDebugWith ("instantiate: " <> pretty pt) $ do
     fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
-    let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap (TypeVar loc) fresh)
+    let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap (\tv -> TypeVar loc tv []) fresh)
     let instantiatedConstraint =
             substituteAll substitution constraint
         instantiatedMonotype =
@@ -499,8 +500,8 @@ solve EmptyConstraint{} = pure mempty
 unifyGiven ::
     (UnifyEffects r loc, Monoid (Constraint loc)) =>
     Maybe (Constraint loc) -> Monotype loc -> Monotype loc -> Eff r (Substitution loc)
-unifyGiven _ (TypeVar _ a) b = bindGiven a b
-unifyGiven _ a (TypeVar _ b) = bindGiven b a
+unifyGiven _ (TypeVar _ a _) b = bindGiven a b
+unifyGiven _ a (TypeVar _ b _) = bindGiven b a
 unifyGiven constraint (Function _ a b) (Function _ c d) = unifyGivenMany constraint [a, b] [c, d]
 unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor _ b bs)
     | a == b =
@@ -549,9 +550,10 @@ unify a b = do
     unify' ::
         Monotype loc -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
 
-    unify' (TypeVar _ a) (TypeVar _ b) | a == b = pure (mempty, mempty)
-    unify' (TypeVar _ (UnificationVar a)) b = unifyVar a b
-    unify' a (TypeVar _ (UnificationVar b)) = unifyVar b a
+    unify' (TypeVar _ a _) (TypeVar _ b _) | a == b = pure (mempty, mempty)
+    unify' (TypeVar _ (UnificationVar a) []) b = unifyVar a b
+    unify' a (TypeVar _ (UnificationVar b) []) = unifyVar b a
+    unify' t1 t2 | isApplied t1 || isApplied t2 = unifyApplied t1 t2
     unify' t1@(TypeConstructor l1 a as) t2@(TypeConstructor _l2 b bs)
         | a == b =
             if length as /= length bs
@@ -600,6 +602,55 @@ unify a b = do
             Just c -> throwError $ mkUnifyErrorFromConstraint TypeMismatch a b c ctx
             Nothing -> throwError $ mkUnifyError TypeMismatch a b (monotypeLoc a) ctx
 
+    -- is the type applied to some arguments?
+    isApplied :: Monotype loc -> Bool
+    isApplied (TypeVar _ _ (_ : _)) = True
+    isApplied (TypeConstructor _ _ (_ : _)) = True
+    isApplied _ = False
+
+    -- split into base and arguments
+    splitApp :: Monotype loc -> (Monotype loc, [Monotype loc])
+    splitApp (TypeVar loc tv args) = (TypeVar loc tv [], args)
+    splitApp (TypeConstructor loc dc args) = (TypeConstructor loc dc [], args)
+    splitApp other = (other, [])
+
+    -- unify two applied types, trying to expand type aliases if the heads are type constructors
+    unifyApplied :: Monotype loc -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
+    unifyApplied t1 t2 = do
+        let (h1, args1) = splitApp t1
+        let (h2, args2) = splitApp t2
+        -- Try to expand alias for t1 first
+        expanded1 <- case h1 of
+            TypeConstructor _ a _ -> expandAlias a args1
+            _ -> pure Nothing
+        case expanded1 of
+            Just t1' -> unify t1' t2
+            Nothing -> do
+                -- If t1 is not an alias, try to expand alias for t2
+                expanded2 <- case h2 of
+                    TypeConstructor _ b _ -> expandAlias b args2
+                    _ -> pure Nothing
+                case expanded2 of
+                    Just t2' -> unify t1 t2'
+                    Nothing -> decompose h1 args1 h2 args2
+      where
+        decompose :: Monotype loc -> [Monotype loc] -> Monotype loc -> [Monotype loc] -> Eff r (Constraint loc, Substitution loc)
+        decompose h1 args1 h2 args2 = do
+            if length args1 /= length args2
+                then do
+                    ctx <- ask @ContextStack
+                    let errorKind =
+                            if h1 == h2
+                                then ArityMismatch (length args1) (length args2)
+                                else TypeMismatch
+                    case ?constraint of
+                        Just c -> throwError $ mkUnifyErrorFromConstraint errorKind t1 t2 c ctx
+                        Nothing -> throwError $ mkUnifyError errorKind t1 t2 (monotypeLoc t1) ctx
+                else do
+                    (c1, s1) <- unify h1 h2
+                    (c2, s2) <- unifyMany (substituteAll s1 <$> args1) (substituteAll s1 <$> args2)
+                    pure (c1 <> c2, s1 <> s2)
+
 expandAlias ::
     ( UnifyEffects r loc
     , loc ~ SourceRegion
@@ -629,7 +680,7 @@ bindGiven a t =
     if member a (ftv t)
         then do
             ctx <- ask @ContextStack
-            let tvType = TypeVar (monotypeLoc t) a
+            let tvType = TypeVar (monotypeLoc t) a []
             throwError $ mkUnifyError (OccursCheck a) tvType t (monotypeLoc t) ctx
         else pure (substitution (tvValue a, t))
   where
@@ -655,14 +706,14 @@ unifyVar a t = do
     bindVar :: UniqueTyVar -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
     bindVar tv t | member tv (fuv t) = do
         ctx <- ask @ContextStack
-        let tvType = TypeVar (monotypeLoc t) (UnificationVar tv)
+        let tvType = TypeVar (monotypeLoc t) (UnificationVar tv) []
         throwError $ mkUnifyError (OccursCheck (UnificationVar tv)) tvType t (monotypeLoc t) ctx
     bindVar tv t = do
         tch <- ask @(Set UniqueTyVar)
         logDebug ("bindVar " <> pretty tv <> " to " <> pretty t)
         if member tv tch
             then pure (EmptyConstraint (monotypeLoc t), substitution (tv, t))
-            else pure (simpleEquality (monotypeLoc t) (TypeVar (monotypeLoc t) $ UnificationVar tv) t, mempty)
+            else pure (simpleEquality (monotypeLoc t) (TypeVar (monotypeLoc t) (UnificationVar tv) []) t, mempty)
 
 unifyMany ::
     ( UnifyEffects r loc

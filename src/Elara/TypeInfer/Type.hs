@@ -174,7 +174,11 @@ data AxiomScheme loc
 -- | A monotype τ
 data Monotype (loc :: Kind.Type)
     = -- | A type variable tv
-      TypeVar loc TypeVariable
+      TypeVar
+        loc
+        TypeVariable
+        -- | extra type arguments in the case of higher kinded type variables
+        [Monotype loc]
     | -- | A type constructor
       TypeConstructor loc (Qualified TypeName) [Monotype loc]
     | -- | A function type τ₁ → τ₂
@@ -184,7 +188,7 @@ data Monotype (loc :: Kind.Type)
 instance Generic loc => Plated (Monotype loc) (Monotype loc)
 
 monotypeLoc :: Monotype loc -> loc
-monotypeLoc (TypeVar loc _) = loc
+monotypeLoc (TypeVar loc _ _) = loc
 monotypeLoc (TypeConstructor loc _ _) = loc
 monotypeLoc (Function loc _ _) = loc
 
@@ -249,22 +253,29 @@ instance Eq loc => Substitutable Constraint loc where
             }
 
 instance Substitutable Monotype loc where
-    substitute _ _ (TypeVar loc (SkolemVar v)) = TypeVar loc (SkolemVar v)
-    substitute tv t (TypeVar _ (UnificationVar v)) | tv == v = t
-    substitute _ _ (TypeVar loc tv) = TypeVar loc tv
+    substitute tv t (TypeVar loc (SkolemVar v) vs) = TypeVar loc (SkolemVar v) (substitute tv t <$> vs) -- skolems are rigid
+    substitute tv t (TypeVar _ (UnificationVar v) vs)
+        | tv == v =
+            applyMonotype t (substitute tv t <$> vs)
+    substitute tv t (TypeVar loc tv' vs) = TypeVar loc tv' (substitute tv t <$> vs)
     substitute tv t (TypeConstructor loc dc ts) = TypeConstructor loc dc (substitute tv t <$> ts)
     substitute tv t (Function loc t1 t2) = Function loc (substitute tv t t1) (substitute tv t t2)
 
-    substituteAll (Substitution m) t@(TypeVar loc tv) = case tv of
-        SkolemVar v -> TypeVar loc (SkolemVar v) -- skolems are rigid
+    substituteAll subst@(Substitution m) t@(TypeVar loc tv tvs) = case tv of
+        SkolemVar v -> TypeVar loc (SkolemVar v) (substituteAll subst <$> tvs) -- skolems are rigid
         UnificationVar v ->
             -- make sure we recursively apply substitutions until we reach a fixed point
             let r = case Map.lookup v m of
-                    Just t' -> t'
-                    Nothing -> TypeVar loc (UnificationVar v)
+                    Just t' -> substituteAll subst (applyMonotype t' (substituteAll subst <$> tvs))
+                    Nothing -> TypeVar loc (UnificationVar v) (substituteAll subst <$> tvs)
              in if r == t then t else substituteAll (Substitution m) r
     substituteAll s (TypeConstructor loc dc ts) = TypeConstructor loc dc (substituteAll s <$> ts)
     substituteAll s (Function loc t1 t2) = Function loc (substituteAll s t1) (substituteAll s t2)
+
+applyMonotype :: Monotype loc -> [Monotype loc] -> Monotype loc
+applyMonotype (TypeVar loc tv args) newArgs = TypeVar loc tv (args <> newArgs)
+applyMonotype (TypeConstructor loc dc args) newArgs = TypeConstructor loc dc (args <> newArgs)
+applyMonotype (Function loc t1 t2) _ = Function loc t1 t2
 
 instance Substitutable Substitution loc where
     substitute tv t (Substitution s) = Substitution (Map.insert tv t s)
@@ -292,7 +303,7 @@ instance Pretty loc => Pretty (Constraint loc) where
     pretty Equality{eqLeft = m1, eqRight = m2} = pretty m1 <> " ∼ " <> pretty m2
 
 instance Pretty (Monotype loc) where
-    pretty (TypeVar _ tv) = Style.varName (pretty tv)
+    pretty (TypeVar _ tv tvs) = Style.varName (pretty tv) <> (if null tvs then "" else " " <> hsep (pretty <$> tvs)) --
     pretty (TypeConstructor _ dc ts) = Style.typeName (pretty dc) <> " " <> hsep (pretty <$> ts)
     pretty (Function _ f@(Function{}) t3) = parens (pretty f) <> Style.operator " → " <> pretty t3
     pretty (Function _ t1 t2) = pretty t1 <> Style.operator " → " <> pretty t2
