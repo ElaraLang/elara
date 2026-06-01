@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Desugar.Common.html"><span class="hs-identifier">Elara.Desugar.Common</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Instances.html"><span class="hs-identifier">Elara.AST.Instances</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Location.html"><span class="hs-identifier">Elara.AST.Location</span></a></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html"><span class="hs-identifier">Elara.AST.Phases.Desugared</span></a></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Types.html"><span class="hs-identifier">Elara.AST.Types</span></a></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="annot"><span class="hs-comment">{- | A partial declaration stores a desugared part of a declaration
+This allows merging of declarations with the same name
+For example, the code
+@
+def a : Int
+...
+...
+let a = 5
+@
+is legal, and the 2 parts of the declaration need to be merged
+
+Firstly, we create a 'JustDef' after seeing the @def@ line, then we merge this with a 'JustLet' after seeing the @let@ line
+to create a 'Both' declaration, which is then resolved to a Desugared.Declaration'
+-}</span></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">data</span><span> </span><span id="PartialDeclaration"><span class="annot"><a href="Elara.Desugar.Common.html#PartialDeclaration"><span class="hs-identifier hs-var">PartialDeclaration</span></a></span></span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | A partial declaration with just a def line</span></span><span>
+</span><span id="line-27"></span><span>      </span><span id="JustDef"><span class="annot"><a href="Elara.Desugar.Common.html#JustDef"><span class="hs-identifier hs-var">JustDef</span></a></span></span><span>
+</span><span id="line-28"></span><span>        </span><span class="annot"><span class="hs-comment">-- | Name of the declaration</span></span><span>
+</span><span id="line-29"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>        </span><span class="annot"><span class="hs-comment">-- | The *overall* region of the declaration, not just the body!</span></span><span>
+</span><span id="line-31"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#DesugaredType"><span class="hs-identifier hs-type">DesugaredType</span></a></span><span>
+</span><span id="line-33"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Types.html#Annotation"><span class="hs-identifier hs-type">Annotation</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">Desugared</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="JustLet"><span class="annot"><a href="Elara.Desugar.Common.html#JustLet"><span class="hs-identifier hs-var">JustLet</span></a></span></span><span>
+</span><span id="line-35"></span><span>        </span><span class="annot"><span class="hs-comment">-- | Name of the declaration</span></span><span>
+</span><span id="line-36"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>        </span><span class="annot"><span class="hs-comment">-- | The *overall* region of the *entire* declaration, not just the body!</span></span><span>
+</span><span id="line-38"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>        </span><span class="annot"><span class="hs-comment">-- | The desugared expression of the let binding</span></span><span>
+</span><span id="line-40"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#DesugaredExpr"><span class="hs-identifier hs-type">DesugaredExpr</span></a></span><span>
+</span><span id="line-41"></span><span>        </span><span class="annot"><span class="hs-comment">-- | Any annotations on the let binding</span></span><span>
+</span><span id="line-42"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Types.html#Annotation"><span class="hs-identifier hs-type">Annotation</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">Desugared</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | A @def@ *and* @let@ declaration that have been merged together, but not yet resolved to a 'Declaration'</span></span><span>
+</span><span id="line-44"></span><span>      </span><span id="AllDecl"><span class="annot"><a href="Elara.Desugar.Common.html#AllDecl"><span class="hs-identifier hs-var">AllDecl</span></a></span></span><span>
+</span><span id="line-45"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#DesugaredType"><span class="hs-identifier hs-type">DesugaredType</span></a></span><span>
+</span><span id="line-48"></span><span>        </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#DesugaredExpr"><span class="hs-identifier hs-type">DesugaredExpr</span></a></span><span>
+</span><span id="line-49"></span><span>        </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Types.html#Annotation"><span class="hs-identifier hs-type">Annotation</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">Desugared</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Immediate"><span class="annot"><a href="Elara.Desugar.Common.html#Immediate"><span class="hs-identifier hs-var">Immediate</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Declaration"><span class="hs-identifier hs-type">Declaration</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Desugared.html#Desugared"><span class="hs-identifier hs-type">Desugared</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680196155"><span id="local-6989586621680196157"><span class="annot"><span class="annottext">(forall x. PartialDeclaration -&gt; Rep PartialDeclaration x)
+-&gt; (forall x. Rep PartialDeclaration x -&gt; PartialDeclaration)
+-&gt; Generic PartialDeclaration
+forall x. Rep PartialDeclaration x -&gt; PartialDeclaration
+forall x. PartialDeclaration -&gt; Rep PartialDeclaration x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. PartialDeclaration -&gt; Rep PartialDeclaration x
+from :: forall x. PartialDeclaration -&gt; Rep PartialDeclaration x
+$cto :: forall x. Rep PartialDeclaration x -&gt; PartialDeclaration
+to :: forall x. Rep PartialDeclaration x -&gt; PartialDeclaration
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680196163"><span id="local-6989586621680196197"><span id="local-6989586621680196201"><span class="annot"><span class="annottext">Int -&gt; PartialDeclaration -&gt; ShowS
+[PartialDeclaration] -&gt; ShowS
+PartialDeclaration -&gt; String
+(Int -&gt; PartialDeclaration -&gt; ShowS)
+-&gt; (PartialDeclaration -&gt; String)
+-&gt; ([PartialDeclaration] -&gt; ShowS)
+-&gt; Show PartialDeclaration
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; PartialDeclaration -&gt; ShowS
+showsPrec :: Int -&gt; PartialDeclaration -&gt; ShowS
+$cshow :: PartialDeclaration -&gt; String
+show :: PartialDeclaration -&gt; String
+$cshowList :: [PartialDeclaration] -&gt; ShowS
+showList :: [PartialDeclaration] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="annot"><a href="Elara.Desugar.Common.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-type">partialDeclarationSourceRegion</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Desugar.Common.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-54"></span><span id="partialDeclarationSourceRegion"><span class="annot"><span class="annottext">partialDeclarationSourceRegion :: PartialDeclaration -&gt; NodeLoc DeclNode SourceRegion
+</span><a href="Elara.Desugar.Common.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var hs-var">partialDeclarationSourceRegion</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#JustDef"><span class="hs-identifier hs-type">JustDef</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680196271"><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><a href="#local-6989586621680196271"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe [Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><a href="#local-6989586621680196271"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><span id="line-55"></span><span class="annot"><a href="Elara.Desugar.Common.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var">partialDeclarationSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#JustLet"><span class="hs-identifier hs-type">JustLet</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680196272"><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><a href="#local-6989586621680196272"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredExpr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe [Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><a href="#local-6989586621680196272"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><span id="line-56"></span><span class="annot"><a href="Elara.Desugar.Common.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var">partialDeclarationSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#AllDecl"><span class="hs-identifier hs-type">AllDecl</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680196273"><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><a href="#local-6989586621680196273"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredExpr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><a href="#local-6989586621680196273"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><span id="line-57"></span><span class="annot"><a href="Elara.Desugar.Common.html#partialDeclarationSourceRegion"><span class="hs-identifier hs-var">partialDeclarationSourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#Immediate"><span class="hs-identifier hs-type">Immediate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Declaration"><span class="hs-identifier hs-type">Declaration</span></a></span><span> </span><span id="local-6989586621680196274"><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><a href="#local-6989586621680196274"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">Declaration' SourceRegion Desugared
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><a href="#local-6989586621680196274"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Desugar.Common.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-60"></span><span>    </span><span id="local-6989586621680196292"><span class="annot"><span class="annottext">pretty :: PartialDeclaration -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680196292"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#JustDef"><span class="hs-identifier hs-type">JustDef</span></a></span><span> </span><span id="local-6989586621680196294"><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196294"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe [Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;JustDef&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196294"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#JustLet"><span class="hs-identifier hs-type">JustLet</span></a></span><span> </span><span id="local-6989586621680196296"><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196296"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredExpr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe [Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;JustLet&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196296"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#AllDecl"><span class="hs-identifier hs-type">AllDecl</span></a></span><span> </span><span id="local-6989586621680196297"><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196297"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredExpr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;All&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196297"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span id="local-6989586621680196298"><span class="annot"><span class="annottext">imm :: PartialDeclaration
+</span><a href="#local-6989586621680196298"><span class="hs-identifier hs-var">imm</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#Immediate"><span class="hs-identifier hs-type">Immediate</span></a></span><span> </span><span class="annot"><span class="annottext">Declaration SourceRegion Desugared
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Immediate&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion Name -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PartialDeclaration -&gt; TaggedLocate VarNode SourceRegion Name
+</span><a href="Elara.Desugar.Common.html#getPartialName"><span class="hs-identifier hs-var">getPartialName</span></a></span><span> </span><span class="annot"><span class="annottext">PartialDeclaration
+</span><a href="#local-6989586621680196298"><span class="hs-identifier hs-var">imm</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="annot"><a href="Elara.Desugar.Common.html#getPartialName"><span class="hs-identifier hs-type">getPartialName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Desugar.Common.html#PartialDeclaration"><span class="hs-identifier hs-type">PartialDeclaration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span>
+</span><span id="line-66"></span><span id="getPartialName"><span class="annot"><span class="annottext">getPartialName :: PartialDeclaration -&gt; TaggedLocate VarNode SourceRegion Name
+</span><a href="Elara.Desugar.Common.html#getPartialName"><span class="hs-identifier hs-var hs-var">getPartialName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#JustDef"><span class="hs-identifier hs-type">JustDef</span></a></span><span> </span><span id="local-6989586621680196315"><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196315"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe [Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name)
+-&gt; TaggedLocate VarNode SourceRegion VarName
+-&gt; TaggedLocate VarNode SourceRegion Name
+forall a b.
+(a -&gt; b)
+-&gt; TaggedLocate VarNode SourceRegion a
+-&gt; TaggedLocate VarNode SourceRegion b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+forall name. ToName name =&gt; name -&gt; Name
+</span><a href="Elara.AST.Name.html#toName"><span class="hs-identifier hs-var">toName</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196315"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-67"></span><span class="annot"><a href="Elara.Desugar.Common.html#getPartialName"><span class="hs-identifier hs-var">getPartialName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#JustLet"><span class="hs-identifier hs-type">JustLet</span></a></span><span> </span><span id="local-6989586621680196317"><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196317"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredExpr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe [Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name)
+-&gt; TaggedLocate VarNode SourceRegion VarName
+-&gt; TaggedLocate VarNode SourceRegion Name
+forall a b.
+(a -&gt; b)
+-&gt; TaggedLocate VarNode SourceRegion a
+-&gt; TaggedLocate VarNode SourceRegion b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+forall name. ToName name =&gt; name -&gt; Name
+</span><a href="Elara.AST.Name.html#toName"><span class="hs-identifier hs-var">toName</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196317"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Elara.Desugar.Common.html#getPartialName"><span class="hs-identifier hs-var">getPartialName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#AllDecl"><span class="hs-identifier hs-type">AllDecl</span></a></span><span> </span><span id="local-6989586621680196318"><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196318"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DesugaredExpr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name)
+-&gt; TaggedLocate VarNode SourceRegion VarName
+-&gt; TaggedLocate VarNode SourceRegion Name
+forall a b.
+(a -&gt; b)
+-&gt; TaggedLocate VarNode SourceRegion a
+-&gt; TaggedLocate VarNode SourceRegion b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+forall name. ToName name =&gt; name -&gt; Name
+</span><a href="Elara.AST.Name.html#toName"><span class="hs-identifier hs-var">toName</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+</span><a href="#local-6989586621680196318"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-69"></span><span class="annot"><a href="Elara.Desugar.Common.html#getPartialName"><span class="hs-identifier hs-var">getPartialName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Desugar.Common.html#Immediate"><span class="hs-identifier hs-type">Immediate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Declaration"><span class="hs-identifier hs-type">Declaration</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Declaration%27"><span class="hs-identifier hs-type">Declaration'</span></a></span><span> </span><span class="annot"><span class="annottext">LocateNode ModuleNode SourceRegion ModuleName
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#DeclarationBody"><span class="hs-identifier hs-type">DeclarationBody</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc DeclNode SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680196321"><span class="annot"><span class="annottext">DeclarationBody' SourceRegion Desugared
+</span><a href="#local-6989586621680196321"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">DeclarationBody' SourceRegion Desugared
+</span><a href="#local-6989586621680196321"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-71"></span><span>        </span><span class="annot"><a href="Elara.AST.Types.html#ValueDeclaration"><span class="hs-identifier hs-type">ValueDeclaration</span></a></span><span> </span><span id="local-6989586621680196323"><span class="annot"><span class="annottext">TopValueBinder Desugared SourceRegion
+</span><a href="#local-6989586621680196323"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">DesugaredExpr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">ValueDeclPatterns Desugared SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">ValueDeclTypeAnnotation Desugared SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">ValueDeclMetadata Desugared SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Name)
+-&gt; TaggedLocate VarNode SourceRegion VarName
+-&gt; TaggedLocate VarNode SourceRegion Name
+forall a b.
+(a -&gt; b)
+-&gt; TaggedLocate VarNode SourceRegion a
+-&gt; TaggedLocate VarNode SourceRegion b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Name
+forall name. ToName name =&gt; name -&gt; Name
+</span><a href="Elara.AST.Name.html#toName"><span class="hs-identifier hs-var">toName</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate VarNode SourceRegion VarName
+TopValueBinder Desugared SourceRegion
+</span><a href="#local-6989586621680196323"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-72"></span><span>        </span><span class="annot"><a href="Elara.AST.Types.html#TypeDeclarationBody"><span class="hs-identifier hs-type">TypeDeclarationBody</span></a></span><span> </span><span id="local-6989586621680196325"><span class="annot"><span class="annottext">TopTypeBinder Desugared SourceRegion
+</span><a href="#local-6989586621680196325"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="annot"><span class="annottext">[TypeVariable Desugared SourceRegion]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">TypeDeclaration SourceRegion Desugared
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe DesugaredType
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">TypeDeclMetadata Desugared SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[Annotation SourceRegion Desugared]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; Name
+</span><a href="Elara.AST.Name.html#NameType"><span class="hs-identifier hs-var">NameType</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeName -&gt; Name)
+-&gt; TaggedLocate VarNode SourceRegion TypeName
+-&gt; TaggedLocate VarNode SourceRegion Name
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (newTag :: AstNode) (oldTag :: AstNode) loc a.
+(UnwrapNodeLoc oldTag loc loc, WrapNode newTag) =&gt;
+TaggedLocate oldTag loc a -&gt; TaggedLocate newTag loc a
+</span><a href="Elara.AST.Location.html#retag"><span class="hs-identifier hs-var">retag</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate TypeNode SourceRegion TypeName
+TopTypeBinder Desugared SourceRegion
+</span><a href="#local-6989586621680196325"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-73"></span><span>        </span><span class="annot"><a href="Elara.AST.Types.html#DeclBodyExtension"><span class="hs-identifier hs-type">DeclBodyExtension</span></a></span><span> </span><span id="local-6989586621680196330"><span class="annot"><span class="annottext">DeclBodyExtension Desugared SourceRegion
+</span><a href="#local-6989586621680196330"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Void -&gt; TaggedLocate VarNode SourceRegion Name
+forall a. Void -&gt; a
+</span><span class="hs-identifier hs-var">absurd</span></span><span> </span><span class="annot"><span class="annottext">Void
+DeclBodyExtension Desugared SourceRegion
+</span><a href="#local-6989586621680196330"><span class="hs-identifier hs-var">ext</span></a></span><span>
+</span><span id="line-74"></span></pre></body></html>

@@ -2,140 +2,186 @@
 </span><span id="line-2"></span><span>
 </span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Eff</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(:&gt;)</span></span><span class="hs-special">)</span><span>
 </span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Error.Static</span></span><span>
-</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
-</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html"><span class="hs-identifier">Elara.AST.Phases.Kinded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier">KindedType</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType%27"><span class="hs-identifier">KindedType'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier">SourceRegion</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier">unlocated</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Types.html"><span class="hs-identifier">Elara.AST.Types</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">New</span></span><span>
-</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html"><span class="hs-identifier">Elara.Data.Kind</span></a></span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier">Unique</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier">ReportableError</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Prim.html"><span class="hs-identifier">Elara.Prim</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Prim.html#mkPrimQual"><span class="hs-identifier">mkPrimQual</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html"><span class="hs-identifier">Elara.TypeInfer.Type</span></a></span><span>
-</span><span id="line-15"></span><span>
-</span><span id="line-16"></span><span class="annot"><span class="hs-comment">-- | Collect free type variables from a type</span></span><span>
-</span><span id="line-17"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-type">freeTypeVars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier hs-type">KindedType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-18"></span><span id="freeTypeVars"><span class="annot"><span class="annottext">freeTypeVars :: KindedType -&gt; [Located (Unique LowerAlphaName)]
-</span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var hs-var">freeTypeVars</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">New.Type</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Location.html"><span class="hs-identifier">Elara.AST.Location</span></a></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html"><span class="hs-identifier">Elara.AST.Phases.Kinded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier">KindedType</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType%27"><span class="hs-identifier">KindedType'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier">SourceRegion</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier">unlocated</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html"><span class="hs-identifier">Elara.Data.Kind</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier">Unique</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier">ElaraDiagnostic</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier">ElaraError</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier">ElaraMarker</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraMarkerType"><span class="hs-identifier">ElaraMarkerType</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraNote"><span class="hs-identifier">ElaraNote</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier">ElaraReport</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraSeverity"><span class="hs-identifier">ElaraSeverity</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Diagnose.html"><span class="hs-identifier">Elara.Error.Diagnose</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.Diagnose.html#toDiagnoseReports"><span class="hs-identifier">toDiagnoseReports</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Prim.html"><span class="hs-identifier">Elara.Prim</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Prim.html#mkPrimQual"><span class="hs-identifier">mkPrimQual</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html"><span class="hs-identifier">Elara.TypeInfer.Type</span></a></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Types.html"><span class="hs-identifier">Elara.AST.Types</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">New</span></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="annot"><span class="hs-comment">-- | Collect free type variables from a type</span></span><span>
+</span><span id="line-21"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-type">freeTypeVars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier hs-type">KindedType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-22"></span><span id="freeTypeVars"><span class="annot"><span class="annottext">freeTypeVars :: KindedType
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+</span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var hs-var">freeTypeVars</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">New.Type</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">TypeMeta Kinded SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680116943"><span class="annot"><span class="annottext">Type' SourceRegion Kinded
-</span><a href="#local-6989586621680116943"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded -&gt; [Located (Unique LowerAlphaName)]
-</span><a href="#local-6989586621680116944"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
-</span><a href="#local-6989586621680116943"><span class="hs-identifier hs-var">t'</span></a></span><span>
-</span><span id="line-19"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-20"></span><span>    </span><span class="annot"><a href="#local-6989586621680116944"><span class="hs-identifier hs-type">freeTypeVars'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType%27"><span class="hs-identifier hs-type">KindedType'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-21"></span><span>    </span><span id="local-6989586621680116944"><span class="annot"><span class="annottext">freeTypeVars' :: Type' SourceRegion Kinded -&gt; [Located (Unique LowerAlphaName)]
-</span><a href="#local-6989586621680116944"><span class="hs-identifier hs-var hs-var">freeTypeVars'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TVar"><span class="hs-identifier hs-type">New.TVar</span></a></span><span> </span><span id="local-6989586621680116946"><span class="annot"><span class="annottext">TypeVariable Kinded SourceRegion
-</span><a href="#local-6989586621680116946"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Located (Unique LowerAlphaName)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680178309"><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178309"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+</span><a href="#local-6989586621680178310"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178309"><span class="hs-identifier hs-var">t'</span></a></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>    </span><span id="local-6989586621680178310"><span class="annot"><span class="annottext">freeTypeVars' :: Type' SourceRegion Kinded
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+</span><a href="#local-6989586621680178310"><span class="hs-identifier hs-var hs-var">freeTypeVars'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TVar"><span class="hs-identifier hs-type">New.TVar</span></a></span><span> </span><span id="local-6989586621680178317"><span class="annot"><span class="annottext">TypeVariable Kinded SourceRegion
+</span><a href="#local-6989586621680178317"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
 TypeVariable Kinded SourceRegion
-</span><a href="#local-6989586621680116946"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-22"></span><span>    </span><span class="annot"><a href="#local-6989586621680116944"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TFun"><span class="hs-identifier hs-type">New.TFun</span></a></span><span> </span><span id="local-6989586621680116948"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116948"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621680116949"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116949"><span class="hs-identifier hs-var">t2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; [Located (Unique LowerAlphaName)]
+</span><a href="#local-6989586621680178317"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="#local-6989586621680178310"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TFun"><span class="hs-identifier hs-type">New.TFun</span></a></span><span> </span><span id="local-6989586621680178319"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178319"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621680178320"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178320"><span class="hs-identifier hs-var">t2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KindedType
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 </span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var">freeTypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116948"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="annot"><span class="annottext">[Located (Unique LowerAlphaName)]
--&gt; [Located (Unique LowerAlphaName)]
--&gt; [Located (Unique LowerAlphaName)]
+</span><a href="#local-6989586621680178319"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="annot"><span class="annottext">[TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
-</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; [Located (Unique LowerAlphaName)]
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">KindedType
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 </span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var">freeTypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116949"><span class="hs-identifier hs-var">t2</span></a></span><span>
-</span><span id="line-23"></span><span>    </span><span class="annot"><a href="#local-6989586621680116944"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178320"><span class="hs-identifier hs-var">t2</span></a></span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="#local-6989586621680178310"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
 </span><a href="Elara.AST.Types.html#TUnit"><span class="hs-identifier hs-var">New.TUnit</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-24"></span><span>    </span><span class="annot"><a href="#local-6989586621680116944"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TApp"><span class="hs-identifier hs-type">New.TApp</span></a></span><span> </span><span id="local-6989586621680116952"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116952"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621680116953"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116953"><span class="hs-identifier hs-var">t2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; [Located (Unique LowerAlphaName)]
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="#local-6989586621680178310"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TApp"><span class="hs-identifier hs-type">New.TApp</span></a></span><span> </span><span id="local-6989586621680178323"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178323"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621680178324"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178324"><span class="hs-identifier hs-var">t2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KindedType
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 </span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var">freeTypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116952"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="annot"><span class="annottext">[Located (Unique LowerAlphaName)]
--&gt; [Located (Unique LowerAlphaName)]
--&gt; [Located (Unique LowerAlphaName)]
+</span><a href="#local-6989586621680178323"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="annot"><span class="annottext">[TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
-</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; [Located (Unique LowerAlphaName)]
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">KindedType
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 </span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var">freeTypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116953"><span class="hs-identifier hs-var">t2</span></a></span><span>
-</span><span id="line-25"></span><span>    </span><span class="annot"><a href="#local-6989586621680116944"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TUserDefined"><span class="hs-identifier hs-type">New.TUserDefined</span></a></span><span> </span><span class="annot"><span class="annottext">TypeOccurrence Kinded SourceRegion
+</span><a href="#local-6989586621680178324"><span class="hs-identifier hs-var">t2</span></a></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="#local-6989586621680178310"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TUserDefined"><span class="hs-identifier hs-type">New.TUserDefined</span></a></span><span> </span><span class="annot"><span class="annottext">TypeOccurrence Kinded SourceRegion
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-26"></span><span>    </span><span class="annot"><a href="#local-6989586621680116944"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TRecord"><span class="hs-identifier hs-type">New.TRecord</span></a></span><span> </span><span id="local-6989586621680116956"><span class="annot"><span class="annottext">NonEmpty (Locate SourceRegion LowerAlphaName, KindedType)
-</span><a href="#local-6989586621680116956"><span class="hs-identifier hs-var">fields</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Located LowerAlphaName, KindedType)
- -&gt; [Located (Unique LowerAlphaName)])
--&gt; NonEmpty (Located LowerAlphaName, KindedType)
--&gt; [Located (Unique LowerAlphaName)]
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="#local-6989586621680178310"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TRecord"><span class="hs-identifier hs-type">New.TRecord</span></a></span><span> </span><span id="local-6989586621680178327"><span class="annot"><span class="annottext">NonEmpty
+  (LocateNode VarNode SourceRegion LowerAlphaName, KindedType)
+</span><a href="#local-6989586621680178327"><span class="hs-identifier hs-var">fields</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((TaggedLocate VarNode SourceRegion LowerAlphaName, KindedType)
+ -&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)])
+-&gt; NonEmpty
+     (TaggedLocate VarNode SourceRegion LowerAlphaName, KindedType)
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
-</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">KindedType -&gt; [Located (Unique LowerAlphaName)]
-</span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var">freeTypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">(KindedType -&gt; [Located (Unique LowerAlphaName)])
--&gt; ((Located LowerAlphaName, KindedType) -&gt; KindedType)
--&gt; (Located LowerAlphaName, KindedType)
--&gt; [Located (Unique LowerAlphaName)]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">KindedType
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+</span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var">freeTypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">(KindedType
+ -&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)])
+-&gt; ((TaggedLocate VarNode SourceRegion LowerAlphaName, KindedType)
+    -&gt; KindedType)
+-&gt; (TaggedLocate VarNode SourceRegion LowerAlphaName, KindedType)
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Located LowerAlphaName, KindedType) -&gt; KindedType
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(TaggedLocate VarNode SourceRegion LowerAlphaName, KindedType)
+-&gt; KindedType
 forall a b. (a, b) -&gt; b
-</span><span class="hs-identifier hs-var">snd</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">NonEmpty (Located LowerAlphaName, KindedType)
-NonEmpty (Locate SourceRegion LowerAlphaName, KindedType)
-</span><a href="#local-6989586621680116956"><span class="hs-identifier hs-var">fields</span></a></span><span>
-</span><span id="line-27"></span><span>    </span><span class="annot"><a href="#local-6989586621680116944"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TList"><span class="hs-identifier hs-type">New.TList</span></a></span><span> </span><span id="local-6989586621680116961"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116961"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; [Located (Unique LowerAlphaName)]
+</span><span class="hs-identifier hs-var">snd</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">NonEmpty
+  (TaggedLocate VarNode SourceRegion LowerAlphaName, KindedType)
+NonEmpty
+  (LocateNode VarNode SourceRegion LowerAlphaName, KindedType)
+</span><a href="#local-6989586621680178327"><span class="hs-identifier hs-var">fields</span></a></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="#local-6989586621680178310"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TList"><span class="hs-identifier hs-type">New.TList</span></a></span><span> </span><span id="local-6989586621680178332"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178332"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KindedType
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 </span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var">freeTypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116961"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-28"></span><span>    </span><span class="annot"><a href="#local-6989586621680116944"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TExtension"><span class="hs-identifier hs-type">New.TExtension</span></a></span><span> </span><span id="local-6989586621680116963"><span class="annot"><span class="annottext">TypeSyntaxExtension Kinded SourceRegion
-</span><a href="#local-6989586621680116963"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Void -&gt; [Located (Unique LowerAlphaName)]
+</span><a href="#local-6989586621680178332"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="#local-6989586621680178310"><span class="hs-identifier hs-var">freeTypeVars'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TExtension"><span class="hs-identifier hs-type">New.TExtension</span></a></span><span> </span><span id="local-6989586621680178334"><span class="annot"><span class="annottext">TypeSyntaxExtension Kinded SourceRegion
+</span><a href="#local-6989586621680178334"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Void
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 forall a. Void -&gt; a
 </span><span class="hs-identifier hs-var">absurd</span></span><span> </span><span class="annot"><span class="annottext">Void
 TypeSyntaxExtension Kinded SourceRegion
-</span><a href="#local-6989586621680116963"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-29"></span><span>
-</span><span id="line-30"></span><span id="local-6989586621680116815"><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToGeneralisedInferType"><span class="hs-identifier hs-type">astTypeToGeneralisedInferType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680116815"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier hs-type">KindedType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680116815"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-31"></span><span id="astTypeToGeneralisedInferType"><span class="annot"><span class="annottext">astTypeToGeneralisedInferType :: forall (r :: [Effect]).
+</span><a href="#local-6989586621680178334"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span id="local-6989586621680178196"><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToGeneralisedInferType"><span class="hs-identifier hs-type">astTypeToGeneralisedInferType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680178196"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier hs-type">KindedType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680178196"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-34"></span><span id="astTypeToGeneralisedInferType"><span class="annot"><span class="annottext">astTypeToGeneralisedInferType :: forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 KindedType -&gt; Eff r (Type SourceRegion)
-</span><a href="Elara.TypeInfer.Convert.html#astTypeToGeneralisedInferType"><span class="hs-identifier hs-var hs-var">astTypeToGeneralisedInferType</span></a></span></span><span> </span><span id="local-6989586621680116983"><span class="annot"><span class="annottext">t :: KindedType
-</span><a href="#local-6989586621680116983"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">New.Type</span></a></span><span> </span><span id="local-6989586621680116984"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680116984"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span id="local-6989586621680116985"><span class="annot"><span class="annottext">TypeMeta Kinded SourceRegion
-</span><a href="#local-6989586621680116985"><span class="hs-identifier hs-var">_kind</span></a></span></span><span> </span><span id="local-6989586621680116986"><span class="annot"><span class="annottext">Type' SourceRegion Kinded
-</span><a href="#local-6989586621680116986"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-32"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680116987"><span class="annot"><span class="annottext">ftvs :: [Located (Unique LowerAlphaName)]
-</span><a href="#local-6989586621680116987"><span class="hs-identifier hs-var hs-var hs-var">ftvs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Located (Unique LowerAlphaName)]
--&gt; [Located (Unique LowerAlphaName)]
+</span><a href="Elara.TypeInfer.Convert.html#astTypeToGeneralisedInferType"><span class="hs-identifier hs-var hs-var">astTypeToGeneralisedInferType</span></a></span></span><span> </span><span id="local-6989586621680178362"><span class="annot"><span class="annottext">t :: KindedType
+</span><a href="#local-6989586621680178362"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">New.Type</span></a></span><span> </span><span id="local-6989586621680178363"><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion
+</span><a href="#local-6989586621680178363"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span id="local-6989586621680178364"><span class="annot"><span class="annottext">TypeMeta Kinded SourceRegion
+</span><a href="#local-6989586621680178364"><span class="hs-identifier hs-var">_kind</span></a></span></span><span> </span><span id="local-6989586621680178365"><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178365"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680178366"><span class="annot"><span class="annottext">ftvs :: [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+</span><a href="#local-6989586621680178366"><span class="hs-identifier hs-var hs-var hs-var">ftvs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 forall a. Ord a =&gt; [a] -&gt; [a]
-</span><span class="hs-identifier hs-var">ordNub</span></span><span> </span><span class="annot"><span class="annottext">([Located (Unique LowerAlphaName)]
- -&gt; [Located (Unique LowerAlphaName)])
--&gt; [Located (Unique LowerAlphaName)]
--&gt; [Located (Unique LowerAlphaName)]
+</span><span class="hs-identifier hs-var">ordNub</span></span><span> </span><span class="annot"><span class="annottext">([TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+ -&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)])
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; [Located (Unique LowerAlphaName)]
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">KindedType
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
 </span><a href="Elara.TypeInfer.Convert.html#freeTypeVars"><span class="hs-identifier hs-var">freeTypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680116983"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-33"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680116989"><span class="annot"><span class="annottext">skolems :: [UniqueTyVar]
-</span><a href="#local-6989586621680116989"><span class="hs-identifier hs-var hs-var hs-var">skolems</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Located (Unique LowerAlphaName) -&gt; UniqueTyVar)
--&gt; [Located (Unique LowerAlphaName)] -&gt; [UniqueTyVar]
+</span><a href="#local-6989586621680178362"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680178368"><span class="annot"><span class="annottext">skolems :: [Unique (Maybe Text)]
+</span><a href="#local-6989586621680178368"><span class="hs-identifier hs-var hs-var hs-var">skolems</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
+ -&gt; Unique (Maybe Text))
+-&gt; [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+-&gt; [Unique (Maybe Text)]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
-</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located UniqueTyVar) UniqueTyVar
--&gt; Located UniqueTyVar -&gt; UniqueTyVar
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Optic'
+  A_Lens
+  NoIx
+  (TaggedLocate TypeNode SourceRegion (Unique (Maybe Text)))
+  (Unique (Maybe Text))
+-&gt; TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+-&gt; Unique (Maybe Text)
 forall k (is :: IxList) s a.
 Is k A_Getter =&gt;
 Optic' k is s a -&gt; s -&gt; a
-</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located UniqueTyVar) UniqueTyVar
-forall a b. Lens (Located a) (Located b) a b
-</span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span> </span><span class="annot"><span class="annottext">(Located UniqueTyVar -&gt; UniqueTyVar)
--&gt; (Located (Unique LowerAlphaName) -&gt; Located UniqueTyVar)
--&gt; Located (Unique LowerAlphaName)
--&gt; UniqueTyVar
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens
+  NoIx
+  (TaggedLocate TypeNode SourceRegion (Unique (Maybe Text)))
+  (Unique (Maybe Text))
+forall a b.
+Lens
+  (TaggedLocate TypeNode SourceRegion a)
+  (TaggedLocate TypeNode SourceRegion b)
+  a
+  b
+forall (w :: * -&gt; *) a b. LocatedElement w =&gt; Lens (w a) (w b) a b
+</span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span> </span><span class="annot"><span class="annottext">(TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+ -&gt; Unique (Maybe Text))
+-&gt; (TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
+    -&gt; TaggedLocate TypeNode SourceRegion (Unique (Maybe Text)))
+-&gt; TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
+-&gt; Unique (Maybe Text)
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Located (Unique LowerAlphaName) -&gt; Located UniqueTyVar
-</span><a href="Elara.TypeInfer.Convert.html#convertTyVar"><span class="hs-identifier hs-var">convertTyVar</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Located (Unique LowerAlphaName)]
-</span><a href="#local-6989586621680116987"><span class="hs-identifier hs-var">ftvs</span></a></span><span>
-</span><span id="line-34"></span><span>    </span><span id="local-6989586621680116992"><span class="annot"><a href="#local-6989586621680116992"><span class="hs-identifier hs-var">asInferType</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
+-&gt; TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+</span><a href="Elara.TypeInfer.Convert.html#convertTyVar"><span class="hs-identifier hs-var">convertTyVar</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)]
+</span><a href="#local-6989586621680178366"><span class="hs-identifier hs-var">ftvs</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680178371"><span class="annot"><span class="annottext">loc' :: SourceRegion
+</span><a href="#local-6989586621680178371"><span class="hs-identifier hs-var hs-var hs-var">loc'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion -&gt; SourceRegion
+forall a loc. HasLocation a loc =&gt; a -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var">getLocation</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion
+</span><a href="#local-6989586621680178363"><span class="hs-identifier hs-var">loc</span></a></span><span>
+</span><span id="line-38"></span><span>    </span><span id="local-6989586621680178373"><span class="annot"><a href="#local-6989586621680178373"><span class="hs-identifier hs-var">asInferType</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SourceRegion
 -&gt; Type' SourceRegion Kinded -&gt; Eff r (Monotype SourceRegion)
 forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 SourceRegion
 -&gt; Type' SourceRegion Kinded -&gt; Eff r (Monotype SourceRegion)
 </span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680116984"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
-</span><a href="#local-6989586621680116986"><span class="hs-identifier hs-var">t'</span></a></span><span>
-</span><span id="line-35"></span><span>
-</span><span id="line-36"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680116989"><span class="hs-identifier hs-type">skolems</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-37"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type SourceRegion -&gt; Eff r (Type SourceRegion)
+</span><a href="#local-6989586621680178371"><span class="hs-identifier hs-var">loc'</span></a></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178365"><span class="hs-identifier hs-var">t'</span></a></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680178368"><span class="hs-identifier hs-type">skolems</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-41"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type SourceRegion -&gt; Eff r (Type SourceRegion)
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Type SourceRegion -&gt; Eff r (Type SourceRegion))
@@ -144,8 +190,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Type SourceRegion
 forall loc. Monotype loc -&gt; Type loc
 </span><a href="Elara.TypeInfer.Type.html#Lifted"><span class="hs-identifier hs-var">Lifted</span></a></span><span> </span><span class="annot"><span class="annottext">Monotype SourceRegion
-</span><a href="#local-6989586621680116992"><span class="hs-identifier hs-var">asInferType</span></a></span><span>
-</span><span id="line-38"></span><span>        </span><span class="annot"><span class="annottext">[UniqueTyVar]
+</span><a href="#local-6989586621680178373"><span class="hs-identifier hs-var">asInferType</span></a></span><span>
+</span><span id="line-42"></span><span>        </span><span class="annot"><span class="annottext">[Unique (Maybe Text)]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type SourceRegion -&gt; Eff r (Type SourceRegion)
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -155,66 +201,79 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Polytype SourceRegion -&gt; Type SourceRegion
 forall loc. Polytype loc -&gt; Type loc
 </span><a href="Elara.TypeInfer.Type.html#Polytype"><span class="hs-identifier hs-var">Polytype</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SourceRegion
--&gt; [UniqueTyVar]
+-&gt; [Unique (Maybe Text)]
 -&gt; Constraint SourceRegion
 -&gt; Monotype SourceRegion
 -&gt; Polytype SourceRegion
 forall loc.
 loc
--&gt; [UniqueTyVar] -&gt; Constraint loc -&gt; Monotype loc -&gt; Polytype loc
+-&gt; [Unique (Maybe Text)]
+-&gt; Constraint loc
+-&gt; Monotype loc
+-&gt; Polytype loc
 </span><a href="Elara.TypeInfer.Type.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680116984"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="annot"><span class="annottext">[UniqueTyVar]
-</span><a href="#local-6989586621680116989"><span class="hs-identifier hs-var">skolems</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SourceRegion -&gt; Constraint SourceRegion
+</span><a href="#local-6989586621680178371"><span class="hs-identifier hs-var">loc'</span></a></span><span> </span><span class="annot"><span class="annottext">[Unique (Maybe Text)]
+</span><a href="#local-6989586621680178368"><span class="hs-identifier hs-var">skolems</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SourceRegion -&gt; Constraint SourceRegion
 forall loc. loc -&gt; Constraint loc
 </span><a href="Elara.TypeInfer.Type.html#EmptyConstraint"><span class="hs-identifier hs-var">EmptyConstraint</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680116984"><span class="hs-identifier hs-var">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Monotype SourceRegion
-</span><a href="#local-6989586621680116992"><span class="hs-identifier hs-var">asInferType</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-39"></span><span>
-</span><span id="line-40"></span><span id="local-6989586621680116855"><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-type">astTypeToInferType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680116855"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier hs-type">KindedType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680116855"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-41"></span><span id="astTypeToInferType"><span class="annot"><span class="annottext">astTypeToInferType :: forall (r :: [Effect]).
+</span><a href="#local-6989586621680178371"><span class="hs-identifier hs-var">loc'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Monotype SourceRegion
+</span><a href="#local-6989586621680178373"><span class="hs-identifier hs-var">asInferType</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span id="local-6989586621680178248"><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-type">astTypeToInferType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680178248"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier hs-type">KindedType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680178248"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-45"></span><span id="astTypeToInferType"><span class="annot"><span class="annottext">astTypeToInferType :: forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 KindedType -&gt; Eff r (Monotype SourceRegion)
-</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-var hs-var">astTypeToInferType</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">New.Type</span></a></span><span> </span><span id="local-6989586621680117001"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117001"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span id="local-6989586621680117002"><span class="annot"><span class="annottext">TypeMeta Kinded SourceRegion
-</span><a href="#local-6989586621680117002"><span class="hs-identifier hs-var">_kind</span></a></span></span><span> </span><span id="local-6989586621680117003"><span class="annot"><span class="annottext">Type' SourceRegion Kinded
-</span><a href="#local-6989586621680117003"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-42"></span><span>    </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-var hs-var">astTypeToInferType</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">New.Type</span></a></span><span> </span><span id="local-6989586621680178383"><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion
+</span><a href="#local-6989586621680178383"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span id="local-6989586621680178384"><span class="annot"><span class="annottext">TypeMeta Kinded SourceRegion
+</span><a href="#local-6989586621680178384"><span class="hs-identifier hs-var">_kind</span></a></span></span><span> </span><span id="local-6989586621680178385"><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178385"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><span class="annottext">SourceRegion
 -&gt; Type' SourceRegion Kinded -&gt; Eff r (Monotype SourceRegion)
 forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 SourceRegion
 -&gt; Type' SourceRegion Kinded -&gt; Eff r (Monotype SourceRegion)
-</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117001"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
-</span><a href="#local-6989586621680117003"><span class="hs-identifier hs-var">t'</span></a></span><span>
-</span><span id="line-43"></span><span>
-</span><span id="line-44"></span><span id="local-6989586621680116857"><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferTypeWithKind"><span class="hs-identifier hs-type">astTypeToInferTypeWithKind</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680116857"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier hs-type">KindedType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680116857"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-45"></span><span id="astTypeToInferTypeWithKind"><span class="annot"><span class="annottext">astTypeToInferTypeWithKind :: forall (r :: [Effect]).
+</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion -&gt; SourceRegion
+forall a loc. HasLocation a loc =&gt; a -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var">getLocation</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion
+</span><a href="#local-6989586621680178383"><span class="hs-identifier hs-var">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178385"><span class="hs-identifier hs-var">t'</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span id="local-6989586621680178250"><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferTypeWithKind"><span class="hs-identifier hs-type">astTypeToInferTypeWithKind</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680178250"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType"><span class="hs-identifier hs-type">KindedType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680178250"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-49"></span><span id="astTypeToInferTypeWithKind"><span class="annot"><span class="annottext">astTypeToInferTypeWithKind :: forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 KindedType -&gt; Eff r (Monotype SourceRegion, ElaraKind)
-</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferTypeWithKind"><span class="hs-identifier hs-var hs-var">astTypeToInferTypeWithKind</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">New.Type</span></a></span><span> </span><span id="local-6989586621680117009"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117009"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span id="local-6989586621680117010"><span class="annot"><span class="annottext">TypeMeta Kinded SourceRegion
-</span><a href="#local-6989586621680117010"><span class="hs-identifier hs-var">kind</span></a></span></span><span> </span><span id="local-6989586621680117011"><span class="annot"><span class="annottext">Type' SourceRegion Kinded
-</span><a href="#local-6989586621680117011"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-46"></span><span>    </span><span id="local-6989586621680117012"><span class="annot"><a href="#local-6989586621680117012"><span class="hs-identifier hs-var">asInferType</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferTypeWithKind"><span class="hs-identifier hs-var hs-var">astTypeToInferTypeWithKind</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">New.Type</span></a></span><span> </span><span id="local-6989586621680178392"><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion
+</span><a href="#local-6989586621680178392"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span id="local-6989586621680178393"><span class="annot"><span class="annottext">TypeMeta Kinded SourceRegion
+</span><a href="#local-6989586621680178393"><span class="hs-identifier hs-var">kind</span></a></span></span><span> </span><span id="local-6989586621680178394"><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178394"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-50"></span><span>    </span><span id="local-6989586621680178395"><span class="annot"><a href="#local-6989586621680178395"><span class="hs-identifier hs-var">asInferType</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SourceRegion
 -&gt; Type' SourceRegion Kinded -&gt; Eff r (Monotype SourceRegion)
 forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 SourceRegion
 -&gt; Type' SourceRegion Kinded -&gt; Eff r (Monotype SourceRegion)
-</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117009"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
-</span><a href="#local-6989586621680117011"><span class="hs-identifier hs-var">t'</span></a></span><span>
-</span><span id="line-47"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680117012"><span class="hs-identifier hs-type">asInferType</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680117010"><span class="hs-identifier hs-type">kind</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-48"></span><span>
-</span><span id="line-49"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#convertTyVar"><span class="hs-identifier hs-type">convertTyVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Unique.html#UniqueTyVar"><span class="hs-identifier hs-type">UniqueTyVar</span></a></span><span>
-</span><span id="line-50"></span><span id="convertTyVar"><span class="annot"><span class="annottext">convertTyVar :: Located (Unique LowerAlphaName) -&gt; Located UniqueTyVar
-</span><a href="Elara.TypeInfer.Convert.html#convertTyVar"><span class="hs-identifier hs-var hs-var">convertTyVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Unique LowerAlphaName -&gt; UniqueTyVar)
--&gt; Located (Unique LowerAlphaName) -&gt; Located UniqueTyVar
-forall a b. (a -&gt; b) -&gt; Located a -&gt; Located b
+</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion -&gt; SourceRegion
+forall a loc. HasLocation a loc =&gt; a -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var">getLocation</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc TypeNode SourceRegion
+</span><a href="#local-6989586621680178392"><span class="hs-identifier hs-var">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178394"><span class="hs-identifier hs-var">t'</span></a></span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680178395"><span class="hs-identifier hs-type">asInferType</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680178393"><span class="hs-identifier hs-type">kind</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- convertTyVar :: Located (Unique LowerAlphaName) -&gt; Located UniqueTyVar</span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#convertTyVar"><span class="hs-identifier hs-type">convertTyVar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span id="convertTyVar"><span class="annot"><span class="annottext">convertTyVar :: TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
+-&gt; TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+</span><a href="Elara.TypeInfer.Convert.html#convertTyVar"><span class="hs-identifier hs-var hs-var">convertTyVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Unique LowerAlphaName -&gt; Unique (Maybe Text))
+-&gt; TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
+-&gt; TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+forall a b.
+(a -&gt; b)
+-&gt; TaggedLocate TypeNode SourceRegion a
+-&gt; TaggedLocate TypeNode SourceRegion b
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(LowerAlphaName -&gt; Maybe Text)
--&gt; Unique LowerAlphaName -&gt; UniqueTyVar
+-&gt; Unique LowerAlphaName -&gt; Unique (Maybe Text)
 forall a b. (a -&gt; b) -&gt; Unique a -&gt; Unique b
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
@@ -225,16 +284,16 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">LowerAlphaName -&gt; Text
 forall name. NameLike name =&gt; name -&gt; Text
 </span><a href="Elara.AST.Name.html#nameText"><span class="hs-identifier hs-var">nameText</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-51"></span><span>
-</span><span id="line-52"></span><span id="local-6989586621680116847"><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-type">astTypeToInferType'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680116847"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType%27"><span class="hs-identifier hs-type">KindedType'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680116847"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-53"></span><span id="astTypeToInferType%27"><span class="annot"><span class="annottext">astTypeToInferType' :: forall (r :: [Effect]).
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span id="local-6989586621680178240"><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-type">astTypeToInferType'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680178240"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Kinded.html#KindedType%27"><span class="hs-identifier hs-type">KindedType'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680178240"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-58"></span><span id="astTypeToInferType%27"><span class="annot"><span class="annottext">astTypeToInferType' :: forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 SourceRegion
 -&gt; Type' SourceRegion Kinded -&gt; Eff r (Monotype SourceRegion)
-</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var hs-var">astTypeToInferType'</span></a></span></span><span> </span><span id="local-6989586621680117055"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117055"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TVar"><span class="hs-identifier hs-type">New.TVar</span></a></span><span> </span><span id="local-6989586621680117056"><span class="annot"><span class="annottext">TypeVariable Kinded SourceRegion
-</span><a href="#local-6989586621680117056"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-54"></span><span>    </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
+</span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var hs-var">astTypeToInferType'</span></a></span></span><span> </span><span id="local-6989586621680178441"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680178441"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TVar"><span class="hs-identifier hs-type">New.TVar</span></a></span><span> </span><span id="local-6989586621680178442"><span class="annot"><span class="annottext">TypeVariable Kinded SourceRegion
+</span><a href="#local-6989586621680178442"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion))
@@ -243,42 +302,61 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; TypeVariable -&gt; Monotype SourceRegion
 forall loc. loc -&gt; TypeVariable -&gt; Monotype loc
 </span><a href="Elara.TypeInfer.Type.html#TypeVar"><span class="hs-identifier hs-var">TypeVar</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117055"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeVariable -&gt; Monotype SourceRegion)
+</span><a href="#local-6989586621680178441"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeVariable -&gt; Monotype SourceRegion)
 -&gt; TypeVariable -&gt; Monotype SourceRegion
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">UniqueTyVar -&gt; TypeVariable
-</span><a href="Elara.TypeInfer.Type.html#UnificationVar"><span class="hs-identifier hs-var">UnificationVar</span></a></span><span> </span><span class="annot"><span class="annottext">(UniqueTyVar -&gt; TypeVariable) -&gt; UniqueTyVar -&gt; TypeVariable
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Unique (Maybe Text) -&gt; TypeVariable
+</span><a href="Elara.TypeInfer.Type.html#UnificationVar"><span class="hs-identifier hs-var">UnificationVar</span></a></span><span> </span><span class="annot"><span class="annottext">(Unique (Maybe Text) -&gt; TypeVariable)
+-&gt; Unique (Maybe Text) -&gt; TypeVariable
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located UniqueTyVar) UniqueTyVar
--&gt; Located UniqueTyVar -&gt; UniqueTyVar
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens
+  NoIx
+  (TaggedLocate TypeNode SourceRegion (Unique (Maybe Text)))
+  (Unique (Maybe Text))
+-&gt; TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+-&gt; Unique (Maybe Text)
 forall k (is :: IxList) s a.
 Is k A_Getter =&gt;
 Optic' k is s a -&gt; s -&gt; a
-</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx (Located UniqueTyVar) UniqueTyVar
-forall a b. Lens (Located a) (Located b) a b
-</span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span> </span><span class="annot"><span class="annottext">(Located UniqueTyVar -&gt; UniqueTyVar)
--&gt; Located UniqueTyVar -&gt; UniqueTyVar
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Optic'
+  A_Lens
+  NoIx
+  (TaggedLocate TypeNode SourceRegion (Unique (Maybe Text)))
+  (Unique (Maybe Text))
+forall a b.
+Lens
+  (TaggedLocate TypeNode SourceRegion a)
+  (TaggedLocate TypeNode SourceRegion b)
+  a
+  b
+forall (w :: * -&gt; *) a b. LocatedElement w =&gt; Lens (w a) (w b) a b
+</span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span> </span><span class="annot"><span class="annottext">(TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+ -&gt; Unique (Maybe Text))
+-&gt; TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+-&gt; Unique (Maybe Text)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Located (Unique LowerAlphaName) -&gt; Located UniqueTyVar
-</span><a href="Elara.TypeInfer.Convert.html#convertTyVar"><span class="hs-identifier hs-var">convertTyVar</span></a></span><span> </span><span class="annot"><span class="annottext">Located (Unique LowerAlphaName)
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
+-&gt; TaggedLocate TypeNode SourceRegion (Unique (Maybe Text))
+</span><a href="Elara.TypeInfer.Convert.html#convertTyVar"><span class="hs-identifier hs-var">convertTyVar</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)
 TypeVariable Kinded SourceRegion
-</span><a href="#local-6989586621680117056"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-55"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span id="local-6989586621680117059"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117059"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TFun"><span class="hs-identifier hs-type">New.TFun</span></a></span><span> </span><span id="local-6989586621680117060"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680117060"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621680117061"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680117061"><span class="hs-identifier hs-var">o</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-56"></span><span>    </span><span id="local-6989586621680117062"><span class="annot"><a href="#local-6989586621680117062"><span class="hs-identifier hs-var">i'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; Eff r (Monotype SourceRegion)
+</span><a href="#local-6989586621680178442"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-60"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span id="local-6989586621680178445"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680178445"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TFun"><span class="hs-identifier hs-type">New.TFun</span></a></span><span> </span><span id="local-6989586621680178446"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178446"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621680178447"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178447"><span class="hs-identifier hs-var">o</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-61"></span><span>    </span><span id="local-6989586621680178448"><span class="annot"><a href="#local-6989586621680178448"><span class="hs-identifier hs-var">i'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; Eff r (Monotype SourceRegion)
 forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 KindedType -&gt; Eff r (Monotype SourceRegion)
 </span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-var">astTypeToInferType</span></a></span><span> </span><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680117060"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-57"></span><span>    </span><span id="local-6989586621680117063"><span class="annot"><a href="#local-6989586621680117063"><span class="hs-identifier hs-var">o'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-type">astTypeToInferType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680117061"><span class="hs-identifier hs-type">o</span></a></span><span>
-</span><span id="line-58"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Function"><span class="hs-identifier hs-type">Function</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680117059"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680117062"><span class="hs-identifier hs-type">i'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680117063"><span class="hs-identifier hs-type">o'</span></a></span><span>
-</span><span id="line-59"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span id="local-6989586621680117065"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117065"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
+</span><a href="#local-6989586621680178446"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-62"></span><span>    </span><span id="local-6989586621680178449"><span class="annot"><a href="#local-6989586621680178449"><span class="hs-identifier hs-var">o'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-type">astTypeToInferType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680178447"><span class="hs-identifier hs-type">o</span></a></span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Function"><span class="hs-identifier hs-type">Function</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680178445"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680178448"><span class="hs-identifier hs-type">i'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680178449"><span class="hs-identifier hs-type">o'</span></a></span><span>
+</span><span id="line-64"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span id="local-6989586621680178451"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680178451"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type' SourceRegion Kinded
 </span><a href="Elara.AST.Types.html#TUnit"><span class="hs-identifier hs-var">New.TUnit</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-60"></span><span>    </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
+</span><span id="line-65"></span><span>    </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion))
@@ -291,14 +369,14 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall loc.
 loc -&gt; Qualified TypeName -&gt; [Monotype loc] -&gt; Monotype loc
 </span><a href="Elara.TypeInfer.Type.html#TypeConstructor"><span class="hs-identifier hs-var">TypeConstructor</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117065"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Qualified TypeName
+</span><a href="#local-6989586621680178451"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; Qualified TypeName
 forall c. c -&gt; Qualified c
 </span><a href="Elara.Prim.html#mkPrimQual"><span class="hs-identifier hs-var">mkPrimQual</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
 </span><span class="hs-string">&quot;()&quot;</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-61"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TList"><span class="hs-identifier hs-type">New.TList</span></a></span><span> </span><span id="local-6989586621680117067"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680117067"><span class="hs-identifier hs-var">_t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Eff r (Monotype SourceRegion)
+</span><span id="line-66"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TList"><span class="hs-identifier hs-type">New.TList</span></a></span><span> </span><span id="local-6989586621680178453"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178453"><span class="hs-identifier hs-var">_t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Eff r (Monotype SourceRegion)
 forall e (es :: [Effect]) a.
 (HasCallStack, Error e :&gt; es, Show e) =&gt;
 e -&gt; Eff es a
@@ -308,10 +386,11 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeConvertError
 </span><a href="Elara.TypeInfer.Convert.html#NotSupported"><span class="hs-identifier hs-var">NotSupported</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;List types are not supported yet&quot;</span></span><span>
-</span><span id="line-63"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TRecord"><span class="hs-identifier hs-type">New.TRecord</span></a></span><span> </span><span id="local-6989586621680117070"><span class="annot"><span class="annottext">NonEmpty (Locate SourceRegion LowerAlphaName, KindedType)
-</span><a href="#local-6989586621680117070"><span class="hs-identifier hs-var">_fields</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-64"></span><span>    </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Eff r (Monotype SourceRegion)
+</span><span id="line-68"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TRecord"><span class="hs-identifier hs-type">New.TRecord</span></a></span><span> </span><span id="local-6989586621680178456"><span class="annot"><span class="annottext">NonEmpty
+  (LocateNode VarNode SourceRegion LowerAlphaName, KindedType)
+</span><a href="#local-6989586621680178456"><span class="hs-identifier hs-var">_fields</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Eff r (Monotype SourceRegion)
 forall e (es :: [Effect]) a.
 (HasCallStack, Error e :&gt; es, Show e) =&gt;
 e -&gt; Eff es a
@@ -321,23 +400,23 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeConvertError
 </span><a href="Elara.TypeInfer.Convert.html#NotSupported"><span class="hs-identifier hs-var">NotSupported</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;Record types are not supported yet&quot;</span></span><span>
-</span><span id="line-65"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span id="local-6989586621680117071"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117071"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TApp"><span class="hs-identifier hs-type">New.TApp</span></a></span><span> </span><span id="local-6989586621680117072"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680117072"><span class="hs-identifier hs-var">ctor</span></a></span></span><span> </span><span id="local-6989586621680117073"><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680117073"><span class="hs-identifier hs-var">arg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-66"></span><span>    </span><span id="local-6989586621680117074"><span class="annot"><a href="#local-6989586621680117074"><span class="hs-identifier hs-var">ctor'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; Eff r (Monotype SourceRegion)
+</span><span id="line-70"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span id="local-6989586621680178457"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680178457"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TApp"><span class="hs-identifier hs-type">New.TApp</span></a></span><span> </span><span id="local-6989586621680178458"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178458"><span class="hs-identifier hs-var">ctor</span></a></span></span><span> </span><span id="local-6989586621680178459"><span class="annot"><span class="annottext">KindedType
+</span><a href="#local-6989586621680178459"><span class="hs-identifier hs-var">arg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621680178460"><span class="annot"><a href="#local-6989586621680178460"><span class="hs-identifier hs-var">ctor'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">KindedType -&gt; Eff r (Monotype SourceRegion)
 forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 KindedType -&gt; Eff r (Monotype SourceRegion)
 </span><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-var">astTypeToInferType</span></a></span><span> </span><span class="annot"><span class="annottext">KindedType
-</span><a href="#local-6989586621680117072"><span class="hs-identifier hs-var">ctor</span></a></span><span>
-</span><span id="line-67"></span><span>    </span><span id="local-6989586621680117075"><span class="annot"><a href="#local-6989586621680117075"><span class="hs-identifier hs-var">arg'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-type">astTypeToInferType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680117073"><span class="hs-identifier hs-type">arg</span></a></span><span>
-</span><span id="line-68"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680117074"><span class="hs-identifier hs-type">ctor'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-69"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Type.html#TypeConstructor"><span class="hs-identifier hs-type">TypeConstructor</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680117076"><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680117076"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680117077"><span class="annot"><span class="annottext">[Monotype SourceRegion]
-</span><a href="#local-6989586621680117077"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-70"></span><span>            </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
+</span><a href="#local-6989586621680178458"><span class="hs-identifier hs-var">ctor</span></a></span><span>
+</span><span id="line-72"></span><span>    </span><span id="local-6989586621680178461"><span class="annot"><a href="#local-6989586621680178461"><span class="hs-identifier hs-var">arg'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType"><span class="hs-identifier hs-type">astTypeToInferType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680178459"><span class="hs-identifier hs-type">arg</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680178460"><span class="hs-identifier hs-type">ctor'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-74"></span><span>        </span><span class="annot"><a href="Elara.TypeInfer.Type.html#TypeConstructor"><span class="hs-identifier hs-type">TypeConstructor</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680178462"><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680178462"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680178463"><span class="annot"><span class="annottext">[Monotype SourceRegion]
+</span><a href="#local-6989586621680178463"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-75"></span><span>            </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion))
@@ -350,15 +429,15 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall loc.
 loc -&gt; Qualified TypeName -&gt; [Monotype loc] -&gt; Monotype loc
 </span><a href="Elara.TypeInfer.Type.html#TypeConstructor"><span class="hs-identifier hs-var">TypeConstructor</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117071"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680117076"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Monotype SourceRegion]
-</span><a href="#local-6989586621680117077"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">[Monotype SourceRegion]
+</span><a href="#local-6989586621680178457"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680178462"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Monotype SourceRegion]
+</span><a href="#local-6989586621680178463"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">[Monotype SourceRegion]
 -&gt; [Monotype SourceRegion] -&gt; [Monotype SourceRegion]
-forall a. [a] -&gt; [a] -&gt; [a]
-</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Monotype SourceRegion
-</span><a href="#local-6989586621680117075"><span class="hs-identifier hs-var">arg'</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
-</span><span id="line-71"></span><span>        </span><span id="local-6989586621680117078"><span class="annot"><span class="annottext">Monotype SourceRegion
-</span><a href="#local-6989586621680117078"><span class="hs-identifier hs-var">_other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Eff r (Monotype SourceRegion)
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Monotype SourceRegion
+</span><a href="#local-6989586621680178461"><span class="hs-identifier hs-var">arg'</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>        </span><span id="local-6989586621680178464"><span class="annot"><span class="annottext">Monotype SourceRegion
+</span><a href="#local-6989586621680178464"><span class="hs-identifier hs-var">_other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Eff r (Monotype SourceRegion)
 forall e (es :: [Effect]) a.
 (HasCallStack, Error e :&gt; es, Show e) =&gt;
 e -&gt; Eff es a
@@ -368,10 +447,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; TypeConvertError
 </span><a href="Elara.TypeInfer.Convert.html#NotSupported"><span class="hs-identifier hs-var">NotSupported</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;Type constructor application is only supported for type constructors&quot;</span></span><span>
-</span><span id="line-72"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span id="local-6989586621680117079"><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117079"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TUserDefined"><span class="hs-identifier hs-type">New.TUserDefined</span></a></span><span> </span><span id="local-6989586621680117080"><span class="annot"><span class="annottext">TypeOccurrence Kinded SourceRegion
-</span><a href="#local-6989586621680117080"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-73"></span><span>    </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
+</span><span id="line-77"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span id="local-6989586621680178465"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680178465"><span class="hs-identifier hs-var">loc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TUserDefined"><span class="hs-identifier hs-type">New.TUserDefined</span></a></span><span> </span><span id="local-6989586621680178466"><span class="annot"><span class="annottext">TypeOccurrence Kinded SourceRegion
+</span><a href="#local-6989586621680178466"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion))
@@ -384,50 +463,82 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall loc.
 loc -&gt; Qualified TypeName -&gt; [Monotype loc] -&gt; Monotype loc
 </span><a href="Elara.TypeInfer.Type.html#TypeConstructor"><span class="hs-identifier hs-var">TypeConstructor</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><a href="#local-6989586621680117079"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Located (Qualified TypeName)
+</span><a href="#local-6989586621680178465"><span class="hs-identifier hs-var">loc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TaggedLocate TypeNode SourceRegion (Qualified TypeName)
 TypeOccurrence Kinded SourceRegion
-</span><a href="#local-6989586621680117080"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Located (Qualified TypeName)
+</span><a href="#local-6989586621680178466"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate TypeNode SourceRegion (Qualified TypeName)
 -&gt; Optic'
-     A_Lens NoIx (Located (Qualified TypeName)) (Qualified TypeName)
+     A_Lens
+     NoIx
+     (TaggedLocate TypeNode SourceRegion (Qualified TypeName))
+     (Qualified TypeName)
 -&gt; Qualified TypeName
 forall k s (is :: IxList) a.
 Is k A_Getter =&gt;
 s -&gt; Optic' k is s a -&gt; a
 </span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic'
-  A_Lens NoIx (Located (Qualified TypeName)) (Qualified TypeName)
-forall a b. Lens (Located a) (Located b) a b
+  A_Lens
+  NoIx
+  (TaggedLocate TypeNode SourceRegion (Qualified TypeName))
+  (Qualified TypeName)
+forall a b.
+Lens
+  (TaggedLocate TypeNode SourceRegion a)
+  (TaggedLocate TypeNode SourceRegion b)
+  a
+  b
+forall (w :: * -&gt; *) a b. LocatedElement w =&gt; Lens (w a) (w b) a b
 </span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-74"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TExtension"><span class="hs-identifier hs-type">New.TExtension</span></a></span><span> </span><span id="local-6989586621680117082"><span class="annot"><span class="annottext">TypeSyntaxExtension Kinded SourceRegion
-</span><a href="#local-6989586621680117082"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Void -&gt; Eff r (Monotype SourceRegion)
+</span><span id="line-79"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#astTypeToInferType%27"><span class="hs-identifier hs-var">astTypeToInferType'</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#TExtension"><span class="hs-identifier hs-type">New.TExtension</span></a></span><span> </span><span id="local-6989586621680178468"><span class="annot"><span class="annottext">TypeSyntaxExtension Kinded SourceRegion
+</span><a href="#local-6989586621680178468"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Void -&gt; Eff r (Monotype SourceRegion)
 forall a. Void -&gt; a
 </span><span class="hs-identifier hs-var">absurd</span></span><span> </span><span class="annot"><span class="annottext">Void
 TypeSyntaxExtension Kinded SourceRegion
-</span><a href="#local-6989586621680117082"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-75"></span><span>
-</span><span id="line-76"></span><span id="local-6989586621680116879"><span class="annot"><a href="Elara.TypeInfer.Convert.html#assertMonotype"><span class="hs-identifier hs-type">assertMonotype</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680116879"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680116879"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-77"></span><span id="assertMonotype"><span class="annot"><span class="annottext">assertMonotype :: forall (r :: [Effect]).
+</span><a href="#local-6989586621680178468"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span id="local-6989586621680178272"><span class="annot"><a href="Elara.TypeInfer.Convert.html#assertMonotype"><span class="hs-identifier hs-type">assertMonotype</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680178272"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.TypeInfer.Type.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680178272"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Monotype"><span class="hs-identifier hs-type">Monotype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-82"></span><span id="assertMonotype"><span class="annot"><span class="annottext">assertMonotype :: forall (r :: [Effect]).
 (Error TypeConvertError :&gt; r) =&gt;
 Type SourceRegion -&gt; Eff r (Monotype SourceRegion)
-</span><a href="Elara.TypeInfer.Convert.html#assertMonotype"><span class="hs-identifier hs-var hs-var">assertMonotype</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Lifted"><span class="hs-identifier hs-type">Lifted</span></a></span><span> </span><span id="local-6989586621680117090"><span class="annot"><span class="annottext">Monotype SourceRegion
-</span><a href="#local-6989586621680117090"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
+</span><a href="Elara.TypeInfer.Convert.html#assertMonotype"><span class="hs-identifier hs-var hs-var">assertMonotype</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Lifted"><span class="hs-identifier hs-type">Lifted</span></a></span><span> </span><span id="local-6989586621680178476"><span class="annot"><span class="annottext">Monotype SourceRegion
+</span><a href="#local-6989586621680178476"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Monotype SourceRegion -&gt; Eff r (Monotype SourceRegion)
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Monotype SourceRegion
-</span><a href="#local-6989586621680117090"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-78"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#assertMonotype"><span class="hs-identifier hs-var">assertMonotype</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Polytype"><span class="hs-identifier hs-type">Polytype</span></a></span><span> </span><span id="local-6989586621680117091"><span class="annot"><span class="annottext">Polytype SourceRegion
-</span><a href="#local-6989586621680117091"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Eff r (Monotype SourceRegion)
+</span><a href="#local-6989586621680178476"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-83"></span><span class="annot"><a href="Elara.TypeInfer.Convert.html#assertMonotype"><span class="hs-identifier hs-var">assertMonotype</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Polytype"><span class="hs-identifier hs-type">Polytype</span></a></span><span> </span><span id="local-6989586621680178477"><span class="annot"><span class="annottext">Polytype SourceRegion
+</span><a href="#local-6989586621680178477"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Eff r (Monotype SourceRegion)
 forall e (es :: [Effect]) a.
 (HasCallStack, Error e :&gt; es, Show e) =&gt;
 e -&gt; Eff es a
 </span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Polytype SourceRegion -&gt; TypeConvertError
 </span><a href="Elara.TypeInfer.Convert.html#HigherRankTypesNotSupported"><span class="hs-identifier hs-var">HigherRankTypesNotSupported</span></a></span><span> </span><span class="annot"><span class="annottext">Polytype SourceRegion
-</span><a href="#local-6989586621680117091"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-79"></span><span>
-</span><span id="line-80"></span><span class="hs-keyword">data</span><span> </span><span id="TypeConvertError"><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-var">TypeConvertError</span></a></span></span><span>
-</span><span id="line-81"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="HigherRankTypesNotSupported"><span class="annot"><a href="Elara.TypeInfer.Convert.html#HigherRankTypesNotSupported"><span class="hs-identifier hs-var">HigherRankTypesNotSupported</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Polytype"><span class="hs-identifier hs-type">Polytype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-82"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="NotSupported"><span class="annot"><a href="Elara.TypeInfer.Convert.html#NotSupported"><span class="hs-identifier hs-var">NotSupported</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-83"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680117094"><span id="local-6989586621680117104"><span id="local-6989586621680117107"><span class="annot"><span class="annottext">Int -&gt; TypeConvertError -&gt; ShowS
+</span><a href="#local-6989586621680178477"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">data</span><span> </span><span id="TypeConvertError"><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-var">TypeConvertError</span></a></span></span><span>
+</span><span id="line-86"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="HigherRankTypesNotSupported"><span class="annot"><a href="Elara.TypeInfer.Convert.html#HigherRankTypesNotSupported"><span class="hs-identifier hs-var">HigherRankTypesNotSupported</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Type.html#Polytype"><span class="hs-identifier hs-type">Polytype</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="NotSupported"><span class="annot"><a href="Elara.TypeInfer.Convert.html#NotSupported"><span class="hs-identifier hs-var">NotSupported</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-88"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680178480"><span id="local-6989586621680178490"><span class="annot"><span class="annottext">TypeConvertError -&gt; TypeConvertError -&gt; Bool
+(TypeConvertError -&gt; TypeConvertError -&gt; Bool)
+-&gt; (TypeConvertError -&gt; TypeConvertError -&gt; Bool)
+-&gt; Eq TypeConvertError
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: TypeConvertError -&gt; TypeConvertError -&gt; Bool
+== :: TypeConvertError -&gt; TypeConvertError -&gt; Bool
+$c/= :: TypeConvertError -&gt; TypeConvertError -&gt; Bool
+/= :: TypeConvertError -&gt; TypeConvertError -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680178496"><span id="local-6989586621680178498"><span class="annot"><span class="annottext">(forall x. TypeConvertError -&gt; Rep TypeConvertError x)
+-&gt; (forall x. Rep TypeConvertError x -&gt; TypeConvertError)
+-&gt; Generic TypeConvertError
+forall x. Rep TypeConvertError x -&gt; TypeConvertError
+forall x. TypeConvertError -&gt; Rep TypeConvertError x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. TypeConvertError -&gt; Rep TypeConvertError x
+from :: forall x. TypeConvertError -&gt; Rep TypeConvertError x
+$cto :: forall x. Rep TypeConvertError x -&gt; TypeConvertError
+to :: forall x. Rep TypeConvertError x -&gt; TypeConvertError
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680178504"><span id="local-6989586621680178514"><span id="local-6989586621680178517"><span class="annot"><span class="annottext">Int -&gt; TypeConvertError -&gt; ShowS
 [TypeConvertError] -&gt; ShowS
 TypeConvertError -&gt; String
 (Int -&gt; TypeConvertError -&gt; ShowS)
@@ -442,29 +553,39 @@ $cshow :: TypeConvertError -&gt; String
 show :: TypeConvertError -&gt; String
 $cshowList :: [TypeConvertError] -&gt; ShowS
 showList :: [TypeConvertError] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680117113"><span id="local-6989586621680117123"><span class="annot"><span class="annottext">TypeConvertError -&gt; TypeConvertError -&gt; Bool
-(TypeConvertError -&gt; TypeConvertError -&gt; Bool)
--&gt; (TypeConvertError -&gt; TypeConvertError -&gt; Bool)
--&gt; Eq TypeConvertError
-forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
-$c== :: TypeConvertError -&gt; TypeConvertError -&gt; Bool
-== :: TypeConvertError -&gt; TypeConvertError -&gt; Bool
-$c/= :: TypeConvertError -&gt; TypeConvertError -&gt; Bool
-/= :: TypeConvertError -&gt; TypeConvertError -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680117129"><span id="local-6989586621680117131"><span class="annot"><span class="annottext">(forall x. TypeConvertError -&gt; Rep TypeConvertError x)
--&gt; (forall x. Rep TypeConvertError x -&gt; TypeConvertError)
--&gt; Generic TypeConvertError
-forall x. Rep TypeConvertError x -&gt; TypeConvertError
-forall x. TypeConvertError -&gt; Rep TypeConvertError x
-forall a.
-(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
-$cfrom :: forall x. TypeConvertError -&gt; Rep TypeConvertError x
-from :: forall x. TypeConvertError -&gt; Rep TypeConvertError x
-$cto :: forall x. Rep TypeConvertError x -&gt; TypeConvertError
-to :: forall x. Rep TypeConvertError x -&gt; TypeConvertError
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-84"></span><span>
-</span><span id="line-85"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680117137"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span></span><span>
-</span><span id="line-86"></span><span>
-</span><span id="line-87"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680117182"><span id="local-6989586621680117186"><span id="local-6989586621680117189"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span></span></span></span><span>
-</span><span id="line-88"></span></pre></body></html>
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680178527"><span id="local-6989586621680178531"><span id="local-6989586621680178534"><span id="local-6989586621680178537"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span></span></span></span></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-93"></span><span>    </span><span id="local-6989586621680178545"><span class="annot"><span class="annottext">pretty :: TypeConvertError -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680178545"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeConvertError -&gt; Doc AnsiStyle
+forall e. ElaraDiagnostic e =&gt; e -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680178551"><span id="local-6989586621680178554"><span id="local-6989586621680178557"><span id="local-6989586621680178562"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.TypeInfer.Convert.html#TypeConvertError"><span class="hs-identifier hs-type">TypeConvertError</span></a></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-96"></span><span>    </span><span id="local-6989586621680178570"><span class="annot"><span class="annottext">diagnosticMessage :: TypeConvertError -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMessage</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Convert.html#HigherRankTypesNotSupported"><span class="hs-identifier hs-type">HigherRankTypesNotSupported</span></a></span><span> </span><span class="annot"><span class="annottext">Polytype SourceRegion
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Higher rank types are not supported yet&quot;</span></span><span>
+</span><span id="line-97"></span><span>    </span><span class="annot"><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Convert.html#NotSupported"><span class="hs-identifier hs-type">NotSupported</span></a></span><span> </span><span id="local-6989586621680178571"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680178571"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Not supported:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
+</span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680178571"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span>    </span><span id="local-6989586621680178574"><span class="annot"><span class="annottext">diagnosticMarkers :: TypeConvertError -&gt; [ElaraMarker]
+</span><a href="#local-6989586621680178574"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMarkers</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Convert.html#HigherRankTypesNotSupported"><span class="hs-identifier hs-type">HigherRankTypesNotSupported</span></a></span><span> </span><span id="local-6989586621680178576"><span class="annot"><span class="annottext">Polytype SourceRegion
+</span><a href="#local-6989586621680178576"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">SourceRegion -&gt; ElaraMarkerType -&gt; Doc AnsiStyle -&gt; ElaraMarker
+</span><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier hs-var">ElaraMarker</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Polytype SourceRegion -&gt; SourceRegion
+forall loc. Polytype loc -&gt; loc
+</span><a href="Elara.TypeInfer.Type.html#polytypeLoc"><span class="hs-identifier hs-var">polytypeLoc</span></a></span><span> </span><span class="annot"><span class="annottext">Polytype SourceRegion
+</span><a href="#local-6989586621680178576"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ElaraMarkerType
+</span><a href="Elara.Error.html#PrimaryMarker"><span class="hs-identifier hs-var">PrimaryMarker</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Higher rank type here&quot;</span></span><span class="hs-special">]</span><span>
+</span><span id="line-100"></span><span>    </span><span class="annot"><a href="Elara.Error.html#diagnosticMarkers"><span class="hs-identifier hs-var">diagnosticMarkers</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.TypeInfer.Convert.html#NotSupported"><span class="hs-identifier hs-type">NotSupported</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-101"></span></pre></body></html>

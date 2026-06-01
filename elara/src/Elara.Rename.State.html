@@ -2,25 +2,37 @@
 </span><span id="line-2"></span><span>
 </span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List.NonEmpty</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">NonEmpty</span></span><span>
 </span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
-</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
-</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html"><span class="hs-identifier">Elara.AST.VarRef</span></a></span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span>
-</span><span id="line-8"></span><span>
-</span><span id="line-9"></span><span class="annot"><span class="hs-comment">{- | The state used during renaming. Keeps track of all in-scope known names.
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.VarRef.html"><span class="hs-identifier">Elara.AST.VarRef</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="annot"><span class="hs-comment">{- | The state used during renaming. Keeps track of all in-scope known names.
 Specifically, it maps the &quot;unqualified&quot; name ot all known references to that name.
 -}</span></span><span>
-</span><span id="line-12"></span><span class="hs-keyword">data</span><span> </span><span id="RenameState"><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-var">RenameState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="RenameState"><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-var">RenameState</span></a></span></span><span>
-</span><span id="line-13"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="varNames"><span class="annot"><span class="annottext">RenameState -&gt; Map VarName (NonEmpty (VarRef VarName))
+</span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="RenameState"><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-var">RenameState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="RenameState"><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-var">RenameState</span></a></span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="varNames"><span class="annot"><span class="annottext">RenameState -&gt; Map VarName (NonEmpty (VarRef VarName))
 </span><a href="Elara.Rename.State.html#varNames"><span class="hs-identifier hs-var hs-var">varNames</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#VarRef"><span class="hs-identifier hs-type">VarRef</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-14"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ All the variable names in scope</span></span><span>
-</span><span id="line-15"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="typeNames"><span class="annot"><span class="annottext">RenameState -&gt; Map TypeName (NonEmpty (VarRef TypeName))
+</span><span id="line-15"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ All the variable names in scope</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="typeNames"><span class="annot"><span class="annottext">RenameState -&gt; Map TypeName (NonEmpty (VarRef TypeName))
 </span><a href="Elara.Rename.State.html#typeNames"><span class="hs-identifier hs-var hs-var">typeNames</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#VarRef"><span class="hs-identifier hs-type">VarRef</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-16"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ All the type names in scope</span></span><span>
-</span><span id="line-17"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="typeVars"><span class="annot"><span class="annottext">RenameState -&gt; Map LowerAlphaName (Unique LowerAlphaName)
+</span><span id="line-17"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ All the type names in scope</span></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="typeVars"><span class="annot"><span class="annottext">RenameState -&gt; Map LowerAlphaName (Unique LowerAlphaName)
 </span><a href="Elara.Rename.State.html#typeVars"><span class="hs-identifier hs-var hs-var">typeVars</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ All the type variables in scope</span></span><span>
-</span><span id="line-19"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-20"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680106057"><span id="local-6989586621680106071"><span id="local-6989586621680106075"><span class="annot"><span class="annottext">Int -&gt; RenameState -&gt; ShowS
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ All the type variables in scope</span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-21"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680164849"><span id="local-6989586621680164851"><span class="annot"><span class="annottext">(forall x. RenameState -&gt; Rep RenameState x)
+-&gt; (forall x. Rep RenameState x -&gt; RenameState)
+-&gt; Generic RenameState
+forall x. Rep RenameState x -&gt; RenameState
+forall x. RenameState -&gt; Rep RenameState x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. RenameState -&gt; Rep RenameState x
+from :: forall x. RenameState -&gt; Rep RenameState x
+$cto :: forall x. Rep RenameState x -&gt; RenameState
+to :: forall x. Rep RenameState x -&gt; RenameState
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680164857"><span id="local-6989586621680164871"><span id="local-6989586621680164875"><span class="annot"><span class="annottext">Int -&gt; RenameState -&gt; ShowS
 [RenameState] -&gt; ShowS
 RenameState -&gt; String
 (Int -&gt; RenameState -&gt; ShowS)
@@ -35,28 +47,17 @@ $cshow :: RenameState -&gt; String
 show :: RenameState -&gt; String
 $cshowList :: [RenameState] -&gt; ShowS
 showList :: [RenameState] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680106102"><span id="local-6989586621680106104"><span class="annot"><span class="annottext">(forall x. RenameState -&gt; Rep RenameState x)
--&gt; (forall x. Rep RenameState x -&gt; RenameState)
--&gt; Generic RenameState
-forall x. Rep RenameState x -&gt; RenameState
-forall x. RenameState -&gt; Rep RenameState x
-forall a.
-(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
-$cfrom :: forall x. RenameState -&gt; Rep RenameState x
-from :: forall x. RenameState -&gt; Rep RenameState x
-$cto :: forall x. Rep RenameState x -&gt; RenameState
-to :: forall x. Rep RenameState x -&gt; RenameState
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-21"></span><span>
-</span><span id="line-22"></span><span class="annot"><span class="hs-comment">-- | Insert a value into a map of non-empty lists, merging with existing entries.</span></span><span>
-</span><span id="line-23"></span><span id="local-6989586621680106029"><span id="local-6989586621680106030"><span class="annot"><a href="Elara.Rename.State.html#insertMerging"><span class="hs-identifier hs-type">insertMerging</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-24"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621680106029"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621680106030"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680106029"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680106030"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621680106029"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="#local-6989586621680106030"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621680106029"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="#local-6989586621680106030"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
-</span><span id="line-25"></span><span id="insertMerging"><span class="annot"><span class="annottext">insertMerging :: forall k a.
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="annot"><span class="hs-comment">-- | Insert a value into a map of non-empty lists, merging with existing entries.</span></span><span>
+</span><span id="line-24"></span><span id="local-6989586621680164821"><span id="local-6989586621680164822"><span class="annot"><a href="Elara.Rename.State.html#insertMerging"><span class="hs-identifier hs-type">insertMerging</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-25"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621680164821"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621680164822"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680164821"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680164822"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621680164821"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="#local-6989586621680164822"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621680164821"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="#local-6989586621680164822"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-26"></span><span id="insertMerging"><span class="annot"><span class="annottext">insertMerging :: forall k a.
 (Ord k, Eq a) =&gt;
 k -&gt; a -&gt; Map k (NonEmpty a) -&gt; Map k (NonEmpty a)
-</span><a href="Elara.Rename.State.html#insertMerging"><span class="hs-identifier hs-var hs-var">insertMerging</span></a></span></span><span> </span><span id="local-6989586621680106118"><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621680106118"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621680106119"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621680106119"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(NonEmpty a -&gt; NonEmpty a -&gt; NonEmpty a)
+</span><a href="Elara.Rename.State.html#insertMerging"><span class="hs-identifier hs-var hs-var">insertMerging</span></a></span></span><span> </span><span id="local-6989586621680164910"><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621680164910"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621680164911"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680164911"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(NonEmpty a -&gt; NonEmpty a -&gt; NonEmpty a)
 -&gt; k -&gt; NonEmpty a -&gt; Map k (NonEmpty a) -&gt; Map k (NonEmpty a)
 forall k a. Ord k =&gt; (a -&gt; a -&gt; a) -&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.insertWith</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">NonEmpty a -&gt; NonEmpty a
@@ -73,47 +74,47 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty a -&gt; NonEmpty a -&gt; NonEmpty a
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">(&lt;&gt;)</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621680106118"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OneItem (NonEmpty a) -&gt; NonEmpty a
+</span><a href="#local-6989586621680164910"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OneItem (NonEmpty a) -&gt; NonEmpty a
 forall x. One x =&gt; OneItem x -&gt; x
 </span><span class="hs-identifier hs-var">one</span></span><span> </span><span class="annot"><span class="annottext">a
 OneItem (NonEmpty a)
-</span><a href="#local-6989586621680106119"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-26"></span><span>
-</span><span id="line-27"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680106126"><span id="local-6989586621680106130"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span><span> </span><span id="local-6989586621680106145"><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
-</span><a href="#local-6989586621680106145"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span id="local-6989586621680106146"><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
-</span><a href="#local-6989586621680106146"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621680106147"><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
-</span><a href="#local-6989586621680106147"><span class="hs-identifier hs-var">tv1</span></a></span></span><span> </span><span id="local-6989586621680106148"><span class="annot"><span class="annottext">&lt;&gt; :: RenameState -&gt; RenameState -&gt; RenameState
-</span><span class="hs-operator hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span><span> </span><span id="local-6989586621680106149"><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
-</span><a href="#local-6989586621680106149"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span id="local-6989586621680106150"><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
-</span><a href="#local-6989586621680106150"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span id="local-6989586621680106151"><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
-</span><a href="#local-6989586621680106151"><span class="hs-identifier hs-var">tv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-29"></span><span>        </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
+</span><a href="#local-6989586621680164911"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680164918"><span id="local-6989586621680164922"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span><span> </span><span id="local-6989586621680164937"><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
+</span><a href="#local-6989586621680164937"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span id="local-6989586621680164938"><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
+</span><a href="#local-6989586621680164938"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621680164939"><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
+</span><a href="#local-6989586621680164939"><span class="hs-identifier hs-var">tv1</span></a></span></span><span> </span><span id="local-6989586621680164940"><span class="annot"><span class="annottext">&lt;&gt; :: RenameState -&gt; RenameState -&gt; RenameState
+</span><span class="hs-operator hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span><span> </span><span id="local-6989586621680164941"><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
+</span><a href="#local-6989586621680164941"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span id="local-6989586621680164942"><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
+</span><a href="#local-6989586621680164942"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span id="local-6989586621680164943"><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
+</span><a href="#local-6989586621680164943"><span class="hs-identifier hs-var">tv2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-30"></span><span>        </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
 -&gt; Map TypeName (NonEmpty (VarRef TypeName))
 -&gt; Map LowerAlphaName (Unique LowerAlphaName)
 -&gt; RenameState
 </span><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-var">RenameState</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
-</span><a href="#local-6989586621680106145"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
+</span><a href="#local-6989586621680164937"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
 -&gt; Map VarName (NonEmpty (VarRef VarName))
 -&gt; Map VarName (NonEmpty (VarRef VarName))
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
-</span><a href="#local-6989586621680106149"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
-</span><a href="#local-6989586621680106146"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
+</span><a href="#local-6989586621680164941"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
+</span><a href="#local-6989586621680164938"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
 -&gt; Map TypeName (NonEmpty (VarRef TypeName))
 -&gt; Map TypeName (NonEmpty (VarRef TypeName))
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Map TypeName (NonEmpty (VarRef TypeName))
-</span><a href="#local-6989586621680106150"><span class="hs-identifier hs-var">t2</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
-</span><a href="#local-6989586621680106147"><span class="hs-identifier hs-var">tv1</span></a></span><span> </span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
+</span><a href="#local-6989586621680164942"><span class="hs-identifier hs-var">t2</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
+</span><a href="#local-6989586621680164939"><span class="hs-identifier hs-var">tv1</span></a></span><span> </span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
 -&gt; Map LowerAlphaName (Unique LowerAlphaName)
 -&gt; Map LowerAlphaName (Unique LowerAlphaName)
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
-</span><a href="#local-6989586621680106151"><span class="hs-identifier hs-var">tv2</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-30"></span><span>
-</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680106156"><span id="local-6989586621680106160"><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-32"></span><span>    </span><span id="local-6989586621680106170"><span class="annot"><span class="annottext">mempty :: RenameState
+</span><a href="#local-6989586621680164943"><span class="hs-identifier hs-var">tv2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680164948"><span id="local-6989586621680164952"><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="Elara.Rename.State.html#RenameState"><span class="hs-identifier hs-type">RenameState</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-33"></span><span>    </span><span id="local-6989586621680164962"><span class="annot"><span class="annottext">mempty :: RenameState
 </span><span class="hs-identifier hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map VarName (NonEmpty (VarRef VarName))
 -&gt; Map TypeName (NonEmpty (VarRef TypeName))
 -&gt; Map LowerAlphaName (Unique LowerAlphaName)
@@ -125,4 +126,4 @@ forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">Map LowerAlphaName (Unique LowerAlphaName)
 forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span>
-</span><span id="line-33"></span></pre></body></html>
+</span><span id="line-34"></span></pre></body></html>

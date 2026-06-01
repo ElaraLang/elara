@@ -1,0 +1,1523 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE AllowAmbiguousTypes #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE FunctionalDependencies #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE RequiredTypeArguments #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeAbstractions #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE TypeData #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilyDependencies #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.AST.Location.html"><span class="hs-identifier">Elara.AST.Location</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.TypeError</span></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="annot"><span class="hs-comment">{- | The different kinds of nodes that should have incompatible locations
+to prevent accidentally using the wrong location for a node.
+the actual definitions of what is in each category is a bit vague
+-}</span></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">data</span><span> </span><span id="AstNode"><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-var">AstNode</span></a></span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | a location of the _whole_ module</span></span><span>
+</span><span id="line-23"></span><span>      </span><span id="ModuleNode"><span class="annot"><a href="Elara.AST.Location.html#ModuleNode"><span class="hs-identifier hs-var">ModuleNode</span></a></span></span><span>
+</span><span id="line-24"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | a location of an entire declaration</span></span><span>
+</span><span id="line-25"></span><span>      </span><span id="DeclNode"><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-var">DeclNode</span></a></span></span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | a location of an expression</span></span><span>
+</span><span id="line-27"></span><span>      </span><span id="ExprNode"><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-var">ExprNode</span></a></span></span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | a location of a pattern</span></span><span>
+</span><span id="line-29"></span><span>      </span><span id="PatternNode"><span class="annot"><a href="Elara.AST.Location.html#PatternNode"><span class="hs-identifier hs-var">PatternNode</span></a></span></span><span>
+</span><span id="line-30"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | a location of a type</span></span><span>
+</span><span id="line-31"></span><span>      </span><span id="TypeNode"><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-var">TypeNode</span></a></span></span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | a location of a variable</span></span><span>
+</span><span id="line-33"></span><span>      </span><span id="VarNode"><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-var">VarNode</span></a></span></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">data</span><span> </span><span class="hs-keyword">family</span><span> </span><span id="NodeLoc"><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-var">NodeLoc</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176371"><span class="annot"><a href="#local-6989586621680176371"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680176372"><span class="annot"><a href="#local-6989586621680176372"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="NodeLoc"><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-var">NodeLoc</span></a></span></span><span> </span><span id="local-6989586621680176373"><span class="annot"><a href="Elara.AST.Location.html#ModuleNode"><span class="hs-identifier hs-type">ModuleNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176373"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ModuleLoc"><span class="annot"><a href="Elara.AST.Location.html#ModuleLoc"><span class="hs-identifier hs-var">ModuleLoc</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680176373"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176377"><span id="local-6989586621680176381"><span class="annot"><span class="annottext">NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+(NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool)
+-&gt; (NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool)
+-&gt; Eq (NodeLoc ModuleNode loc)
+forall loc.
+Eq loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall loc.
+Eq loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+== :: NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+$c/= :: forall loc.
+Eq loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+/= :: NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176393"><span id="local-6989586621680176397"><span class="annot"><span class="annottext">Semigroup (NodeLoc ModuleNode loc)
+Semigroup (NodeLoc ModuleNode loc) =&gt;
+(NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc)
+-&gt; (NodeLoc ModuleNode loc
+    -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc)
+-&gt; IsRegion (NodeLoc ModuleNode loc)
+NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+forall region.
+Semigroup region =&gt;
+(NonEmpty region -&gt; region)
+-&gt; (region -&gt; region -&gt; region) -&gt; IsRegion region
+forall loc. IsRegion loc =&gt; Semigroup (NodeLoc ModuleNode loc)
+forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc
+forall loc.
+IsRegion loc =&gt;
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+$cspanningRegion :: forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc
+spanningRegion :: NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc
+$cenclosingRegion :: forall loc.
+IsRegion loc =&gt;
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+enclosingRegion :: NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+</span><a href="Elara.AST.Region.html#IsRegion"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">IsRegion</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176410"><span id="local-6989586621680176414"><span id="local-6989586621680176418"><span id="local-6989586621680176422"><span id="local-6989586621680176426"><span id="local-6989586621680176430"><span id="local-6989586621680176434"><span class="annot"><span class="annottext">Eq (NodeLoc ModuleNode loc)
+Eq (NodeLoc ModuleNode loc) =&gt;
+(NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Ordering)
+-&gt; (NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool)
+-&gt; (NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool)
+-&gt; (NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool)
+-&gt; (NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool)
+-&gt; (NodeLoc ModuleNode loc
+    -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc)
+-&gt; (NodeLoc ModuleNode loc
+    -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc)
+-&gt; Ord (NodeLoc ModuleNode loc)
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Ordering
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall loc. Ord loc =&gt; Eq (NodeLoc ModuleNode loc)
+forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Ordering
+forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+$ccompare :: forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Ordering
+compare :: NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Ordering
+$c&lt; :: forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+&lt; :: NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+$c&lt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+&lt;= :: NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+$c&gt; :: forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+&gt; :: NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+$c&gt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+&gt;= :: NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc -&gt; Bool
+$cmax :: forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+max :: NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+$cmin :: forall loc.
+Ord loc =&gt;
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+min :: NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176448"><span class="annot"><span class="annottext">NodeLoc ModuleNode loc -&gt; Doc AnsiStyle
+(NodeLoc ModuleNode loc -&gt; Doc AnsiStyle)
+-&gt; Pretty (NodeLoc ModuleNode loc)
+forall loc. Pretty loc =&gt; NodeLoc ModuleNode loc -&gt; Doc AnsiStyle
+forall a. (a -&gt; Doc AnsiStyle) -&gt; Pretty a
+$cpretty :: forall loc. Pretty loc =&gt; NodeLoc ModuleNode loc -&gt; Doc AnsiStyle
+pretty :: NodeLoc ModuleNode loc -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-var hs-var hs-var hs-var">Pretty</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176456"><span id="local-6989586621680176460"><span id="local-6989586621680176464"><span class="annot"><span class="annottext">NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+(NodeLoc ModuleNode loc
+ -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc)
+-&gt; (NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc)
+-&gt; (forall b.
+    Integral b =&gt;
+    b -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc)
+-&gt; Semigroup (NodeLoc ModuleNode loc)
+forall b.
+Integral b =&gt;
+b -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc
+forall loc.
+Semigroup loc =&gt;
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+$c&lt;&gt; :: forall loc.
+Semigroup loc =&gt;
+NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+&lt;&gt; :: NodeLoc ModuleNode loc
+-&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+$csconcat :: forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc
+sconcat :: NonEmpty (NodeLoc ModuleNode loc) -&gt; NodeLoc ModuleNode loc
+$cstimes :: forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+stimes :: forall b.
+Integral b =&gt;
+b -&gt; NodeLoc ModuleNode loc -&gt; NodeLoc ModuleNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176474"><span id="local-6989586621680176479"><span id="local-6989586621680176483"><span class="annot"><span class="annottext">Int -&gt; NodeLoc ModuleNode loc -&gt; ShowS
+[NodeLoc ModuleNode loc] -&gt; ShowS
+NodeLoc ModuleNode loc -&gt; String
+(Int -&gt; NodeLoc ModuleNode loc -&gt; ShowS)
+-&gt; (NodeLoc ModuleNode loc -&gt; String)
+-&gt; ([NodeLoc ModuleNode loc] -&gt; ShowS)
+-&gt; Show (NodeLoc ModuleNode loc)
+forall loc. Show loc =&gt; Int -&gt; NodeLoc ModuleNode loc -&gt; ShowS
+forall loc. Show loc =&gt; [NodeLoc ModuleNode loc] -&gt; ShowS
+forall loc. Show loc =&gt; NodeLoc ModuleNode loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; NodeLoc ModuleNode loc -&gt; ShowS
+showsPrec :: Int -&gt; NodeLoc ModuleNode loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; NodeLoc ModuleNode loc -&gt; String
+show :: NodeLoc ModuleNode loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [NodeLoc ModuleNode loc] -&gt; ShowS
+showList :: [NodeLoc ModuleNode loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="NodeLoc"><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-var">NodeLoc</span></a></span></span><span> </span><span id="local-6989586621680176217"><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176217"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DeclLoc"><span class="annot"><a href="Elara.AST.Location.html#DeclLoc"><span class="hs-identifier hs-var">DeclLoc</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680176217"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176490"><span id="local-6989586621680176494"><span class="annot"><span class="annottext">NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+(NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool)
+-&gt; (NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool)
+-&gt; Eq (NodeLoc DeclNode loc)
+forall loc.
+Eq loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall loc.
+Eq loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+== :: NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+$c/= :: forall loc.
+Eq loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+/= :: NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176504"><span id="local-6989586621680176508"><span class="annot"><span class="annottext">Semigroup (NodeLoc DeclNode loc)
+Semigroup (NodeLoc DeclNode loc) =&gt;
+(NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc)
+-&gt; (NodeLoc DeclNode loc
+    -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc)
+-&gt; IsRegion (NodeLoc DeclNode loc)
+NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+forall region.
+Semigroup region =&gt;
+(NonEmpty region -&gt; region)
+-&gt; (region -&gt; region -&gt; region) -&gt; IsRegion region
+forall loc. IsRegion loc =&gt; Semigroup (NodeLoc DeclNode loc)
+forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc
+forall loc.
+IsRegion loc =&gt;
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+$cspanningRegion :: forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc
+spanningRegion :: NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc
+$cenclosingRegion :: forall loc.
+IsRegion loc =&gt;
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+enclosingRegion :: NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Region.html#IsRegion"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">IsRegion</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176517"><span id="local-6989586621680176521"><span id="local-6989586621680176525"><span id="local-6989586621680176529"><span id="local-6989586621680176533"><span id="local-6989586621680176537"><span id="local-6989586621680176541"><span class="annot"><span class="annottext">Eq (NodeLoc DeclNode loc)
+Eq (NodeLoc DeclNode loc) =&gt;
+(NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Ordering)
+-&gt; (NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool)
+-&gt; (NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool)
+-&gt; (NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool)
+-&gt; (NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool)
+-&gt; (NodeLoc DeclNode loc
+    -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc)
+-&gt; (NodeLoc DeclNode loc
+    -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc)
+-&gt; Ord (NodeLoc DeclNode loc)
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Ordering
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall loc. Ord loc =&gt; Eq (NodeLoc DeclNode loc)
+forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Ordering
+forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+$ccompare :: forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Ordering
+compare :: NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Ordering
+$c&lt; :: forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+&lt; :: NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+$c&lt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+&lt;= :: NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+$c&gt; :: forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+&gt; :: NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+$c&gt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+&gt;= :: NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc -&gt; Bool
+$cmax :: forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+max :: NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+$cmin :: forall loc.
+Ord loc =&gt;
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+min :: NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176547"><span class="annot"><span class="annottext">NodeLoc DeclNode loc -&gt; Doc AnsiStyle
+(NodeLoc DeclNode loc -&gt; Doc AnsiStyle)
+-&gt; Pretty (NodeLoc DeclNode loc)
+forall loc. Pretty loc =&gt; NodeLoc DeclNode loc -&gt; Doc AnsiStyle
+forall a. (a -&gt; Doc AnsiStyle) -&gt; Pretty a
+$cpretty :: forall loc. Pretty loc =&gt; NodeLoc DeclNode loc -&gt; Doc AnsiStyle
+pretty :: NodeLoc DeclNode loc -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-var hs-var hs-var hs-var">Pretty</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176553"><span id="local-6989586621680176557"><span id="local-6989586621680176561"><span class="annot"><span class="annottext">NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+(NodeLoc DeclNode loc
+ -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc)
+-&gt; (NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc)
+-&gt; (forall b.
+    Integral b =&gt;
+    b -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc)
+-&gt; Semigroup (NodeLoc DeclNode loc)
+forall b.
+Integral b =&gt;
+b -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc
+forall loc.
+Semigroup loc =&gt;
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+$c&lt;&gt; :: forall loc.
+Semigroup loc =&gt;
+NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+&lt;&gt; :: NodeLoc DeclNode loc
+-&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+$csconcat :: forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc
+sconcat :: NonEmpty (NodeLoc DeclNode loc) -&gt; NodeLoc DeclNode loc
+$cstimes :: forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+stimes :: forall b.
+Integral b =&gt;
+b -&gt; NodeLoc DeclNode loc -&gt; NodeLoc DeclNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176568"><span id="local-6989586621680176572"><span id="local-6989586621680176576"><span class="annot"><span class="annottext">Int -&gt; NodeLoc DeclNode loc -&gt; ShowS
+[NodeLoc DeclNode loc] -&gt; ShowS
+NodeLoc DeclNode loc -&gt; String
+(Int -&gt; NodeLoc DeclNode loc -&gt; ShowS)
+-&gt; (NodeLoc DeclNode loc -&gt; String)
+-&gt; ([NodeLoc DeclNode loc] -&gt; ShowS)
+-&gt; Show (NodeLoc DeclNode loc)
+forall loc. Show loc =&gt; Int -&gt; NodeLoc DeclNode loc -&gt; ShowS
+forall loc. Show loc =&gt; [NodeLoc DeclNode loc] -&gt; ShowS
+forall loc. Show loc =&gt; NodeLoc DeclNode loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; NodeLoc DeclNode loc -&gt; ShowS
+showsPrec :: Int -&gt; NodeLoc DeclNode loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; NodeLoc DeclNode loc -&gt; String
+show :: NodeLoc DeclNode loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [NodeLoc DeclNode loc] -&gt; ShowS
+showList :: [NodeLoc DeclNode loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="NodeLoc"><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-var">NodeLoc</span></a></span></span><span> </span><span id="local-6989586621680176224"><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176224"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ExprLoc"><span class="annot"><a href="Elara.AST.Location.html#ExprLoc"><span class="hs-identifier hs-var">ExprLoc</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680176224"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176581"><span id="local-6989586621680176585"><span class="annot"><span class="annottext">NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+(NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool)
+-&gt; (NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool)
+-&gt; Eq (NodeLoc ExprNode loc)
+forall loc.
+Eq loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall loc.
+Eq loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+== :: NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+$c/= :: forall loc.
+Eq loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+/= :: NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176595"><span id="local-6989586621680176599"><span class="annot"><span class="annottext">Semigroup (NodeLoc ExprNode loc)
+Semigroup (NodeLoc ExprNode loc) =&gt;
+(NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc)
+-&gt; (NodeLoc ExprNode loc
+    -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc)
+-&gt; IsRegion (NodeLoc ExprNode loc)
+NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+forall region.
+Semigroup region =&gt;
+(NonEmpty region -&gt; region)
+-&gt; (region -&gt; region -&gt; region) -&gt; IsRegion region
+forall loc. IsRegion loc =&gt; Semigroup (NodeLoc ExprNode loc)
+forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc
+forall loc.
+IsRegion loc =&gt;
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+$cspanningRegion :: forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc
+spanningRegion :: NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc
+$cenclosingRegion :: forall loc.
+IsRegion loc =&gt;
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+enclosingRegion :: NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+</span><a href="Elara.AST.Region.html#IsRegion"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">IsRegion</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176608"><span id="local-6989586621680176612"><span id="local-6989586621680176616"><span id="local-6989586621680176620"><span id="local-6989586621680176624"><span id="local-6989586621680176628"><span id="local-6989586621680176632"><span class="annot"><span class="annottext">Eq (NodeLoc ExprNode loc)
+Eq (NodeLoc ExprNode loc) =&gt;
+(NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Ordering)
+-&gt; (NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool)
+-&gt; (NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool)
+-&gt; (NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool)
+-&gt; (NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool)
+-&gt; (NodeLoc ExprNode loc
+    -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc)
+-&gt; (NodeLoc ExprNode loc
+    -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc)
+-&gt; Ord (NodeLoc ExprNode loc)
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Ordering
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall loc. Ord loc =&gt; Eq (NodeLoc ExprNode loc)
+forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Ordering
+forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+$ccompare :: forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Ordering
+compare :: NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Ordering
+$c&lt; :: forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+&lt; :: NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+$c&lt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+&lt;= :: NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+$c&gt; :: forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+&gt; :: NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+$c&gt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+&gt;= :: NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc -&gt; Bool
+$cmax :: forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+max :: NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+$cmin :: forall loc.
+Ord loc =&gt;
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+min :: NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176638"><span class="annot"><span class="annottext">NodeLoc ExprNode loc -&gt; Doc AnsiStyle
+(NodeLoc ExprNode loc -&gt; Doc AnsiStyle)
+-&gt; Pretty (NodeLoc ExprNode loc)
+forall loc. Pretty loc =&gt; NodeLoc ExprNode loc -&gt; Doc AnsiStyle
+forall a. (a -&gt; Doc AnsiStyle) -&gt; Pretty a
+$cpretty :: forall loc. Pretty loc =&gt; NodeLoc ExprNode loc -&gt; Doc AnsiStyle
+pretty :: NodeLoc ExprNode loc -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-var hs-var hs-var hs-var">Pretty</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176644"><span id="local-6989586621680176648"><span id="local-6989586621680176652"><span class="annot"><span class="annottext">NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+(NodeLoc ExprNode loc
+ -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc)
+-&gt; (NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc)
+-&gt; (forall b.
+    Integral b =&gt;
+    b -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc)
+-&gt; Semigroup (NodeLoc ExprNode loc)
+forall b.
+Integral b =&gt;
+b -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc
+forall loc.
+Semigroup loc =&gt;
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+$c&lt;&gt; :: forall loc.
+Semigroup loc =&gt;
+NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+&lt;&gt; :: NodeLoc ExprNode loc
+-&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+$csconcat :: forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc
+sconcat :: NonEmpty (NodeLoc ExprNode loc) -&gt; NodeLoc ExprNode loc
+$cstimes :: forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+stimes :: forall b.
+Integral b =&gt;
+b -&gt; NodeLoc ExprNode loc -&gt; NodeLoc ExprNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176659"><span id="local-6989586621680176663"><span id="local-6989586621680176667"><span class="annot"><span class="annottext">Int -&gt; NodeLoc ExprNode loc -&gt; ShowS
+[NodeLoc ExprNode loc] -&gt; ShowS
+NodeLoc ExprNode loc -&gt; String
+(Int -&gt; NodeLoc ExprNode loc -&gt; ShowS)
+-&gt; (NodeLoc ExprNode loc -&gt; String)
+-&gt; ([NodeLoc ExprNode loc] -&gt; ShowS)
+-&gt; Show (NodeLoc ExprNode loc)
+forall loc. Show loc =&gt; Int -&gt; NodeLoc ExprNode loc -&gt; ShowS
+forall loc. Show loc =&gt; [NodeLoc ExprNode loc] -&gt; ShowS
+forall loc. Show loc =&gt; NodeLoc ExprNode loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; NodeLoc ExprNode loc -&gt; ShowS
+showsPrec :: Int -&gt; NodeLoc ExprNode loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; NodeLoc ExprNode loc -&gt; String
+show :: NodeLoc ExprNode loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [NodeLoc ExprNode loc] -&gt; ShowS
+showList :: [NodeLoc ExprNode loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="NodeLoc"><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-var">NodeLoc</span></a></span></span><span> </span><span id="local-6989586621680176669"><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176669"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="VarLoc"><span class="annot"><a href="Elara.AST.Location.html#VarLoc"><span class="hs-identifier hs-var">VarLoc</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680176669"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176673"><span id="local-6989586621680176677"><span class="annot"><span class="annottext">NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+(NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool)
+-&gt; (NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool)
+-&gt; Eq (NodeLoc VarNode loc)
+forall loc.
+Eq loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall loc.
+Eq loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+== :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+$c/= :: forall loc.
+Eq loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+/= :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176687"><span id="local-6989586621680176691"><span class="annot"><span class="annottext">Semigroup (NodeLoc VarNode loc)
+Semigroup (NodeLoc VarNode loc) =&gt;
+(NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc)
+-&gt; (NodeLoc VarNode loc
+    -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc)
+-&gt; IsRegion (NodeLoc VarNode loc)
+NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+forall region.
+Semigroup region =&gt;
+(NonEmpty region -&gt; region)
+-&gt; (region -&gt; region -&gt; region) -&gt; IsRegion region
+forall loc. IsRegion loc =&gt; Semigroup (NodeLoc VarNode loc)
+forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc
+forall loc.
+IsRegion loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+$cspanningRegion :: forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc
+spanningRegion :: NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc
+$cenclosingRegion :: forall loc.
+IsRegion loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+enclosingRegion :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+</span><a href="Elara.AST.Region.html#IsRegion"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">IsRegion</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176700"><span id="local-6989586621680176704"><span id="local-6989586621680176708"><span id="local-6989586621680176712"><span id="local-6989586621680176716"><span id="local-6989586621680176720"><span id="local-6989586621680176724"><span class="annot"><span class="annottext">Eq (NodeLoc VarNode loc)
+Eq (NodeLoc VarNode loc) =&gt;
+(NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Ordering)
+-&gt; (NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool)
+-&gt; (NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool)
+-&gt; (NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool)
+-&gt; (NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool)
+-&gt; (NodeLoc VarNode loc
+    -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc)
+-&gt; (NodeLoc VarNode loc
+    -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc)
+-&gt; Ord (NodeLoc VarNode loc)
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Ordering
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall loc. Ord loc =&gt; Eq (NodeLoc VarNode loc)
+forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Ordering
+forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+$ccompare :: forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Ordering
+compare :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Ordering
+$c&lt; :: forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+&lt; :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+$c&lt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+&lt;= :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+$c&gt; :: forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+&gt; :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+$c&gt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+&gt;= :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; Bool
+$cmax :: forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+max :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+$cmin :: forall loc.
+Ord loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+min :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176730"><span class="annot"><span class="annottext">NodeLoc VarNode loc -&gt; Doc AnsiStyle
+(NodeLoc VarNode loc -&gt; Doc AnsiStyle)
+-&gt; Pretty (NodeLoc VarNode loc)
+forall loc. Pretty loc =&gt; NodeLoc VarNode loc -&gt; Doc AnsiStyle
+forall a. (a -&gt; Doc AnsiStyle) -&gt; Pretty a
+$cpretty :: forall loc. Pretty loc =&gt; NodeLoc VarNode loc -&gt; Doc AnsiStyle
+pretty :: NodeLoc VarNode loc -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-var hs-var hs-var hs-var">Pretty</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176736"><span id="local-6989586621680176740"><span id="local-6989586621680176744"><span class="annot"><span class="annottext">NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+(NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc)
+-&gt; (NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc)
+-&gt; (forall b.
+    Integral b =&gt;
+    b -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc)
+-&gt; Semigroup (NodeLoc VarNode loc)
+forall b.
+Integral b =&gt;
+b -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc
+forall loc.
+Semigroup loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+$c&lt;&gt; :: forall loc.
+Semigroup loc =&gt;
+NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+&lt;&gt; :: NodeLoc VarNode loc -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+$csconcat :: forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc
+sconcat :: NonEmpty (NodeLoc VarNode loc) -&gt; NodeLoc VarNode loc
+$cstimes :: forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+stimes :: forall b.
+Integral b =&gt;
+b -&gt; NodeLoc VarNode loc -&gt; NodeLoc VarNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176751"><span id="local-6989586621680176755"><span id="local-6989586621680176759"><span class="annot"><span class="annottext">Int -&gt; NodeLoc VarNode loc -&gt; ShowS
+[NodeLoc VarNode loc] -&gt; ShowS
+NodeLoc VarNode loc -&gt; String
+(Int -&gt; NodeLoc VarNode loc -&gt; ShowS)
+-&gt; (NodeLoc VarNode loc -&gt; String)
+-&gt; ([NodeLoc VarNode loc] -&gt; ShowS)
+-&gt; Show (NodeLoc VarNode loc)
+forall loc. Show loc =&gt; Int -&gt; NodeLoc VarNode loc -&gt; ShowS
+forall loc. Show loc =&gt; [NodeLoc VarNode loc] -&gt; ShowS
+forall loc. Show loc =&gt; NodeLoc VarNode loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; NodeLoc VarNode loc -&gt; ShowS
+showsPrec :: Int -&gt; NodeLoc VarNode loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; NodeLoc VarNode loc -&gt; String
+show :: NodeLoc VarNode loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [NodeLoc VarNode loc] -&gt; ShowS
+showList :: [NodeLoc VarNode loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="NodeLoc"><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-var">NodeLoc</span></a></span></span><span> </span><span id="local-6989586621680176221"><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176221"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TypeLoc"><span class="annot"><a href="Elara.AST.Location.html#TypeLoc"><span class="hs-identifier hs-var">TypeLoc</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680176221"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176764"><span id="local-6989586621680176768"><span class="annot"><span class="annottext">NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+(NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool)
+-&gt; (NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool)
+-&gt; Eq (NodeLoc TypeNode loc)
+forall loc.
+Eq loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall loc.
+Eq loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+== :: NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+$c/= :: forall loc.
+Eq loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+/= :: NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176778"><span id="local-6989586621680176782"><span class="annot"><span class="annottext">Semigroup (NodeLoc TypeNode loc)
+Semigroup (NodeLoc TypeNode loc) =&gt;
+(NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc)
+-&gt; (NodeLoc TypeNode loc
+    -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc)
+-&gt; IsRegion (NodeLoc TypeNode loc)
+NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+forall region.
+Semigroup region =&gt;
+(NonEmpty region -&gt; region)
+-&gt; (region -&gt; region -&gt; region) -&gt; IsRegion region
+forall loc. IsRegion loc =&gt; Semigroup (NodeLoc TypeNode loc)
+forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc
+forall loc.
+IsRegion loc =&gt;
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+$cspanningRegion :: forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc
+spanningRegion :: NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc
+$cenclosingRegion :: forall loc.
+IsRegion loc =&gt;
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+enclosingRegion :: NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+</span><a href="Elara.AST.Region.html#IsRegion"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">IsRegion</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176791"><span id="local-6989586621680176795"><span id="local-6989586621680176799"><span id="local-6989586621680176803"><span id="local-6989586621680176807"><span id="local-6989586621680176811"><span id="local-6989586621680176815"><span class="annot"><span class="annottext">Eq (NodeLoc TypeNode loc)
+Eq (NodeLoc TypeNode loc) =&gt;
+(NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Ordering)
+-&gt; (NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool)
+-&gt; (NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool)
+-&gt; (NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool)
+-&gt; (NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool)
+-&gt; (NodeLoc TypeNode loc
+    -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc)
+-&gt; (NodeLoc TypeNode loc
+    -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc)
+-&gt; Ord (NodeLoc TypeNode loc)
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Ordering
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall loc. Ord loc =&gt; Eq (NodeLoc TypeNode loc)
+forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Ordering
+forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+$ccompare :: forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Ordering
+compare :: NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Ordering
+$c&lt; :: forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+&lt; :: NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+$c&lt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+&lt;= :: NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+$c&gt; :: forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+&gt; :: NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+$c&gt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+&gt;= :: NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc -&gt; Bool
+$cmax :: forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+max :: NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+$cmin :: forall loc.
+Ord loc =&gt;
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+min :: NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176821"><span class="annot"><span class="annottext">NodeLoc TypeNode loc -&gt; Doc AnsiStyle
+(NodeLoc TypeNode loc -&gt; Doc AnsiStyle)
+-&gt; Pretty (NodeLoc TypeNode loc)
+forall loc. Pretty loc =&gt; NodeLoc TypeNode loc -&gt; Doc AnsiStyle
+forall a. (a -&gt; Doc AnsiStyle) -&gt; Pretty a
+$cpretty :: forall loc. Pretty loc =&gt; NodeLoc TypeNode loc -&gt; Doc AnsiStyle
+pretty :: NodeLoc TypeNode loc -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-var hs-var hs-var hs-var">Pretty</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176827"><span id="local-6989586621680176831"><span id="local-6989586621680176835"><span class="annot"><span class="annottext">NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+(NodeLoc TypeNode loc
+ -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc)
+-&gt; (NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc)
+-&gt; (forall b.
+    Integral b =&gt;
+    b -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc)
+-&gt; Semigroup (NodeLoc TypeNode loc)
+forall b.
+Integral b =&gt;
+b -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc
+forall loc.
+Semigroup loc =&gt;
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+$c&lt;&gt; :: forall loc.
+Semigroup loc =&gt;
+NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+&lt;&gt; :: NodeLoc TypeNode loc
+-&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+$csconcat :: forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc
+sconcat :: NonEmpty (NodeLoc TypeNode loc) -&gt; NodeLoc TypeNode loc
+$cstimes :: forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+stimes :: forall b.
+Integral b =&gt;
+b -&gt; NodeLoc TypeNode loc -&gt; NodeLoc TypeNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176842"><span id="local-6989586621680176846"><span id="local-6989586621680176850"><span class="annot"><span class="annottext">Int -&gt; NodeLoc TypeNode loc -&gt; ShowS
+[NodeLoc TypeNode loc] -&gt; ShowS
+NodeLoc TypeNode loc -&gt; String
+(Int -&gt; NodeLoc TypeNode loc -&gt; ShowS)
+-&gt; (NodeLoc TypeNode loc -&gt; String)
+-&gt; ([NodeLoc TypeNode loc] -&gt; ShowS)
+-&gt; Show (NodeLoc TypeNode loc)
+forall loc. Show loc =&gt; Int -&gt; NodeLoc TypeNode loc -&gt; ShowS
+forall loc. Show loc =&gt; [NodeLoc TypeNode loc] -&gt; ShowS
+forall loc. Show loc =&gt; NodeLoc TypeNode loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; NodeLoc TypeNode loc -&gt; ShowS
+showsPrec :: Int -&gt; NodeLoc TypeNode loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; NodeLoc TypeNode loc -&gt; String
+show :: NodeLoc TypeNode loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [NodeLoc TypeNode loc] -&gt; ShowS
+showList :: [NodeLoc TypeNode loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">newtype</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="NodeLoc"><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-var">NodeLoc</span></a></span></span><span> </span><span id="local-6989586621680176852"><span class="annot"><a href="Elara.AST.Location.html#PatternNode"><span class="hs-identifier hs-type">PatternNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176852"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PatLoc"><span class="annot"><a href="Elara.AST.Location.html#PatLoc"><span class="hs-identifier hs-var">PatLoc</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680176852"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176856"><span id="local-6989586621680176860"><span class="annot"><span class="annottext">NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+(NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool)
+-&gt; (NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool)
+-&gt; Eq (NodeLoc PatternNode loc)
+forall loc.
+Eq loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall loc.
+Eq loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+== :: NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+$c/= :: forall loc.
+Eq loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+/= :: NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176870"><span id="local-6989586621680176874"><span class="annot"><span class="annottext">Semigroup (NodeLoc PatternNode loc)
+Semigroup (NodeLoc PatternNode loc) =&gt;
+(NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc)
+-&gt; (NodeLoc PatternNode loc
+    -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc)
+-&gt; IsRegion (NodeLoc PatternNode loc)
+NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+forall region.
+Semigroup region =&gt;
+(NonEmpty region -&gt; region)
+-&gt; (region -&gt; region -&gt; region) -&gt; IsRegion region
+forall loc. IsRegion loc =&gt; Semigroup (NodeLoc PatternNode loc)
+forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc
+forall loc.
+IsRegion loc =&gt;
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+$cspanningRegion :: forall loc.
+IsRegion loc =&gt;
+NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc
+spanningRegion :: NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc
+$cenclosingRegion :: forall loc.
+IsRegion loc =&gt;
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+enclosingRegion :: NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+</span><a href="Elara.AST.Region.html#IsRegion"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">IsRegion</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176883"><span id="local-6989586621680176887"><span id="local-6989586621680176891"><span id="local-6989586621680176895"><span id="local-6989586621680176899"><span id="local-6989586621680176903"><span id="local-6989586621680176907"><span class="annot"><span class="annottext">Eq (NodeLoc PatternNode loc)
+Eq (NodeLoc PatternNode loc) =&gt;
+(NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Ordering)
+-&gt; (NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool)
+-&gt; (NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool)
+-&gt; (NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool)
+-&gt; (NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool)
+-&gt; (NodeLoc PatternNode loc
+    -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc)
+-&gt; (NodeLoc PatternNode loc
+    -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc)
+-&gt; Ord (NodeLoc PatternNode loc)
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Ordering
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall loc. Ord loc =&gt; Eq (NodeLoc PatternNode loc)
+forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Ordering
+forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+$ccompare :: forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Ordering
+compare :: NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Ordering
+$c&lt; :: forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+&lt; :: NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+$c&lt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+&lt;= :: NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+$c&gt; :: forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+&gt; :: NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+$c&gt;= :: forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+&gt;= :: NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc -&gt; Bool
+$cmax :: forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+max :: NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+$cmin :: forall loc.
+Ord loc =&gt;
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+min :: NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176913"><span class="annot"><span class="annottext">NodeLoc PatternNode loc -&gt; Doc AnsiStyle
+(NodeLoc PatternNode loc -&gt; Doc AnsiStyle)
+-&gt; Pretty (NodeLoc PatternNode loc)
+forall loc. Pretty loc =&gt; NodeLoc PatternNode loc -&gt; Doc AnsiStyle
+forall a. (a -&gt; Doc AnsiStyle) -&gt; Pretty a
+$cpretty :: forall loc. Pretty loc =&gt; NodeLoc PatternNode loc -&gt; Doc AnsiStyle
+pretty :: NodeLoc PatternNode loc -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-var hs-var hs-var hs-var">Pretty</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176919"><span id="local-6989586621680176923"><span id="local-6989586621680176927"><span class="annot"><span class="annottext">NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+(NodeLoc PatternNode loc
+ -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc)
+-&gt; (NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc)
+-&gt; (forall b.
+    Integral b =&gt;
+    b -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc)
+-&gt; Semigroup (NodeLoc PatternNode loc)
+forall b.
+Integral b =&gt;
+b -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc
+forall loc.
+Semigroup loc =&gt;
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+$c&lt;&gt; :: forall loc.
+Semigroup loc =&gt;
+NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+&lt;&gt; :: NodeLoc PatternNode loc
+-&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+$csconcat :: forall loc.
+Semigroup loc =&gt;
+NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc
+sconcat :: NonEmpty (NodeLoc PatternNode loc) -&gt; NodeLoc PatternNode loc
+$cstimes :: forall loc b.
+(Semigroup loc, Integral b) =&gt;
+b -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+stimes :: forall b.
+Integral b =&gt;
+b -&gt; NodeLoc PatternNode loc -&gt; NodeLoc PatternNode loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680176934"><span id="local-6989586621680176938"><span id="local-6989586621680176942"><span class="annot"><span class="annottext">Int -&gt; NodeLoc PatternNode loc -&gt; ShowS
+[NodeLoc PatternNode loc] -&gt; ShowS
+NodeLoc PatternNode loc -&gt; String
+(Int -&gt; NodeLoc PatternNode loc -&gt; ShowS)
+-&gt; (NodeLoc PatternNode loc -&gt; String)
+-&gt; ([NodeLoc PatternNode loc] -&gt; ShowS)
+-&gt; Show (NodeLoc PatternNode loc)
+forall loc. Show loc =&gt; Int -&gt; NodeLoc PatternNode loc -&gt; ShowS
+forall loc. Show loc =&gt; [NodeLoc PatternNode loc] -&gt; ShowS
+forall loc. Show loc =&gt; NodeLoc PatternNode loc -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall loc. Show loc =&gt; Int -&gt; NodeLoc PatternNode loc -&gt; ShowS
+showsPrec :: Int -&gt; NodeLoc PatternNode loc -&gt; ShowS
+$cshow :: forall loc. Show loc =&gt; NodeLoc PatternNode loc -&gt; String
+show :: NodeLoc PatternNode loc -&gt; String
+$cshowList :: forall loc. Show loc =&gt; [NodeLoc PatternNode loc] -&gt; ShowS
+showList :: [NodeLoc PatternNode loc] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">class</span><span> </span><span id="UnwrapNodeLoc"><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-var">UnwrapNodeLoc</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176187"><span class="annot"><a href="#local-6989586621680176187"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680176188"><span class="annot"><a href="#local-6989586621680176188"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680176189"><span class="annot"><a href="#local-6989586621680176189"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-50"></span><span>    </span><span id="unwrapLoc"><span class="annot"><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-type">unwrapLoc</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176187"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176188"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680176189"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176190"><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-type">UnwrapNodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ModuleNode"><span class="hs-identifier hs-type">ModuleNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176190"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176190"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680176948"><span class="annot"><span class="annottext">unwrapLoc :: NodeLoc ModuleNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-var hs-var hs-var">unwrapLoc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#ModuleLoc"><span class="hs-identifier hs-type">ModuleLoc</span></a></span><span> </span><span id="local-6989586621680176949"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176949"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176949"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176193"><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-type">UnwrapNodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176193"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176193"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680176952"><span class="annot"><span class="annottext">unwrapLoc :: NodeLoc DeclNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-var hs-var hs-var">unwrapLoc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#DeclLoc"><span class="hs-identifier hs-type">DeclLoc</span></a></span><span> </span><span id="local-6989586621680176953"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176953"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176953"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176196"><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-type">UnwrapNodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176196"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176196"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680176956"><span class="annot"><span class="annottext">unwrapLoc :: NodeLoc ExprNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-var hs-var hs-var">unwrapLoc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#ExprLoc"><span class="hs-identifier hs-type">ExprLoc</span></a></span><span> </span><span id="local-6989586621680176957"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176957"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176957"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176199"><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-type">UnwrapNodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176199"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176199"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680176960"><span class="annot"><span class="annottext">unwrapLoc :: NodeLoc VarNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-var hs-var hs-var">unwrapLoc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#VarLoc"><span class="hs-identifier hs-type">VarLoc</span></a></span><span> </span><span id="local-6989586621680176961"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176961"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176961"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176202"><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-type">UnwrapNodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176202"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176202"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680176964"><span class="annot"><span class="annottext">unwrapLoc :: NodeLoc TypeNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-var hs-var hs-var">unwrapLoc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TypeLoc"><span class="hs-identifier hs-type">TypeLoc</span></a></span><span> </span><span id="local-6989586621680176965"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176965"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176965"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176205"><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-type">UnwrapNodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#PatternNode"><span class="hs-identifier hs-type">PatternNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176205"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176205"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680176968"><span class="annot"><span class="annottext">unwrapLoc :: NodeLoc PatternNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-var hs-var hs-var">unwrapLoc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#PatLoc"><span class="hs-identifier hs-type">PatLoc</span></a></span><span> </span><span id="local-6989586621680176969"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176969"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176969"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="annot"><span class="hs-comment">{- | the &quot;join&quot; of two nodes, i.e. the smallest node that subsumes both of them.
+note that this is not the same as a &quot;container&quot; relationship. for example, an 'ExprNode' can contain a 'PatternNode', since a pattern can appear inside an expression,
+but the join of 'ExprNode' and 'PatternNode' is 'ExprNode', since 'ExprNode' is the only node that could contain both at once.
+@a@ should be the smaller node and @b@ the larger node.
+by default, this relation is symmetric, so should be overridden for asymmetric cases.
+-}</span></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">family</span><span> </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176970"><span class="annot"><a href="#local-6989586621680176970"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176971"><span class="annot"><a href="#local-6989586621680176971"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-comment">-- Identity</span><span>
+</span><span id="line-72"></span><span>    </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span id="local-6989586621680176972"><span class="annot"><a href="#local-6989586621680176972"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176972"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621680176972"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-comment">-- Join PatternNode ExprNode = ExprNode -- an expression can contain a pattern</span><span>
+</span><span id="line-74"></span><span>    </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#PatternNode"><span class="hs-identifier hs-type">PatternNode</span></a></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-75"></span><span>        </span><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span>
+</span><span id="line-76"></span><span>    </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span>
+</span><span id="line-77"></span><span>    </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="hs-comment">-- a (type) variable can appear in a type</span><span>
+</span><span id="line-78"></span><span>    </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span id="local-6989586621680176973"><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176973"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span>
+</span><span id="line-79"></span><span>    </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span id="local-6989586621680176974"><span class="annot"><a href="#local-6989586621680176974"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span>
+</span><span id="line-80"></span><span>    </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ModuleNode"><span class="hs-identifier hs-type">ModuleNode</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ModuleNode"><span class="hs-identifier hs-type">ModuleNode</span></a></span><span> </span><span class="hs-comment">-- everything is contained in the module</span><span>
+</span><span id="line-81"></span><span>    </span><span id="Join"><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-var">Join</span></a></span></span><span> </span><span id="local-6989586621680176975"><span id="local-6989586621680176976"><span class="annot"><a href="#local-6989586621680176975"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176976"><span class="hs-identifier hs-type">b</span></a></span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-type">Join</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176976"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176975"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="annot"><span class="hs-comment">-- | A node @a@ subsumes a node @b@ if the join of @a@ and @b@ is @a@</span></span><span>
+</span><span id="line-84"></span><span class="hs-keyword">type</span><span> </span><span id="Subsumes"><span class="annot"><a href="Elara.AST.Location.html#Subsumes"><span class="hs-identifier hs-var">Subsumes</span></a></span></span><span> </span><span id="local-6989586621680176977"><span class="annot"><a href="#local-6989586621680176977"><span class="hs-identifier hs-type">narrower</span></a></span></span><span> </span><span id="local-6989586621680176978"><span class="annot"><a href="#local-6989586621680176978"><span class="hs-identifier hs-type">wider</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-type">Join</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176977"><span class="hs-identifier hs-type">narrower</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176978"><span class="hs-identifier hs-type">wider</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="#local-6989586621680176978"><span class="hs-identifier hs-type">wider</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="annot"><span class="hs-comment">-- | Widen a node to a wider node at the data level</span></span><span>
+</span><span id="line-87"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Subsumes"><span class="hs-identifier hs-type">Subsumes</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176207"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176208"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="Widen"><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-var">Widen</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176207"><span class="annot"><a href="#local-6989586621680176207"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176208"><span class="annot"><a href="#local-6989586621680176208"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-88"></span><span>    </span><span id="widen"><span class="annot"><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-type">widen</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621680176212"><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176207"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176212"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176208"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176212"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176213"><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176213"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176213"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680176987"><span class="annot"><span class="annottext">widen :: forall loc. NodeLoc n loc -&gt; NodeLoc n loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var hs-var hs-var">widen</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc n loc -&gt; NodeLoc n loc
+forall a. a -&gt; a
+</span><a href="Prelude.html#identity"><span class="hs-identifier hs-var">identity</span></a></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#PatternNode"><span class="hs-identifier hs-type">PatternNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680176994"><span class="annot"><span class="annottext">widen :: forall loc. NodeLoc PatternNode loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var hs-var hs-var">widen</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#PatLoc"><span class="hs-identifier hs-type">PatLoc</span></a></span><span> </span><span id="local-6989586621680176995"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176995"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc DeclNode loc
+forall loc. loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#DeclLoc"><span class="hs-identifier hs-var">DeclLoc</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680176995"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177001"><span class="annot"><span class="annottext">widen :: forall loc. NodeLoc VarNode loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var hs-var hs-var">widen</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#VarLoc"><span class="hs-identifier hs-type">VarLoc</span></a></span><span> </span><span id="local-6989586621680177002"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177002"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc DeclNode loc
+forall loc. loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#DeclLoc"><span class="hs-identifier hs-var">DeclLoc</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177002"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177008"><span class="annot"><span class="annottext">widen :: forall loc. NodeLoc ExprNode loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var hs-var hs-var">widen</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#ExprLoc"><span class="hs-identifier hs-type">ExprLoc</span></a></span><span> </span><span id="local-6989586621680177009"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177009"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc DeclNode loc
+forall loc. loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#DeclLoc"><span class="hs-identifier hs-var">DeclLoc</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177009"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177015"><span class="annot"><span class="annottext">widen :: forall loc. NodeLoc VarNode loc -&gt; NodeLoc TypeNode loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var hs-var hs-var">widen</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#VarLoc"><span class="hs-identifier hs-type">VarLoc</span></a></span><span> </span><span id="local-6989586621680177016"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177016"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc TypeNode loc
+forall loc. loc -&gt; NodeLoc TypeNode loc
+</span><a href="Elara.AST.Location.html#TypeLoc"><span class="hs-identifier hs-var">TypeLoc</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177016"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177022"><span class="annot"><span class="annottext">widen :: forall loc. NodeLoc TypeNode loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var hs-var hs-var">widen</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TypeLoc"><span class="hs-identifier hs-type">TypeLoc</span></a></span><span> </span><span id="local-6989586621680177023"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177023"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc DeclNode loc
+forall loc. loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#DeclLoc"><span class="hs-identifier hs-var">DeclLoc</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177023"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-101"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#PatternNode"><span class="hs-identifier hs-type">PatternNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177029"><span class="annot"><span class="annottext">widen :: forall loc. NodeLoc PatternNode loc -&gt; NodeLoc ExprNode loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var hs-var hs-var">widen</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#PatLoc"><span class="hs-identifier hs-type">PatLoc</span></a></span><span> </span><span id="local-6989586621680177030"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177030"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc ExprNode loc
+forall loc. loc -&gt; NodeLoc ExprNode loc
+</span><a href="Elara.AST.Location.html#ExprLoc"><span class="hs-identifier hs-var">ExprLoc</span></a></span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177030"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="hs-keyword">class</span><span> </span><span id="LocSemigroup"><span class="annot"><a href="Elara.AST.Location.html#LocSemigroup"><span class="hs-identifier hs-var">LocSemigroup</span></a></span></span><span> </span><span id="local-6989586621680176230"><span class="annot"><a href="#local-6989586621680176230"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621680176232"><span class="annot"><a href="#local-6989586621680176232"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span id="local-6989586621680176231"><span class="annot"><a href="#local-6989586621680176231"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>    </span><span id="%3C.%3E"><span class="annot"><a href="Elara.AST.Location.html#%3C.%3E"><span class="hs-operator hs-type">(&lt;.&gt;)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176230"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176231"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176232"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176231"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-type">Join</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176230"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176232"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176231"><span class="hs-identifier hs-type">loc</span></a></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">6</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#%3C.%3E"><span class="hs-operator hs-type">&lt;.&gt;</span></a></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-109"></span><span>    </span><span id="local-6989586621680176233"><span id="local-6989586621680176234"><span id="local-6989586621680176235"><span class="hs-special">(</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#IsRegion"><span class="hs-identifier hs-type">IsRegion</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176233"><span class="hs-identifier hs-type">loc</span></a></span><span>
+</span><span id="line-110"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176234"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-type">Join</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176234"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176235"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-111"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#Widen"><span class="hs-identifier hs-type">Widen</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176235"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-type">Join</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176234"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176235"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-type">Join</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176234"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176235"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176233"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-113"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-114"></span><span>    </span><span class="annot"><a href="Elara.AST.Location.html#LocSemigroup"><span class="hs-identifier hs-type">LocSemigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176234"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176235"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176233"><span class="hs-identifier hs-type">loc</span></a></span></span></span></span><span>
+</span><span id="line-115"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-116"></span><span>    </span><span id="local-6989586621680177042"><span class="annot"><span class="annottext">NodeLoc a loc
+</span><a href="#local-6989586621680177042"><span class="hs-identifier hs-var">l1</span></a></span></span><span> </span><span id="local-6989586621680177043"><span class="annot"><span class="annottext">&lt;.&gt; :: NodeLoc a loc -&gt; NodeLoc b loc -&gt; NodeLoc (Join a b) loc
+</span><a href="Elara.AST.Location.html#%3C.%3E"><span class="hs-operator hs-var hs-var hs-var">&lt;.&gt;</span></a></span></span><span> </span><span id="local-6989586621680177044"><span class="annot"><span class="annottext">NodeLoc b loc
+</span><a href="#local-6989586621680177044"><span class="hs-identifier hs-var">l2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-117"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680177045"><span class="annot"><span class="annottext">raw1 :: NodeLoc (Join a b) loc
+</span><a href="#local-6989586621680177045"><span class="hs-identifier hs-var hs-var">raw1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (a :: AstNode) (b :: AstNode) loc.
+Widen a b =&gt;
+NodeLoc a loc -&gt; NodeLoc b loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var">widen</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680176234"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-type">Join</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176234"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176235"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">NodeLoc a loc
+</span><a href="#local-6989586621680177042"><span class="hs-identifier hs-var">l1</span></a></span><span>
+</span><span id="line-118"></span><span>            </span><span id="local-6989586621680177046"><span class="annot"><span class="annottext">raw2 :: NodeLoc (Join a b) loc
+</span><a href="#local-6989586621680177046"><span class="hs-identifier hs-var hs-var">raw2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (a :: AstNode) (b :: AstNode) loc.
+Widen a b =&gt;
+NodeLoc a loc -&gt; NodeLoc b loc
+</span><a href="Elara.AST.Location.html#widen"><span class="hs-identifier hs-var">widen</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680176235"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#Join"><span class="hs-identifier hs-type">Join</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176234"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176235"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">NodeLoc b loc
+</span><a href="#local-6989586621680177044"><span class="hs-identifier hs-var">l2</span></a></span><span>
+</span><span id="line-119"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NodeLoc (Join a b) loc
+</span><a href="#local-6989586621680177045"><span class="hs-identifier hs-var">raw1</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc (Join a b) loc
+-&gt; NodeLoc (Join a b) loc -&gt; NodeLoc (Join a b) loc
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">NodeLoc (Join a b) loc
+</span><a href="#local-6989586621680177046"><span class="hs-identifier hs-var">raw2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span class="hs-keyword">class</span><span> </span><span id="HasLocation"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-var">HasLocation</span></a></span></span><span> </span><span id="local-6989586621680176240"><span class="annot"><a href="#local-6989586621680176240"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621680176241"><span class="annot"><a href="#local-6989586621680176241"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><a href="#local-6989586621680176240"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680176241"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-122"></span><span>    </span><span id="getLocation"><span class="annot"><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-type">getLocation</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680176240"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680176241"><span class="hs-identifier hs-type">loc</span></a></span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176242"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176242"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177051"><span class="annot"><span class="annottext">getLocation :: Located n -&gt; SourceRegion
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var hs-var hs-var">getLocation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span id="local-6989586621680177053"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680177053"><span class="hs-identifier hs-var">sr</span></a></span></span><span> </span><span class="annot"><span class="annottext">n
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680177053"><span class="hs-identifier hs-var">sr</span></a></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176244"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ModuleNode"><span class="hs-identifier hs-type">ModuleNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176244"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176244"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177056"><span class="annot"><span class="annottext">getLocation :: NodeLoc ModuleNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var hs-var hs-var">getLocation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#ModuleLoc"><span class="hs-identifier hs-type">ModuleLoc</span></a></span><span> </span><span id="local-6989586621680177057"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177057"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177057"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176246"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176246"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176246"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177060"><span class="annot"><span class="annottext">getLocation :: NodeLoc DeclNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var hs-var hs-var">getLocation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#DeclLoc"><span class="hs-identifier hs-type">DeclLoc</span></a></span><span> </span><span id="local-6989586621680177061"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177061"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177061"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176248"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176248"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176248"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177064"><span class="annot"><span class="annottext">getLocation :: NodeLoc ExprNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var hs-var hs-var">getLocation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#ExprLoc"><span class="hs-identifier hs-type">ExprLoc</span></a></span><span> </span><span id="local-6989586621680177065"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177065"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177065"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176250"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#PatternNode"><span class="hs-identifier hs-type">PatternNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176250"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176250"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177068"><span class="annot"><span class="annottext">getLocation :: NodeLoc PatternNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var hs-var hs-var">getLocation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#PatLoc"><span class="hs-identifier hs-type">PatLoc</span></a></span><span> </span><span id="local-6989586621680177069"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177069"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177069"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176252"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176252"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176252"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177072"><span class="annot"><span class="annottext">getLocation :: NodeLoc VarNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var hs-var hs-var">getLocation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#VarLoc"><span class="hs-identifier hs-type">VarLoc</span></a></span><span> </span><span id="local-6989586621680177073"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177073"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177073"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176254"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176254"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176254"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177076"><span class="annot"><span class="annottext">getLocation :: NodeLoc TypeNode loc -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var hs-var hs-var">getLocation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TypeLoc"><span class="hs-identifier hs-type">TypeLoc</span></a></span><span> </span><span id="local-6989586621680177077"><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177077"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc
+</span><a href="#local-6989586621680177077"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="annot"><span class="hs-comment">-- | class for wrapping a raw location in a node-specific location wrapper</span></span><span>
+</span><span id="line-139"></span><span class="hs-keyword">class</span><span> </span><span id="WrapNode"><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-var">WrapNode</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176257"><span class="annot"><a href="#local-6989586621680176257"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-140"></span><span>    </span><span id="wrap"><span class="annot"><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-type">wrap</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621680176255"><span class="annot"><a href="#local-6989586621680176255"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176257"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176255"><span class="hs-identifier hs-type">loc</span></a></span></span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ModuleNode"><span class="hs-identifier hs-type">ModuleNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177082"><span class="annot"><span class="annottext">wrap :: forall loc. loc -&gt; NodeLoc ModuleNode loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var hs-var hs-var">wrap</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc ModuleNode loc
+forall loc. loc -&gt; NodeLoc ModuleNode loc
+</span><a href="Elara.AST.Location.html#ModuleLoc"><span class="hs-identifier hs-var">ModuleLoc</span></a></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#DeclNode"><span class="hs-identifier hs-type">DeclNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177085"><span class="annot"><span class="annottext">wrap :: forall loc. loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var hs-var hs-var">wrap</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc DeclNode loc
+forall loc. loc -&gt; NodeLoc DeclNode loc
+</span><a href="Elara.AST.Location.html#DeclLoc"><span class="hs-identifier hs-var">DeclLoc</span></a></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#ExprNode"><span class="hs-identifier hs-type">ExprNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177088"><span class="annot"><span class="annottext">wrap :: forall loc. loc -&gt; NodeLoc ExprNode loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var hs-var hs-var">wrap</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc ExprNode loc
+forall loc. loc -&gt; NodeLoc ExprNode loc
+</span><a href="Elara.AST.Location.html#ExprLoc"><span class="hs-identifier hs-var">ExprLoc</span></a></span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#PatternNode"><span class="hs-identifier hs-type">PatternNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177091"><span class="annot"><span class="annottext">wrap :: forall loc. loc -&gt; NodeLoc PatternNode loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var hs-var hs-var">wrap</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc PatternNode loc
+forall loc. loc -&gt; NodeLoc PatternNode loc
+</span><a href="Elara.AST.Location.html#PatLoc"><span class="hs-identifier hs-var">PatLoc</span></a></span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#VarNode"><span class="hs-identifier hs-type">VarNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177094"><span class="annot"><span class="annottext">wrap :: forall loc. loc -&gt; NodeLoc VarNode loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var hs-var hs-var">wrap</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc VarNode loc
+forall loc. loc -&gt; NodeLoc VarNode loc
+</span><a href="Elara.AST.Location.html#VarLoc"><span class="hs-identifier hs-var">VarLoc</span></a></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TypeNode"><span class="hs-identifier hs-type">TypeNode</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680177097"><span class="annot"><span class="annottext">wrap :: forall loc. loc -&gt; NodeLoc TypeNode loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var hs-var hs-var">wrap</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">loc -&gt; NodeLoc TypeNode loc
+forall loc. loc -&gt; NodeLoc TypeNode loc
+</span><a href="Elara.AST.Location.html#TypeLoc"><span class="hs-identifier hs-var">TypeLoc</span></a></span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span class="annot"><span class="hs-comment">-- | a version of 'Located' that is tagged with the specific node type it is located for</span></span><span>
+</span><span id="line-155"></span><span class="hs-keyword">data</span><span> </span><span id="TaggedLocate"><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-var">TaggedLocate</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176334"><span class="annot"><a href="#local-6989586621680176334"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680176335"><span class="annot"><a href="#local-6989586621680176335"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680176336"><span class="annot"><a href="#local-6989586621680176336"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TaggedLocate"><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-var">TaggedLocate</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176334"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176335"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680176336"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-156"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680177100"><span id="local-6989586621680177102"><span class="annot"><span class="annottext">(forall a b.
+ (a -&gt; b) -&gt; TaggedLocate n loc a -&gt; TaggedLocate n loc b)
+-&gt; (forall a b. a -&gt; TaggedLocate n loc b -&gt; TaggedLocate n loc a)
+-&gt; Functor (TaggedLocate n loc)
+forall a b. a -&gt; TaggedLocate n loc b -&gt; TaggedLocate n loc a
+forall a b.
+(a -&gt; b) -&gt; TaggedLocate n loc a -&gt; TaggedLocate n loc b
+forall (n :: AstNode) loc a b.
+a -&gt; TaggedLocate n loc b -&gt; TaggedLocate n loc a
+forall (n :: AstNode) loc a b.
+(a -&gt; b) -&gt; TaggedLocate n loc a -&gt; TaggedLocate n loc b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+$cfmap :: forall (n :: AstNode) loc a b.
+(a -&gt; b) -&gt; TaggedLocate n loc a -&gt; TaggedLocate n loc b
+fmap :: forall a b.
+(a -&gt; b) -&gt; TaggedLocate n loc a -&gt; TaggedLocate n loc b
+$c&lt;$ :: forall (n :: AstNode) loc a b.
+a -&gt; TaggedLocate n loc b -&gt; TaggedLocate n loc a
+&lt;$ :: forall a b. a -&gt; TaggedLocate n loc b -&gt; TaggedLocate n loc a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680177107"><span id="local-6989586621680177109"><span class="annot"><span class="annottext">(forall x. TaggedLocate n loc a -&gt; Rep (TaggedLocate n loc a) x)
+-&gt; (forall x. Rep (TaggedLocate n loc a) x -&gt; TaggedLocate n loc a)
+-&gt; Generic (TaggedLocate n loc a)
+forall x. Rep (TaggedLocate n loc a) x -&gt; TaggedLocate n loc a
+forall x. TaggedLocate n loc a -&gt; Rep (TaggedLocate n loc a) x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+forall (n :: AstNode) loc a x.
+Rep (TaggedLocate n loc a) x -&gt; TaggedLocate n loc a
+forall (n :: AstNode) loc a x.
+TaggedLocate n loc a -&gt; Rep (TaggedLocate n loc a) x
+$cfrom :: forall (n :: AstNode) loc a x.
+TaggedLocate n loc a -&gt; Rep (TaggedLocate n loc a) x
+from :: forall x. TaggedLocate n loc a -&gt; Rep (TaggedLocate n loc a) x
+$cto :: forall (n :: AstNode) loc a x.
+Rep (TaggedLocate n loc a) x -&gt; TaggedLocate n loc a
+to :: forall x. Rep (TaggedLocate n loc a) x -&gt; TaggedLocate n loc a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176286"><span id="local-6989586621680176287"><span id="local-6989586621680176288"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176286"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176287"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176288"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176286"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-159"></span><span>    </span><span id="local-6989586621680177118"><span class="annot"><span class="annottext">pretty :: TaggedLocate n loc a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc n loc
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680177119"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177119"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177119"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-160"></span><span>
+</span><span id="line-161"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176292"><span id="local-6989586621680176293"><span id="local-6989586621680176294"><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176292"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176293"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176294"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176292"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176293"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-162"></span><span>    </span><span id="local-6989586621680177122"><span class="annot"><span class="annottext">getLocation :: TaggedLocate n loc a -&gt; NodeLoc n loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var hs-var hs-var">getLocation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span id="local-6989586621680177123"><span class="annot"><span class="annottext">NodeLoc n loc
+</span><a href="#local-6989586621680177123"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc n loc
+</span><a href="#local-6989586621680177123"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-163"></span><span>
+</span><span id="line-164"></span><span id="local-6989586621680176298"><span id="local-6989586621680176299"><span id="local-6989586621680176300"><span id="local-6989586621680177127"><span id="local-6989586621680177132"><span id="local-6989586621680177136"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621680176298"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176299"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176300"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176299"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176300"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176298"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span id="local-6989586621680176304"><span id="local-6989586621680176305"><span id="local-6989586621680176306"><span id="local-6989586621680177141"><span id="local-6989586621680177145"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621680176304"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176305"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176306"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176305"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176306"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176304"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span id="local-6989586621680176310"><span id="local-6989586621680176311"><span id="local-6989586621680176312"><span id="local-6989586621680177155"><span id="local-6989586621680177159"><span id="local-6989586621680177163"><span id="local-6989586621680177167"><span id="local-6989586621680177170"><span id="local-6989586621680177173"><span id="local-6989586621680177176"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621680176310"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176311"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176312"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176311"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176312"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176310"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680176320"><span id="local-6989586621680176321"><span class="annot"><a href="Elara.AST.Region.html#LocatedElement"><span class="hs-identifier hs-type">LocatedElement</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176320"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176321"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-171"></span><span>    </span><span id="local-6989586621680177181"><span class="annot"><span class="annottext">unlocated :: forall a b. Lens (TaggedLocate n loc a) (TaggedLocate n loc b) a b
+</span><a href="#local-6989586621680177181"><span class="hs-identifier hs-var hs-var hs-var">unlocated</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LensVL (TaggedLocate n loc a) (TaggedLocate n loc b) a b
+-&gt; Lens (TaggedLocate n loc a) (TaggedLocate n loc b) a b
+forall s t a b. LensVL s t a b -&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">lensVL</span></span><span> </span><span class="annot"><span class="annottext">(LensVL (TaggedLocate n loc a) (TaggedLocate n loc b) a b
+ -&gt; Lens (TaggedLocate n loc a) (TaggedLocate n loc b) a b)
+-&gt; LensVL (TaggedLocate n loc a) (TaggedLocate n loc b) a b
+-&gt; Lens (TaggedLocate n loc a) (TaggedLocate n loc b) a b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680177186"><span class="annot"><span class="annottext">a -&gt; f b
+</span><a href="#local-6989586621680177186"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span id="local-6989586621680177187"><span class="annot"><span class="annottext">NodeLoc n loc
+</span><a href="#local-6989586621680177187"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621680177188"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177188"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(b -&gt; TaggedLocate n loc b) -&gt; f b -&gt; f (TaggedLocate n loc b)
+forall a b. (a -&gt; b) -&gt; f a -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NodeLoc n loc -&gt; b -&gt; TaggedLocate n loc b
+forall (n :: AstNode) loc a.
+NodeLoc n loc -&gt; a -&gt; TaggedLocate n loc a
+</span><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-var">TaggedLocate</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc n loc
+</span><a href="#local-6989586621680177187"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; f b
+</span><a href="#local-6989586621680177186"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177188"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span class="annot"><span class="hs-comment">-- | Tag a value that 'HasLocation' with a specific located node type</span></span><span>
+</span><span id="line-174"></span><span class="annot"><a href="Elara.AST.Location.html#tag"><span class="hs-identifier hs-type">tag</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680176339"><span class="annot"><a href="#local-6989586621680176339"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#AstNode"><span class="hs-identifier hs-type">AstNode</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680176337"><span class="annot"><a href="#local-6989586621680176337"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621680176338"><span class="annot"><a href="#local-6989586621680176338"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176337"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176338"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176339"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680176337"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176339"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176338"><span class="hs-identifier hs-type">loc</span></a></span><span>
+</span><span id="line-175"></span><span id="tag"><span class="annot"><span class="annottext">tag :: forall (n :: AstNode) -&gt;
+forall a loc. (HasLocation a loc, WrapNode n) =&gt; a -&gt; NodeLoc n loc
+</span><a href="Elara.AST.Location.html#tag"><span class="hs-identifier hs-var hs-var">tag</span></a></span></span><span> </span><span id="local-6989586621680177194"><span class="annot"><a href="#local-6989586621680177194"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680177195"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177195"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (n :: AstNode) loc. WrapNode n =&gt; loc -&gt; NodeLoc n loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var">wrap</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680177194"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; loc
+forall a loc. HasLocation a loc =&gt; a -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var">getLocation</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177195"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-176"></span><span>
+</span><span id="line-177"></span><span class="annot"><span class="hs-comment">-- | Convert a generic 'Located' value into a tagged 'TaggedLocate'</span></span><span>
+</span><span id="line-178"></span><span class="annot"><a href="Elara.AST.Location.html#tagLocated"><span class="hs-identifier hs-type">tagLocated</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680176343"><span class="annot"><a href="#local-6989586621680176343"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span id="local-6989586621680176344"><span class="annot"><a href="#local-6989586621680176344"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176343"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176344"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176343"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176344"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-179"></span><span id="tagLocated"><span class="annot"><span class="annottext">tagLocated :: forall (n :: AstNode) a.
+WrapNode n =&gt;
+Located a -&gt; TaggedLocate n SourceRegion a
+</span><a href="Elara.AST.Location.html#tagLocated"><span class="hs-identifier hs-var hs-var">tagLocated</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span id="local-6989586621680177199"><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680177199"><span class="hs-identifier hs-var">region</span></a></span></span><span> </span><span id="local-6989586621680177200"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177200"><span class="hs-identifier hs-var">val</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc n SourceRegion -&gt; a -&gt; TaggedLocate n SourceRegion a
+forall (n :: AstNode) loc a.
+NodeLoc n loc -&gt; a -&gt; TaggedLocate n loc a
+</span><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-var">TaggedLocate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (n :: AstNode) loc. WrapNode n =&gt; loc -&gt; NodeLoc n loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var">wrap</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680176343"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680177199"><span class="hs-identifier hs-var">region</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177200"><span class="hs-identifier hs-var">val</span></a></span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span><span class="annot"><a href="Elara.AST.Location.html#spanAs"><span class="hs-identifier hs-type">spanAs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680176349"><span class="annot"><a href="#local-6989586621680176349"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span id="local-6989586621680176347"><span class="annot"><a href="#local-6989586621680176347"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621680176348"><span class="annot"><a href="#local-6989586621680176348"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#HasLocation"><span class="hs-identifier hs-type">HasLocation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176347"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176348"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176349"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621680176348"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680176347"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#NodeLoc"><span class="hs-identifier hs-type">NodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176349"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176348"><span class="hs-identifier hs-type">loc</span></a></span><span>
+</span><span id="line-182"></span><span id="spanAs"><span class="annot"><span class="annottext">spanAs :: forall (n :: AstNode) a loc.
+(HasLocation a loc, WrapNode n, Monoid loc) =&gt;
+[a] -&gt; NodeLoc n loc
+</span><a href="Elara.AST.Location.html#spanAs"><span class="hs-identifier hs-var hs-var">spanAs</span></a></span></span><span> </span><span id="local-6989586621680177208"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680177208"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (n :: AstNode) loc. WrapNode n =&gt; loc -&gt; NodeLoc n loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var">wrap</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680176349"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[loc] -&gt; loc
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">mconcat</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; loc) -&gt; [a] -&gt; [loc]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; loc
+forall a loc. HasLocation a loc =&gt; a -&gt; loc
+</span><a href="Elara.AST.Location.html#getLocation"><span class="hs-identifier hs-var">getLocation</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680177208"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-183"></span><span>
+</span><span id="line-184"></span><span class="annot"><a href="Elara.AST.Location.html#retag"><span class="hs-identifier hs-type">retag</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-185"></span><span>    </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680176358"><span class="annot"><a href="#local-6989586621680176358"><span class="hs-identifier hs-type">newTag</span></a></span></span><span> </span><span id="local-6989586621680176356"><span class="annot"><a href="#local-6989586621680176356"><span class="hs-identifier hs-type">oldTag</span></a></span></span><span> </span><span id="local-6989586621680176357"><span class="annot"><a href="#local-6989586621680176357"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680176359"><span class="annot"><a href="#local-6989586621680176359"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-186"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-type">UnwrapNodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176356"><span class="hs-identifier hs-type">oldTag</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176357"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176357"><span class="hs-identifier hs-type">loc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#WrapNode"><span class="hs-identifier hs-type">WrapNode</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176358"><span class="hs-identifier hs-type">newTag</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-187"></span><span>    </span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176356"><span class="hs-identifier hs-type">oldTag</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176357"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176359"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176358"><span class="hs-identifier hs-type">newTag</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176357"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176359"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-188"></span><span id="retag"><span class="annot"><span class="annottext">retag :: forall (newTag :: AstNode) (oldTag :: AstNode) loc a.
+(UnwrapNodeLoc oldTag loc loc, WrapNode newTag) =&gt;
+TaggedLocate oldTag loc a -&gt; TaggedLocate newTag loc a
+</span><a href="Elara.AST.Location.html#retag"><span class="hs-identifier hs-var hs-var">retag</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span id="local-6989586621680177214"><span class="annot"><span class="annottext">NodeLoc oldTag loc
+</span><a href="#local-6989586621680177214"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621680177215"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177215"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NodeLoc newTag loc -&gt; a -&gt; TaggedLocate newTag loc a
+forall (n :: AstNode) loc a.
+NodeLoc n loc -&gt; a -&gt; TaggedLocate n loc a
+</span><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-var">TaggedLocate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (n :: AstNode) loc. WrapNode n =&gt; loc -&gt; NodeLoc n loc
+</span><a href="Elara.AST.Location.html#wrap"><span class="hs-identifier hs-var">wrap</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680176358"><span class="hs-identifier hs-type">newTag</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NodeLoc oldTag loc -&gt; loc
+forall (n :: AstNode) loc a.
+UnwrapNodeLoc n loc a =&gt;
+NodeLoc n loc -&gt; a
+</span><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-var">unwrapLoc</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc oldTag loc
+</span><a href="#local-6989586621680177214"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177215"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-189"></span><span>
+</span><span id="line-190"></span><span class="annot"><a href="Elara.AST.Location.html#stripTag"><span class="hs-identifier hs-type">stripTag</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680176364"><span class="annot"><a href="#local-6989586621680176364"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span id="local-6989586621680176365"><span class="annot"><a href="#local-6989586621680176365"><span class="hs-identifier hs-type">loc</span></a></span></span><span> </span><span id="local-6989586621680176366"><span class="annot"><a href="#local-6989586621680176366"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#UnwrapNodeLoc"><span class="hs-identifier hs-type">UnwrapNodeLoc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176364"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176365"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176364"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176365"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176366"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680176366"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-191"></span><span id="stripTag"><span class="annot"><span class="annottext">stripTag :: forall (n :: AstNode) loc a.
+UnwrapNodeLoc n loc SourceRegion =&gt;
+TaggedLocate n loc a -&gt; Located a
+</span><a href="Elara.AST.Location.html#stripTag"><span class="hs-identifier hs-var hs-var">stripTag</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Location.html#TaggedLocate"><span class="hs-identifier hs-type">TaggedLocate</span></a></span><span> </span><span id="local-6989586621680177219"><span class="annot"><span class="annottext">NodeLoc n loc
+</span><a href="#local-6989586621680177219"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621680177220"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177220"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; a -&gt; Located a
+forall a. SourceRegion -&gt; a -&gt; Located a
+</span><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-var">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NodeLoc n loc -&gt; SourceRegion
+forall (n :: AstNode) loc a.
+UnwrapNodeLoc n loc a =&gt;
+NodeLoc n loc -&gt; a
+</span><a href="Elara.AST.Location.html#unwrapLoc"><span class="hs-identifier hs-var">unwrapLoc</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc n loc
+</span><a href="#local-6989586621680177219"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680177220"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-192"></span></pre></body></html>

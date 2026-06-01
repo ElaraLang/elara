@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE RecordWildCards #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Error.Diagnose.html"><span class="hs-identifier">Elara.Error.Diagnose</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Error.Diagnose</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Diag</span></span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#HasPath"><span class="hs-identifier">HasPath</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#path"><span class="hs-identifier">path</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier">sourceRegionToDiagnosePosition</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="annot"><span class="hs-comment">-- | Convert an 'ElaraDiagnostic' to a list of 'diagnose' 'Report's.</span></span><span>
+</span><span id="line-12"></span><span id="local-6989586621680148544"><span class="annot"><a href="Elara.Error.Diagnose.html#toDiagnoseReports"><span class="hs-identifier hs-type">toDiagnoseReports</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148544"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680148544"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Diag.Report</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-13"></span><span id="toDiagnoseReports"><span class="annot"><span class="annottext">toDiagnoseReports :: forall e. ElaraDiagnostic e =&gt; e -&gt; [Report (Doc AnsiStyle)]
+</span><a href="Elara.Error.Diagnose.html#toDiagnoseReports"><span class="hs-identifier hs-var hs-var">toDiagnoseReports</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ElaraReport -&gt; Report (Doc AnsiStyle))
+-&gt; [ElaraReport] -&gt; [Report (Doc AnsiStyle)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">ElaraReport -&gt; Report (Doc AnsiStyle)
+</span><a href="Elara.Error.Diagnose.html#elaraReportToDiagnoseReport"><span class="hs-identifier hs-var">elaraReportToDiagnoseReport</span></a></span><span> </span><span class="annot"><span class="annottext">([ElaraReport] -&gt; [Report (Doc AnsiStyle)])
+-&gt; (e -&gt; [ElaraReport]) -&gt; e -&gt; [Report (Doc AnsiStyle)]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; [ElaraReport]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraReport]
+</span><a href="Elara.Error.html#diagnosticReports"><span class="hs-identifier hs-var">diagnosticReports</span></a></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="annot"><span class="hs-comment">-- | Convert a single 'ElaraReport' to a 'diagnose' 'Report'.</span></span><span>
+</span><span id="line-16"></span><span class="annot"><a href="Elara.Error.Diagnose.html#elaraReportToDiagnoseReport"><span class="hs-identifier hs-type">elaraReportToDiagnoseReport</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier hs-type">ElaraReport</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diag.Report</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span id="elaraReportToDiagnoseReport"><span class="annot"><span class="annottext">elaraReportToDiagnoseReport :: ElaraReport -&gt; Report (Doc AnsiStyle)
+</span><a href="Elara.Error.Diagnose.html#elaraReportToDiagnoseReport"><span class="hs-identifier hs-var hs-var">elaraReportToDiagnoseReport</span></a></span></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier hs-type">ElaraReport</span></a></span><span class="hs-special">{</span><span id="local-6989586621680148635"><span id="local-6989586621680148636"><span id="local-6989586621680148637"><span id="local-6989586621680148638"><span id="local-6989586621680148639"><span class="annot"><span class="annottext">[ElaraNote]
+[ElaraMarker]
+Maybe ErrorCode
+Doc AnsiStyle
+ElaraSeverity
+reportSeverity :: ElaraSeverity
+reportCode :: Maybe ErrorCode
+reportMessage :: Doc AnsiStyle
+reportMarkers :: [ElaraMarker]
+reportNotes :: [ElaraNote]
+reportNotes :: ElaraReport -&gt; [ElaraNote]
+reportMarkers :: ElaraReport -&gt; [ElaraMarker]
+reportMessage :: ElaraReport -&gt; Doc AnsiStyle
+reportCode :: ElaraReport -&gt; Maybe ErrorCode
+reportSeverity :: ElaraReport -&gt; ElaraSeverity
+</span><a href="#local-6989586621680148635"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680148645"><span class="annot"><span class="annottext">markers :: [(Position, Marker (Doc AnsiStyle))]
+</span><a href="#local-6989586621680148645"><span class="hs-identifier hs-var hs-var">markers</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ElaraMarker -&gt; (Position, Marker (Doc AnsiStyle)))
+-&gt; [ElaraMarker] -&gt; [(Position, Marker (Doc AnsiStyle))]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">ElaraMarker -&gt; (Position, Marker (Doc AnsiStyle))
+</span><a href="Elara.Error.Diagnose.html#elaraMarkerToDiagnoseMarker"><span class="hs-identifier hs-var">elaraMarkerToDiagnoseMarker</span></a></span><span> </span><span class="annot"><span class="annottext">[ElaraMarker]
+</span><a href="#local-6989586621680148638"><span class="hs-identifier hs-var">reportMarkers</span></a></span><span>
+</span><span id="line-19"></span><span>        </span><span id="local-6989586621680148647"><span class="annot"><span class="annottext">notes :: [Note (Doc AnsiStyle)]
+</span><a href="#local-6989586621680148647"><span class="hs-identifier hs-var hs-var">notes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ElaraNote -&gt; Note (Doc AnsiStyle))
+-&gt; [ElaraNote] -&gt; [Note (Doc AnsiStyle)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">ElaraNote -&gt; Note (Doc AnsiStyle)
+</span><a href="Elara.Error.Diagnose.html#elaraNoteToDiagnoseNote"><span class="hs-identifier hs-var">elaraNoteToDiagnoseNote</span></a></span><span> </span><span class="annot"><span class="annottext">[ElaraNote]
+</span><a href="#local-6989586621680148639"><span class="hs-identifier hs-var">reportNotes</span></a></span><span>
+</span><span id="line-20"></span><span>        </span><span id="local-6989586621680148649"><span class="annot"><span class="annottext">constructor :: Maybe (Doc AnsiStyle)
+-&gt; Doc AnsiStyle
+-&gt; [(Position, Marker (Doc AnsiStyle))]
+-&gt; [Note (Doc AnsiStyle)]
+-&gt; Report (Doc AnsiStyle)
+</span><a href="#local-6989586621680148649"><span class="hs-identifier hs-var hs-var">constructor</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ElaraSeverity
+</span><a href="#local-6989586621680148635"><span class="hs-identifier hs-var">reportSeverity</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-21"></span><span>            </span><span class="annot"><span class="annottext">ElaraSeverity
+</span><a href="Elara.Error.html#ErrorSeverity"><span class="hs-identifier hs-var">ErrorSeverity</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
+-&gt; Doc AnsiStyle
+-&gt; [(Position, Marker (Doc AnsiStyle))]
+-&gt; [Note (Doc AnsiStyle)]
+-&gt; Report (Doc AnsiStyle)
+forall msg.
+Maybe msg
+-&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
+</span><span class="hs-identifier hs-var">Diag.Err</span></span><span>
+</span><span id="line-22"></span><span>            </span><span class="annot"><span class="annottext">ElaraSeverity
+</span><a href="Elara.Error.html#WarningSeverity"><span class="hs-identifier hs-var">WarningSeverity</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
+-&gt; Doc AnsiStyle
+-&gt; [(Position, Marker (Doc AnsiStyle))]
+-&gt; [Note (Doc AnsiStyle)]
+-&gt; Report (Doc AnsiStyle)
+forall msg.
+Maybe msg
+-&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
+</span><span class="hs-identifier hs-var">Diag.Warn</span></span><span>
+</span><span id="line-23"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
+-&gt; Doc AnsiStyle
+-&gt; [(Position, Marker (Doc AnsiStyle))]
+-&gt; [Note (Doc AnsiStyle)]
+-&gt; Report (Doc AnsiStyle)
+</span><a href="#local-6989586621680148649"><span class="hs-identifier hs-var">constructor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ErrorCode -&gt; Doc AnsiStyle)
+-&gt; Maybe ErrorCode -&gt; Maybe (Doc AnsiStyle)
+forall a b. (a -&gt; b) -&gt; Maybe a -&gt; Maybe b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span> </span><span id="local-6989586621680148655"><span class="annot"><span class="annottext">forall ann. Doc ann
+</span><a href="#local-6989586621680148655"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(ZonkAny 0 -&gt; AnsiStyle) -&gt; Doc (ZonkAny 0) -&gt; Doc AnsiStyle
+forall ann ann'. (ann -&gt; ann') -&gt; Doc ann -&gt; Doc ann'
+</span><span class="hs-identifier hs-var">reAnnotate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnsiStyle -&gt; ZonkAny 0 -&gt; AnsiStyle
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">AnsiStyle
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc (ZonkAny 0)
+forall ann. Doc ann
+</span><a href="#local-6989586621680148655"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe ErrorCode
+</span><a href="#local-6989586621680148636"><span class="hs-identifier hs-var">reportCode</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680148637"><span class="hs-identifier hs-var">reportMessage</span></a></span><span> </span><span class="annot"><span class="annottext">[(Position, Marker (Doc AnsiStyle))]
+</span><a href="#local-6989586621680148645"><span class="hs-identifier hs-var">markers</span></a></span><span> </span><span class="annot"><span class="annottext">[Note (Doc AnsiStyle)]
+</span><a href="#local-6989586621680148647"><span class="hs-identifier hs-var">notes</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><span class="hs-comment">-- | Convert an 'ElaraMarker' to a 'diagnose' marker.</span></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="Elara.Error.Diagnose.html#elaraMarkerToDiagnoseMarker"><span class="hs-identifier hs-type">elaraMarkerToDiagnoseMarker</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier hs-type">ElaraMarker</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Diag.Position</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diag.Marker</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span id="elaraMarkerToDiagnoseMarker"><span class="annot"><span class="annottext">elaraMarkerToDiagnoseMarker :: ElaraMarker -&gt; (Position, Marker (Doc AnsiStyle))
+</span><a href="Elara.Error.Diagnose.html#elaraMarkerToDiagnoseMarker"><span class="hs-identifier hs-var hs-var">elaraMarkerToDiagnoseMarker</span></a></span></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier hs-type">ElaraMarker</span></a></span><span class="hs-special">{</span><span id="local-6989586621680148659"><span id="local-6989586621680148660"><span id="local-6989586621680148661"><span class="annot"><span class="annottext">Doc AnsiStyle
+SourceRegion
+ElaraMarkerType
+markerRegion :: SourceRegion
+markerType :: ElaraMarkerType
+markerMessage :: Doc AnsiStyle
+markerMessage :: ElaraMarker -&gt; Doc AnsiStyle
+markerType :: ElaraMarker -&gt; ElaraMarkerType
+markerRegion :: ElaraMarker -&gt; SourceRegion
+</span><a href="#local-6989586621680148659"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680148665"><span class="annot"><span class="annottext">pos :: Position
+</span><a href="#local-6989586621680148665"><span class="hs-identifier hs-var hs-var">pos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SourceRegion -&gt; Position
+</span><a href="Elara.AST.Region.html#sourceRegionToDiagnosePosition"><span class="hs-identifier hs-var">sourceRegionToDiagnosePosition</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+</span><a href="#local-6989586621680148659"><span class="hs-identifier hs-var">markerRegion</span></a></span><span>
+</span><span id="line-29"></span><span>        </span><span id="local-6989586621680148666"><span class="annot"><span class="annottext">marker :: Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><a href="#local-6989586621680148666"><span class="hs-identifier hs-var hs-var">marker</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ElaraMarkerType
+</span><a href="#local-6989586621680148660"><span class="hs-identifier hs-var">markerType</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-30"></span><span>            </span><span class="annot"><span class="annottext">ElaraMarkerType
+</span><a href="Elara.Error.html#PrimaryMarker"><span class="hs-identifier hs-var">PrimaryMarker</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+forall msg. msg -&gt; Marker msg
+</span><span class="hs-identifier hs-var">Diag.This</span></span><span>
+</span><span id="line-31"></span><span>            </span><span class="annot"><span class="annottext">ElaraMarkerType
+</span><a href="Elara.Error.html#SecondaryMarker"><span class="hs-identifier hs-var">SecondaryMarker</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+forall msg. msg -&gt; Marker msg
+</span><span class="hs-identifier hs-var">Diag.Where</span></span><span>
+</span><span id="line-32"></span><span>            </span><span class="annot"><span class="annottext">ElaraMarkerType
+</span><a href="Elara.Error.html#InfoMarker"><span class="hs-identifier hs-var">InfoMarker</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+forall msg. msg -&gt; Marker msg
+</span><span class="hs-identifier hs-var">Diag.Maybe</span></span><span>
+</span><span id="line-33"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Position
+</span><a href="#local-6989586621680148665"><span class="hs-identifier hs-var">pos</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Marker (Doc AnsiStyle)
+</span><a href="#local-6989586621680148666"><span class="hs-identifier hs-var">marker</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680148661"><span class="hs-identifier hs-var">markerMessage</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="annot"><span class="hs-comment">-- | Convert an 'ElaraNote' to a 'diagnose' note.</span></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Elara.Error.Diagnose.html#elaraNoteToDiagnoseNote"><span class="hs-identifier hs-type">elaraNoteToDiagnoseNote</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraNote"><span class="hs-identifier hs-type">ElaraNote</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diag.Note</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span id="elaraNoteToDiagnoseNote"><span class="annot"><span class="annottext">elaraNoteToDiagnoseNote :: ElaraNote -&gt; Note (Doc AnsiStyle)
+</span><a href="Elara.Error.Diagnose.html#elaraNoteToDiagnoseNote"><span class="hs-identifier hs-var hs-var">elaraNoteToDiagnoseNote</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span id="local-6989586621680148674"><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680148674"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
+forall msg. msg -&gt; Note msg
+</span><span class="hs-identifier hs-var">Diag.Note</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680148674"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><span id="line-38"></span><span class="annot"><a href="Elara.Error.Diagnose.html#elaraNoteToDiagnoseNote"><span class="hs-identifier hs-var">elaraNoteToDiagnoseNote</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#Hint"><span class="hs-identifier hs-type">Hint</span></a></span><span> </span><span id="local-6989586621680148677"><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680148677"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Note (Doc AnsiStyle)
+forall msg. msg -&gt; Note msg
+</span><span class="hs-identifier hs-var">Diag.Hint</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680148677"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Elara.Error.Diagnose.html#reportsToDiagnostic"><span class="hs-identifier hs-type">reportsToDiagnostic</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier hs-type">ElaraReport</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Diag.Diagnostic</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span id="reportsToDiagnostic"><span class="annot"><span class="annottext">reportsToDiagnostic :: [ElaraReport] -&gt; IO (Diagnostic (Doc AnsiStyle))
+</span><a href="Elara.Error.Diagnose.html#reportsToDiagnostic"><span class="hs-identifier hs-var hs-var">reportsToDiagnostic</span></a></span></span><span> </span><span id="local-6989586621680148707"><span class="annot"><span class="annottext">[ElaraReport]
+</span><a href="#local-6989586621680148707"><span class="hs-identifier hs-var">reports</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680148712"><span class="annot"><span class="annottext">emptyDiag :: Diagnostic (Doc AnsiStyle)
+</span><a href="#local-6989586621680148712"><span class="hs-identifier hs-var hs-var hs-var">emptyDiag</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagnostic (Doc AnsiStyle)
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680148713"><span class="annot"><span class="annottext">filesNeeded :: [FilePath]
+</span><a href="#local-6989586621680148713"><span class="hs-identifier hs-var hs-var hs-var">filesNeeded</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Maybe FilePath] -&gt; [FilePath]
+forall a. [Maybe a] -&gt; [a]
+</span><span class="hs-identifier hs-var">catMaybes</span></span><span> </span><span class="annot"><span class="annottext">([Maybe FilePath] -&gt; [FilePath]) -&gt; [Maybe FilePath] -&gt; [FilePath]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Maybe FilePath] -&gt; [Maybe FilePath]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">ordNub</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ElaraMarker -&gt; SourceRegion
+</span><a href="Elara.Error.html#markerRegion"><span class="hs-identifier hs-var">markerRegion</span></a></span><span> </span><span class="annot"><span class="annottext">ElaraMarker
+</span><a href="#local-6989586621680148716"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
+-&gt; Optic' A_Lens NoIx SourceRegion (Maybe FilePath)
+-&gt; Maybe FilePath
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx SourceRegion (Maybe FilePath)
+forall a. HasPath a =&gt; Lens' a (Maybe FilePath)
+</span><a href="Elara.AST.Region.html#path"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621680148718"><span class="annot"><span class="annottext">ElaraReport
+</span><a href="#local-6989586621680148718"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[ElaraReport]
+</span><a href="#local-6989586621680148707"><span class="hs-identifier hs-var">reports</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148716"><span class="annot"><span class="annottext">ElaraMarker
+</span><a href="#local-6989586621680148716"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ElaraReport -&gt; [ElaraMarker]
+</span><a href="Elara.Error.html#reportMarkers"><span class="hs-identifier hs-var">reportMarkers</span></a></span><span> </span><span class="annot"><span class="annottext">ElaraReport
+</span><a href="#local-6989586621680148718"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-44"></span><span>    </span><span id="local-6989586621680148719"><span class="annot"><a href="#local-6989586621680148719"><span class="hs-identifier hs-var">fileContents</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath]
+-&gt; (FilePath -&gt; IO (FilePath, FilePath))
+-&gt; IO [(FilePath, FilePath)]
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+t a -&gt; (a -&gt; f b) -&gt; f (t b)
+</span><span class="hs-identifier hs-var">for</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680148713"><span class="hs-identifier hs-var">filesNeeded</span></a></span><span> </span><span class="annot"><span class="annottext">((FilePath -&gt; IO (FilePath, FilePath))
+ -&gt; IO [(FilePath, FilePath)])
+-&gt; (FilePath -&gt; IO (FilePath, FilePath))
+-&gt; IO [(FilePath, FilePath)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680148721"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680148721"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-45"></span><span>        </span><span id="local-6989586621680148722"><span class="annot"><a href="#local-6989586621680148722"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ByteString
+forall (m :: * -&gt; *). MonadIO m =&gt; FilePath -&gt; m ByteString
+</span><span class="hs-identifier hs-var">readFileBS</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680148721"><span class="hs-identifier hs-var">fp</span></a></span><span>
+</span><span id="line-46"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680148721"><span class="hs-identifier hs-type">fp</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">decodeUtf8</span></span><span> </span><span class="annot"><a href="#local-6989586621680148722"><span class="hs-identifier hs-type">content</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680148725"><span class="annot"><a href="#local-6989586621680148725"><span class="hs-identifier hs-var hs-var">diagWithFiles</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagnostic (Doc AnsiStyle)
+ -&gt; (FilePath, FilePath) -&gt; Diagnostic (Doc AnsiStyle))
+-&gt; Diagnostic (Doc AnsiStyle)
+-&gt; [(FilePath, FilePath)]
+-&gt; Diagnostic (Doc AnsiStyle)
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) b a.
+Foldable t =&gt;
+(b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldl'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680148727"><span class="annot"><span class="annottext">Diagnostic (Doc AnsiStyle)
+</span><a href="#local-6989586621680148727"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680148728"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680148728"><span class="hs-identifier hs-var">fp</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148729"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680148729"><span class="hs-identifier hs-var">content</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Diagnostic (Doc AnsiStyle)
+-&gt; FilePath -&gt; FilePath -&gt; Diagnostic (Doc AnsiStyle)
+forall msg.
+Diagnostic msg -&gt; FilePath -&gt; FilePath -&gt; Diagnostic msg
+</span><span class="hs-identifier hs-var">Diag.addFile</span></span><span> </span><span class="annot"><span class="annottext">Diagnostic (Doc AnsiStyle)
+</span><a href="#local-6989586621680148727"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680148728"><span class="hs-identifier hs-var">fp</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680148729"><span class="hs-identifier hs-var">content</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Diagnostic (Doc AnsiStyle)
+</span><a href="#local-6989586621680148712"><span class="hs-identifier hs-var">emptyDiag</span></a></span><span> </span><span class="annot"><span class="annottext">[(FilePath, FilePath)]
+</span><a href="#local-6989586621680148719"><span class="hs-identifier hs-var">fileContents</span></a></span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">foldl'</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diag.addReport</span></span><span> </span><span class="annot"><a href="#local-6989586621680148725"><span class="hs-identifier hs-type">diagWithFiles</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">fmap</span></span><span> </span><span class="annot"><a href="Elara.Error.Diagnose.html#elaraReportToDiagnoseReport"><span class="hs-identifier hs-type">elaraReportToDiagnoseReport</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148707"><span class="hs-identifier hs-type">reports</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span></pre></body></html>

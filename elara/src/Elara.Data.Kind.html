@@ -1,47 +1,26 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680105187"><span id="local-6989586621680105188"><span id="local-6989586621680105189"><span id="local-6989586621680105190"><span id="local-6989586621680105191"></span></span></span></span></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="local-6989586621680161041"><span id="local-6989586621680161042"><span id="local-6989586621680161043"><span id="local-6989586621680161044"><span id="local-6989586621680161045"></span></span></span></span></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
 </span><span id="line-2"></span><span>
 </span><span id="line-3"></span><span class="annot"><span class="hs-comment">-- | Stores the kind of a type.</span></span><span>
 </span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html"><span class="hs-identifier">Elara.Data.Kind</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-5"></span><span>
 </span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Data</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Data</span></span><span class="hs-special">)</span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier">LowerAlphaName</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
-</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.Styles.html"><span class="hs-identifier">Elara.Data.Pretty.Styles</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Style</span></span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Rep</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Rep</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier">LowerAlphaName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html"><span class="hs-identifier">Elara.Data.Unique</span></a></span><span>
 </span><span id="line-12"></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraKind"><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-var">ElaraKind</span></a></span></span><span>
-</span><span id="line-14"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | The kind of monotypes (@Type@ or @*@ in Haskell)</span></span><span>
-</span><span id="line-15"></span><span>      </span><span id="TypeKind"><span class="annot"><a href="Elara.Data.Kind.html#TypeKind"><span class="hs-identifier hs-var">TypeKind</span></a></span></span><span>
-</span><span id="line-16"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Functions over kinds (eg @Type -&gt; Type@ in Haskell)</span></span><span>
-</span><span id="line-17"></span><span>      </span><span id="FunctionKind"><span class="annot"><a href="Elara.Data.Kind.html#FunctionKind"><span class="hs-identifier hs-var">FunctionKind</span></a></span></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span>
-</span><span id="line-18"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | A kind variable for poly-kinds (probably not supported yet)</span></span><span>
-</span><span id="line-19"></span><span>      </span><span id="VarKind"><span class="annot"><a href="Elara.Data.Kind.html#VarKind"><span class="hs-identifier hs-var">VarKind</span></a></span></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#KindVar"><span class="hs-identifier hs-type">KindVar</span></a></span><span>
-</span><span id="line-20"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="KindScheme"><span class="annot"><a href="Elara.Data.Kind.html#KindScheme"><span class="hs-identifier hs-var">KindScheme</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Data.Kind.html#KindVar"><span class="hs-identifier hs-type">KindVar</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span>
-</span><span id="line-21"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680105198"><span id="local-6989586621680105212"><span id="local-6989586621680105215"><span class="annot"><span class="annottext">Int -&gt; ElaraKind -&gt; ShowS
-[ElaraKind] -&gt; ShowS
-ElaraKind -&gt; String
-(Int -&gt; ElaraKind -&gt; ShowS)
--&gt; (ElaraKind -&gt; String)
--&gt; ([ElaraKind] -&gt; ShowS)
--&gt; Show ElaraKind
-forall a.
-(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
-$cshowsPrec :: Int -&gt; ElaraKind -&gt; ShowS
-showsPrec :: Int -&gt; ElaraKind -&gt; ShowS
-$cshow :: ElaraKind -&gt; String
-show :: ElaraKind -&gt; String
-$cshowList :: [ElaraKind] -&gt; ShowS
-showList :: [ElaraKind] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680105220"><span id="local-6989586621680105233"><span class="annot"><span class="annottext">ElaraKind -&gt; ElaraKind -&gt; Bool
-(ElaraKind -&gt; ElaraKind -&gt; Bool)
--&gt; (ElaraKind -&gt; ElaraKind -&gt; Bool) -&gt; Eq ElaraKind
-forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
-$c== :: ElaraKind -&gt; ElaraKind -&gt; Bool
-== :: ElaraKind -&gt; ElaraKind -&gt; Bool
-$c/= :: ElaraKind -&gt; ElaraKind -&gt; Bool
-/= :: ElaraKind -&gt; ElaraKind -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680105239"><span id="local-6989586621680105249"><span id="local-6989586621680105256"><span id="local-6989586621680105258"><span id="local-6989586621680105260"><span id="local-6989586621680105265"><span id="local-6989586621680105270"><span id="local-6989586621680105273"><span id="local-6989586621680105276"><span id="local-6989586621680105279"><span id="local-6989586621680105282"><span id="local-6989586621680105285"><span id="local-6989586621680105290"><span id="local-6989586621680105295"><span class="annot"><span class="annottext">Typeable ElaraKind
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.Styles.html"><span class="hs-identifier">Elara.Data.Pretty.Styles</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Style</span></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraKind"><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-var">ElaraKind</span></a></span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | The kind of monotypes (@Type@ or @*@ in Haskell)</span></span><span>
+</span><span id="line-17"></span><span>      </span><span id="TypeKind"><span class="annot"><a href="Elara.Data.Kind.html#TypeKind"><span class="hs-identifier hs-var">TypeKind</span></a></span></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Functions over kinds (eg @Type -&gt; Type@ in Haskell)</span></span><span>
+</span><span id="line-19"></span><span>      </span><span id="FunctionKind"><span class="annot"><a href="Elara.Data.Kind.html#FunctionKind"><span class="hs-identifier hs-var">FunctionKind</span></a></span></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span>
+</span><span id="line-20"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | A kind variable for poly-kinds (probably not supported yet)</span></span><span>
+</span><span id="line-21"></span><span>      </span><span id="VarKind"><span class="annot"><a href="Elara.Data.Kind.html#VarKind"><span class="hs-identifier hs-var">VarKind</span></a></span></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#KindVar"><span class="hs-identifier hs-type">KindVar</span></a></span><span>
+</span><span id="line-22"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="KindScheme"><span class="annot"><a href="Elara.Data.Kind.html#KindScheme"><span class="hs-identifier hs-var">KindScheme</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Data.Kind.html#KindVar"><span class="hs-identifier hs-type">KindVar</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span>
+</span><span id="line-23"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680161054"><span id="local-6989586621680161064"><span id="local-6989586621680161071"><span id="local-6989586621680161073"><span id="local-6989586621680161075"><span id="local-6989586621680161080"><span id="local-6989586621680161085"><span id="local-6989586621680161088"><span id="local-6989586621680161091"><span id="local-6989586621680161094"><span id="local-6989586621680161097"><span id="local-6989586621680161100"><span id="local-6989586621680161105"><span id="local-6989586621680161110"><span class="annot"><span class="annottext">Typeable ElaraKind
 Typeable ElaraKind =&gt;
 (forall (c :: * -&gt; *).
  (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
@@ -203,7 +182,25 @@ MonadPlus m =&gt;
 gmapMo :: forall (m :: * -&gt; *).
 MonadPlus m =&gt;
 (forall d. Data d =&gt; d -&gt; m d) -&gt; ElaraKind -&gt; m ElaraKind
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680105307"><span id="local-6989586621680105317"><span id="local-6989586621680105320"><span id="local-6989586621680105323"><span id="local-6989586621680105326"><span id="local-6989586621680105329"><span id="local-6989586621680105332"><span class="annot"><span class="annottext">Eq ElaraKind
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680161120"><span id="local-6989586621680161133"><span class="annot"><span class="annottext">ElaraKind -&gt; ElaraKind -&gt; Bool
+(ElaraKind -&gt; ElaraKind -&gt; Bool)
+-&gt; (ElaraKind -&gt; ElaraKind -&gt; Bool) -&gt; Eq ElaraKind
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: ElaraKind -&gt; ElaraKind -&gt; Bool
+== :: ElaraKind -&gt; ElaraKind -&gt; Bool
+$c/= :: ElaraKind -&gt; ElaraKind -&gt; Bool
+/= :: ElaraKind -&gt; ElaraKind -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680161137"><span id="local-6989586621680161139"><span class="annot"><span class="annottext">(forall x. ElaraKind -&gt; Rep ElaraKind x)
+-&gt; (forall x. Rep ElaraKind x -&gt; ElaraKind) -&gt; Generic ElaraKind
+forall x. Rep ElaraKind x -&gt; ElaraKind
+forall x. ElaraKind -&gt; Rep ElaraKind x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. ElaraKind -&gt; Rep ElaraKind x
+from :: forall x. ElaraKind -&gt; Rep ElaraKind x
+$cto :: forall x. Rep ElaraKind x -&gt; ElaraKind
+to :: forall x. Rep ElaraKind x -&gt; ElaraKind
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680161147"><span id="local-6989586621680161157"><span id="local-6989586621680161160"><span id="local-6989586621680161163"><span id="local-6989586621680161166"><span id="local-6989586621680161169"><span id="local-6989586621680161172"><span class="annot"><span class="annottext">Eq ElaraKind
 Eq ElaraKind =&gt;
 (ElaraKind -&gt; ElaraKind -&gt; Ordering)
 -&gt; (ElaraKind -&gt; ElaraKind -&gt; Bool)
@@ -240,36 +237,41 @@ $cmax :: ElaraKind -&gt; ElaraKind -&gt; ElaraKind
 max :: ElaraKind -&gt; ElaraKind -&gt; ElaraKind
 $cmin :: ElaraKind -&gt; ElaraKind -&gt; ElaraKind
 min :: ElaraKind -&gt; ElaraKind -&gt; ElaraKind
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680105337"><span id="local-6989586621680105339"><span class="annot"><span class="annottext">(forall x. ElaraKind -&gt; Rep ElaraKind x)
--&gt; (forall x. Rep ElaraKind x -&gt; ElaraKind) -&gt; Generic ElaraKind
-forall x. Rep ElaraKind x -&gt; ElaraKind
-forall x. ElaraKind -&gt; Rep ElaraKind x
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680161177"><span id="local-6989586621680161191"><span id="local-6989586621680161194"><span class="annot"><span class="annottext">Int -&gt; ElaraKind -&gt; ShowS
+[ElaraKind] -&gt; ShowS
+ElaraKind -&gt; String
+(Int -&gt; ElaraKind -&gt; ShowS)
+-&gt; (ElaraKind -&gt; String)
+-&gt; ([ElaraKind] -&gt; ShowS)
+-&gt; Show ElaraKind
 forall a.
-(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
-$cfrom :: forall x. ElaraKind -&gt; Rep ElaraKind x
-from :: forall x. ElaraKind -&gt; Rep ElaraKind x
-$cto :: forall x. Rep ElaraKind x -&gt; ElaraKind
-to :: forall x. Rep ElaraKind x -&gt; ElaraKind
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-22"></span><span>
-</span><span id="line-23"></span><span class="hs-keyword">instance</span><span>
-</span><span id="line-24"></span><span>    </span><span id="local-6989586621680105350"><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680105171"><span class="annot"><a href="#local-6989586621680105171"><span class="hs-identifier hs-type">x</span></a></span></span><span class="hs-operator">.</span><span>
-</span><span id="line-25"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Generic</span></span><span> </span><span class="annot"><a href="#local-6989586621680105171"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Prelude.html#SafeGPlate"><span class="hs-identifier hs-type">SafeGPlate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Rep</span></span><span> </span><span class="annot"><a href="#local-6989586621680105171"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GPlate</span></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680105171"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Prelude.html#Plated"><span class="hs-identifier hs-type">Plated</span></a></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680105171"><span class="hs-identifier hs-type">x</span></a></span></span><span>
-</span><span id="line-26"></span><span>
-</span><span id="line-27"></span><span class="hs-keyword">type</span><span> </span><span id="KindVar"><span class="annot"><a href="Elara.Data.Kind.html#KindVar"><span class="hs-identifier hs-var">KindVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span><span>
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ElaraKind -&gt; ShowS
+showsPrec :: Int -&gt; ElaraKind -&gt; ShowS
+$cshow :: ElaraKind -&gt; String
+show :: ElaraKind -&gt; String
+$cshowList :: [ElaraKind] -&gt; ShowS
+showList :: [ElaraKind] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-26"></span><span>    </span><span id="local-6989586621680161204"><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680161025"><span class="annot"><a href="#local-6989586621680161025"><span class="hs-identifier hs-type">x</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Generic</span></span><span> </span><span class="annot"><a href="#local-6989586621680161025"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Prelude.html#SafeGPlate"><span class="hs-identifier hs-type">SafeGPlate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Rep</span></span><span> </span><span class="annot"><a href="#local-6989586621680161025"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">GPlate</span></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680161025"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Prelude.html#Plated"><span class="hs-identifier hs-type">Plated</span></a></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680161025"><span class="hs-identifier hs-type">x</span></a></span></span><span>
 </span><span id="line-28"></span><span>
-</span><span id="line-29"></span><span class="hs-keyword">type</span><span> </span><span id="TypeVar"><span class="annot"><a href="Elara.Data.Kind.html#TypeVar"><span class="hs-identifier hs-var">TypeVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">type</span><span> </span><span id="KindVar"><span class="annot"><a href="Elara.Data.Kind.html#KindVar"><span class="hs-identifier hs-var">KindVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#UniqueId"><span class="hs-identifier hs-type">UniqueId</span></a></span><span>
 </span><span id="line-30"></span><span>
-</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-32"></span><span>    </span><span id="local-6989586621680105381"><span class="annot"><span class="annottext">pretty :: ElaraKind -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680105381"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><span class="annottext">ElaraKind
+</span><span id="line-31"></span><span class="hs-keyword">type</span><span> </span><span id="TypeVar"><span class="annot"><a href="Elara.Data.Kind.html#TypeVar"><span class="hs-identifier hs-var">TypeVar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.Data.Unique.html#Unique"><span class="hs-identifier hs-type">Unique</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#LowerAlphaName"><span class="hs-identifier hs-type">LowerAlphaName</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Data.Kind.html#ElaraKind"><span class="hs-identifier hs-type">ElaraKind</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-34"></span><span>    </span><span id="local-6989586621680161235"><span class="annot"><span class="annottext">pretty :: ElaraKind -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680161235"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><span class="annottext">ElaraKind
 </span><a href="Elara.Data.Kind.html#TypeKind"><span class="hs-identifier hs-var">TypeKind</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.Styles.html#typeName"><span class="hs-identifier hs-var">Style.typeName</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Type&quot;</span></span><span>
-</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Kind.html#KindScheme"><span class="hs-identifier hs-type">KindScheme</span></a></span><span> </span><span id="local-6989586621680105384"><span class="annot"><span class="annottext">[KindVar]
-</span><a href="#local-6989586621680105384"><span class="hs-identifier hs-var">vars</span></a></span></span><span> </span><span id="local-6989586621680105385"><span class="annot"><span class="annottext">ElaraKind
-</span><a href="#local-6989586621680105385"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-34"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Kind.html#KindScheme"><span class="hs-identifier hs-type">KindScheme</span></a></span><span> </span><span id="local-6989586621680161238"><span class="annot"><span class="annottext">[KindVar]
+</span><a href="#local-6989586621680161238"><span class="hs-identifier hs-var">vars</span></a></span></span><span> </span><span id="local-6989586621680161239"><span class="annot"><span class="annottext">ElaraKind
+</span><a href="#local-6989586621680161239"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-36"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;forall&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
@@ -289,7 +291,7 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">KindVar -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[KindVar]
-</span><a href="#local-6989586621680105384"><span class="hs-identifier hs-var">vars</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680161238"><span class="hs-identifier hs-var">vars</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -297,13 +299,13 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">ElaraKind -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">ElaraKind
-</span><a href="#local-6989586621680105385"><span class="hs-identifier hs-var">k</span></a></span><span>
-</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Kind.html#FunctionKind"><span class="hs-identifier hs-type">FunctionKind</span></a></span><span> </span><span id="local-6989586621680105390"><span class="annot"><span class="annottext">ElaraKind
-</span><a href="#local-6989586621680105390"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621680105391"><span class="annot"><span class="annottext">ElaraKind
-</span><a href="#local-6989586621680105391"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraKind -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680161239"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Kind.html#FunctionKind"><span class="hs-identifier hs-type">FunctionKind</span></a></span><span> </span><span id="local-6989586621680161244"><span class="annot"><span class="annottext">ElaraKind
+</span><a href="#local-6989586621680161244"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621680161245"><span class="annot"><span class="annottext">ElaraKind
+</span><a href="#local-6989586621680161245"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraKind -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">ElaraKind
-</span><a href="#local-6989586621680105390"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680161244"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot; -&gt; &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -311,18 +313,18 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">ElaraKind -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">ElaraKind
-</span><a href="#local-6989586621680105391"><span class="hs-identifier hs-var">r</span></a></span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Kind.html#VarKind"><span class="hs-identifier hs-type">VarKind</span></a></span><span> </span><span id="local-6989586621680105392"><span class="annot"><span class="annottext">KindVar
-</span><a href="#local-6989586621680105392"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680161245"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Kind.html#VarKind"><span class="hs-identifier hs-type">VarKind</span></a></span><span> </span><span id="local-6989586621680161246"><span class="annot"><span class="annottext">KindVar
+</span><a href="#local-6989586621680161246"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.Styles.html#varName"><span class="hs-identifier hs-var">Style.varName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;k&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">KindVar -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">KindVar
-</span><a href="#local-6989586621680105392"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-37"></span><span>
-</span><span id="line-38"></span><span class="hs-comment">-- instance ToJSON ElaraKind</span><span>
+</span><a href="#local-6989586621680161246"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-39"></span><span>
-</span><span id="line-40"></span><span class="hs-comment">-- instance Hashable ElaraKind</span><span>
-</span><span id="line-41"></span></pre></body></html>
+</span><span id="line-40"></span><span class="hs-comment">-- instance ToJSON ElaraKind</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- instance Hashable ElaraKind</span><span>
+</span><span id="line-43"></span></pre></body></html>

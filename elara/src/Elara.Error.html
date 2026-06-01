@@ -2,223 +2,440 @@
 </span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
 </span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE ImplicitParams #-}</span><span>
 </span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE ImpredicativeTypes #-}</span><span>
-</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
-</span><span id="line-6"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}</span><span>
-</span><span id="line-7"></span><span>
-</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span> </span><span class="hs-special">(</span><span>
-</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier">ReportableError</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier">SomeReportableError</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-11"></span><span>    </span><span class="annot"><a href="Elara.Error.html#runErrorOrReport"><span class="hs-identifier">runErrorOrReport</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Elara.Error.html#defaultReport"><span class="hs-identifier">defaultReport</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Elara.Error.html#addPosition"><span class="hs-identifier">addPosition</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Elara.Error.html#concatDiagnostics"><span class="hs-identifier">concatDiagnostics</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-15"></span><span>    </span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Error.Effect.html"><span class="hs-identifier">Elara.Error.Effect</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-16"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-17"></span><span>
-</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Eff</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(:&gt;)</span></span><span class="hs-special">)</span><span>
-</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Error.Static</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Eff</span></span><span>
-</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
-</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html"><span class="hs-identifier">Elara.Error.Codes</span></a></span><span>
-</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Effect.html"><span class="hs-identifier">Elara.Error.Effect</span></a></span><span>
-</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Error.Diagnose</span></span><span>
-</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Prelude.html"><span class="hs-identifier">Prelude</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">asks</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">readFile</span></span><span class="hs-special">)</span><span>
-</span><span id="line-25"></span><span>
-</span><span id="line-26"></span><span class="hs-keyword">class</span><span> </span><span id="ReportableError"><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-var">ReportableError</span></a></span></span><span> </span><span id="local-6989586621680084028"><span class="annot"><a href="#local-6989586621680084028"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-27"></span><span>    </span><span id="errorCode"><span class="annot"><a href="Elara.Error.html#errorCode"><span class="hs-identifier hs-type">errorCode</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680084028"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-28"></span><span>    </span><span id="local-6989586621680084104"><span class="annot"><a href="Elara.Error.html#errorCode"><span class="hs-identifier hs-var hs-var">errorCode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe ErrorCode -&gt; e -&gt; Maybe ErrorCode
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE QuantifiedConstraints #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><span class="hs-comment">-- | Errors, Warnings, and Diagnostics</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><span class="hs-comment">-- * New Error System</span></span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier">ElaraDiagnostic</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier">ElaraError</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier">ElaraWarning</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ElaraSeverity"><span class="hs-identifier">ElaraSeverity</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier">ElaraMarker</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ElaraMarkerType"><span class="hs-identifier">ElaraMarkerType</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ElaraNote"><span class="hs-identifier">ElaraNote</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier">ElaraReport</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Elara.Error.html#reportElaraWarning"><span class="hs-identifier">reportElaraWarning</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Elara.Error.html#runErrorAsElaraError"><span class="hs-identifier">runErrorAsElaraError</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Elara.Error.html#runWriterAsElaraWarning"><span class="hs-identifier">runWriterAsElaraWarning</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html"><span class="hs-identifier">Elara.Error.Codes</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Eff</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(:&gt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Error.Static</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Eff</span></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Writer.Static.Local</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Eff</span></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Show</span></span><span> </span><span class="hs-keyword">qualified</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier">SourceRegion</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html"><span class="hs-identifier">Elara.Error.Codes</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Prelude.html"><span class="hs-identifier">Prelude</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">asks</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">readFile</span></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="annot"><span class="hs-comment">-- | A data-focused diagnostic that can be rendered to various formats (terminal, LSP, etc.)</span></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="ElaraDiagnostic"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-var">ElaraDiagnostic</span></a></span></span><span> </span><span id="local-6989586621680147933"><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-40"></span><span>    </span><span id="diagnosticReports"><span class="annot"><a href="Elara.Error.html#diagnosticReports"><span class="hs-identifier hs-type">diagnosticReports</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier hs-type">ElaraReport</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-41"></span><span>    </span><span class="hs-keyword">default</span><span> </span><span id="diagnosticReports"><span class="annot"><a href="Elara.Error.html#diagnosticReports"><span class="hs-identifier hs-type">diagnosticReports</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier hs-type">ElaraReport</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-42"></span><span>    </span><span id="local-6989586621680148044"><span class="annot"><a href="Elara.Error.html#diagnosticReports"><span class="hs-identifier hs-var hs-var">diagnosticReports</span></a></span><span> </span><span id="local-6989586621680148050"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148050"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ElaraSeverity
+-&gt; Maybe ErrorCode
+-&gt; Doc AnsiStyle
+-&gt; [ElaraMarker]
+-&gt; [ElaraNote]
+-&gt; ElaraReport
+</span><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier hs-var">ElaraReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; ElaraSeverity
+forall e. ElaraDiagnostic e =&gt; e -&gt; ElaraSeverity
+</span><a href="Elara.Error.html#diagnosticSeverity"><span class="hs-identifier hs-var">diagnosticSeverity</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148050"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; Maybe ErrorCode
+forall e. ElaraDiagnostic e =&gt; e -&gt; Maybe ErrorCode
+</span><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var">diagnosticCode</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148050"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; Doc AnsiStyle
+forall e. ElaraDiagnostic e =&gt; e -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148050"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; [ElaraMarker]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraMarker]
+</span><a href="Elara.Error.html#diagnosticMarkers"><span class="hs-identifier hs-var">diagnosticMarkers</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148050"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; [ElaraNote]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraNote]
+</span><a href="Elara.Error.html#diagnosticNotes"><span class="hs-identifier hs-var">diagnosticNotes</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148050"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span>    </span><span id="diagnosticSeverity"><span class="annot"><a href="Elara.Error.html#diagnosticSeverity"><span class="hs-identifier hs-type">diagnosticSeverity</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraSeverity"><span class="hs-identifier hs-type">ElaraSeverity</span></a></span><span>
+</span><span id="line-45"></span><span>    </span><span id="local-6989586621680148057"><span class="annot"><a href="Elara.Error.html#diagnosticSeverity"><span class="hs-identifier hs-var hs-var">diagnosticSeverity</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ElaraSeverity -&gt; e -&gt; ElaraSeverity
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">ElaraSeverity
+</span><a href="Elara.Error.html#ErrorSeverity"><span class="hs-identifier hs-var">ErrorSeverity</span></a></span></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span>    </span><span id="diagnosticCode"><span class="annot"><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-type">diagnosticCode</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-48"></span><span>    </span><span id="local-6989586621680148060"><span class="annot"><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var hs-var">diagnosticCode</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe ErrorCode -&gt; e -&gt; Maybe ErrorCode
 forall a b. a -&gt; b -&gt; a
 </span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">Maybe ErrorCode
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span></span><span>
-</span><span id="line-29"></span><span>
-</span><span id="line-30"></span><span>    </span><span id="getReport"><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-type">getReport</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680084028"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Report</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-31"></span><span>    </span><span id="local-6989586621680084107"><span class="annot"><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var hs-var">getReport</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Report (Doc AnsiStyle))
--&gt; e -&gt; Maybe (Report (Doc AnsiStyle))
-forall a b. a -&gt; b -&gt; a
-</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Report (Doc AnsiStyle))
-forall a. Maybe a
-</span><span class="hs-identifier hs-var">Nothing</span></span></span><span>
-</span><span id="line-32"></span><span>
-</span><span id="line-33"></span><span>    </span><span id="report"><span class="annot"><a href="Elara.Error.html#report"><span class="hs-identifier hs-type">report</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621680084061"><span class="annot"><a href="Elara.Error.Effect.html#DiagnosticWriter"><span class="hs-identifier hs-type">DiagnosticWriter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680084061"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680084028"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680084061"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-34"></span><span>    </span><span class="hs-keyword">default</span><span> </span><span id="report"><span class="annot"><a href="Elara.Error.html#report"><span class="hs-identifier hs-type">report</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621680084040"><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680084028"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.Effect.html#DiagnosticWriter"><span class="hs-identifier hs-type">DiagnosticWriter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680084040"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680084028"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680084040"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-35"></span><span>    </span><span id="local-6989586621680084109"><span class="annot"><a href="Elara.Error.html#report"><span class="hs-identifier hs-var hs-var">report</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; Eff r ()
-forall e (r :: [Effect]).
-(ReportableError e, Pretty e,
- DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
-e -&gt; Eff r ()
-</span><a href="Elara.Error.html#defaultReport"><span class="hs-identifier hs-var">defaultReport</span></a></span></span><span>
-</span><span id="line-36"></span><span>
-</span><span id="line-37"></span><span id="local-6989586621680084044"><span id="local-6989586621680084045"><span class="annot"><a href="Elara.Error.html#defaultReport"><span class="hs-identifier hs-type">defaultReport</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-38"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680084044"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680084044"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.Effect.html#DiagnosticWriter"><span class="hs-identifier hs-type">DiagnosticWriter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680084045"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-39"></span><span>    </span><span class="annot"><a href="#local-6989586621680084044"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680084045"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
-</span><span id="line-40"></span><span id="defaultReport"><span class="annot"><span class="annottext">defaultReport :: forall e (r :: [Effect]).
-(ReportableError e, Pretty e,
- DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
-e -&gt; Eff r ()
-</span><a href="Elara.Error.html#defaultReport"><span class="hs-identifier hs-var hs-var">defaultReport</span></a></span></span><span> </span><span id="local-6989586621680084126"><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621680084126"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-41"></span><span>    </span><span class="hs-pragma">{-# HLINT ignore &quot;Use id&quot; #-}</span><span>
-</span><span id="line-42"></span><span>    </span><span class="hs-comment">-- i love impredicative types</span><span>
-</span><span id="line-43"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680084127"><span class="annot"><span class="annottext">code :: Maybe (Doc AnsiStyle)
-</span><a href="#local-6989586621680084127"><span class="hs-identifier hs-var hs-var">code</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680084128"><span class="annot"><span class="annottext">ErrorCode
-</span><a href="#local-6989586621680084128"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
-ErrorCode
-</span><a href="#local-6989586621680084128"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(ErrorCode -&gt; Doc AnsiStyle)
--&gt; Maybe ErrorCode -&gt; Maybe (Doc AnsiStyle)
-forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
-</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; Maybe ErrorCode
-forall e. ReportableError e =&gt; e -&gt; Maybe ErrorCode
-</span><a href="Elara.Error.html#errorCode"><span class="hs-identifier hs-var">errorCode</span></a></span><span> </span><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621680084126"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-44"></span><span>        </span><span id="local-6989586621680084130"><span class="annot"><span class="annottext">report :: Maybe (Report (Doc AnsiStyle))
-</span><a href="#local-6989586621680084130"><span class="hs-identifier hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; Maybe (Report (Doc AnsiStyle))
-forall e. ReportableError e =&gt; e -&gt; Maybe (Report (Doc AnsiStyle))
-</span><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621680084126"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-45"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Report (Doc AnsiStyle) -&gt; Eff r ()
-forall t (es :: [Effect]).
-(HasCallStack, DiagnosticWriter t :&gt; es) =&gt;
-Report t -&gt; Eff es ()
-</span><a href="Elara.Error.Effect.html#writeReport"><span class="hs-identifier hs-var">writeReport</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Report (Doc AnsiStyle)
--&gt; Maybe (Report (Doc AnsiStyle)) -&gt; Report (Doc AnsiStyle)
-forall a. a -&gt; Maybe a -&gt; a
-</span><span class="hs-identifier hs-var">fromMaybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
--&gt; Doc AnsiStyle
--&gt; [(Position, Marker (Doc AnsiStyle))]
--&gt; [Note (Doc AnsiStyle)]
--&gt; Report (Doc AnsiStyle)
-forall msg.
-Maybe msg
--&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
-</span><span class="hs-identifier hs-var">Err</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Doc AnsiStyle)
-</span><a href="#local-6989586621680084127"><span class="hs-identifier hs-var">code</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; Doc AnsiStyle
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span>    </span><span id="diagnosticMessage"><span class="annot"><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-type">diagnosticMessage</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-51"></span><span>    </span><span class="hs-keyword">default</span><span> </span><span id="diagnosticMessage"><span class="annot"><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-type">diagnosticMessage</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-52"></span><span>    </span><span id="local-6989586621680148061"><span class="annot"><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var hs-var">diagnosticMessage</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
-</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621680084126"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe (Report (Doc AnsiStyle))
-</span><a href="#local-6989586621680084130"><span class="hs-identifier hs-var">report</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-46"></span><span>
-</span><span id="line-47"></span><span class="hs-keyword">data</span><span> </span><span id="SomeReportableError"><span class="annot"><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier hs-var">SomeReportableError</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680084135"><span class="annot"><a href="#local-6989586621680084135"><span class="hs-identifier hs-type">x</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680084135"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="SomeReportableError"><span class="annot"><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier hs-var">SomeReportableError</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680084135"><span class="hs-identifier hs-type">x</span></a></span><span>
-</span><span id="line-48"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier hs-type">SomeReportableError</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-49"></span><span>    </span><span id="local-6989586621680084142"><span class="annot"><span class="annottext">errorCode :: SomeReportableError -&gt; Maybe ErrorCode
-</span><a href="Elara.Error.html#errorCode"><span class="hs-identifier hs-var hs-var hs-var">errorCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier hs-type">SomeReportableError</span></a></span><span> </span><span id="local-6989586621680084145"><span class="annot"><span class="annottext">x
-</span><a href="#local-6989586621680084145"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">x -&gt; Maybe ErrorCode
-forall e. ReportableError e =&gt; e -&gt; Maybe ErrorCode
-</span><a href="Elara.Error.html#errorCode"><span class="hs-identifier hs-var">errorCode</span></a></span><span> </span><span class="annot"><span class="annottext">x
-</span><a href="#local-6989586621680084145"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-50"></span><span>    </span><span id="local-6989586621680084146"><span class="annot"><span class="annottext">getReport :: SomeReportableError -&gt; Maybe (Report (Doc AnsiStyle))
-</span><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var hs-var hs-var">getReport</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier hs-type">SomeReportableError</span></a></span><span> </span><span id="local-6989586621680084149"><span class="annot"><span class="annottext">x
-</span><a href="#local-6989586621680084149"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">x -&gt; Maybe (Report (Doc AnsiStyle))
-forall e. ReportableError e =&gt; e -&gt; Maybe (Report (Doc AnsiStyle))
-</span><a href="Elara.Error.html#getReport"><span class="hs-identifier hs-var">getReport</span></a></span><span> </span><span class="annot"><span class="annottext">x
-</span><a href="#local-6989586621680084149"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-51"></span><span>    </span><span id="local-6989586621680084151"><span class="annot"><span class="annottext">report :: forall (r :: [Effect]).
-(DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
-SomeReportableError -&gt; Eff r ()
-</span><a href="Elara.Error.html#report"><span class="hs-identifier hs-var hs-var hs-var">report</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier hs-type">SomeReportableError</span></a></span><span> </span><span id="local-6989586621680084155"><span class="annot"><span class="annottext">x
-</span><a href="#local-6989586621680084155"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">x -&gt; Eff r ()
-forall (r :: [Effect]).
-(DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
-x -&gt; Eff r ()
-forall e (r :: [Effect]).
-(ReportableError e, DiagnosticWriter (Doc AnsiStyle) :&gt; r) =&gt;
-e -&gt; Eff r ()
-</span><a href="Elara.Error.html#report"><span class="hs-identifier hs-var">report</span></a></span><span> </span><span class="annot"><span class="annottext">x
-</span><a href="#local-6989586621680084155"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-52"></span><span>
-</span><span id="line-53"></span><span id="local-6989586621680084066"><span class="annot"><a href="Elara.Error.html#addPosition"><span class="hs-identifier hs-type">addPosition</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Position</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Marker</span></span><span> </span><span class="annot"><a href="#local-6989586621680084066"><span class="hs-identifier hs-type">msg</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Report</span></span><span> </span><span class="annot"><a href="#local-6989586621680084066"><span class="hs-identifier hs-type">msg</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Report</span></span><span> </span><span class="annot"><a href="#local-6989586621680084066"><span class="hs-identifier hs-type">msg</span></a></span></span><span>
-</span><span id="line-54"></span><span id="addPosition"><span class="annot"><span class="annottext">addPosition :: forall msg. (Position, Marker msg) -&gt; Report msg -&gt; Report msg
-</span><a href="Elara.Error.html#addPosition"><span class="hs-identifier hs-var hs-var">addPosition</span></a></span></span><span> </span><span id="local-6989586621680084156"><span class="annot"><span class="annottext">(Position, Marker msg)
-</span><a href="#local-6989586621680084156"><span class="hs-identifier hs-var">marker</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Err</span></span><span> </span><span id="local-6989586621680084157"><span class="annot"><span class="annottext">Maybe msg
-</span><a href="#local-6989586621680084157"><span class="hs-identifier hs-var">code</span></a></span></span><span> </span><span id="local-6989586621680084158"><span class="annot"><span class="annottext">msg
-</span><a href="#local-6989586621680084158"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680084159"><span class="annot"><span class="annottext">[(Position, Marker msg)]
-</span><a href="#local-6989586621680084159"><span class="hs-identifier hs-var">markers</span></a></span></span><span> </span><span id="local-6989586621680084160"><span class="annot"><span class="annottext">[Note msg]
-</span><a href="#local-6989586621680084160"><span class="hs-identifier hs-var">notes</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe msg
--&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
-forall msg.
-Maybe msg
--&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
-</span><span class="hs-identifier hs-var">Err</span></span><span> </span><span class="annot"><span class="annottext">Maybe msg
-</span><a href="#local-6989586621680084157"><span class="hs-identifier hs-var">code</span></a></span><span> </span><span class="annot"><span class="annottext">msg
-</span><a href="#local-6989586621680084158"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Position, Marker msg)
-</span><a href="#local-6989586621680084156"><span class="hs-identifier hs-var">marker</span></a></span><span> </span><span class="annot"><span class="annottext">(Position, Marker msg)
--&gt; [(Position, Marker msg)] -&gt; [(Position, Marker msg)]
-forall a. a -&gt; [a] -&gt; [a]
-</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(Position, Marker msg)]
-</span><a href="#local-6989586621680084159"><span class="hs-identifier hs-var">markers</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Note msg]
-</span><a href="#local-6989586621680084160"><span class="hs-identifier hs-var">notes</span></a></span><span>
-</span><span id="line-55"></span><span class="annot"><a href="Elara.Error.html#addPosition"><span class="hs-identifier hs-var">addPosition</span></a></span><span> </span><span id="local-6989586621680084161"><span class="annot"><span class="annottext">(Position, Marker msg)
-</span><a href="#local-6989586621680084161"><span class="hs-identifier hs-var">marker</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Warn</span></span><span> </span><span id="local-6989586621680084163"><span class="annot"><span class="annottext">Maybe msg
-</span><a href="#local-6989586621680084163"><span class="hs-identifier hs-var">code</span></a></span></span><span> </span><span id="local-6989586621680084164"><span class="annot"><span class="annottext">msg
-</span><a href="#local-6989586621680084164"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621680084165"><span class="annot"><span class="annottext">[(Position, Marker msg)]
-</span><a href="#local-6989586621680084165"><span class="hs-identifier hs-var">markers</span></a></span></span><span> </span><span id="local-6989586621680084166"><span class="annot"><span class="annottext">[Note msg]
-</span><a href="#local-6989586621680084166"><span class="hs-identifier hs-var">notes</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe msg
--&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
-forall msg.
-Maybe msg
--&gt; msg -&gt; [(Position, Marker msg)] -&gt; [Note msg] -&gt; Report msg
-</span><span class="hs-identifier hs-var">Warn</span></span><span> </span><span class="annot"><span class="annottext">Maybe msg
-</span><a href="#local-6989586621680084163"><span class="hs-identifier hs-var">code</span></a></span><span> </span><span class="annot"><span class="annottext">msg
-</span><a href="#local-6989586621680084164"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Position, Marker msg)
-</span><a href="#local-6989586621680084161"><span class="hs-identifier hs-var">marker</span></a></span><span> </span><span class="annot"><span class="annottext">(Position, Marker msg)
--&gt; [(Position, Marker msg)] -&gt; [(Position, Marker msg)]
-forall a. a -&gt; [a] -&gt; [a]
-</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(Position, Marker msg)]
-</span><a href="#local-6989586621680084165"><span class="hs-identifier hs-var">markers</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Note msg]
-</span><a href="#local-6989586621680084166"><span class="hs-identifier hs-var">notes</span></a></span><span>
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span>    </span><span id="diagnosticMarkers"><span class="annot"><a href="Elara.Error.html#diagnosticMarkers"><span class="hs-identifier hs-type">diagnosticMarkers</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier hs-type">ElaraMarker</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-55"></span><span>    </span><span id="local-6989586621680148065"><span class="annot"><a href="Elara.Error.html#diagnosticMarkers"><span class="hs-identifier hs-var hs-var">diagnosticMarkers</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[ElaraMarker] -&gt; e -&gt; [ElaraMarker]
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span></span><span>
 </span><span id="line-56"></span><span>
-</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- | Concatenate two diagnostics, keeping the first one's file map. Use this instead of the Semigroup instance for Diagnostics.</span></span><span>
-</span><span id="line-58"></span><span id="local-6989586621680084068"><span class="annot"><a href="Elara.Error.html#concatDiagnostics"><span class="hs-identifier hs-type">concatDiagnostics</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diagnostic</span></span><span> </span><span class="annot"><a href="#local-6989586621680084068"><span class="hs-identifier hs-type">msg</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diagnostic</span></span><span> </span><span class="annot"><a href="#local-6989586621680084068"><span class="hs-identifier hs-type">msg</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diagnostic</span></span><span> </span><span class="annot"><a href="#local-6989586621680084068"><span class="hs-identifier hs-type">msg</span></a></span></span><span>
-</span><span id="line-59"></span><span id="concatDiagnostics"><span class="annot"><span class="annottext">concatDiagnostics :: forall msg. Diagnostic msg -&gt; Diagnostic msg -&gt; Diagnostic msg
-</span><a href="Elara.Error.html#concatDiagnostics"><span class="hs-identifier hs-var hs-var">concatDiagnostics</span></a></span></span><span> </span><span id="local-6989586621680084169"><span class="annot"><span class="annottext">Diagnostic msg
-</span><a href="#local-6989586621680084169"><span class="hs-identifier hs-var">diag</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Diagnostic msg -&gt; Diagnostic msg -&gt; Diagnostic msg
-forall a. Semigroup a =&gt; a -&gt; a -&gt; a
-</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Diagnostic msg
-</span><a href="#local-6989586621680084169"><span class="hs-identifier hs-var">diag</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-60"></span><span>
-</span><span id="line-61"></span><span class="annot"><a href="Elara.Error.html#runErrorOrReport"><span class="hs-identifier hs-type">runErrorOrReport</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-62"></span><span>    </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680084075"><span class="annot"><a href="#local-6989586621680084075"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span id="local-6989586621680084073"><span class="annot"><a href="#local-6989586621680084073"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span id="local-6989586621680084076"><span class="annot"><a href="#local-6989586621680084076"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span>
-</span><span id="line-63"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Elara.Error.Effect.html#DiagnosticWriter"><span class="hs-identifier hs-type">DiagnosticWriter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680084073"><span class="hs-identifier hs-type">r</span></a></span><span>
-</span><span id="line-64"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff.Error</span></span><span> </span><span class="annot"><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier hs-type">SomeReportableError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680084073"><span class="hs-identifier hs-type">r</span></a></span><span>
-</span><span id="line-65"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ReportableError"><span class="hs-identifier hs-type">ReportableError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680084075"><span class="hs-identifier hs-type">e</span></a></span><span>
-</span><span id="line-66"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-67"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eff.Error</span></span><span> </span><span class="annot"><a href="#local-6989586621680084075"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-glyph">:</span><span> </span><span class="annot"><a href="#local-6989586621680084073"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680084076"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-68"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680084073"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680084076"><span class="hs-identifier hs-type">a</span></a></span><span>
-</span><span id="line-69"></span><span id="runErrorOrReport"><span class="annot"><span class="annottext">runErrorOrReport :: forall e (r :: [Effect]) a.
-(DiagnosticWriter (Doc AnsiStyle) :&gt; r,
- Error SomeReportableError :&gt; r, ReportableError e) =&gt;
+</span><span id="line-57"></span><span>    </span><span id="diagnosticNotes"><span class="annot"><a href="Elara.Error.html#diagnosticNotes"><span class="hs-identifier hs-type">diagnosticNotes</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680147933"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraNote"><span class="hs-identifier hs-type">ElaraNote</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-58"></span><span>    </span><span id="local-6989586621680148066"><span class="annot"><a href="Elara.Error.html#diagnosticNotes"><span class="hs-identifier hs-var hs-var">diagnosticNotes</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[ElaraNote] -&gt; e -&gt; [ElaraNote]
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span></span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraSeverity"><span class="annot"><a href="Elara.Error.html#ElaraSeverity"><span class="hs-identifier hs-var">ElaraSeverity</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ErrorSeverity"><span class="annot"><a href="Elara.Error.html#ErrorSeverity"><span class="hs-identifier hs-var">ErrorSeverity</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="WarningSeverity"><span class="annot"><a href="Elara.Error.html#WarningSeverity"><span class="hs-identifier hs-var">WarningSeverity</span></a></span></span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680148069"><span id="local-6989586621680148074"><span class="annot"><span class="annottext">ElaraSeverity -&gt; ElaraSeverity -&gt; Bool
+(ElaraSeverity -&gt; ElaraSeverity -&gt; Bool)
+-&gt; (ElaraSeverity -&gt; ElaraSeverity -&gt; Bool) -&gt; Eq ElaraSeverity
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: ElaraSeverity -&gt; ElaraSeverity -&gt; Bool
+== :: ElaraSeverity -&gt; ElaraSeverity -&gt; Bool
+$c/= :: ElaraSeverity -&gt; ElaraSeverity -&gt; Bool
+/= :: ElaraSeverity -&gt; ElaraSeverity -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148079"><span id="local-6989586621680148085"><span id="local-6989586621680148089"><span class="annot"><span class="annottext">Int -&gt; ElaraSeverity -&gt; ShowS
+[ElaraSeverity] -&gt; ShowS
+ElaraSeverity -&gt; String
+(Int -&gt; ElaraSeverity -&gt; ShowS)
+-&gt; (ElaraSeverity -&gt; String)
+-&gt; ([ElaraSeverity] -&gt; ShowS)
+-&gt; Show ElaraSeverity
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ElaraSeverity -&gt; ShowS
+showsPrec :: Int -&gt; ElaraSeverity -&gt; ShowS
+$cshow :: ElaraSeverity -&gt; String
+show :: ElaraSeverity -&gt; String
+$cshowList :: [ElaraSeverity] -&gt; ShowS
+showList :: [ElaraSeverity] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraMarker"><span class="annot"><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier hs-var">ElaraMarker</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ElaraMarker"><span class="annot"><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier hs-var">ElaraMarker</span></a></span></span><span>
+</span><span id="line-64"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="markerRegion"><span class="annot"><span class="annottext">ElaraMarker -&gt; SourceRegion
+</span><a href="Elara.Error.html#markerRegion"><span class="hs-identifier hs-var hs-var">markerRegion</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span>
+</span><span id="line-65"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="markerType"><span class="annot"><span class="annottext">ElaraMarker -&gt; ElaraMarkerType
+</span><a href="Elara.Error.html#markerType"><span class="hs-identifier hs-var hs-var">markerType</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraMarkerType"><span class="hs-identifier hs-type">ElaraMarkerType</span></a></span><span>
+</span><span id="line-66"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="markerMessage"><span class="annot"><span class="annottext">ElaraMarker -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#markerMessage"><span class="hs-identifier hs-var hs-var">markerMessage</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680148098"><span id="local-6989586621680148100"><span class="annot"><span class="annottext">(forall x. ElaraMarker -&gt; Rep ElaraMarker x)
+-&gt; (forall x. Rep ElaraMarker x -&gt; ElaraMarker)
+-&gt; Generic ElaraMarker
+forall x. Rep ElaraMarker x -&gt; ElaraMarker
+forall x. ElaraMarker -&gt; Rep ElaraMarker x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. ElaraMarker -&gt; Rep ElaraMarker x
+from :: forall x. ElaraMarker -&gt; Rep ElaraMarker x
+$cto :: forall x. Rep ElaraMarker x -&gt; ElaraMarker
+to :: forall x. Rep ElaraMarker x -&gt; ElaraMarker
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148106"><span id="local-6989586621680148122"><span id="local-6989586621680148126"><span class="annot"><span class="annottext">Int -&gt; ElaraMarker -&gt; ShowS
+[ElaraMarker] -&gt; ShowS
+ElaraMarker -&gt; String
+(Int -&gt; ElaraMarker -&gt; ShowS)
+-&gt; (ElaraMarker -&gt; String)
+-&gt; ([ElaraMarker] -&gt; ShowS)
+-&gt; Show ElaraMarker
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ElaraMarker -&gt; ShowS
+showsPrec :: Int -&gt; ElaraMarker -&gt; ShowS
+$cshow :: ElaraMarker -&gt; String
+show :: ElaraMarker -&gt; String
+$cshowList :: [ElaraMarker] -&gt; ShowS
+showList :: [ElaraMarker] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraMarkerType"><span class="annot"><a href="Elara.Error.html#ElaraMarkerType"><span class="hs-identifier hs-var">ElaraMarkerType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PrimaryMarker"><span class="annot"><a href="Elara.Error.html#PrimaryMarker"><span class="hs-identifier hs-var">PrimaryMarker</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="SecondaryMarker"><span class="annot"><a href="Elara.Error.html#SecondaryMarker"><span class="hs-identifier hs-var">SecondaryMarker</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="InfoMarker"><span class="annot"><a href="Elara.Error.html#InfoMarker"><span class="hs-identifier hs-var">InfoMarker</span></a></span></span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680148132"><span id="local-6989586621680148136"><span class="annot"><span class="annottext">ElaraMarkerType -&gt; ElaraMarkerType -&gt; Bool
+(ElaraMarkerType -&gt; ElaraMarkerType -&gt; Bool)
+-&gt; (ElaraMarkerType -&gt; ElaraMarkerType -&gt; Bool)
+-&gt; Eq ElaraMarkerType
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: ElaraMarkerType -&gt; ElaraMarkerType -&gt; Bool
+== :: ElaraMarkerType -&gt; ElaraMarkerType -&gt; Bool
+$c/= :: ElaraMarkerType -&gt; ElaraMarkerType -&gt; Bool
+/= :: ElaraMarkerType -&gt; ElaraMarkerType -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148140"><span id="local-6989586621680148146"><span id="local-6989586621680148149"><span class="annot"><span class="annottext">Int -&gt; ElaraMarkerType -&gt; ShowS
+[ElaraMarkerType] -&gt; ShowS
+ElaraMarkerType -&gt; String
+(Int -&gt; ElaraMarkerType -&gt; ShowS)
+-&gt; (ElaraMarkerType -&gt; String)
+-&gt; ([ElaraMarkerType] -&gt; ShowS)
+-&gt; Show ElaraMarkerType
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ElaraMarkerType -&gt; ShowS
+showsPrec :: Int -&gt; ElaraMarkerType -&gt; ShowS
+$cshow :: ElaraMarkerType -&gt; String
+show :: ElaraMarkerType -&gt; String
+$cshowList :: [ElaraMarkerType] -&gt; ShowS
+showList :: [ElaraMarkerType] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraNote"><span class="annot"><a href="Elara.Error.html#ElaraNote"><span class="hs-identifier hs-var">ElaraNote</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Note"><span class="annot"><a href="Elara.Error.html#Note"><span class="hs-identifier hs-var">Note</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Hint"><span class="annot"><a href="Elara.Error.html#Hint"><span class="hs-identifier hs-var">Hint</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680148154"><span id="local-6989586621680148156"><span class="annot"><span class="annottext">(forall x. ElaraNote -&gt; Rep ElaraNote x)
+-&gt; (forall x. Rep ElaraNote x -&gt; ElaraNote) -&gt; Generic ElaraNote
+forall x. Rep ElaraNote x -&gt; ElaraNote
+forall x. ElaraNote -&gt; Rep ElaraNote x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. ElaraNote -&gt; Rep ElaraNote x
+from :: forall x. ElaraNote -&gt; Rep ElaraNote x
+$cto :: forall x. Rep ElaraNote x -&gt; ElaraNote
+to :: forall x. Rep ElaraNote x -&gt; ElaraNote
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148159"><span id="local-6989586621680148168"><span id="local-6989586621680148172"><span class="annot"><span class="annottext">Int -&gt; ElaraNote -&gt; ShowS
+[ElaraNote] -&gt; ShowS
+ElaraNote -&gt; String
+(Int -&gt; ElaraNote -&gt; ShowS)
+-&gt; (ElaraNote -&gt; String)
+-&gt; ([ElaraNote] -&gt; ShowS)
+-&gt; Show ElaraNote
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ElaraNote -&gt; ShowS
+showsPrec :: Int -&gt; ElaraNote -&gt; ShowS
+$cshow :: ElaraNote -&gt; String
+show :: ElaraNote -&gt; String
+$cshowList :: [ElaraNote] -&gt; ShowS
+showList :: [ElaraNote] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraReport"><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier hs-var">ElaraReport</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ElaraReport"><span class="annot"><a href="Elara.Error.html#ElaraReport"><span class="hs-identifier hs-var">ElaraReport</span></a></span></span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="reportSeverity"><span class="annot"><span class="annottext">ElaraReport -&gt; ElaraSeverity
+</span><a href="Elara.Error.html#reportSeverity"><span class="hs-identifier hs-var hs-var">reportSeverity</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraSeverity"><span class="hs-identifier hs-type">ElaraSeverity</span></a></span><span>
+</span><span id="line-78"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="reportCode"><span class="annot"><span class="annottext">ElaraReport -&gt; Maybe ErrorCode
+</span><a href="Elara.Error.html#reportCode"><span class="hs-identifier hs-var hs-var">reportCode</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-79"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="reportMessage"><span class="annot"><span class="annottext">ElaraReport -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#reportMessage"><span class="hs-identifier hs-var hs-var">reportMessage</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-80"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="reportMarkers"><span class="annot"><span class="annottext">ElaraReport -&gt; [ElaraMarker]
+</span><a href="Elara.Error.html#reportMarkers"><span class="hs-identifier hs-var hs-var">reportMarkers</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraMarker"><span class="hs-identifier hs-type">ElaraMarker</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="reportNotes"><span class="annot"><span class="annottext">ElaraReport -&gt; [ElaraNote]
+</span><a href="Elara.Error.html#reportNotes"><span class="hs-identifier hs-var hs-var">reportNotes</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraNote"><span class="hs-identifier hs-type">ElaraNote</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-82"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-83"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680148180"><span id="local-6989586621680148182"><span class="annot"><span class="annottext">(forall x. ElaraReport -&gt; Rep ElaraReport x)
+-&gt; (forall x. Rep ElaraReport x -&gt; ElaraReport)
+-&gt; Generic ElaraReport
+forall x. Rep ElaraReport x -&gt; ElaraReport
+forall x. ElaraReport -&gt; Rep ElaraReport x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. ElaraReport -&gt; Rep ElaraReport x
+from :: forall x. ElaraReport -&gt; Rep ElaraReport x
+$cto :: forall x. Rep ElaraReport x -&gt; ElaraReport
+to :: forall x. Rep ElaraReport x -&gt; ElaraReport
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148185"><span id="local-6989586621680148206"><span id="local-6989586621680148210"><span class="annot"><span class="annottext">Int -&gt; ElaraReport -&gt; ShowS
+[ElaraReport] -&gt; ShowS
+ElaraReport -&gt; String
+(Int -&gt; ElaraReport -&gt; ShowS)
+-&gt; (ElaraReport -&gt; String)
+-&gt; ([ElaraReport] -&gt; ShowS)
+-&gt; Show ElaraReport
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ElaraReport -&gt; ShowS
+showsPrec :: Int -&gt; ElaraReport -&gt; ShowS
+$cshow :: ElaraReport -&gt; String
+show :: ElaraReport -&gt; String
+$cshowList :: [ElaraReport] -&gt; ShowS
+showList :: [ElaraReport] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="annot"><span class="hs-comment">-- | A type-erased error that implements 'ElaraDiagnostic' and 'Exception'.</span></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraError"><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-var">ElaraError</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680148213"><span class="annot"><a href="#local-6989586621680148213"><span class="hs-identifier hs-type">e</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="#local-6989586621680148213"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148213"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="ElaraError"><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-var">ElaraError</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680148213"><span class="hs-identifier hs-type">e</span></a></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680148216"><span id="local-6989586621680148221"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>    </span><span id="local-6989586621680148223"><span class="annot"><span class="annottext">show :: ElaraError -&gt; String
+</span><a href="#local-6989586621680148223"><span class="hs-identifier hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span id="local-6989586621680148230"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148230"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">GHC.Show.show</span></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148230"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680148236"><span id="local-6989586621680148240"><span id="local-6989586621680148243"><span id="local-6989586621680148246"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span></span></span></span></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-94"></span><span>    </span><span id="local-6989586621680148259"><span class="annot"><span class="annottext">diagnosticReports :: ElaraError -&gt; [ElaraReport]
+</span><a href="Elara.Error.html#diagnosticReports"><span class="hs-identifier hs-var hs-var hs-var">diagnosticReports</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span id="local-6989586621680148263"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148263"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; [ElaraReport]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraReport]
+</span><a href="Elara.Error.html#diagnosticReports"><span class="hs-identifier hs-var">diagnosticReports</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148263"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-95"></span><span>    </span><span id="local-6989586621680148264"><span class="annot"><span class="annottext">diagnosticMessage :: ElaraError -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMessage</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span id="local-6989586621680148268"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148268"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; Doc AnsiStyle
+forall e. ElaraDiagnostic e =&gt; e -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148268"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-96"></span><span>    </span><span id="local-6989586621680148269"><span class="annot"><span class="annottext">diagnosticSeverity :: ElaraError -&gt; ElaraSeverity
+</span><a href="Elara.Error.html#diagnosticSeverity"><span class="hs-identifier hs-var hs-var hs-var">diagnosticSeverity</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span id="local-6989586621680148273"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148273"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; ElaraSeverity
+forall e. ElaraDiagnostic e =&gt; e -&gt; ElaraSeverity
+</span><a href="Elara.Error.html#diagnosticSeverity"><span class="hs-identifier hs-var">diagnosticSeverity</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148273"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-97"></span><span>    </span><span id="local-6989586621680148274"><span class="annot"><span class="annottext">diagnosticCode :: ElaraError -&gt; Maybe ErrorCode
+</span><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var hs-var hs-var">diagnosticCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span id="local-6989586621680148278"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148278"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; Maybe ErrorCode
+forall e. ElaraDiagnostic e =&gt; e -&gt; Maybe ErrorCode
+</span><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var">diagnosticCode</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148278"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-98"></span><span>    </span><span id="local-6989586621680148279"><span class="annot"><span class="annottext">diagnosticMarkers :: ElaraError -&gt; [ElaraMarker]
+</span><a href="Elara.Error.html#diagnosticMarkers"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMarkers</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span id="local-6989586621680148283"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148283"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; [ElaraMarker]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraMarker]
+</span><a href="Elara.Error.html#diagnosticMarkers"><span class="hs-identifier hs-var">diagnosticMarkers</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148283"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-99"></span><span>    </span><span id="local-6989586621680148284"><span class="annot"><span class="annottext">diagnosticNotes :: ElaraError -&gt; [ElaraNote]
+</span><a href="Elara.Error.html#diagnosticNotes"><span class="hs-identifier hs-var hs-var hs-var">diagnosticNotes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span id="local-6989586621680148288"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148288"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; [ElaraNote]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraNote]
+</span><a href="Elara.Error.html#diagnosticNotes"><span class="hs-identifier hs-var">diagnosticNotes</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148288"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-102"></span><span>    </span><span id="local-6989586621680148292"><span class="annot"><span class="annottext">pretty :: ElaraError -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span id="local-6989586621680148296"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148296"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; Doc AnsiStyle
+forall e. ElaraDiagnostic e =&gt; e -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148296"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span class="annot"><span class="hs-comment">-- | A type-erased warning that implements 'ElaraDiagnostic'.</span></span><span>
+</span><span id="line-105"></span><span class="hs-keyword">data</span><span> </span><span id="ElaraWarning"><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-var">ElaraWarning</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680148297"><span class="annot"><a href="#local-6989586621680148297"><span class="hs-identifier hs-type">w</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680148297"><span class="hs-identifier hs-type">w</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148297"><span class="hs-identifier hs-type">w</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="ElaraWarning"><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-var">ElaraWarning</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680148297"><span class="hs-identifier hs-type">w</span></a></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-108"></span><span>    </span><span id="local-6989586621680148308"><span class="annot"><span class="annottext">diagnosticReports :: ElaraWarning -&gt; [ElaraReport]
+</span><a href="Elara.Error.html#diagnosticReports"><span class="hs-identifier hs-var hs-var hs-var">diagnosticReports</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span id="local-6989586621680148312"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148312"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">w -&gt; [ElaraReport]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraReport]
+</span><a href="Elara.Error.html#diagnosticReports"><span class="hs-identifier hs-var">diagnosticReports</span></a></span><span> </span><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148312"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-109"></span><span>    </span><span id="local-6989586621680148313"><span class="annot"><span class="annottext">diagnosticMessage :: ElaraWarning -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMessage</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span id="local-6989586621680148317"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148317"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">w -&gt; Doc AnsiStyle
+forall e. ElaraDiagnostic e =&gt; e -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span> </span><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148317"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-110"></span><span>    </span><span id="local-6989586621680148318"><span class="annot"><span class="annottext">diagnosticSeverity :: ElaraWarning -&gt; ElaraSeverity
+</span><a href="Elara.Error.html#diagnosticSeverity"><span class="hs-identifier hs-var hs-var hs-var">diagnosticSeverity</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span id="local-6989586621680148322"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148322"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">w -&gt; ElaraSeverity
+forall e. ElaraDiagnostic e =&gt; e -&gt; ElaraSeverity
+</span><a href="Elara.Error.html#diagnosticSeverity"><span class="hs-identifier hs-var">diagnosticSeverity</span></a></span><span> </span><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148322"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-111"></span><span>    </span><span id="local-6989586621680148323"><span class="annot"><span class="annottext">diagnosticCode :: ElaraWarning -&gt; Maybe ErrorCode
+</span><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var hs-var hs-var">diagnosticCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span id="local-6989586621680148327"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148327"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">w -&gt; Maybe ErrorCode
+forall e. ElaraDiagnostic e =&gt; e -&gt; Maybe ErrorCode
+</span><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var">diagnosticCode</span></a></span><span> </span><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148327"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-112"></span><span>    </span><span id="local-6989586621680148328"><span class="annot"><span class="annottext">diagnosticMarkers :: ElaraWarning -&gt; [ElaraMarker]
+</span><a href="Elara.Error.html#diagnosticMarkers"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMarkers</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span id="local-6989586621680148332"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148332"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">w -&gt; [ElaraMarker]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraMarker]
+</span><a href="Elara.Error.html#diagnosticMarkers"><span class="hs-identifier hs-var">diagnosticMarkers</span></a></span><span> </span><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148332"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-113"></span><span>    </span><span id="local-6989586621680148333"><span class="annot"><span class="annottext">diagnosticNotes :: ElaraWarning -&gt; [ElaraNote]
+</span><a href="Elara.Error.html#diagnosticNotes"><span class="hs-identifier hs-var hs-var hs-var">diagnosticNotes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span id="local-6989586621680148337"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148337"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">w -&gt; [ElaraNote]
+forall e. ElaraDiagnostic e =&gt; e -&gt; [ElaraNote]
+</span><a href="Elara.Error.html#diagnosticNotes"><span class="hs-identifier hs-var">diagnosticNotes</span></a></span><span> </span><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148337"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-116"></span><span>    </span><span id="local-6989586621680148340"><span class="annot"><span class="annottext">pretty :: ElaraWarning -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span id="local-6989586621680148344"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148344"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">w -&gt; Doc AnsiStyle
+forall e. ElaraDiagnostic e =&gt; e -&gt; Doc AnsiStyle
+</span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span> </span><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148344"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span id="local-6989586621680147985"><span id="local-6989586621680147987"><span class="annot"><a href="Elara.Error.html#reportElaraWarning"><span class="hs-identifier hs-type">reportElaraWarning</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680147985"><span class="hs-identifier hs-type">w</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680147985"><span class="hs-identifier hs-type">w</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff.Writer</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680147987"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680147985"><span class="hs-identifier hs-type">w</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680147987"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-119"></span><span id="reportElaraWarning"><span class="annot"><span class="annottext">reportElaraWarning :: forall w (es :: [Effect]).
+(Typeable w, ElaraDiagnostic w, Writer [ElaraWarning] :&gt; es) =&gt;
+w -&gt; Eff es ()
+</span><a href="Elara.Error.html#reportElaraWarning"><span class="hs-identifier hs-var hs-var">reportElaraWarning</span></a></span></span><span> </span><span id="local-6989586621680148355"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148355"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[ElaraWarning] -&gt; Eff es ()
+forall w (es :: [Effect]).
+(HasCallStack, Writer w :&gt; es, Monoid w) =&gt;
+w -&gt; Eff es ()
+</span><span class="hs-identifier hs-var">Eff.tell</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">w -&gt; ElaraWarning
+forall w. (Typeable w, ElaraDiagnostic w) =&gt; w -&gt; ElaraWarning
+</span><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-var">ElaraWarning</span></a></span><span> </span><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621680148355"><span class="hs-identifier hs-var">w</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span class="annot"><a href="Elara.Error.html#runErrorAsElaraError"><span class="hs-identifier hs-type">runErrorAsElaraError</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-122"></span><span>    </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680147997"><span class="annot"><a href="#local-6989586621680147997"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span id="local-6989586621680147999"><span class="annot"><a href="#local-6989586621680147999"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span id="local-6989586621680148000"><span class="annot"><a href="#local-6989586621680148000"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-123"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="#local-6989586621680147997"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680147997"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff.Error</span></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680147999"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-124"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eff.Error</span></span><span> </span><span class="annot"><a href="#local-6989586621680147997"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-glyph">:</span><span> </span><span class="annot"><a href="#local-6989586621680147999"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680148000"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-125"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680147999"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148000"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-126"></span><span id="runErrorAsElaraError"><span class="annot"><span class="annottext">runErrorAsElaraError :: forall e (r :: [Effect]) a.
+(Exception e, ElaraDiagnostic e, Error ElaraError :&gt; r) =&gt;
 Eff (Error e : r) a -&gt; Eff r a
-</span><a href="Elara.Error.html#runErrorOrReport"><span class="hs-identifier hs-var hs-var">runErrorOrReport</span></a></span></span><span> </span><span id="local-6989586621680084175"><span class="annot"><span class="annottext">Eff (Error e : r) a
-</span><a href="#local-6989586621680084175"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(HasCallStack =&gt; Eff r a) -&gt; Eff r a
+</span><a href="Elara.Error.html#runErrorAsElaraError"><span class="hs-identifier hs-var hs-var">runErrorAsElaraError</span></a></span></span><span> </span><span id="local-6989586621680148362"><span class="annot"><span class="annottext">Eff (Error e : r) a
+</span><a href="#local-6989586621680148362"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(HasCallStack =&gt; Eff r a) -&gt; Eff r a
 forall a. HasCallStack =&gt; (HasCallStack =&gt; a) -&gt; a
 </span><span class="hs-identifier hs-var">withFrozenCallStack</span></span><span> </span><span class="annot"><span class="annottext">((HasCallStack =&gt; Eff r a) -&gt; Eff r a)
 -&gt; (HasCallStack =&gt; Eff r a) -&gt; Eff r a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-70"></span><span>    </span><span id="local-6989586621680084184"><span class="annot"><a href="#local-6989586621680084184"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff (Error e : r) a -&gt; Eff r (Either (CallStack, e) a)
+</span><span id="line-127"></span><span>    </span><span id="local-6989586621680148371"><span class="annot"><a href="#local-6989586621680148371"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff (Error e : r) a -&gt; Eff r (Either (CallStack, e) a)
 forall e (es :: [Effect]) a.
 HasCallStack =&gt;
 Eff (Error e : es) a -&gt; Eff es (Either (CallStack, e) a)
 </span><span class="hs-identifier hs-var">Eff.runError</span></span><span> </span><span class="annot"><span class="annottext">Eff (Error e : r) a
-</span><a href="#local-6989586621680084175"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-71"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680084184"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-72"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680084186"><span class="annot"><span class="annottext">CallStack
-</span><a href="#local-6989586621680084186"><span class="hs-identifier hs-var">callStack</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680084187"><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621680084187"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-73"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span class="">?callStack</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack
+</span><a href="#local-6989586621680148362"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680148371"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-129"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680148373"><span class="annot"><span class="annottext">CallStack
+</span><a href="#local-6989586621680148373"><span class="hs-identifier hs-var">_callStack</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148374"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148374"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="">?callStack</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack
 CallStack
-</span><a href="#local-6989586621680084186"><span class="hs-identifier hs-var">callStack</span></a></span><span> </span><span class="hs-comment">-- silly</span><span>
-</span><span id="line-74"></span><span>             </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">SomeReportableError -&gt; Eff r a
+</span><a href="#local-6989586621680148373"><span class="hs-identifier hs-var">_callStack</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">ElaraError -&gt; Eff r a
 forall e (es :: [Effect]) a.
-(HasCallStack, Error e :&gt; es) =&gt;
+(HasCallStack, Error e :&gt; es, Show e) =&gt;
 e -&gt; Eff es a
-</span><span class="hs-identifier hs-var">Eff.throwError_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; SomeReportableError
-forall x. ReportableError x =&gt; x -&gt; SomeReportableError
-</span><a href="Elara.Error.html#SomeReportableError"><span class="hs-identifier hs-var">SomeReportableError</span></a></span><span> </span><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621680084187"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-75"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621680084194"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621680084194"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Eff r a
+</span><span class="hs-identifier hs-var">Eff.throwError</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; ElaraError
+forall e. (Exception e, ElaraDiagnostic e) =&gt; e -&gt; ElaraError
+</span><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-var">ElaraError</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621680148374"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621680148383"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680148383"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Eff r a
 forall a. a -&gt; Eff r a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621680084194"><span class="hs-identifier hs-var">a</span></a></span><span>
-</span><span id="line-76"></span></pre></body></html>
+</span><a href="#local-6989586621680148383"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span class="annot"><a href="Elara.Error.html#runWriterAsElaraWarning"><span class="hs-identifier hs-type">runWriterAsElaraWarning</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-133"></span><span>    </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680148020"><span class="annot"><a href="#local-6989586621680148020"><span class="hs-identifier hs-type">w</span></a></span></span><span> </span><span id="local-6989586621680148021"><span class="annot"><a href="#local-6989586621680148021"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span id="local-6989586621680148023"><span class="annot"><a href="#local-6989586621680148023"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621680148022"><span class="annot"><a href="#local-6989586621680148022"><span class="hs-identifier hs-type">f</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-134"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span> </span><span class="annot"><a href="#local-6989586621680148020"><span class="hs-identifier hs-type">w</span></a></span><span>
+</span><span id="line-135"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148020"><span class="hs-identifier hs-type">w</span></a></span><span>
+</span><span id="line-136"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff.Writer</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680148021"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680148022"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148020"><span class="hs-identifier hs-type">w</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Foldable</span></span><span> </span><span class="annot"><a href="#local-6989586621680148022"><span class="hs-identifier hs-type">f</span></a></span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-140"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eff.Writer</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680148022"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148020"><span class="hs-identifier hs-type">w</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">'</span><span class="hs-glyph">:</span><span> </span><span class="annot"><a href="#local-6989586621680148021"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680148023"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-141"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680148021"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680148023"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-142"></span><span id="runWriterAsElaraWarning"><span class="annot"><span class="annottext">runWriterAsElaraWarning :: forall w (r :: [Effect]) a (f :: * -&gt; *).
+(Typeable w, ElaraDiagnostic w, Writer [ElaraWarning] :&gt; r,
+ Monoid (f w), Foldable f) =&gt;
+Eff (Writer (f w) : r) a -&gt; Eff r a
+</span><a href="Elara.Error.html#runWriterAsElaraWarning"><span class="hs-identifier hs-var hs-var">runWriterAsElaraWarning</span></a></span></span><span> </span><span id="local-6989586621680148404"><span class="annot"><span class="annottext">Eff (Writer (f w) : r) a
+</span><a href="#local-6989586621680148404"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-143"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621680148405"><span class="annot"><a href="#local-6989586621680148405"><span class="hs-identifier hs-var">result</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148406"><span class="annot"><a href="#local-6989586621680148406"><span class="hs-identifier hs-var">specificWarnings</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff (Writer (f w) : r) a -&gt; Eff r (a, f w)
+forall w (es :: [Effect]) a.
+(HasCallStack, Monoid w) =&gt;
+Eff (Writer w : es) a -&gt; Eff es (a, w)
+</span><span class="hs-identifier hs-var">Eff.runWriter</span></span><span> </span><span class="annot"><span class="annottext">Eff (Writer (f w) : r) a
+</span><a href="#local-6989586621680148404"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff.tell</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.html#ElaraWarning"><span class="hs-identifier hs-type">ElaraWarning</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">toList</span></span><span> </span><span class="annot"><a href="#local-6989586621680148406"><span class="hs-identifier hs-type">specificWarnings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>
+</span><span id="line-147"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><a href="#local-6989586621680148405"><span class="hs-identifier hs-type">result</span></a></span><span>
+</span><span id="line-148"></span></pre></body></html>

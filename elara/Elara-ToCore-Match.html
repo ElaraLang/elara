@@ -14,7 +14,7 @@ Row 2: [ _      ] [ Left c  ] =&gt; Body 2
 with scrutinees: <code class="inline-code">[x, y]</code></p><h2>The Algorithm Step</h2><p>We look at **Column 0** (the head) to decide what to do with variable <code class="inline-code">x</code>.
 1. We see a constructor <code class="inline-code">Just</code>. We must generate a <code class="inline-code">match x with ...</code>.
 2. We create a branch for <code class="inline-code">Just</code>. Inside this branch, <code class="inline-code">x</code> is unwrapped into <code class="inline-code">payload</code>.
-   We transform the matrix for this branch (<a href="Specialization.html">Specialization</a>):
+   We transform the matrix for this branch (<a href="Specialisation.html">Specialisation</a>):
    - Row 1 matches <code class="inline-code">Just a</code>. The pattern <code class="inline-code">Just a</code> becomes <code class="inline-code">a</code>.
    - Row 2 is a wildcard <code class="inline-code">_</code>. It matches <code class="inline-code">Just</code> too! We expand <code class="inline-code">_</code> into <code class="inline-code">wildcard_payload</code>.</p><p>New Matrix for <a href="Just.html">Just</a> branch:
    <code class="inline-code">
@@ -28,4 +28,4 @@ As we decompose constructors, the matrix will grow wider.</p></div></div><div cl
 This function is recursive:
 1. If the matrix is empty (width 0), we are done, so we emit the RHS of the first valid row.
 2. If we have patterns but no scrutinees, we emit a unit value (which indicates a non-exhaustive match).
-3. Otherwise, we inspect the first column (<code>processHeadColumn</code>) to decide how to branch, and recurse.</p></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.30.0</p></div></body></html>
+3. Otherwise, we inspect the first column (<code>processHeadColumn</code>) to decide how to branch, and recurse.</p></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.32.0</p></div></body></html>
