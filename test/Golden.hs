@@ -37,8 +37,12 @@ spec = describe "Golden tests" $ do
         it "Currying and partial application" $
             runGolden defaultSettings backend "currying"
 
-        it "Tuples and pattern matching on tuples" $
-            runGolden defaultSettings backend "tuples"
+        describe "Tuples" $ do
+            it "Tuples and pattern matching on tuples" $
+                runGolden defaultSettings backend "tuples"
+
+            it "Larger tuples" $
+                runGolden defaultSettings backend "bigger-tuples"
 
         it "Type aliases" $
             runGolden defaultSettings backend "type-aliases"

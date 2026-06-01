@@ -21,6 +21,9 @@ type List a = Nil | Cons a (List a)
 type Ordering = LT | EQ | GT
 
 type Tuple2 a b = | Tuple2 a b
+type Tuple3 a b c = | Tuple3 a b c
+type Tuple4 a b c d = | Tuple4 a b c d
+type Tuple5 a b c d e = | Tuple5 a b c d e
 
 
 type Associativity = 

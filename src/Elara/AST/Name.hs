@@ -48,7 +48,7 @@ newtype LowerAlphaName = LowerAlphaName Text
     deriving (Data, Eq, Generic, IsString, Ord, Show)
 
 newtype TypeName = TypeName Text
-    deriving (Data, Eq, Generic, IsString, Ord, Show)
+    deriving (Data, Eq, Generic, IsString, Ord, Semigroup, Show)
 
 newtype OpName = OpName Text
     deriving (Data, Eq, Generic, IsString, Ord, Show)

@@ -46,6 +46,7 @@ module Elara.Prim (
     nilCtorName,
     consCtorName,
     tuple2CtorName,
+    tupleNCtorName,
     ltCtorName,
     eqCtorName,
     gtCtorName,
@@ -301,3 +302,6 @@ gtCtorName = mkPrimQual "GT"
 
 unitCtorName :: IsString s => Qualified s
 unitCtorName = mkPrimQual "Unit"
+
+tupleNCtorName :: Semigroup s => IsString s => Int -> Qualified s
+tupleNCtorName n = mkPrimQual ("Tuple" <> show n)

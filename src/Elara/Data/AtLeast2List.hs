@@ -1,6 +1,8 @@
 -- | A list that contains at least two elements, used for tuples
 module Elara.Data.AtLeast2List where
 
+import Data.Foldable1 (Foldable1 (..))
+
 data AtLeast2List a = AtLeast2List a a [a]
     deriving (Eq, Generic, Ord, Show)
 
@@ -9,6 +11,9 @@ toList (AtLeast2List x y xs) = x : y : xs
 
 toNonEmpty :: AtLeast2List a -> NonEmpty a
 toNonEmpty (AtLeast2List x y xs) = x :| (y : xs)
+
+toHeadAndTail :: AtLeast2List a -> (a, NonEmpty a)
+toHeadAndTail (AtLeast2List x y xs) = (x, y :| xs)
 
 fromList :: [a] -> Maybe (AtLeast2List a)
 fromList (x : y : xs) = Just $ AtLeast2List x y xs
@@ -30,6 +35,14 @@ instance Functor AtLeast2List where
 
 instance Foldable AtLeast2List where
     foldMap f (AtLeast2List x y xs) = f x <> f y <> foldMap f xs
+
+instance Foldable1 AtLeast2List where
+    foldMap1 :: Semigroup m => (a -> m) -> AtLeast2List a -> m
+    foldMap1 f (AtLeast2List x y xs) =
+        let head = f x <> f y
+         in case xs of
+                [] -> head
+                rest : rs -> head <> foldMap1 f (rest :| rs)
 
 instance Traversable AtLeast2List where
     traverse f (AtLeast2List x y xs) = AtLeast2List <$> f x <*> f y <*> traverse f xs

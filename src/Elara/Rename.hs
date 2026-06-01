@@ -10,6 +10,7 @@ Note that until the monad operations are implemented, we can't fully remove bloc
 -}
 module Elara.Rename (renameExpr, InnerRename) where
 
+import Data.Foldable1 (Foldable1 (fold1), foldl1', foldr1)
 import Data.Generics.Product hiding (list)
 import Effectful (Eff, (:>))
 import Effectful.Error.Static (throwError)
@@ -52,6 +53,7 @@ import Elara.AST.Module qualified as NewModule
 import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Types qualified as New
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Prim qualified as Prim
 import Rock qualified
 
@@ -498,7 +500,16 @@ renameType antv (New.TExtension (TupleType (AtLeast2List fst' snd' []))) = do
     let base = New.TApp tupleCtor fst''
 
     pure $ New.TApp (New.Type loc () base) snd''
-renameType _ (New.TExtension (TupleType{})) = error "renameType: Tuple more than length 2"
+renameType antv (New.TExtension (TupleType tupleElems)) = do
+    -- turn it into Elara.Prim.TupleN type
+    let tupleName = Prim.tupleNCtorName (length tupleElems)
+
+    elems' <- traverse (renameSimpleTypeWith antv) tupleElems
+    let loc = foldr1 enclosingRegion (fmap (\(New.Type l _ _) -> l) elems')
+    let tupleCtor = New.Type loc () (New.TUserDefined (TaggedLocate loc tupleName))
+
+    let (head', tail) = AtLeast2List.toHeadAndTail elems'
+    pure $ foldl' (New.TApp . New.Type loc ()) (New.TApp tupleCtor head') tail
 
 renameExpr :: (InnerRename r, Eff.Reader (Maybe (New.Declaration SourceRegion NewD.Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) => NewD.DesugaredExpr -> Eff r NewR.RenamedExpr
 renameExpr (New.Expr _ () (New.EBlock es)) = desugarBlock es
@@ -591,9 +602,33 @@ renameExpr (New.Expr loc () e') = do
         fst'' <- renameExpr fst'
         snd'' <- renameExpr snd'
         let typeLoc = wrap @TypeNode (unwrapLoc loc)
-        let base = New.Expr loc Nothing (New.EApp NoExtension (New.Expr loc Nothing (New.ECon NoExtension (TaggedLocate typeLoc Prim.tuple2CtorName))) fst'')
+        let base =
+                New.Expr
+                    loc
+                    Nothing
+                    ( New.EApp
+                        NoExtension
+                        ( New.Expr
+                            loc
+                            Nothing
+                            (New.ECon NoExtension (TaggedLocate typeLoc Prim.tuple2CtorName))
+                        )
+                        fst''
+                    )
         pure (New.EApp NoExtension base snd'', Nothing)
-    renameExprExtension (DesugaredTuple _) = error "renameExpr': Tuple more than length 2"
+    renameExprExtension (DesugaredTuple (TupleExpression tupleElems)) = do
+        -- turn it into Elara.Prim.TupleN type
+        let tupleName :: Qualified TypeName = Prim.tupleNCtorName (length tupleElems)
+
+        elems' <- traverse renameExpr tupleElems
+        let typeLoc = wrap @TypeNode (unwrapLoc loc)
+        let headCtorExpr :: New.Expr SourceRegion Renamed =
+                New.Expr loc Nothing (New.ECon NoExtension (TaggedLocate typeLoc tupleName))
+
+        let elemsList = AtLeast2List.toNonEmpty elems'
+        let New.Expr _ _ r = foldl' (\acc m -> New.Expr loc Nothing (New.EApp NoExtension acc m)) headCtorExpr elemsList
+
+        pure (r, Nothing)
 
 renameBinaryOperator :: forall r. (InnerRename r, Rock.Rock Elara.Query.Query :> r) => New.BinaryOperator SourceRegion NewD.Desugared -> Eff r (New.BinaryOperator SourceRegion NewR.Renamed)
 renameBinaryOperator (New.SymOp opLoc occ) = do

@@ -3,10 +3,10 @@ module Elara.JVM.Lower.ADT (lowerDataCon) where
 import Data.List (zipWith3)
 import Effectful
 import H2JVM
-import H2JVM.Name
 import H2JVM.Type
 
 import Elara.Core
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
 import Elara.JVM.Emit.Types (stringTypeName)
@@ -175,8 +175,7 @@ generateElaraToStringMethod (className, fields) = do
     let elaraStringType = ObjectFieldType stringTypeName
     let elaraStringReturn = TypeReturn elaraStringType
     let thisClassType = ObjectFieldType className
-    let simpleClassName = case className of
-            QualifiedClassName _ (ClassName name) -> name
+    let simpleClassName = prettyToText className
     let concatDesc =
             MethodDescriptor
                 [ObjectFieldType stringTypeName]
@@ -196,7 +195,7 @@ generateElaraToStringMethod (className, fields) = do
             else do
                 resultUnique <- makeUnique "result"
                 let elaraStringType = ObjectFieldType stringTypeName
-                let openParen = simpleClassName <> "("
+                let openParen = "(" <> simpleClassName <> " "
 
                 -- Build field string representations
                 fieldStringExprs <- forM (zip [0 ..] fields) $ \(i :: Int, IR.Field fieldName fieldType) -> do
@@ -209,12 +208,12 @@ generateElaraToStringMethod (className, fields) = do
                     if i == 0
                         then pure fieldStr
                         else do
-                            let commaStr = IR.LitString ", "
+                            let spaceStr = IR.LitString " "
 
-                            -- Concatenate ", " + fieldStr (both as Elara/String)
+                            -- Concatenate " " + fieldStr (both as Elara/String)
                             pure $
                                 IR.Call
-                                    (IR.InvokeVirtual commaStr stringTypeName "concat" concatDesc)
+                                    (IR.InvokeVirtual spaceStr stringTypeName "concat" concatDesc)
                                     [fieldStr]
 
                 -- Concatenate all parts using Elara/String.concat

@@ -338,7 +338,7 @@ apply f' a' = case f' of
         let asText = case a' of
                 Ctor (DataCon (Qualified "Tuple2" _) _ _) [arg1, arg2] ->
                     prettyToText (arg1, arg2)
-                other -> prettyToText other
+                other -> prettyToUnannotatedText other
         pure $ String asText
     VPrimOp Prim.PrimThrowError -> do
         throwError_ $ CodeThrewError a'
@@ -346,7 +346,7 @@ apply f' a' = case f' of
         pure $ IOAction $ do
             let asString = case a' of
                     String s -> s
-                    other -> prettyToText other
+                    other -> prettyToUnannotatedText other
             printText asString
             pure (Ctor unitCtor [])
     VPrimOp Prim.PrimGetArgs -> do
