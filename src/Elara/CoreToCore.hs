@@ -6,19 +6,22 @@ This stage performs optimisations and transformations on the Core AST
 module Elara.CoreToCore where
 
 import Effectful (Eff)
+
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core (CoreBind, CoreExpr, Expr (..), Literal (..), Var (..))
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Generic (Bind (..), mapBind, traverseBind)
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF
 import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
-import Elara.Error (runErrorOrReport)
-import Elara.Query qualified
+import Elara.Error (runErrorAsElaraError)
 import Elara.Query.Effects (ConsQueryEffects)
+
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
+import Elara.Prim qualified as Prim
+import Elara.Query qualified
 import Rock qualified
 
 type CoreExprPass = CoreExpr -> CoreExpr
@@ -35,7 +38,9 @@ pattern Infix mn op a b <-
 constantFold :: CoreExprPass
 constantFold = transform f
   where
-    f (Infix ("Elara" :| ["Prim"]) "+" (Lit (Int a)) (Lit (Int b))) = Lit (Int (a + b))
+    f (App (App (PrimOp Prim.PrimIntAdd _) (Lit (Int a))) (Lit (Int b))) = Lit (Int (a + b))
+    f (App (App (PrimOp Prim.PrimIntMultiply _) (Lit (Int a))) (Lit (Int b))) = Lit (Int (a * b))
+    f (App (App (PrimOp Prim.PrimIntSubtract _) (Lit (Int a))) (Lit (Int b))) = Lit (Int (a - b))
     f other = other
 
 -- | Performs beta reduction on the Core AST to reduce redundant lambdas
@@ -94,8 +99,8 @@ runGetANFCoreModuleQuery mn = do
 
 runGetFinalisedCoreModuleQuery :: HasCallStack => ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)
 runGetFinalisedCoreModuleQuery mn = do
-    coreModule <- runErrorOrReport @ClosureLiftError $ Rock.fetch (Elara.Query.GetClosureLiftedModule mn)
-    runErrorOrReport @TypeCheckError $ typeCheckCoreModule coreModule
+    coreModule <- runErrorAsElaraError @ClosureLiftError $ Rock.fetch (Elara.Query.GetClosureLiftedModule mn)
+    runErrorAsElaraError @TypeCheckError $ typeCheckCoreModule coreModule
     pure (unANF coreModule)
 
 moduleToANF ::

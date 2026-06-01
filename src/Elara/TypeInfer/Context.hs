@@ -47,12 +47,12 @@ data InferenceContext
       CheckingAnnotation
         { annotationSite :: !SourceRegion
         }
-    deriving (Generic, Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 
 -- | A stack of inference contexts, with the most recent context at the head.
 newtype ContextStack = ContextStack [InferenceContext]
-    deriving (Generic, Show, Eq)
-    deriving newtype (Semigroup, Monoid)
+    deriving (Eq, Generic, Show)
+    deriving newtype (Monoid, Semigroup)
 
 -- | Create an empty context stack
 emptyContextStack :: ContextStack

@@ -1,11 +1,13 @@
 -- | This module mostly just exists to be a circuit breaker :)
 module Elara.Rename.Imports (isImportedBy, isExposition, expositionToLocatedName) where
 
+import Elara.AST.Location
 import Elara.AST.Module
 import Elara.AST.Name (MaybeQualified (..), ModuleName, Name (..), Qualified (..), VarName (..))
-import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Region
 import Elara.AST.VarRef
+
+import Elara.AST.Phases.Desugared qualified as NewD
 
 {- | Tests whether an 'Exposition' entry matches a given 'Name' from a module.
 
@@ -15,22 +17,30 @@ module's own @exposing@ list). A 'Nothing' qualifier is treated as a wildcard an
 module; a @'Just' q@ qualifier must equal @mn@.
 -}
 isExposition :: ModuleName -> Name -> Exposition SourceRegion NewD.Desugared -> Bool
-isExposition mn (NVarName (OperatorVarName opn)) (ExposedOp (Located _ (MaybeQualified opn' mq))) =
+isExposition mn (NameOp opn) (ExposedOp (TaggedLocate _ (MaybeQualified opn' mq))) =
     opn == opn' && maybe True (== mn) mq
-isExposition mn (NVarName vn) (ExposedValue (Located _ (MaybeQualified vn' mq))) =
+isExposition mn (NameValue vn) (ExposedValue (TaggedLocate _ (MaybeQualified (NormalVarName vn') mq))) =
     vn == vn' && maybe True (== mn) mq
-isExposition mn (NTypeName tn) (ExposedType (Located _ (MaybeQualified tn' mq))) =
+isExposition mn (NameOp opn) (ExposedValue (TaggedLocate _ (MaybeQualified (OperatorVarName opn') mq))) =
+    opn == opn' && maybe True (== mn) mq
+isExposition mn (NameType tn) (ExposedType (TaggedLocate _ (MaybeQualified tn' mq))) =
     tn == tn' && maybe True (== mn) mq
-isExposition mn (NTypeName tn) (ExposedTypeAndAllConstructors (Located _ (MaybeQualified tn' mq))) =
+isExposition mn (NameType tn) (ExposedTypeAndAllConstructors (TaggedLocate _ (MaybeQualified tn' mq))) =
     tn == tn' && maybe True (== mn) mq
 isExposition _ _ _ = False
 
 -- | Extract a 'Located Name' from an 'Exposition' for error reporting
 expositionToLocatedName :: Exposition SourceRegion NewD.Desugared -> Located Name
-expositionToLocatedName (ExposedValue (Located sr (MaybeQualified vn _))) = Located sr (NVarName vn)
-expositionToLocatedName (ExposedOp (Located sr (MaybeQualified opn _))) = Located sr (NVarName (OperatorVarName opn))
-expositionToLocatedName (ExposedType (Located sr (MaybeQualified tn _))) = Located sr (NTypeName tn)
-expositionToLocatedName (ExposedTypeAndAllConstructors (Located sr (MaybeQualified tn _))) = Located sr (NTypeName tn)
+expositionToLocatedName (ExposedValue (TaggedLocate loc (MaybeQualified (NormalVarName vn) _))) =
+    Located (getLocation loc) (NameValue vn)
+expositionToLocatedName (ExposedValue (TaggedLocate loc (MaybeQualified (OperatorVarName opn) _))) =
+    Located (getLocation loc) (NameOp opn)
+expositionToLocatedName (ExposedOp (TaggedLocate loc (MaybeQualified opn _))) =
+    Located (getLocation loc) (NameOp opn)
+expositionToLocatedName (ExposedType (TaggedLocate loc (MaybeQualified tn _))) =
+    Located (getLocation loc) (NameType tn)
+expositionToLocatedName (ExposedTypeAndAllConstructors (TaggedLocate loc (MaybeQualified tn _))) =
+    Located (getLocation loc) (NameType tn)
 
 {- | Tests that @m@ imports @n@
 This is determined by 2 conditions:
@@ -53,5 +63,8 @@ isImportedBy (Module _ m) (Global (Located _ (Qualified n' nameMod))) = do
                     ImportExposing (ExposingSome es) -> any (isExposition (m'.moduleName ^. unlocated) n) es
                     ImportHiding hidings ->
                         not $ any (isExposition (m'.moduleName ^. unlocated) n) hidings
-    findImport :: ModuleName -> [Import SourceRegion NewD.Desugared] -> Maybe (Import SourceRegion NewD.Desugared)
+    findImport ::
+        ModuleName ->
+        [Import SourceRegion NewD.Desugared] ->
+        Maybe (Import SourceRegion NewD.Desugared)
     findImport mn' = find (\(Import _ imp) -> mn' == imp.importModuleName ^. unlocated)

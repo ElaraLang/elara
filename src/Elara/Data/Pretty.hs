@@ -21,18 +21,21 @@ module Elara.Data.Pretty (
 )
 where
 
-import Data.HashMap.Strict qualified as HM
-import Data.Map qualified as Map (toList)
-import Elara.Data.Pretty.Styles qualified as Styles
-import Elara.Width qualified as Width
 import Error.Diagnose (Annotation, defaultStyle)
 import GHC.Generics
 import Prettyprinter as Pretty hiding (Pretty (..), pretty)
-import Prettyprinter qualified as PP
 import Prettyprinter.Render.Terminal (AnsiStyle)
+
+import Data.HashMap.Strict qualified as HM
+import Data.Map qualified as Map (toList)
+import Prettyprinter qualified as PP
 import Prettyprinter.Render.Terminal qualified as Pretty.Terminal (renderStrict)
 import Prettyprinter.Render.Text qualified as Pretty.Text
+
 import Prelude hiding (group)
+
+import Elara.Data.Pretty.Styles qualified as Styles
+import Elara.Width qualified as Width
 
 indentDepth :: Int
 indentDepth = 4

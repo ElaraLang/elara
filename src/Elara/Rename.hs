@@ -6,50 +6,55 @@ This stage handles:
 1. Renaming all variables, types, and type variables, adding module qualification or unique suffixes to avoid name clashes
 2. Desugaring any "first-class" pattern matches into normal match expressions (eg '\[] -> 1' to '\x -> match x with [] -> 1')
 3. Desugaring blocks into let-in chains (and monad operations soon), eg 'let y = 1; y + 1' to 'let y = 1 in y + 1'
-  Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
+Note that until the monad operations are implemented, we can't fully remove blocks, as we have nothing to translate 'f x; g x' into
 -}
-module Elara.Rename (getRenamedModule, renameExpr, InnerRename) where
+module Elara.Rename (renameExpr, InnerRename) where
 
+import Data.Foldable1 (Foldable1 (fold1), foldl1', foldr1)
 import Data.Generics.Product hiding (list)
+import Effectful (Eff, (:>))
+import Effectful.Error.Static (throwError)
+
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Effectful (Eff, inject, (:>))
-import Effectful.Error.Static (throwError)
 import Effectful.Error.Static qualified as Eff
 import Effectful.Reader.Static qualified as Eff
-import Effectful.State.Extra
 import Effectful.State.Static.Local qualified as Eff
+import Effectful.State.Static.Local qualified as Local
 
--- New AST types (primary)
+import Effectful.State.Extra
 import Elara.AST.Extensions
-import Elara.AST.Module qualified as NewModule
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (NTypeName, NVarName), OpName (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
+import Elara.AST.Location
+import Elara.AST.Name (DeclName (..), LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (..))
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Desugared (DesugaredExpressionExtension (..))
-import Elara.AST.Phases.Desugared qualified as NewD
-import Elara.AST.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
-import Elara.AST.Phases.Renamed qualified as NewR
-import Elara.AST.Region (Located (Located), SourceRegion (..), enclosingRegion', generatedSourceRegion, sourceRegion, spanningRegion', unlocated, withLocationOf)
-import Elara.AST.Types qualified as New
-import Elara.AST.VarRef (VarRef, VarRef' (Global, Local))
+import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..), TypedLambdaParam (..))
+import Elara.AST.Region (Located (Located), SourceRegion (..), enclosingRegion, generatedSourceRegion, sourceRegion, spanningRegion, unlocated, withLocationOf)
+import Elara.AST.VarRef (VarRef, VarRef' (Global, Local), withName)
 import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
-import Elara.Error (runErrorOrReport)
+import Elara.Error (runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug)
-import Elara.Prim (mkPrimQual, unitName)
-import Elara.Prim.Core (consCtorName, emptyListCtorName, tuple2CtorName)
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Prim.Rename (primitiveRenameState)
-import Elara.Query (QueryType (..), SupportsQuery (..))
-import Elara.Query qualified
+import Elara.Query
 import Elara.Query.Effects
-import Elara.Query.Errors (StandardQueryError)
+import Elara.Query.Errors ()
 import Elara.Rename.Error
 import Elara.Rename.Imports (expositionToLocatedName, isExposition, isImportedBy)
 import Elara.Rename.State
+import Elara.Rules.Generic
 import Print (showColored)
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Types qualified as New
+import Elara.Data.AtLeast2List qualified as AtLeast2List
+import Elara.Prim qualified as Prim
 import Rock qualified
 
 type Rename r =
@@ -72,25 +77,19 @@ type InnerRename r =
     , HasCallStack
     )
 
--- | Run the @'Elara.Query.RenamedModule'@ query, renaming a module by its name
-getRenamedModule ::
-    ModuleName ->
-    Eff
-        (ConsQueryEffects '[Eff.Error RenameError, Eff.State RenameState, Rock.Rock Elara.Query.Query])
-        (NewModule.Module SourceRegion NewR.Renamed)
-getRenamedModule mn = do
-    m <- runErrorOrReport @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
-    let NewModule.Module _ m' = m
-    let actualName = m'.moduleName ^. unlocated
-    when (actualName /= mn) $ throwError $ ModuleNameMismatch (Located (GeneratedRegion "Renaming Entry Point") mn) (actualName `withLocationOf` m'.moduleName)
-    rename m
+instance RunPhase Renamed where
+    getModuleByName mn = do
+        m <- runErrorAsElaraError @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
+        let NewModule.Module _ m' = m
+        let actualName = m'.moduleName ^. unlocated
+        when (actualName /= mn) $ throwError $ ModuleNameMismatch (Located (GeneratedRegion "Renaming Entry Point") mn) (actualName `withLocationOf` stripTag m'.moduleName)
+        Local.evalState primitiveRenameState $ rename m
 
-instance SupportsQuery QueryModuleByName NewR.Renamed where
-    type QuerySpecificEffectsOf QueryModuleByName NewR.Renamed = '[Eff.Error RenameError]
-    query mn =
-        Eff.evalState primitiveRenameState $
-            inject $
-                getRenamedModule mn
+    getDeclarationByName = genericGetDeclarationByName @Renamed getModuleByName
+    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Renamed getDeclarationByName
+    getConstructorDeclaration = genericGetConstructorDeclaration @Renamed getModuleByName
+    getDeclarationAnnotations = genericGetDeclarationAnnotations @Renamed getRequiredDeclarationByName
+    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Renamed getDeclarationAnnotations getConstructorDeclaration
 
 qualifyIn :: Rename r => ModuleName -> MaybeQualified name -> Eff r (Qualified name)
 qualifyIn mn (MaybeQualified n (Just m)) = do
@@ -98,18 +97,22 @@ qualifyIn mn (MaybeQualified n (Just m)) = do
     pure $ Qualified n m
 qualifyIn mn (MaybeQualified n Nothing) = pure $ Qualified n mn
 
-qualifyTypeName :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => Located (MaybeQualified TypeName) -> Eff r (Located (Qualified TypeName))
-qualifyTypeName (Located sr (MaybeQualified n (Just m))) = do
-    ensureExistsAndExposed (Located sr m) (Located sr (NTypeName n))
-    pure $ Located sr (Qualified n m)
-qualifyTypeName (Located sr (MaybeQualified n Nothing)) = do
-    typeNames' <- use' (field' @"typeNames")
-    m <- Eff.ask
-    case Map.lookup n typeNames' of
-        Nothing -> throwError $ UnknownName (Located sr (NTypeName n)) m typeNames'
-        Just ((Global (Located sr' (Qualified n' m'))) :| []) -> pure $ Located sr' (Qualified n' m')
-        Just ((Local _) :| []) -> error "can't have local type names"
-        Just many -> throwError $ AmbiguousTypeName (Located sr (NTypeName n)) many
+qualifyTypeName :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => TaggedLocate TypeNode SourceRegion (MaybeQualified TypeName) -> Eff r (TaggedLocate TypeNode SourceRegion (Qualified TypeName))
+qualifyTypeName locName = do
+    let sr = unwrapLoc (getLocation locName)
+    case locName ^. unlocated of
+        MaybeQualified n (Just m) -> do
+            let moduleName = TaggedLocate (wrap @ModuleNode sr) m
+            ensureExistsAndExposed moduleName (Located sr (NameType n))
+            pure $ Qualified n m <$ locName
+        MaybeQualified n Nothing -> do
+            typeNames' <- use' (field' @"typeNames")
+            m <- Eff.ask
+            case Map.lookup n typeNames' of
+                Nothing -> throwError $ UnknownName (Located sr (NameType n)) m typeNames'
+                Just ((Global v) :| []) -> pure $ v ^. unlocated <$ locName
+                Just ((Local _) :| []) -> error "can't have local type names"
+                Just many -> throwError $ AmbiguousTypeName (Located sr (NameType n)) many
 
 askCurrentModule :: InnerRename r => Eff r (NewModule.Module SourceRegion NewD.Desugared)
 askCurrentModule = do
@@ -123,41 +126,45 @@ lookupGenericName ::
     (Ord name, ToName name, Show name) =>
     Lens' RenameState (Map name (NonEmpty (VarRef name))) ->
     (Located Name -> NonEmpty (VarRef name) -> RenameError) ->
-    Located (MaybeQualified name) ->
-    Eff r (Located (VarRef name))
-lookupGenericName _ _ (Located sr (MaybeQualified n (Just m))) = do
-    ensureExistsAndExposed (Located sr m) (Located sr (toName n))
-    pure $ Located sr $ Global (Located sr (Qualified n m))
-lookupGenericName lens ambiguousError (Located sr (MaybeQualified n Nothing)) = do
+    TaggedLocate node SourceRegion (MaybeQualified name) ->
+    Eff r (TaggedLocate node SourceRegion (VarRef name))
+lookupGenericName _ _ (TaggedLocate loc (MaybeQualified n (Just m))) = do
+    let sr = unwrapLoc loc
+    let moduleName = TaggedLocate (wrap @ModuleNode sr) m
+    ensureExistsAndExposed moduleName (Located sr (toName n))
+    pure $ TaggedLocate loc $ Global (Located sr (Qualified n m))
+lookupGenericName lens ambiguousError (TaggedLocate loc (MaybeQualified n Nothing)) = do
+    let sr = unwrapLoc loc
     names' <- use' lens
     m <- Eff.ask
     case m of
         Nothing ->
             case Map.lookup n names' of
                 Nothing -> throwError $ UnknownName (Located sr $ toName n) m names'
-                Just (v :| []) -> pure $ Located sr v
+                Just (v :| []) -> pure $ TaggedLocate loc v
                 Just many -> throwError $ ambiguousError (Located sr $ toName n) many
         Just m' -> case maybe [] (NonEmpty.filter ((m' `isImportedBy`) . fmap toName)) (Map.lookup n names') of
-            [v] -> pure $ Located sr v
+            [v] -> pure $ TaggedLocate loc v
             [] -> throwError $ UnknownName (Located sr $ toName n) (Just m') names'
             (x : xs) -> throwError $ ambiguousError (Located sr $ toName n) (x :| xs)
 
-lookupVarName :: _ => Located (MaybeQualified VarName) -> Eff r (Located (VarRef VarName))
+lookupVarName :: _ => TaggedLocate VarNode SourceRegion (MaybeQualified VarName) -> Eff r (TaggedLocate VarNode SourceRegion (VarRef VarName))
 lookupVarName = lookupGenericName (field' @"varNames") AmbiguousVarName
 
-lookupTypeName :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => Located (MaybeQualified TypeName) -> Eff r (Located (Qualified TypeName))
-lookupTypeName n =
-    lookupGenericName (field' @"typeNames") AmbiguousTypeName n <<&>> \case
+lookupTypeName :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => TaggedLocate TypeNode SourceRegion (MaybeQualified TypeName) -> Eff r (TaggedLocate TypeNode SourceRegion (Qualified TypeName))
+lookupTypeName n = do
+    TaggedLocate loc ref <- lookupGenericName (field' @"typeNames") AmbiguousTypeName n
+    case ref of
         Local _ -> error "can't have local type names"
-        Global v -> v ^. unlocated
+        Global v -> pure $ TaggedLocate loc (v ^. unlocated)
 
 lookupTypeVar :: _ => LowerAlphaName -> Eff r (Maybe (Unique LowerAlphaName))
 lookupTypeVar n = do
     typeVars' <- use' (field' @"typeVars")
     pure $ Map.lookup n typeVars'
 
-uniquify :: UniqueGen :> r => Located name -> Eff r (Located (Unique name))
-uniquify (Located sr n) = Located sr <$> makeUnique n
+uniquify :: UniqueGen :> r => TaggedLocate n loc name -> Eff r (TaggedLocate n loc (Unique name))
+uniquify (TaggedLocate loc name) = TaggedLocate loc <$> makeUnique name
 
 -- | Performs a topological sort of declarations
 sortDeclarations :: [NewR.RenamedDeclaration] -> Eff r [NewR.RenamedDeclaration]
@@ -196,16 +203,25 @@ rename m@(NewModule.Module loc m') = do
 
     renameExposition :: Rename r => ModuleName -> NewModule.Exposition SourceRegion NewD.Desugared -> Eff r (NewModule.Exposition SourceRegion NewR.Renamed)
     renameExposition mn (NewModule.ExposedValue vn) = do
-        qn <- traverse (qualifyIn mn) vn
-        pure $ NewModule.ExposedValue (fmap (\q -> Global (q `withLocationOf` qn)) qn)
+        let loc = getLocation vn
+        let sr = unwrapLoc loc
+        qn <- qualifyIn mn (vn ^. unlocated)
+        let varRef = Global (Located sr qn)
+        pure $ NewModule.ExposedValue (TaggedLocate loc varRef)
     renameExposition mn (NewModule.ExposedOp opn) = do
-        qn <- traverse (qualifyIn mn) opn
-        let toVarRef q = Global (q `withLocationOf` qn)
-        pure $ NewModule.ExposedOp (fmap toVarRef qn)
-    renameExposition mn (NewModule.ExposedType tn) =
-        NewModule.ExposedType <$> traverse (qualifyIn mn) tn
-    renameExposition mn (NewModule.ExposedTypeAndAllConstructors tn) =
-        NewModule.ExposedTypeAndAllConstructors <$> traverse (qualifyIn mn) tn
+        let loc = getLocation opn
+        let sr = unwrapLoc loc
+        qn <- qualifyIn mn (opn ^. unlocated)
+        let varRef = Global (Located sr qn)
+        pure $ NewModule.ExposedOp (TaggedLocate loc varRef)
+    renameExposition mn (NewModule.ExposedType tn) = do
+        let loc = getLocation tn
+        qn <- qualifyIn mn (tn ^. unlocated)
+        pure $ NewModule.ExposedType (TaggedLocate loc qn)
+    renameExposition mn (NewModule.ExposedTypeAndAllConstructors tn) = do
+        let loc = getLocation tn
+        qn <- qualifyIn mn (tn ^. unlocated)
+        pure $ NewModule.ExposedTypeAndAllConstructors (TaggedLocate loc qn)
 
     renameImport :: Rename r => NewModule.Import SourceRegion NewD.Desugared -> Eff r (NewModule.Import SourceRegion NewR.Renamed)
     renameImport (NewModule.Import iloc (NewModule.Import' name as' qual exp')) = do
@@ -222,18 +238,24 @@ addImportToContext (NewModule.Import _ imp) =
         imp.importExposingOrHiding
         imp.importQualified
 
-getModuleFromName :: Rename r => Located ModuleName -> Eff r (NewModule.Module SourceRegion NewD.Desugared)
+getModuleFromName ::
+    Rename r =>
+    TaggedLocate
+        ModuleNode
+        SourceRegion
+        ModuleName ->
+    Eff r (NewModule.Module SourceRegion NewD.Desugared)
 getModuleFromName mn = do
     m <-
-        runErrorOrReport @DesugarError $
+        runErrorAsElaraError @DesugarError $
             Rock.fetch (Elara.Query.DesugaredModule (mn ^. unlocated))
     let NewModule.Module _ m' = m
     let actualName = m'.moduleName ^. unlocated
     when (actualName /= mn ^. unlocated) $
         throwError $
             ModuleNameMismatch
-                mn
-                (actualName `withLocationOf` m'.moduleName)
+                (stripTag mn)
+                (actualName `withLocationOf` stripTag m'.moduleName)
     pure m
 
 {- | Add all exposed declarations from a module to the renaming context.
@@ -241,7 +263,7 @@ This is used when we import a module, adding all the imported names to the conte
 -}
 addModuleToContext ::
     Rename r =>
-    Located ModuleName ->
+    TaggedLocate ModuleNode SourceRegion ModuleName ->
     NewModule.ImportExposingOrHiding SourceRegion NewD.Desugared ->
     Bool ->
     Eff r ()
@@ -251,25 +273,24 @@ addModuleToContext mn importSpec qualified = do
     let allDecls = importedMod.moduleDeclarations
     let thisMn = mn ^. unlocated
 
-    -- Phase 1: what the imported module itself publicly exports
-    let moduleExported = filter (isExposingAndExists imported . declarationName) allDecls
+    let declName' = toName . declarationName
+    let moduleExported = filter (isExposingAndExists imported . declName') allDecls
 
-    -- Phase 2: apply the import clause against the module's exports, with validation
     toAdd <- case importSpec of
         NewModule.ImportExposing NewModule.ExposingAll ->
             pure moduleExported
         NewModule.ImportExposing (NewModule.ExposingSome importList) -> do
             for_ importList $ \expo ->
-                unless (any (\d -> isExposition thisMn (declarationName d) expo) moduleExported) $
+                unless (any (\d -> isExposition thisMn (declName' d) expo) moduleExported) $
                     throwError $
                         NonExistentModuleDeclaration thisMn (expositionToLocatedName expo)
-            pure $ filter (\d -> any (isExposition thisMn (declarationName d)) importList) moduleExported
+            pure $ filter (\d -> any (isExposition thisMn (declName' d)) importList) moduleExported
         NewModule.ImportHiding hidingList -> do
             for_ hidingList $ \expo ->
-                unless (any (\d -> isExposition thisMn (declarationName d) expo) moduleExported) $
+                unless (any (\d -> isExposition thisMn (declName' d) expo) moduleExported) $
                     throwError $
                         NonExistentModuleDeclaration thisMn (expositionToLocatedName expo)
-            pure $ filter (\d -> not $ any (isExposition thisMn (declarationName d)) hidingList) moduleExported
+            pure $ filter (\d -> not $ any (isExposition thisMn (declName' d)) hidingList) moduleExported
 
     unless qualified $
         traverse_ addDeclarationToContext toAdd
@@ -279,17 +300,17 @@ addModuleToContext mn importSpec qualified = do
         let simpleModuleName = last parts
         let isPrincipalType decl =
                 case declarationName decl of
-                    NTypeName tn -> tn == TypeName simpleModuleName
+                    DeclType tn -> tn == TypeName simpleModuleName
                     _ -> False
         traverse_ addDeclarationToContext (filter isPrincipalType toAdd)
 
--- | Get the name of a declaration
-declarationName :: New.Declaration SourceRegion NewD.Desugared -> Name
+-- | Get the name of a declaration, preserving the VarName/TypeName distinction.
+declarationName :: New.Declaration SourceRegion NewD.Desugared -> DeclName
 declarationName (New.Declaration _ (New.Declaration' _ body)) =
     let New.DeclarationBody _ body' = body
      in case body' of
-            New.ValueDeclaration n _ _ _ _ _ -> NVarName (n ^. unlocated)
-            New.TypeDeclarationBody n _ _ _ _ _ -> NTypeName (n ^. unlocated)
+            New.ValueDeclaration n _ _ _ _ _ -> DeclVar (n ^. unlocated)
+            New.TypeDeclarationBody n _ _ _ _ _ -> DeclType (n ^. unlocated)
             New.DeclBodyExtension v -> absurd v
 
 -- | Add a declaration to the renaming state.
@@ -297,18 +318,27 @@ addDeclarationToContext ::
     Rename r =>
     New.Declaration SourceRegion NewD.Desugared ->
     Eff r ()
-addDeclarationToContext decl@(New.Declaration _ (New.Declaration' declMN body)) = do
+addDeclarationToContext decl@(New.Declaration _dloc (New.Declaration' declMN body)) = do
+    let New.DeclarationBody _ body' = body
+    let nameLoc :: SourceRegion = case body' of
+            New.ValueDeclaration n _ _ _ _ _ -> unwrapLoc (getLocation n)
+            New.TypeDeclarationBody n _ _ _ _ _ -> unwrapLoc (getLocation n)
+            New.DeclBodyExtension v -> absurd v
+
+    -- create a global var ref for a given name
+    -- uses the declaration's module name for qualification
+    -- and the var ref's location refers to just the declaration name
     let global :: name -> VarRef name
         global vn =
             let mn = declMN ^. unlocated
-             in Global (Qualified vn mn `withLocationOf` declMN)
+             in Global (Qualified vn mn `withLocationOf` nameLoc)
+
     case declarationName decl of
-        NVarName vn -> Eff.modify $ over (the @"varNames") $ insertMerging vn (global vn)
-        NTypeName vn -> Eff.modify $ over (the @"typeNames") $ insertMerging vn (global vn)
+        DeclVar vn -> Eff.modify $ over (the @"varNames") $ insertMerging vn (global vn)
+        DeclType tn -> Eff.modify $ over (the @"typeNames") $ insertMerging tn (global tn)
 
     logDebug $ "Added declaration to context: " <> pretty (declarationName decl)
 
-    let New.DeclarationBody _ body' = body
     case body' of
         -- Add all the constructor names to context
         New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ -> for_ ctors $ \(cn, _) ->
@@ -317,7 +347,7 @@ addDeclarationToContext decl@(New.Declaration _ (New.Declaration' declMN body)) 
         _ -> pass
 
 -- | Ensure that a name exists in the context and is exposed
-ensureExistsAndExposed :: (Rock.Rock Elara.Query.Query :> r, _) => Located ModuleName -> Located Name -> Eff r ()
+ensureExistsAndExposed :: (Rock.Rock Elara.Query.Query :> r, _) => TaggedLocate ModuleNode SourceRegion ModuleName -> Located Name -> Eff r ()
 ensureExistsAndExposed mn n = do
     thisMod <- Eff.ask
     m <- getModuleFromName mn
@@ -328,10 +358,10 @@ elementExistsInModule :: NewModule.Module SourceRegion NewD.Desugared -> Name ->
 elementExistsInModule (NewModule.Module _ m') n' =
     any
         ( \decl ->
-            declarationName decl == n'
+            toName (declarationName decl) == n'
                 || case decl of
                     New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ (New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _))) ->
-                        any (\(cn, _) -> NTypeName (cn ^. unlocated) == n') ctors
+                        any (\(cn, _) -> NameType (cn ^. unlocated) == n') ctors
                     _ -> False
         )
         m'.moduleDeclarations
@@ -347,9 +377,11 @@ isExposingAndExists m@(NewModule.Module _ m') n =
             NewModule.ExposingSome es -> elementExistsInModule m n && any (isExposition mn n) es
   where
     isExposition :: ModuleName -> Name -> NewModule.Exposition SourceRegion NewD.Desugared -> Bool
-    isExposition mn (NVarName vn) (NewModule.ExposedValue vn') = MaybeQualified vn (Just mn) == vn' ^. unlocated
-    isExposition mn (NTypeName tn) (NewModule.ExposedType tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
-    isExposition mn (NTypeName tn) (NewModule.ExposedTypeAndAllConstructors tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
+    isExposition mn (NameValue vn) (NewModule.ExposedValue vn') = MaybeQualified (NormalVarName vn) (Just mn) == vn' ^. unlocated
+    isExposition mn (NameOp vn) (NewModule.ExposedValue vn') = MaybeQualified (OperatorVarName vn) (Just mn) == vn' ^. unlocated
+    isExposition mn (NameOp vn) (NewModule.ExposedOp opn') = MaybeQualified vn (Just mn) == opn' ^. unlocated
+    isExposition mn (NameType tn) (NewModule.ExposedType tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
+    isExposition mn (NameType tn) (NewModule.ExposedTypeAndAllConstructors tn') = MaybeQualified tn (Just mn) == tn' ^. unlocated
     isExposition _ _ _ = False
 
 renameDeclaration :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => New.Declaration SourceRegion NewD.Desugared -> Eff r NewR.RenamedDeclaration
@@ -368,12 +400,11 @@ renameDeclaration decl@(New.Declaration dloc (New.Declaration' mn body)) = do
         thisModule <- askCurrentModule
         let NewModule.Module _ thisMod = thisModule
         let qualifiedName =
-                sequenceA $
-                    Qualified name (thisMod.moduleName ^. unlocated)
+                (\n -> Qualified n (thisMod.moduleName ^. unlocated)) <$> name
         pure $ New.ValueDeclaration qualifiedName val' () () mTypeMeta' anns'
     renameDeclarationBody' (New.TypeDeclarationBody name vars typeDecl _mKind _meta anns) = do
         vars' <- traverse uniquify vars
-        let varAliases = zip vars vars' :: [(Located LowerAlphaName, Located (Unique LowerAlphaName))]
+        let varAliases = zip vars vars'
         let addAllVarAliases s =
                 foldl'
                     (\s' (vn, uniqueVn) -> the @"typeVars" %~ Map.insert (vn ^. unlocated) (uniqueVn ^. unlocated) $ s')
@@ -384,8 +415,7 @@ renameDeclaration decl@(New.Declaration dloc (New.Declaration' mn body)) = do
             thisModule <- askCurrentModule
             let NewModule.Module _ thisMod = thisModule
             let qualifiedName =
-                    sequenceA $
-                        Qualified name (thisMod.moduleName ^. unlocated)
+                    (\n -> Qualified n (thisMod.moduleName ^. unlocated)) <$> name
             typeDecl' <- renameTypeDeclaration declModuleName qualifiedName typeDecl
             anns' <- traverse renameAnnotation anns
             pure $ New.TypeDeclarationBody qualifiedName vars' typeDecl' Nothing NoExtension anns'
@@ -397,7 +427,7 @@ renameAnnotation (New.Annotation name args) = do
     args' <- traverse (\(New.AnnotationArg e) -> New.AnnotationArg <$> renameExpr e) args
     pure $ New.Annotation name' args'
 
-renameTypeDeclaration :: _ => ModuleName -> Located (Qualified TypeName) -> New.TypeDeclaration SourceRegion NewD.Desugared -> Eff r (New.TypeDeclaration SourceRegion NewR.Renamed)
+renameTypeDeclaration :: _ => ModuleName -> TaggedLocate TypeNode SourceRegion (Qualified TypeName) -> New.TypeDeclaration SourceRegion NewD.Desugared -> Eff r (New.TypeDeclaration SourceRegion NewR.Renamed)
 renameTypeDeclaration _ declarationName' (New.Alias aliasedType) = do
     t' <- renameSimpleType aliasedType
     let isRecursive = typeIsRecursive (declarationName' ^. unlocated) t'
@@ -408,7 +438,7 @@ renameTypeDeclaration _ declarationName' (New.Alias aliasedType) = do
                 <> " at "
                 <> pretty (r ^. sourceRegion)
             )
-        throwError $ RecursiveTypeAlias declarationName' r
+        throwError $ RecursiveTypeAlias (stripTag declarationName') r
 
     pure $ New.Alias t'
 renameTypeDeclaration thisMod _declarationName' (New.ADT constructors) = do
@@ -439,21 +469,22 @@ renameType ::
     Bool ->
     New.Type' SourceRegion NewD.Desugared ->
     Eff r NewR.RenamedType'
-renameType allowNewTypeVars (New.TVar (Located sr n)) = do
+renameType allowNewTypeVars (New.TVar (TaggedLocate l n)) = do
     inCtx <- lookupTypeVar n
     case inCtx of
-        Just inCtx' -> pure $ New.TVar (Located sr inCtx')
+        Just inCtx' -> pure $ New.TVar (TaggedLocate l inCtx')
         Nothing
             | allowNewTypeVars -> do
                 uniqueN <- makeUnique n
                 Eff.modify $ over (the @"typeVars") $ Map.insert n uniqueN
-                pure (New.TVar $ Located sr uniqueN)
+                pure (New.TVar $ TaggedLocate l uniqueN)
             | otherwise -> throwError $ UnknownTypeVariable n
 renameType antv (New.TFun t1 t2) = New.TFun <$> renameSimpleTypeWith antv t1 <*> renameSimpleTypeWith antv t2
 renameType _ New.TUnit = do
     -- turn it into Elara.Prim.()
-    let unitTypeName = mkPrimQual unitName
-    pure $ New.TUserDefined (Located (generatedSourceRegion Nothing) unitTypeName)
+    let unitTypeName = knownQualified (knownTypeInfo (KnownWiredIn WiredInUnit))
+    let unitLoc = wrap @TypeNode (generatedSourceRegion Nothing)
+    pure $ New.TUserDefined (TaggedLocate unitLoc unitTypeName)
 renameType antv (New.TApp t1 t2) = New.TApp <$> renameSimpleTypeWith antv t1 <*> renameSimpleTypeWith antv t2
 renameType _ (New.TUserDefined ln) = New.TUserDefined <$> qualifyTypeName ln
 renameType antv (New.TRecord fields) = New.TRecord <$> traverse (traverseOf _2 (renameSimpleTypeWith antv)) fields
@@ -462,15 +493,23 @@ renameType antv (New.TExtension (TupleType (AtLeast2List fst' snd' []))) = do
     -- turn it into Elara.Prim.Tuple2 type
     fst'' <- renameSimpleTypeWith antv fst'
     snd'' <- renameSimpleTypeWith antv snd'
-    let tupleCtorName = TypeName <$> tuple2CtorName
     let New.Type fstLoc _ _ = fst'
     let New.Type sndLoc _ _ = snd'
-    let loc = enclosingRegion' fstLoc sndLoc
-    let tupleCtor = New.Type loc () (New.TUserDefined (Located loc tupleCtorName))
+    let loc = enclosingRegion fstLoc sndLoc
+    let tupleCtor = New.Type loc () (New.TUserDefined (TaggedLocate loc Prim.tuple2CtorName))
     let base = New.TApp tupleCtor fst''
 
     pure $ New.TApp (New.Type loc () base) snd''
-renameType _ (New.TExtension (TupleType{})) = error "renameType: Tuple more than length 2"
+renameType antv (New.TExtension (TupleType tupleElems)) = do
+    -- turn it into Elara.Prim.TupleN type
+    let tupleName = Prim.tupleNCtorName (length tupleElems)
+
+    elems' <- traverse (renameSimpleTypeWith antv) tupleElems
+    let loc = foldr1 enclosingRegion (fmap (\(New.Type l _ _) -> l) elems')
+    let tupleCtor = New.Type loc () (New.TUserDefined (TaggedLocate loc tupleName))
+
+    let (head', tail) = AtLeast2List.toHeadAndTail elems'
+    pure $ foldl' (New.TApp . New.Type loc ()) (New.TApp tupleCtor head') tail
 
 renameExpr :: (InnerRename r, Eff.Reader (Maybe (New.Declaration SourceRegion NewD.Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) => NewD.DesugaredExpr -> Eff r NewR.RenamedExpr
 renameExpr (New.Expr _ () (New.EBlock es)) = desugarBlock es
@@ -479,7 +518,9 @@ renameExpr (New.Expr loc () e') = do
     (e'', meta) <- renameExpr' loc e'
     pure $ New.Expr loc meta e''
   where
-    renameExpr' :: (InnerRename r, Eff.Reader (Maybe (New.Declaration SourceRegion NewD.Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) => SourceRegion -> New.Expr' SourceRegion NewD.Desugared -> Eff r (NewR.RenamedExpr', Maybe NewR.RenamedType)
+    renameExpr' ::
+        (InnerRename r, Eff.Reader (Maybe (New.Declaration SourceRegion NewD.Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) =>
+        NodeLoc ExprNode SourceRegion -> New.Expr' SourceRegion NewD.Desugared -> Eff r (NewR.RenamedExpr', Maybe NewR.RenamedType)
     renameExpr' _ (New.EInt i) = pure (New.EInt i, Nothing)
     renameExpr' _ (New.EFloat i) = pure (New.EFloat i, Nothing)
     renameExpr' _ (New.EString i) = pure (New.EString i, Nothing)
@@ -513,14 +554,14 @@ renameExpr (New.Expr loc () e') = do
         pure (New.EMatch e' cases', Nothing)
     renameExpr' _ (New.ELetIn NoExtension vn e body) = do
         vn' <- uniquify vn
-        locally (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ (Local :: Located (Unique VarName) -> VarRef VarName) vn')) $ do
+        locally (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ (Local :: Located (Unique VarName) -> VarRef VarName) (stripTag vn'))) $ do
             exp' <- renameExpr e
             body' <- renameExpr body
             pure (New.ELetIn NoExtension vn' exp' body', Nothing)
     renameExpr' _ (New.EAnn e ty) = do
         e' <- renameExpr e
         ty' <- renameSimpleType ty
-        let New.Expr eloc _ e'' = e'
+        let New.Expr _ _ e'' = e'
         pure (e'', Just ty')
     renameExpr' _ (New.EExtension ext) = renameExprExtension ext
     renameExpr' _ (New.EBlock{}) = error "renameExpr': Block should be handled by renameExpr"
@@ -535,16 +576,20 @@ renameExpr (New.Expr loc () e') = do
     renameExprExtension (DesugaredInParens (InParensExpression e)) = do
         e' <- renameExpr e
         pure (New.EExtension (RenamedInParens (InParensExpression e')), Nothing)
-    renameExprExtension (DesugaredList (ListExpression [])) = pure (New.ECon NoExtension (Located loc emptyListCtorName), Nothing)
+    renameExprExtension (DesugaredList (ListExpression [])) = do
+        let typeLoc = wrap @TypeNode (unwrapLoc loc)
+        pure (New.ECon NoExtension (TaggedLocate typeLoc Prim.nilCtorName), Nothing)
     renameExprExtension (DesugaredList (ListExpression (x : xs))) = do
         xs' <- traverse renameExpr (x :| xs)
         let lastCons :: NewR.RenamedExpr =
-                New.Expr (exprLoc (last xs')) Nothing (New.ECon NoExtension (Located loc emptyListCtorName))
+                let typeLoc = wrap @TypeNode (unwrapLoc loc)
+                 in New.Expr (exprLoc (last xs')) Nothing (New.ECon NoExtension (TaggedLocate typeLoc Prim.nilCtorName))
         let cons :: NewR.RenamedExpr -> NewR.RenamedExpr -> NewR.RenamedExpr
             cons x' y =
                 let xLoc = exprLoc x'
                     yLoc = exprLoc y
-                    consE = New.Expr loc Nothing (New.ECon NoExtension (Located loc consCtorName))
+                    typeLoc = wrap @TypeNode (unwrapLoc loc)
+                    consE = New.Expr loc Nothing (New.ECon NoExtension (TaggedLocate typeLoc Prim.consCtorName))
                     appConsX = New.Expr xLoc Nothing (New.EApp NoExtension consE x')
                  in New.Expr yLoc Nothing (New.EApp NoExtension appConsX y)
         let createConses :: [NewR.RenamedExpr] -> NewR.RenamedExpr
@@ -554,30 +599,58 @@ renameExpr (New.Expr loc () e') = do
         let New.Expr _ meta e'' = result
         pure (e'', meta)
     renameExprExtension (DesugaredTuple (TupleExpression (AtLeast2List fst' snd' []))) = do
-        let tupleCtorName = TypeName <$> tuple2CtorName
         fst'' <- renameExpr fst'
         snd'' <- renameExpr snd'
-        let base = New.Expr loc Nothing (New.EApp NoExtension (New.Expr loc Nothing (New.ECon NoExtension (Located loc tupleCtorName))) fst'')
+        let typeLoc = wrap @TypeNode (unwrapLoc loc)
+        let base =
+                New.Expr
+                    loc
+                    Nothing
+                    ( New.EApp
+                        NoExtension
+                        ( New.Expr
+                            loc
+                            Nothing
+                            (New.ECon NoExtension (TaggedLocate typeLoc Prim.tuple2CtorName))
+                        )
+                        fst''
+                    )
         pure (New.EApp NoExtension base snd'', Nothing)
-    renameExprExtension (DesugaredTuple _) = error "renameExpr': Tuple more than length 2"
+    renameExprExtension (DesugaredTuple (TupleExpression tupleElems)) = do
+        -- turn it into Elara.Prim.TupleN type
+        let tupleName :: Qualified TypeName = Prim.tupleNCtorName (length tupleElems)
+
+        elems' <- traverse renameExpr tupleElems
+        let typeLoc = wrap @TypeNode (unwrapLoc loc)
+        let headCtorExpr :: New.Expr SourceRegion Renamed =
+                New.Expr loc Nothing (New.ECon NoExtension (TaggedLocate typeLoc tupleName))
+
+        let elemsList = AtLeast2List.toNonEmpty elems'
+        let New.Expr _ _ r = foldl' (\acc m -> New.Expr loc Nothing (New.EApp NoExtension acc m)) headCtorExpr elemsList
+
+        pure (r, Nothing)
 
 renameBinaryOperator :: forall r. (InnerRename r, Rock.Rock Elara.Query.Query :> r) => New.BinaryOperator SourceRegion NewD.Desugared -> Eff r (New.BinaryOperator SourceRegion NewR.Renamed)
 renameBinaryOperator (New.SymOp opLoc occ) = do
-    op' <- lookupVarName (OperatorVarName <<$>> occ)
+    TaggedLocate loc op' <- lookupVarName (fmap OperatorVarName <$> occ)
     let onlyOpName (OperatorVarName o') = o'
         onlyOpName _ = error "renameBinaryOperator: I really don't like this"
-    let op'' = onlyOpName <<$>> op'
-    pure $ New.SymOp opLoc op''
-renameBinaryOperator (New.InfixedOp opLoc (Located l o)) = do
-    op' :: VarRef VarOrConName <- case o of
-        MaybeQualified (VarName n) q -> do
-            vn <- lookupVarName (Located l (MaybeQualified (NormalVarName n) q))
-            let onlyVarName (NormalVarName n') = n'
-                onlyVarName _ = error "renameBinaryOperator: I really don't like this"
-            pure $ (VarName . onlyVarName <<$>> vn) ^. unlocated
-        MaybeQualified (ConName n) q -> do
-            tn <- lookupTypeName (Located l (MaybeQualified n q))
-            pure $ Global (ConName <<$>> tn)
+    let op'' = onlyOpName <$> op'
+    pure $ New.SymOp opLoc (TaggedLocate loc op'')
+renameBinaryOperator (New.InfixedOp opLoc (TaggedLocate l o)) = do
+    op' <- case o of
+        MaybeQualified (NameValue n) q -> do
+            vn <- lookupVarName (TaggedLocate l (MaybeQualified (NormalVarName n) q))
+            pure $ withName (vn ^. unlocated)
+        MaybeQualified (NameOp n) q -> do
+            vn <- lookupVarName (TaggedLocate l (MaybeQualified (OperatorVarName n) q))
+            pure $ withName (vn ^. unlocated)
+        MaybeQualified (NameType n) q -> do
+            let typeLoc = wrap @TypeNode (unwrapLoc l)
+            tn <- lookupTypeName (TaggedLocate typeLoc (MaybeQualified n q))
+            let sr = unwrapLoc l
+            let qualifiedName = NameType <$> (tn ^. unlocated)
+            pure $ Global (Located sr qualifiedName)
     pure $ New.InfixedOp opLoc op'
 
 renamePattern :: forall r. (InnerRename r, Rock.Rock Elara.Query.Query :> r) => NewD.DesugaredPattern -> Eff r NewR.RenamedPattern
@@ -586,7 +659,7 @@ renamePattern (New.Pattern loc meta p') = do
     p'' <- renamePattern' loc p'
     pure $ New.Pattern loc meta' p''
   where
-    renamePattern' :: SourceRegion -> NewD.DesugaredPattern' -> Eff r NewR.RenamedPattern'
+    renamePattern' :: NodeLoc PatternNode SourceRegion -> NewD.DesugaredPattern' -> Eff r NewR.RenamedPattern'
     renamePattern' _ (New.PInt i) = pure $ New.PInt i
     renamePattern' _ (New.PFloat i) = pure $ New.PFloat i
     renamePattern' _ (New.PString i) = pure $ New.PString i
@@ -594,24 +667,28 @@ renamePattern (New.Pattern loc meta p') = do
     renamePattern' _ New.PWildcard = pure New.PWildcard
     renamePattern' _ New.PUnit = pure New.PUnit
     renamePattern' _ (New.PVar vn) = do
-        -- vn :: Located VarName
-        vn' <- uniquify vn -- vn' :: Located (Unique VarName)
-        Eff.modify (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ (Local :: Located (Unique VarName) -> VarRef VarName) vn'))
+        vn' <- uniquify vn
+        Eff.modify (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local (stripTag vn')))
         pure $ New.PVar vn'
-    renamePattern' ploc (New.PCon cn ps) = do
+    renamePattern' _ (New.PCon cn ps) = do
         cn' <- qualifyTypeName cn
         ps' <- traverse renamePattern ps
         pure $ New.PCon cn' ps'
     renamePattern' ploc (New.PExtension ext) = renamePatternExtension ploc ext
 
-    renamePatternExtension :: SourceRegion -> ListTuplePatternExtension SourceRegion NewD.Desugared -> Eff r NewR.RenamedPattern'
-    renamePatternExtension ploc (ListPattern []) = pure $ New.PCon (Located ploc emptyListCtorName) []
+    renamePatternExtension :: NodeLoc PatternNode SourceRegion -> ListTuplePatternExtension SourceRegion NewD.Desugared -> Eff r NewR.RenamedPattern'
+    renamePatternExtension ploc (ListPattern []) = do
+        let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+        pure $ New.PCon (TaggedLocate typeLoc Prim.nilCtorName) []
     renamePatternExtension ploc (ListPattern (x : xs)) = do
         xs' <- traverse renamePattern (x :| xs)
         let lastCons :: NewR.RenamedPattern =
-                New.Pattern (exprLocP (last xs')) Nothing (New.PCon (Located ploc emptyListCtorName) [])
+                let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+                 in New.Pattern (exprLocP (last xs')) Nothing (New.PCon (TaggedLocate typeLoc Prim.nilCtorName) [])
         let cons :: NewR.RenamedPattern -> NewR.RenamedPattern -> NewR.RenamedPattern
-            cons x' y = New.Pattern (exprLocP x') Nothing (New.PCon (Located ploc consCtorName) [x', y])
+            cons x' y =
+                let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+                 in New.Pattern (exprLocP x') Nothing (New.PCon (TaggedLocate typeLoc Prim.consCtorName) [x', y])
         let createConses :: [NewR.RenamedPattern] -> NewR.RenamedPattern
             createConses [] = lastCons
             createConses (x' : xs'') = cons x' (createConses xs'')
@@ -621,20 +698,21 @@ renamePattern (New.Pattern loc meta p') = do
     renamePatternExtension ploc (ConsPattern p1 p2) = do
         p1' <- renamePattern p1
         p2' <- renamePattern p2
-        pure $ New.PCon (Located ploc consCtorName) [p1', p2']
+        let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+        pure $ New.PCon (TaggedLocate typeLoc Prim.consCtorName) [p1', p2']
     renamePatternExtension ploc (TuplePattern (p1 :| [p2])) = do
-        let tupleCtorName = TypeName <$> tuple2CtorName
         p1' <- renamePattern p1
         p2' <- renamePattern p2
-        pure $ New.PCon (Located ploc tupleCtorName) [p1', p2']
+        let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+        pure $ New.PCon (TaggedLocate typeLoc Prim.tuple2CtorName) [p1', p2']
     renamePatternExtension _ (TuplePattern _) = error "renamePattern': TuplePattern more than length 2"
 
 -- | Get location from an expression
-exprLoc :: New.Expr SourceRegion p -> SourceRegion
+exprLoc :: New.Expr SourceRegion p -> NodeLoc ExprNode SourceRegion
 exprLoc (New.Expr loc _ _) = loc
 
 -- | Get location from a pattern
-exprLocP :: New.Pattern SourceRegion p -> SourceRegion
+exprLocP :: New.Pattern SourceRegion p -> NodeLoc PatternNode SourceRegion
 exprLocP (New.Pattern loc _ _) = loc
 
 {- | Estimates a var name from a pattern
@@ -664,26 +742,27 @@ patternToMatch ::
     -- | Body of the lambda
     NewD.DesugaredExpr ->
     -- | The variable to bind the match to, and the match expression
-    Eff r (Located (Unique VarName), NewR.RenamedExpr)
+    Eff r (TaggedLocate VarNode SourceRegion (Unique VarName), NewR.RenamedExpr)
 patternToMatch (New.Pattern _ _ (New.PVar vn)) body = do
     -- Special case, no match needed
     -- vn :: Located VarName
     uniqueVn <- uniquify vn
-    body' <- locally (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ (Local :: Located (Unique VarName) -> VarRef VarName) uniqueVn)) $ renameExpr body
+    body' <- locally (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ (Local :: Located (Unique VarName) -> VarRef VarName) (stripTag uniqueVn))) $ renameExpr body
     pure (uniqueVn, body')
 patternToMatch pat body = do
     let vn = patternToVarName pat
     let patLocation = exprLocP pat
     let bodyLocation = exprLoc body
-    uniqueVn <- uniquify (Located patLocation vn)
-    let varRef = Local uniqueVn `withLocationOf` uniqueVn
+    let varLoc = wrap @VarNode (unwrapLoc patLocation)
+    uniqueVn <- uniquify (TaggedLocate varLoc vn)
+    let varRef = TaggedLocate (getLocation uniqueVn) (Local (stripTag uniqueVn))
     pat' <- renamePattern pat
     body' <- renameExpr body
     let match =
             New.EMatch
-                (New.Expr (exprLocP pat') Nothing (New.EVar NoExtension varRef))
+                (New.Expr (widen (exprLocP pat')) Nothing (New.EVar NoExtension varRef))
                 [(pat', body')]
-    pure (uniqueVn, New.Expr (enclosingRegion' patLocation bodyLocation) Nothing match)
+    pure (uniqueVn, New.Expr (patLocation <.> bodyLocation) Nothing match)
 
 {- | Rename a lambda expression.
 This is a little bit special because patterns have to be converted to match expressions.
@@ -705,12 +784,12 @@ desugarBlock (e@(New.Expr _ () (New.ELet{})) :| []) = do
 desugarBlock (e :| []) = renameExpr e
 desugarBlock (New.Expr l () (New.ELet NoExtension n val) :| (xs1 : xs')) = do
     n' <- uniquify n
-    locally (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local n')) $ do
+    locally (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local (stripTag n'))) $ do
         val' <- renameExpr val
         block <- desugarBlock (xs1 :| xs')
         pure $ New.Expr l Nothing (New.ELetIn NoExtension n' val' block)
 desugarBlock xs = do
-    let loc = spanningRegion' (xs <&> exprLoc)
+    let loc = spanningRegion (xs <&> exprLoc)
     xs' <- traverse renameExpr xs
     pure $ New.Expr loc Nothing (New.EBlock xs')
 
@@ -721,9 +800,9 @@ typeIsRecursive targetType (New.Type _loc () t) = case t of
     New.TFun a b -> typeIsRecursive targetType a <|> typeIsRecursive targetType b
     New.TUnit -> Nothing
     New.TApp a b -> typeIsRecursive targetType a <|> typeIsRecursive targetType b
-    New.TUserDefined (Located useSiteLoc n) ->
-        if n == targetType
-            then Just (Located useSiteLoc n)
+    New.TUserDefined locatedName ->
+        if locatedName ^. unlocated == targetType
+            then Just (stripTag locatedName)
             else Nothing
     New.TRecord fields -> asum (fmap (typeIsRecursive targetType . snd) fields)
     New.TList t' -> typeIsRecursive targetType t'

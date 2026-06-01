@@ -10,26 +10,31 @@ where
 
 import Autodocodec
 import Control.Exception as E
-import Data.Set qualified as Set
 import Effectful (runEff)
 import Effectful.Error.Static (runError)
-import Elara qualified
-import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
-import Elara.Data.Unique (resetGlobalUniqueSupply)
-import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
-import Elara.Error
-import Elara.Pipeline (runLogToStdoutAndFile)
-import Elara.Settings (CompilerSettings (..), DumpTarget (..))
+import Effectful.Writer.Static.Local (runWriter)
 import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import OptEnvConf
-import Paths_elara qualified as Elara
-import Print (printPretty)
 import System.CPUTime
 import System.IO (hSetEncoding, utf8)
 import System.Process (callProcess)
 import Text.Printf
+
+import Data.Set qualified as Set
+
+import Elara.Data.Pretty
+import Elara.Data.Unique (resetGlobalUniqueSupply)
+import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
+import Elara.Error
+import Elara.Error.Diagnose (reportsToDiagnostic)
+import Elara.Pipeline (runLogToStdoutAndFile)
+import Elara.Settings (CompilerSettings (..), DumpTarget (..))
+import Print (printPretty)
 import Prelude hiding (reader)
+
+import Elara qualified
+import Elara.Data.Pretty.Styles qualified as Style
+import Paths_elara qualified as Elara
 
 data Settings = Settings
     { dumpTargets :: [DumpTarget]
@@ -90,15 +95,16 @@ instance HasCodec DumpTarget where
                    , (DumpCore, "core")
                    , (DumpIR, "ir")
                    , (DumpJVM, "jvm")
+                   , (DumpQueryGraph, "query-graph")
                    ]
 
 data Dispatch
     = DispatchBuild !FilePath !RunTarget
     | DispatchRun !FilePath !RunTarget
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 data RunTarget = TargetInterpreter | TargetJVM
-    deriving (Show, Eq, Generic)
+    deriving (Eq, Generic, Show)
 
 targetParser :: Parser RunTarget
 targetParser =
@@ -140,13 +146,11 @@ instance HasCodec RunTarget where
 
 toCompilerSettings :: Dispatch -> Settings -> CompilerSettings
 toCompilerSettings dispatch Settings{..} =
-    let
-        dumps = Set.fromList dumpTargets
+    let dumps = Set.fromList dumpTargets
         mainFile = case dispatch of
             DispatchBuild fp _ -> Just fp
             DispatchRun fp _ -> Just fp
-     in
-        CompilerSettings
+     in CompilerSettings
             { dumpTargets = dumps
             , mainFile = mainFile
             , sourceDirs = sourceDirs
@@ -182,16 +186,25 @@ main = do
     run :: Elara.CompileAction -> CompilerSettings -> IO ()
     run action compilerSettings = do
         start <- getCPUTime
-        (diagnostics, mResult) <- runEff $ runDiagnosticWriter $ do
-            result <- runError @SomeReportableError $ uniqueGenToGlobalIO $ runLogToStdoutAndFile $ Elara.compile compilerSettings action
-            case result of
-                Left (callStack, err) -> do
-                    report err
-                    printPretty callStack
-                    pure Nothing
-                Right r -> pure (Just r)
+        (reports, mResult) <- runEff $ do
+            (elaraResult, warnings) <-
+                runWriter @[ElaraWarning] $
+                    runError @ElaraError $
+                        uniqueGenToGlobalIO $
+                            runLogToStdoutAndFile $
+                                Elara.compile compilerSettings action
 
-        printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diagnostics
+            let warnReports = concatMap diagnosticReports warnings
+
+            case elaraResult of
+                Left (callStack, err) -> do
+                    liftIO $ printPretty callStack
+                    pure (warnReports <> diagnosticReports err, Nothing)
+                Right r -> pure (warnReports, Just r)
+
+        unless (null reports) $ do
+            diag <- reportsToDiagnostic reports
+            printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diag
 
         whenJust mResult $ \result -> do
             when (action == Elara.CompileAndRun Elara.JVM) $

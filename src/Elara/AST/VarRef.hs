@@ -7,6 +7,7 @@ module Elara.AST.VarRef where
 
 import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
+
 import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
 import Elara.AST.Region (IgnoreLocation (..), Located (..))
 import Elara.Data.Pretty (Pretty (pretty))
@@ -34,7 +35,7 @@ instance MapVarRefImpl UnlocatedVarRefKind where
 data VarRef' (c :: VarRefKind) n
     = Global (VarRefImpl c (Qualified n))
     | Local (VarRefImpl c (Unique n))
-    deriving (Typeable, Generic)
+    deriving (Generic, Typeable)
 
 instance MapVarRefImpl c => Functor (VarRef' c) where
     fmap :: forall a b. (a -> b) -> VarRef' c a -> VarRef' c b

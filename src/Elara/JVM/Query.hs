@@ -9,22 +9,20 @@ module Elara.JVM.Query (
     runGetJVMClassBytesQuery,
 ) where
 
-import Data.Binary.Put (runPut)
-import Data.Binary.Write (writeBinary)
 import Effectful
-import Effectful.Error.Extra (fromEither)
 import Effectful.Error.Static (Error)
+import H2JVM
+import H2JVM.Name
+
+import Effectful.Error.Extra (fromEither)
 import Elara.AST.Name (ModuleName)
-import Elara.JVM.Emit qualified as Emit
 import Elara.JVM.Error (JVMLoweringError)
-import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower (lowerModule)
 import Elara.Query (Query (..))
 import Elara.Query.Effects (ConsQueryEffects)
-import JVM.Data.Abstract.ClassFile (ClassFile (..))
-import JVM.Data.Abstract.Name (suitableFilePath)
-import JVM.Data.Convert (convert)
-import JVM.Data.Convert.Monad (CodeConverterError)
+
+import Elara.JVM.Emit qualified as Emit
+import Elara.JVM.IR qualified as IR
 import Rock qualified
 
 -- | Lower a Core module to JVM IR
@@ -50,6 +48,5 @@ runGetJVMClassBytesQuery ::
 runGetJVMClassBytesQuery mn = do
     classFiles <- Rock.fetch (GetJVMClassFiles mn)
     for classFiles $ \cf -> do
-        converted <- fromEither $ convert cf
-        let bytes = runPut (writeBinary converted)
+        bytes <- fromEither $ classFileBytes cf
         pure (suitableFilePath cf.name, bytes)

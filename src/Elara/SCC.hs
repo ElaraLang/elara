@@ -3,34 +3,40 @@
 module Elara.SCC where
 
 import Data.Graph (SCC (..), stronglyConnComp)
+import Effectful
+import Effectful.Error.Static (Error)
+import Effectful.Writer.Static.Local (Writer, runWriter)
+import Optics (view)
+
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
-import Effectful
+import Data.Set qualified as Set
+
+import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Shunted (Shunted)
-import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region (Located (..), unlocated)
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
-import Elara.Error (runErrorOrReport)
-import Elara.Query (QueryType (QueryRequiredDeclarationByName), SupportsQuery)
-import Elara.Query qualified
+import Elara.Error (ElaraError, ElaraWarning, reportElaraWarning, runErrorAsElaraError)
 import Elara.Query.Effects (ConsQueryEffects)
 import Elara.SCC.Type
 import Elara.Shunt ()
-import Elara.Shunt.Error (ShuntError)
-import Optics (view)
+import Elara.Shunt.Error (ShuntError, ShuntWarning)
+
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.AST.Types qualified as New
+import Elara.Query qualified
 import Rock qualified
 
 runFreeVarsQuery ::
-    SupportsQuery QueryRequiredDeclarationByName Shunted =>
     Qualified VarName ->
     Eff
-        (ConsQueryEffects '[Rock.Rock Elara.Query.Query])
+        (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError, Writer [ElaraWarning]])
         (HashSet (Qualified VarName))
 runFreeVarsQuery name = do
-    declaration <- runErrorOrReport @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (NVarName <$> name))
+    (declaration, warnings) <- runWriter @(Set ShuntWarning) $ runErrorAsElaraError @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> name))
+    traverse_ reportElaraWarning (Set.toList warnings)
 
     let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body)) = declaration
 
@@ -89,7 +95,7 @@ sccContainingRoot g@ReachableSubgraph{root} =
 -- | Collect free variable references from an expression (manual recursion replacing cosmosOf plate)
 valueDependencies :: NewS.ShuntedExpr -> HashSet (Qualified VarName)
 valueDependencies (New.Expr _ _ e') = case e' of
-    New.EVar NoExtension (Located _ (Global (Located _ qn))) -> one qn
+    New.EVar NoExtension (TaggedLocate _ (Global (Located _ qn))) -> one qn
     New.EVar _ _ -> mempty
     New.ECon _ _ -> mempty
     New.EInt _ -> mempty
@@ -115,7 +121,7 @@ patternDependencies _ = mempty
 -- | Collect type dependencies from a shunted type
 typeDependencies :: NewS.ShuntedType -> HashSet (Qualified Name)
 typeDependencies (New.Type _ _ t') = case t' of
-    New.TUserDefined (Located _ e) -> one (NTypeName <$> e)
+    New.TUserDefined (TaggedLocate _ e) -> one (NameType <$> e)
     New.TFun t1 t2 -> typeDependencies t1 <> typeDependencies t2
     New.TApp t1 t2 -> typeDependencies t1 <> typeDependencies t2
     New.TList t -> typeDependencies t

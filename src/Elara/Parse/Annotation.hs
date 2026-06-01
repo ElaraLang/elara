@@ -1,16 +1,18 @@
 module Elara.Parse.Annotation where
 
+import Text.Megaparsec (customFailure)
+
 import Elara.AST.Extensions (InParensExtension (..), ListExprExtension (..), TupleExprExtension (..))
+import Elara.AST.Location
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Error (ElaraParseError (..))
-import Elara.Parse.Expression (exprParser)
+import Elara.Parse.Grammar
 import Elara.Parse.Indents (lineSeparator)
 import Elara.Parse.Names (conName)
 import Elara.Parse.Primitives
-import Text.Megaparsec (customFailure)
 
 annotations :: Parser [Annotation SourceRegion Frontend]
 annotations = many annotation
@@ -18,7 +20,7 @@ annotations = many annotation
 annotation :: Parser (Annotation SourceRegion Frontend)
 annotation = do
     token_ TokenHash
-    annName <- located conName
+    annName <- tagLocated @TypeNode <$> located conName
 
     args <- many constExpr
 

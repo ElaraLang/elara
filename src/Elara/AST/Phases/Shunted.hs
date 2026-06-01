@@ -1,7 +1,9 @@
+{-# LANGUAGE TypeData #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Elara.AST.Phases.Shunted where
 
+import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Phase
 import Elara.AST.Pretty
@@ -11,20 +13,20 @@ import Elara.AST.VarRef (VarRef)
 import Elara.Data.Pretty (Pretty (..))
 import Elara.Data.Unique (Unique)
 
-data Shunted deriving (Show, Eq, Ord, Generic)
+type data Shunted
 
 instance ElaraPhase Shunted where
-    type ValueOccurrence Shunted loc = Locate loc (VarRef VarName)
-    type ConstructorOccurrence Shunted loc = Locate loc (Qualified TypeName)
-    type TypeOccurrence Shunted loc = Locate loc (Qualified TypeName)
-    type OperatorOccurrence Shunted loc = Locate loc (VarRef OpName)
-    type InfixedOccurrence Shunted loc = VarRef VarName
+    type ValueOccurrence Shunted loc = LocateNode VarNode loc (VarRef VarName)
+    type ConstructorOccurrence Shunted loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeOccurrence Shunted loc = LocateNode TypeNode loc (Qualified TypeName)
+    type OperatorOccurrence Shunted loc = LocateNode VarNode loc (VarRef OpName)
+    type InfixedOccurrence Shunted loc = LocateNode VarNode loc (VarRef VarName)
 
-    type ValueBinder Shunted loc = Locate loc (Unique VarName)
-    type TopValueBinder Shunted loc = Locate loc (Qualified VarName)
-    type TopTypeBinder Shunted loc = Locate loc (Qualified TypeName)
-    type TypeVariable Shunted loc = Locate loc (Unique LowerAlphaName)
-    type ConstructorBinder Shunted loc = Locate loc (Qualified TypeName)
+    type ValueBinder Shunted loc = LocateNode VarNode loc (Unique VarName)
+    type TopValueBinder Shunted loc = LocateNode VarNode loc (Qualified VarName)
+    type TopTypeBinder Shunted loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeVariable Shunted loc = LocateNode TypeNode loc (Unique LowerAlphaName)
+    type ConstructorBinder Shunted loc = LocateNode TypeNode loc (Qualified TypeName)
     type LambdaBinder Shunted loc = TypedLambdaParam (Unique VarName) loc Shunted
 
     type ExpressionMeta Shunted loc = Maybe (Type loc Shunted)
@@ -50,11 +52,17 @@ instance ElaraPhase Shunted where
 
 -- Type aliases
 type ShuntedExpr = Expr SourceRegion Shunted
+
 type ShuntedExpr' = Expr' SourceRegion Shunted
+
 type ShuntedPattern = Pattern SourceRegion Shunted
+
 type ShuntedPattern' = Pattern' SourceRegion Shunted
+
 type ShuntedType = Type SourceRegion Shunted
+
 type ShuntedDeclaration = Declaration SourceRegion Shunted
+
 type ShuntedTypeDeclaration = TypeDeclaration SourceRegion Shunted
 
 instance PrettyPhase Shunted where

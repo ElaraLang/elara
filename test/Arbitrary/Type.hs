@@ -1,12 +1,14 @@
 module Arbitrary.Type where
 
-import Elara.AST.Name
-import Elara.Data.Unique (unsafeMkUnique)
-import Elara.Prim (charName, floatName, intName, mkPrimQual, stringName)
-import Elara.TypeInfer.Type
 import Hedgehog (Gen)
+
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
+
+import Elara.AST.Name
+import Elara.Data.Unique (unsafeMkUnique)
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
+import Elara.TypeInfer.Type
 import Region (qualifiedTest)
 
 -- | contrary to what the name suggests, this will NOT be unique :)
@@ -15,7 +17,7 @@ genUniqueTypeVar = UnificationVar . unsafeMkUnique Nothing <$> Gen.integral (Ran
 
 -- | Names for primitive/scalar types
 primitiveTypeNames :: [Qualified TypeName]
-primitiveTypeNames = mkPrimQual <$> [intName, floatName, stringName, charName]
+primitiveTypeNames = knownQualified . knownTypeInfo <$> [KnownOpaque PrimInt, KnownOpaque PrimFloat, KnownOpaque PrimString, KnownOpaque PrimChar]
 
 typeConstructorNames :: [TypeName]
 typeConstructorNames = ["List", "Maybe", "Pair", "Box", "IO"]

@@ -7,6 +7,7 @@ where
 
 import Prettyprinter (Doc, flatAlt, group, hsep, indent, line, vsep, (<+>))
 import Prettyprinter.Render.Terminal (AnsiStyle)
+
 import Prelude hiding (group)
 
 prettyCtorsInline :: [Doc AnsiStyle] -> Doc AnsiStyle

@@ -4,24 +4,28 @@
 module Elara.Core where
 
 import Data.Data (Data)
+import GHC.Generics (Rep)
+
 import Elara.AST.Name (Qualified)
 import Elara.AST.VarRef (UnlocatedVarRef)
-import Elara.Core.Generic qualified as G
 import Elara.Data.Kind (ElaraKind)
+import Elara.Prim (OpaquePrim)
 import Elara.TypeInfer.Unique
-import GHC.Generics (Rep)
 import Prelude hiding (Alt)
+
+import Elara.Core.Generic qualified as G
+import Elara.Prim qualified as Prim
 
 data TypeVariable = TypeVariable
     { tvName :: UniqueTyVar
     , tvKind :: ElaraKind
     }
-    deriving (Show, Eq, Data, Ord, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 data Var
     = TyVar TypeVariable
     | Id (UnlocatedVarRef Text) Type (Maybe DataCon)
-    deriving (Show, Data, Generic)
+    deriving (Data, Generic, Show)
 
 instance Eq Var where
     (TyVar a) == (TyVar b) = a == b
@@ -47,7 +51,11 @@ data Expr b
     | TyLam Type (Expr b)
     | Let (Bind b) (Expr b)
     | Match (Expr b) (Maybe b) [Alt b]
-    deriving (Show, Eq, Data, Typeable, Generic)
+    | {- | A resolved primitive operation, including its instantiated type.
+      Applied via normal 'App' nodes, so currying works naturally.
+      -}
+      PrimOp Prim.PrimOp Type
+    deriving (Data, Eq, Generic, Show, Typeable)
 
 instance Generic b => Plated (Expr b) (Expr b)
 
@@ -65,7 +73,7 @@ data AltCon
     = DataAlt DataCon
     | LitAlt Literal
     | DEFAULT
-    deriving (Show, Eq, Data, Generic, Ord)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 -- | A data constructor.
 data DataCon = DataCon
@@ -76,7 +84,7 @@ data DataCon = DataCon
     , dataConDataType :: TyCon
     -- ^ The type of the data type the data constructor belongs to, i.e. `type Foo a = Bar a` would have a DataCon for `Bar a` with @dataConDataType = Foo a@. This should be identical to @functionTypeResult . dataConType@
     }
-    deriving (Show, Eq, Data, Generic, Ord)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 data Type
     = -- | A type variable, @a@
@@ -89,7 +97,7 @@ data Type
       ConTy TyCon
     | -- | A forall quantified type, @forall a. T@
       ForAllTy !TypeVariable !Type
-    deriving (Show, Eq, Data, Ord, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 -- | Information about a type constructor
 data TyCon
@@ -98,7 +106,7 @@ data TyCon
         (Qualified Text)
         -- | The details of the type constructor
         TyConDetails
-    deriving (Show, Eq, Data, Ord, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 -- | The details of a type constructor, mainly about its definition
 data TyConDetails
@@ -107,8 +115,9 @@ data TyConDetails
         -- | The ids of its 'DataCon's (constructors)
         [Qualified Text]
     | TyAlias Type
-    | Prim
-    deriving (Show, Eq, Data, Ord, Generic)
+    | -- | An opaque primitive type backed directly by the backend.
+      Prim OpaquePrim
+    deriving (Data, Eq, Generic, Ord, Show)
 
 instance
     forall x.
@@ -156,7 +165,7 @@ data Literal
     | Char !Char
     | Double !Double
     | Unit
-    deriving (Show, Eq, Data, Generic, Ord)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 -- instance (Hashable b) => Hashable (Expr b)
 

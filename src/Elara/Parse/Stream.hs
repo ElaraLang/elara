@@ -4,10 +4,12 @@
 
 module Elara.Parse.Stream where
 
+import Text.Megaparsec
+
 import Data.Text qualified as T
+
 import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
 import Elara.Lexer.Token
-import Text.Megaparsec
 
 data TokenStream = TokenStream
     { tokenStreamInput :: !Text
@@ -19,7 +21,7 @@ data TokenStream = TokenStream
     , tokensConsumed :: !Int
     -- ^ The number of tokens consumed from the stream
     }
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 pattern L :: a -> Located a
 pattern L i <- Located _ i
@@ -41,18 +43,21 @@ instance Stream TokenStream where
             [] -> Nothing
             (t : ts) -> Just (t, TokenStream str ts skip (consumed + 1))
 
-    takeN_ n (TokenStream str s skipIndents consumed)
-        | n <= 0 = Just ([], TokenStream str s skipIndents consumed)
-        | null s = Nothing
+    takeN_ n s@(TokenStream str tokens skip consumed)
+        | n <= 0 = Just ([], s)
+        | null tokens' = Nothing
         | otherwise =
-            let (x, s') = takeWhile_ (const True) (TokenStream str s skipIndents consumed)
-             in case takeN_ (n - length x) s' of
-                    Nothing -> Nothing
-                    Just (xs, s'') -> Just (x ++ xs, s'')
+            let (x, s') = splitAt n tokens'
+             in if length x < n
+                    then Just (x, TokenStream str [] skip (consumed + skippedCount + length x))
+                    else Just (x, TokenStream str s' skip (consumed + skippedCount + n))
+      where
+        (skipped, tokens') = if skip then span (isIndent . view unlocated) tokens else ([], tokens)
+        skippedCount = length skipped
 
     takeWhile_ f (TokenStream str s skipIndents consumed) =
         let (x, s') = span f s
-         in (x, TokenStream str s' skipIndents (consumed + length x)) -- Again, preserve 'str'
+         in (x, TokenStream str s' skipIndents (consumed + length x))
 
 instance VisualStream TokenStream where
     showTokens Proxy =
@@ -116,5 +121,6 @@ realPositionToSourcePos fp (Position line column) =
         , sourceLine = mkPos line
         , sourceColumn = mkPos column
         }
+
 tokenLength :: Lexeme -> Int
 tokenLength = T.length . tokenRepr . view unlocated

@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
-
 -- | Converts typed AST to Core
 module Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery) where
 
@@ -7,17 +5,19 @@ import Data.Generics.Product (field, field')
 import Data.Generics.Sum (AsAny (_As))
 import Data.Generics.Wrapped (_Unwrapped)
 import Data.Graph (SCC (..), flattenSCC, stronglyConnComp)
-import Data.Map qualified as M
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
-import Elara.AST.Module qualified as NewModule
+import Error.Diagnose (Report (..))
+
+import Data.Map qualified as M
+
+import Elara.AST.Location
 import Elara.AST.Name (ModuleName, Name (..), NameLike (..), Qualified (..), TypeName (..), VarName)
-import Elara.AST.Phase (NoExtension (..))
+import Elara.AST.Phase (LocateNode, NoExtension (..))
 import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
 import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr', TypedPattern)
 import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
@@ -27,19 +27,25 @@ import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..), vcat, (<+>))
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
-import Elara.Error (ReportableError (..), runErrorOrReport, writeReport)
+import Elara.Error (ElaraDiagnostic (..), ElaraError (..), ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..), runErrorAsElaraError)
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging
-import Elara.Prim (charName, floatName, intName, ioName, mkPrimQual, stringName, unitName)
+import Elara.Prim (KnownType (..), OpaquePrim (..), WiredInPrim (..), lookupByQualifiedTypeName, mkPrimQual)
 import Elara.Prim.Core
-import Elara.Query qualified
 import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
-import Elara.ToCore.Match qualified as Match
-import Elara.TypeInfer.Type qualified as Type
+import Elara.TypeInfer ()
 import Elara.TypeInfer.Unique (UniqueTyVar)
 import Elara.Utils (uncurry3)
-import Error.Diagnose (Report (..))
-import Rock qualified
 import TODO (todo)
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Types qualified as New
+import Elara.Error.Codes qualified as Codes
+import Elara.Prim qualified as Prim
+import Elara.Query qualified
+import Elara.ToCore.Match qualified as Match
+import Elara.TypeInfer.Type qualified as Type
+import Rock qualified
 
 data ToCoreError
     = LetInTopLevel !TypedExpr
@@ -51,43 +57,38 @@ data ToCoreError
     | UnknownVariable !(Located (Qualified Name))
     deriving (Show)
 
-instance ReportableError ToCoreError where
-    report (LetInTopLevel _) = writeReport $ Err (Just "LetInTopLevel") "TODO" [] []
-    report (UnknownConstructor (Located _ qn) syms) =
-        writeReport $
-            Err
-                (Just "UnknownDataConstructor")
-                ( vcat
-                    [ pretty qn
-                    , "Known constructors:"
-                    , vcat $ pretty <$> M.keys syms.dataCons
-                    ]
-                )
-                []
-                []
-    report (UnknownPrimConstructor qn) = writeReport $ Err (Just "UnknownPrimConstructor") (pretty qn) [] []
-    report (UnknownTypeConstructor qn syms) =
-        writeReport $
-            Err
-                (Just "UnknownTypeConstructor")
-                ( vcat
-                    [ pretty qn
-                    , "Known constructors:"
-                    , vcat $ pretty <$> M.keys syms.tyCons
-                    ]
-                )
-                []
-                []
-    report (UnknownLambdaType _t) = writeReport $ Err (Just "UnknownLambdaType") todo [] []
-    report (UnsolvedTypeSnuckIn _t) = do
-        writeReport $
-            Err
-                (Just "UnsolvedTypeSnuckIn")
-                (vcat [todo, pretty $ prettyCallStack callStack])
-                [ todo
-                ]
-                []
-    report (UnknownVariable (Located _ qn)) = writeReport $ Err (Just "UnknownVariable") (pretty qn) [] []
+instance Exception ToCoreError
+
+instance ElaraDiagnostic ToCoreError where
+    diagnosticMessage (LetInTopLevel _) = "Let in top level"
+    diagnosticMessage (UnknownConstructor (Located _ qn) _) = "Unknown constructor: " <> pretty qn
+    diagnosticMessage (UnknownPrimConstructor qn) = "Unknown primitive constructor: " <> pretty qn
+    diagnosticMessage (UnknownTypeConstructor qn _) = "Unknown type constructor: " <> pretty qn
+    diagnosticMessage (UnknownLambdaType _) = "Unknown lambda type"
+    diagnosticMessage (UnsolvedTypeSnuckIn t) = "Unsolved type snuck in" <+> pretty t
+    diagnosticMessage (UnknownVariable (Located _ qn)) = "Unknown variable: " <> pretty qn
+
+    diagnosticCode (LetInTopLevel _) = Just Codes.letInTopLevel
+    diagnosticCode (UnknownConstructor _ _) = Just Codes.unknownDataConstructor
+    diagnosticCode (UnknownPrimConstructor _) = Just Codes.unknownPrimConstructor
+    diagnosticCode (UnknownTypeConstructor _ _) = Just Codes.unknownTypeConstructor
+    diagnosticCode (UnknownLambdaType _) = Just Codes.unknownLambdaType
+    diagnosticCode (UnsolvedTypeSnuckIn _) = Just Codes.unsolvedTypeSnuckIn
+    diagnosticCode (UnknownVariable _) = Just Codes.unknownVariable
+
+    diagnosticMarkers (LetInTopLevel (New.Expr loc _ _)) = [ElaraMarker (unwrapLoc loc) PrimaryMarker "Let-binding here"]
+    diagnosticMarkers (UnknownConstructor (Located loc _) _) = [ElaraMarker loc PrimaryMarker "Unknown constructor"]
+    diagnosticMarkers (UnknownVariable (Located loc _)) = [ElaraMarker loc PrimaryMarker "Unknown variable"]
+    diagnosticMarkers (UnsolvedTypeSnuckIn (Type.Lifted uv)) = [ElaraMarker (Type.monotypeLoc uv) PrimaryMarker "Unsolved type"]
+    diagnosticMarkers _ = []
+
+    diagnosticNotes (UnknownConstructor _ syms) = [Elara.Error.Note ("Known constructors:" <+> vcat (pretty <$> M.keys syms.dataCons))]
+    diagnosticNotes (UnknownTypeConstructor _ syms) = [Elara.Error.Note ("Known constructors:" <+> vcat (pretty <$> M.keys syms.tyCons))]
+    diagnosticNotes (UnsolvedTypeSnuckIn _) = [Elara.Error.Note "This is likely a compiler bug that should be reported."]
+    diagnosticNotes _ = []
+
+instance Pretty ToCoreError where
+    pretty = diagnosticMessage
 
 data CtorSymbolTable = CtorSymbolTable
     { dataCons :: Map (Qualified Text) DataCon
@@ -99,21 +100,36 @@ primCtorSymbolTable :: CtorSymbolTable
 primCtorSymbolTable =
     CtorSymbolTable
         ( fromList
-            [ (trueCtorName, trueCtor)
-            , (falseCtorName, falseCtor)
+            [ (Prim.trueCtorName, trueCtor)
+            , (Prim.falseCtorName, falseCtor)
             ]
         )
         ( fromList
             [(mkPrimQual "IO", ioCon)]
         )
 
-lookupCtor :: ToCoreC r => Located (Qualified TypeName) -> Eff r DataCon
+-- | Map a 'KnownType' to its corresponding Core 'TyCon'.
+knownTypeToCon :: KnownType -> TyCon
+knownTypeToCon = \case
+    KnownOpaque PrimInt -> intCon
+    KnownOpaque PrimFloat -> floatCon
+    KnownOpaque PrimDouble -> doubleCon
+    KnownOpaque PrimString -> stringCon
+    KnownOpaque PrimChar -> charCon
+    KnownOpaque PrimIO -> ioCon
+    KnownWiredIn WiredInBool -> boolCon
+    KnownWiredIn WiredInList -> listCon
+    KnownWiredIn WiredInTuple2 -> tuple2Con
+    KnownWiredIn WiredInOrdering -> orderingCon
+    KnownWiredIn WiredInUnit -> unitCon
+
+lookupCtor :: ToCoreC r => LocateNode TypeNode SourceRegion (Qualified TypeName) -> Eff r DataCon
 lookupCtor qn = do
     table <- get @CtorSymbolTable
     let plainName = nameText <$> qn ^. unlocated
     case M.lookup plainName table.dataCons of
         Just ctor -> pure ctor
-        Nothing -> Rock.fetch (Elara.Query.GetDataCon (qn ^. unlocated)) ?:! throwError (UnknownConstructor qn table)
+        Nothing -> Rock.fetch (Elara.Query.GetDataCon (qn ^. unlocated)) ?:! throwError (UnknownConstructor (stripTag qn) table)
 
 registerCtor :: ToCoreC r => DataCon -> Eff r ()
 registerCtor ctor = modify (\s -> s{dataCons = M.insert (ctor ^. field @"name") ctor s.dataCons})
@@ -147,19 +163,14 @@ runGetDataConQuery qn = logDebugWith ("runGetDataConQuery: " <> pretty qn) $ do
     pure matchingDataCon
 
 runGetTyConQuery ::
-    Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe TyCon)
-runGetTyConQuery qn
-    | qn == mkPrimQual (nameText intName) = pure $ Just intCon
-    | qn == mkPrimQual (nameText charName) = pure $ Just charCon
-    | qn == mkPrimQual (nameText stringName) = pure $ Just stringCon
-    | qn == mkPrimQual (nameText floatName) = pure $ Just floatCon
-    | qn == mkPrimQual (nameText unitName) = pure $ Just unitCon
-    | qn == mkPrimQual (nameText ioName) = pure $ Just ioCon
-    | otherwise = logDebugWith ("runGetTyConQuery: " <> pretty qn) $ do
-        let name = NTypeName . TypeName <$> qn
+    Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError]) (Maybe TyCon)
+runGetTyConQuery qn = case lookupByQualifiedTypeName (TypeName <$> qn) of
+    Just kt -> pure $ Just (knownTypeToCon kt)
+    Nothing -> logDebugWith ("runGetTyConQuery: " <> pretty qn) $ do
+        let name = NameType . TypeName <$> qn
         typedDecl <- Rock.fetch (Elara.Query.TypeCheckedDeclaration name)
         Just
-            <$> ( runErrorOrReport @ToCoreError $
+            <$> ( runErrorAsElaraError @ToCoreError $
                     evalState primCtorSymbolTable $
                         createTyConFromTyped typedDecl
                 )
@@ -169,7 +180,7 @@ createTyConFromTyped (New.Declaration _ (New.Declaration' _ (New.DeclarationBody
     case body' of
         New.TypeDeclarationBody n _tvs (New.ADT ctors) _maybeTy _metadata _annotations -> do
             let typeName = nameText <$> (n ^. unlocated)
-            let ctorNames = fmap (\(Located _ cn, _) -> fmap nameText cn) (toList ctors)
+            let ctorNames = fmap (\(TaggedLocate _ cn, _) -> fmap nameText cn) (toList ctors)
             pure $ Core.TyCon typeName (TyADT ctorNames)
         New.TypeDeclarationBody n _tvs (New.Alias t) _maybeTy _metadata _annotations -> do
             let typeName = nameText <$> (n ^. unlocated)
@@ -181,6 +192,7 @@ createTyConFromTyped (New.Declaration _ (New.Declaration' _ (New.DeclarationBody
 type ToCoreC r =
     ( State CtorSymbolTable :> r
     , Error ToCoreError :> r
+    , Error ElaraError :> r
     , UniqueGen :> r
     , StructuredDebug :> r
     , QueryEffects r
@@ -190,6 +202,7 @@ type ToCoreC r =
 type InnerToCoreC r =
     ( State CtorSymbolTable :> r
     , Error ToCoreError :> r
+    , Error ElaraError :> r
     , UniqueGen :> r
     , StructuredDebug :> r
     , QueryEffects r
@@ -197,10 +210,10 @@ type InnerToCoreC r =
     )
 
 runGetCoreModuleQuery ::
-    ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)
+    ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError]) (CoreModule CoreBind)
 runGetCoreModuleQuery mn = do
-    typedModule <- Rock.fetch (Elara.Query.TypeCheckedModule mn)
-    runErrorOrReport @ToCoreError $
+    typedModule <- Rock.fetch (Elara.Query.ModuleByName @Typed mn)
+    runErrorAsElaraError @ToCoreError $
         evalState primCtorSymbolTable $
             moduleToCore typedModule
 
@@ -251,7 +264,7 @@ moduleToCore m'@(NewModule.Module _ m) = logDebugWith ("Converting module: " <> 
                 let tyCon =
                         TyCon
                             (nameText <$> n ^. unlocated)
-                            (TyADT (fmap (\(Located _ cn, _) -> fmap nameText cn) (toList ctors)))
+                            (TyADT (fmap (\(TaggedLocate _ cn, _) -> fmap nameText cn) (toList ctors)))
                 registerTyCon tyCon
             New.TypeDeclarationBody n _tvs (New.Alias t) _maybeTy _metadata _annotations -> do
                 tCore <- astTypeToCore t
@@ -268,11 +281,11 @@ moduleToCore m'@(NewModule.Module _ m) = logDebugWith ("Converting module: " <> 
                         TyCon
                             cleanedTypeDeclName
                             ( TyADT
-                                (fmap (\(Located _ cn, _) -> fmap nameText cn) (toList ctors))
+                                (fmap (\(TaggedLocate _ cn, _) -> fmap nameText cn) (toList ctors))
                             )
                 logDebug (pretty tyCon)
                 registerTyCon tyCon
-                ctors' <- for (toList ctors) $ \(Located _ ctorName, ctorArgs) -> do
+                ctors' <- for (toList ctors) $ \(TaggedLocate _ ctorName, ctorArgs) -> do
                     ctorArgs' <- traverse astTypeToCore ctorArgs
                     let ctorType =
                             foldr
@@ -321,8 +334,15 @@ mkTypeVar :: UniqueTyVar -> Core.TypeVariable
 mkTypeVar tv = TypeVariable tv TypeKind
 
 polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Eff r Core.Type
-polytypeToCore (Type.Forall _ tvs _constraints t) = do
-    t' <- typeToCore t
+polytypeToCore (Type.Forall loc tvs _constraints t) = do
+    let protectBoundVars bound = \case
+            Type.TypeVar l (Type.UnificationVar v) | v `elem` bound -> Type.TypeVar l (Type.SkolemVar v)
+            Type.Function l a b -> Type.Function l (protectBoundVars bound a) (protectBoundVars bound b)
+            Type.TypeConstructor l c args -> Type.TypeConstructor l c (fmap (protectBoundVars bound) args)
+            other -> other
+    let tProtected = protectBoundVars tvs t
+
+    t' <- typeToCore tProtected
     let tvs' = fmap mkTypeVar tvs
     pure $ foldr Core.ForAllTy t' tvs'
 
@@ -332,19 +352,15 @@ eitherTypeToCore (Type.Lifted t) = typeToCore t
 
 typeToCore :: HasCallStack => InnerToCoreC r => Type.Monotype SourceRegion -> Eff r Core.Type
 typeToCore (Type.TypeVar _ (Type.SkolemVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
-typeToCore (Type.TypeVar _ (Type.UnificationVar v)) = pure $ Core.TyVarTy $ TypeVariable v TypeKind
+typeToCore uv@(Type.TypeVar _ (Type.UnificationVar _)) =
+    throwError (UnsolvedTypeSnuckIn (Type.Lifted uv))
 typeToCore (Type.Function _ t1 t2) = Core.FuncTy <$> typeToCore t1 <*> typeToCore t2
 typeToCore (Type.TypeConstructor _ qn ts) = do
     let name = fmap (view _Unwrapped) qn
     ts' <- traverse typeToCore ts
-
-    if
-        | name == mkPrimQual (nameText intName) -> pure $ foldl' Core.AppTy (Core.ConTy intCon) ts'
-        | name == mkPrimQual (nameText charName) -> pure $ foldl' Core.AppTy (Core.ConTy charCon) ts'
-        | name == mkPrimQual (nameText stringName) -> pure $ foldl' Core.AppTy (Core.ConTy stringCon) ts'
-        | name == mkPrimQual (nameText unitName) -> pure $ foldl' Core.AppTy (Core.ConTy unitCon) ts'
-        | name == mkPrimQual (nameText ioName) -> pure $ foldl' Core.AppTy (Core.ConTy ioCon) ts'
-        | otherwise -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
+    case lookupByQualifiedTypeName qn of
+        Just kt -> pure $ foldl' Core.AppTy (Core.ConTy (knownTypeToCon kt)) ts'
+        Nothing -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
             tyCon <- lookupTyCon name
             pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
 
@@ -353,28 +369,20 @@ At the Typed phase, TypeMeta is ElaraKind and TypeVariable is Located UniqueTyVa
 -}
 astTypeToCore :: HasCallStack => InnerToCoreC r => New.Type SourceRegion Typed -> Eff r Core.Type
 astTypeToCore (New.Type _ _ t') = case t' of
-    New.TVar (Located _ tv) -> pure $ Core.TyVarTy $ TypeVariable tv TypeKind
+    New.TVar (TaggedLocate _ tv) -> pure $ Core.TyVarTy $ TypeVariable tv TypeKind
     New.TFun t1 t2 -> Core.FuncTy <$> astTypeToCore t1 <*> astTypeToCore t2
     New.TUnit -> pure $ Core.ConTy unitCon
     New.TApp t1 t2 -> Core.AppTy <$> astTypeToCore t1 <*> astTypeToCore t2
-    New.TUserDefined (Located _ qn) -> do
-        let name = nameText <$> qn
-        if
-            | name == mkPrimQual (nameText intName) -> pure $ Core.ConTy intCon
-            | name == mkPrimQual (nameText charName) -> pure $ Core.ConTy charCon
-            | name == mkPrimQual (nameText stringName) -> pure $ Core.ConTy stringCon
-            | name == mkPrimQual (nameText unitName) -> pure $ Core.ConTy unitCon
-            | name == mkPrimQual (nameText ioName) -> pure $ Core.ConTy ioCon
-            | otherwise -> do
-                tyCon <- lookupTyCon name
-                pure $ Core.ConTy tyCon
+    New.TUserDefined (TaggedLocate _ qn) -> case lookupByQualifiedTypeName qn of
+        Just kt -> pure $ Core.ConTy (knownTypeToCon kt)
+        Nothing -> do
+            let name = nameText <$> qn
+            tyCon <- lookupTyCon name
+            pure $ Core.ConTy tyCon
     New.TRecord _fields -> error "astTypeToCore: Record types not yet supported in Core"
     New.TList t1 -> do
         t1' <- astTypeToCore t1
         pure $ Core.AppTy (Core.ConTy listCon) t1'
-      where
-        -- TODO: proper list TyCon
-        listCon = TyCon (mkPrimQual "List") (TyADT [])
     New.TExtension v -> absurd v
 
 conToVar :: DataCon -> Core.Var
@@ -386,12 +394,29 @@ stripVarRefLoc (Global (Located _ qn)) = Global qn
 stripVarRefLoc (Local (Located _ un)) = Local un
 
 toCore :: HasCallStack => InnerToCoreC r => TypedExpr -> Eff r CoreExpr
-toCore le@(New.Expr _ _ e) = moveTypeApplications <$> toCore' e
+toCore le@(New.Expr _ t e) = do
+    coreType <- typeToCore t
+    let resolvePrimOps :: CoreExpr -> CoreExpr
+        resolvePrimOps (Core.App fun (Core.Lit (Core.String key)))
+            | isPrimitiveFn (stripTyApps fun)
+            , Just op <- Prim.parsePrimOp key =
+                Core.PrimOp op coreType
+        resolvePrimOps x = x
+    resolvePrimOps . moveTypeApplications <$> toCore' e
   where
     -- \| Move type applications to the left, eg '(f x) @Int' becomes 'f @Int x'
     moveTypeApplications :: CoreExpr -> CoreExpr
     moveTypeApplications (Core.TyApp (Core.App x y) t) = Core.App (Core.TyApp x t) y
     moveTypeApplications x = x
+
+    stripTyApps :: CoreExpr -> CoreExpr
+    stripTyApps (Core.TyApp e _) = stripTyApps e
+    stripTyApps e = e
+
+    isPrimitiveFn :: CoreExpr -> Bool
+    isPrimitiveFn (Core.Var (Core.Id (Global primName) _ _)) =
+        primName == Prim.elaraPrimitiveName
+    isPrimitiveFn _ = False
 
     toCore' :: InnerToCoreC r => TypedExpr' -> Eff r CoreExpr
     toCore' = \case
@@ -400,11 +425,11 @@ toCore le@(New.Expr _ _ e) = moveTypeApplications <$> toCore' e
         New.EString s -> pure $ Lit (Core.String s)
         New.EChar c -> pure $ Lit (Core.Char c)
         New.EUnit -> pure $ Lit Core.Unit
-        New.EVar t (Located _ vr@(Global (Located _ _))) -> do
+        New.EVar t (TaggedLocate _ vr@(Global (Located _ _))) -> do
             t' <- eitherTypeToCore t
             let stripped = stripVarRefLoc vr
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripped) t' Nothing)
-        New.EVar t (Located _ v@(Local (Located _ _))) -> do
+        New.EVar t (TaggedLocate _ v@(Local (Located _ _))) -> do
             t' <- eitherTypeToCore t
             let stripped = stripVarRefLoc v
             pure $ Core.Var (Core.Id (nameText @VarName <$> stripped) t' Nothing)
@@ -460,7 +485,7 @@ isRecursive :: Unique VarName -> TypedExpr -> Bool
 isRecursive vn = go
   where
     go (New.Expr _ _ e') = case e' of
-        New.EVar _ (Located _ (Local (Located _ n))) -> n == vn
+        New.EVar _ (TaggedLocate _ (Local (Located _ n))) -> n == vn
         New.EVar _ _ -> False
         New.ELam _ _ body -> go body
         New.EApp _ e1 e2 -> go e1 || go e2
@@ -506,7 +531,7 @@ desugarMatch e pats = do
     pure $ Core.Let (NonRecursive (s0, e')) compiled
 
 mkBindName :: InnerToCoreC r => TypedExpr -> Eff r Var
-mkBindName (New.Expr _ _ (New.EVar varType (Located _ vn))) = do
+mkBindName (New.Expr _ _ (New.EVar varType (TaggedLocate _ vn))) = do
     t' <- eitherTypeToCore varType
     unique <- makeUnique (nameText $ varRefVal vn)
     pure (Core.Id (Local unique) t' Nothing)

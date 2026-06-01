@@ -3,13 +3,15 @@
 
 module Arbitrary.Names where
 
+import Hedgehog
+
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
-import Elara.Parse.Expression (reservedWords)
-import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
+
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (..))
+import Elara.Parse.Expression (reservedWords)
 
 genLowerAlphaText :: Gen Text
 genLowerAlphaText =

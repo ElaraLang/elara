@@ -23,7 +23,15 @@ The remaining digits are arbitrary and should be incremented for each new error 
 Some errors are internal, rather than user-facing (i.e. something internal has gone wrong if they are thrown).
   These errors' codes should be prefixed with @[Internal]@.
 -}
-type ErrorCode = forall ann. Doc ann
+newtype ErrorCode = ErrorCode (forall ann. Doc ann)
+
+instance Pretty ErrorCode where
+    pretty (ErrorCode d) = d
+
+deriving instance Show ErrorCode
+
+instance IsString ErrorCode where
+    fromString s = ErrorCode (fromString s)
 
 fileReadError :: ErrorCode
 fileReadError = "E0001"
@@ -124,6 +132,42 @@ typeConstructorMismatch = "E3011"
 
 occursCheckFailed :: ErrorCode
 occursCheckFailed = "E3012"
+
+unknownKind :: ErrorCode
+unknownKind = "E3013"
+
+cannotUnifyKinds :: ErrorCode
+cannotUnifyKinds = "E3014"
+
+notFunctionKind :: ErrorCode
+notFunctionKind = "E3015"
+
+unboundKindVar :: ErrorCode
+unboundKindVar = "E3016"
+
+occursCheckFailedKind :: ErrorCode
+occursCheckFailedKind = "E3017"
+
+letInTopLevel :: ErrorCode
+letInTopLevel = "E3018"
+
+unknownDataConstructor :: ErrorCode
+unknownDataConstructor = "E3019"
+
+unknownPrimConstructor :: ErrorCode
+unknownPrimConstructor = "E3020"
+
+unknownTypeConstructor :: ErrorCode
+unknownTypeConstructor = "E3021"
+
+unknownLambdaType :: ErrorCode
+unknownLambdaType = "E3022"
+
+unsolvedTypeSnuckIn :: ErrorCode
+unsolvedTypeSnuckIn = "E3023"
+
+unknownVariable :: ErrorCode
+unknownVariable = "E3024"
 
 invokeStaticLocal :: ErrorCode
 invokeStaticLocal = "E4001"

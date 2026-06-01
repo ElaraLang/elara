@@ -2,25 +2,28 @@ module Elara.JVM.Lower.ADT (lowerDataCon) where
 
 import Data.List (zipWith3)
 import Effectful
+import H2JVM
+import H2JVM.Type
+
 import Elara.Core
+import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
 import Elara.JVM.Emit.Types (stringTypeName)
-import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Name
-import JVM.Data.Abstract.Type qualified as JVM
+
+import Elara.JVM.IR qualified as IR
+import Elara.Prim qualified as Prim
 
 type ADTInfo = (QualifiedClassName, [IR.Field])
 
 -- | Build an instance method (non-static) from components
-buildInstanceMethod :: Text -> [(Unique Text, JVM.FieldType)] -> JVM.ReturnDescriptor -> [IR.Block] -> IR.Method
+buildInstanceMethod :: Text -> [(Unique Text, FieldType)] -> ReturnDescriptor -> [IR.Block] -> IR.Method
 buildInstanceMethod name args retDesc body =
     IR.Method
         { IR.methodName = name
-        , IR.methodDesc = JVM.MethodDescriptor (map snd args) retDesc
+        , IR.methodDesc = MethodDescriptor (map snd args) retDesc
         , IR.methodArgs = args
         , IR.methodBody = body
         , IR.methodIsStatic = False
@@ -73,7 +76,7 @@ generateConstructor parentClass (className, fields) = do
     entryLabel <- makeUnique "constructor_entry"
     pure $
         IR.Constructor
-            { IR.constructorDesc = JVM.MethodDescriptor (map snd methodArgs) JVM.VoidReturn
+            { IR.constructorDesc = MethodDescriptor (map snd methodArgs) VoidReturn
             , IR.constructorArgs = methodArgs
             , IR.constructorBody = [IR.Block entryLabel body]
             }
@@ -82,10 +85,10 @@ generateConstructor parentClass (className, fields) = do
 generateEqualsMethod :: Lower r => ADTInfo -> Eff r IR.Method
 generateEqualsMethod (className, fields) = do
     objParamUnique <- makeUnique "obj"
-    let objFieldType = JVM.ObjectFieldType "java.lang.Object"
+    let objFieldType = ObjectFieldType "java.lang.Object"
 
     otherUnique <- makeUnique "other"
-    let thisClassType = JVM.ObjectFieldType className
+    let thisClassType = ObjectFieldType className
 
     entryLabel <- makeUnique "equals_entry"
     checkFieldsLabel <- makeUnique "equals_check_fields"
@@ -98,15 +101,15 @@ generateEqualsMethod (className, fields) = do
 
     -- Build field comparisons using java.util.Objects.equals for each field
     let objectsEqualsDesc =
-            JVM.MethodDescriptor
-                [JVM.ObjectFieldType "java.lang/Object", JVM.ObjectFieldType "java/lang/Object"]
-                (JVM.TypeReturn (JVM.PrimitiveFieldType JVM.Boolean))
+            MethodDescriptor
+                [ObjectFieldType "java.lang/Object", ObjectFieldType "java/lang/Object"]
+                (TypeReturn (PrimitiveFieldType JBoolean))
 
     let compareField (IR.Field fieldName fieldType) =
             IR.Call
                 (IR.InvokeStatic "java/util/Objects" "equals" objectsEqualsDesc)
-                [ IR.GetField (IR.This thisClassType) (JVM.ClassInfoType className) fieldName fieldType
-                , IR.GetField (IR.LocalVar otherUnique thisClassType) (JVM.ClassInfoType className) fieldName fieldType
+                [ IR.GetField (IR.This thisClassType) (ClassInfoType className) fieldName fieldType
+                , IR.GetField (IR.LocalVar otherUnique thisClassType) (ClassInfoType className) fieldName fieldType
                 ]
 
     -- Generate labels for each field check
@@ -162,22 +165,21 @@ generateEqualsMethod (className, fields) = do
                 ]
 
     let methodBody = [entryBlock, castBlock] ++ fieldChecks ++ [returnTrueBlock, returnFalseBlock]
-    let primitiveBooleanReturn = JVM.TypeReturn (JVM.PrimitiveFieldType JVM.Boolean)
+    let primitiveBooleanReturn = TypeReturn (PrimitiveFieldType JBoolean)
 
     pure $ buildInstanceMethod "equals" [(objParamUnique, objFieldType)] primitiveBooleanReturn methodBody
 
 -- | Generates a method Elara.String toElaraString() for the given ADTInfo.
 generateElaraToStringMethod :: Lower r => ADTInfo -> Eff r IR.Method
 generateElaraToStringMethod (className, fields) = do
-    let elaraStringType = JVM.ObjectFieldType stringTypeName
-    let elaraStringReturn = JVM.TypeReturn elaraStringType
-    let thisClassType = JVM.ObjectFieldType className
-    let simpleClassName = case className of
-            QualifiedClassName _ (ClassName name) -> name
+    let elaraStringType = ObjectFieldType stringTypeName
+    let elaraStringReturn = TypeReturn elaraStringType
+    let thisClassType = ObjectFieldType className
+    let simpleClassName = prettyToText className
     let concatDesc =
-            JVM.MethodDescriptor
-                [JVM.ObjectFieldType stringTypeName]
-                (JVM.TypeReturn (JVM.ObjectFieldType stringTypeName))
+            MethodDescriptor
+                [ObjectFieldType stringTypeName]
+                (TypeReturn (ObjectFieldType stringTypeName))
 
     entryLabel <- makeUnique "toElaraString_entry"
 
@@ -192,26 +194,26 @@ generateElaraToStringMethod (className, fields) = do
                     ]
             else do
                 resultUnique <- makeUnique "result"
-                let elaraStringType = JVM.ObjectFieldType stringTypeName
-                let openParen = simpleClassName <> "("
+                let elaraStringType = ObjectFieldType stringTypeName
+                let openParen = "(" <> simpleClassName <> " "
 
                 -- Build field string representations
                 fieldStringExprs <- forM (zip [0 ..] fields) $ \(i :: Int, IR.Field fieldName fieldType) -> do
-                    let fieldAccess = IR.GetField (IR.This thisClassType) (JVM.ClassInfoType className) fieldName fieldType
+                    let fieldAccess = IR.GetField (IR.This thisClassType) (ClassInfoType className) fieldName fieldType
 
                     -- Convert field to Elara/String using PrimOp ToString
-                    let fieldStr = IR.PrimOp IR.ToString [fieldAccess]
+                    let fieldStr = IR.PrimOp (IR.CorePrim Prim.PrimToString) [fieldAccess]
 
                     -- Add comma prefix if not the first field
                     if i == 0
                         then pure fieldStr
                         else do
-                            let commaStr = IR.LitString ", "
+                            let spaceStr = IR.LitString " "
 
-                            -- Concatenate ", " + fieldStr (both as Elara/String)
+                            -- Concatenate " " + fieldStr (both as Elara/String)
                             pure $
                                 IR.Call
-                                    (IR.InvokeVirtual commaStr stringTypeName "concat" concatDesc)
+                                    (IR.InvokeVirtual spaceStr stringTypeName "concat" concatDesc)
                                     [fieldStr]
 
                 -- Concatenate all parts using Elara/String.concat
@@ -237,14 +239,14 @@ generateElaraToStringMethod (className, fields) = do
 generateToStringMethod :: Lower r => ADTInfo -> Eff r IR.Method
 generateToStringMethod (className, _fields) = do
     -- just call toElaraString().toString()
-    let javaStringReturn = JVM.TypeReturn (JVM.ObjectFieldType "java/lang/String")
-    let javaStringDesc = JVM.MethodDescriptor [] javaStringReturn
-    let elaraStringType = JVM.ObjectFieldType stringTypeName
-    let thisClassType = JVM.ObjectFieldType className
+    let javaStringReturn = TypeReturn (ObjectFieldType "java/lang/String")
+    let javaStringDesc = MethodDescriptor [] javaStringReturn
+    let elaraStringType = ObjectFieldType stringTypeName
+    let thisClassType = ObjectFieldType className
     entryLabel <- makeUnique "toString_entry"
     let callToElaraString =
             IR.Call
-                (IR.InvokeVirtual (IR.This thisClassType) className "toElaraString" (JVM.MethodDescriptor [] (JVM.TypeReturn elaraStringType)))
+                (IR.InvokeVirtual (IR.This thisClassType) className "toElaraString" (MethodDescriptor [] (TypeReturn elaraStringType)))
                 []
     let callToString =
             IR.Call

@@ -35,21 +35,24 @@ import Codec.Binary.UTF8.String (encodeChar)
 import Data.Char
 import Data.Kind (Type)
 import Data.List.NonEmpty (span, (<|))
-import Data.Text qualified as T
-import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), mkSourceRegionIn, positionToDiagnosePosition)
-import Elara.Error
-import Elara.Error.Codes qualified as Codes
-import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
-import Error.Diagnose (Marker (..), Note (..), Report (Err))
-
 import Effectful (Eff)
 import Effectful.Error.Static
-import Effectful.State.Extra (use', (%=), (.=))
 import Effectful.State.Static.Local
-import Elara.Data.Pretty (Pretty)
+import Error.Diagnose (Marker (..), Note (..), Report (Err))
+
+import Data.Text qualified as T
+
+import Effectful.State.Extra (use', (%=), (.=))
+import Elara.AST.Name (ModuleName (..))
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), mkSourceRegionIn, positionToDiagnosePosition)
+import Elara.Data.Pretty hiding (indent)
+import Elara.Error
+import Elara.Error.Diagnose (toDiagnoseReports)
+import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
 import Elara.Logging (StructuredDebug)
 import Prelude hiding (span)
+
+import Elara.Error.Codes qualified as Codes
 
 data AlexInput = AlexInput
     { _filePath :: FilePath
@@ -58,7 +61,7 @@ data AlexInput = AlexInput
     , _rest :: Text
     , _position :: RealPosition
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 instance Pretty AlexInput
 
 data IndentInfo = IndentInfo
@@ -67,7 +70,7 @@ data IndentInfo = IndentInfo
     , _openedAtDepth :: Int
     -- ^ the delimDepth when this indent was opened
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty IndentInfo
 
@@ -92,7 +95,7 @@ data ParseState = ParseState
     , _layoutExpected :: Maybe LayoutExpectation
     -- ^ Tracks if the previous token triggers a layout block
     }
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty ParseState
 
@@ -101,7 +104,7 @@ data LayoutExpectation
       ExpectIndent
     | -- | Starts a new block at the next token (let/where/do)
       ExpectBlock
-    deriving (Eq, Show, Generic)
+    deriving (Eq, Generic, Show)
 instance Pretty LayoutExpectation
 
 makeLenses ''AlexInput
@@ -136,64 +139,39 @@ data LexerError
         ParseState
     | UnterminatedStringLiteral ParseState
     | GenericAlexError AlexInput
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty LexerError
 
-instance ReportableError LexerError where
-    errorCode (TooMuchIndentation{}) = Just Codes.tooMuchIndentation
-    errorCode (UnterminatedStringLiteral _) = Just Codes.unterminatedStringLiteral
-    errorCode (GenericAlexError _) = Just Codes.genericLexicalError
+instance Exception LexerError
 
-    getReport (TooMuchIndentation expected further actual s) = do
-        let fp = view (input % filePath) s
-        let pos = view (input % position) s
-        let msg = "Unexpected change in indentation. Expected " <> show (expected ^. indent) <> " spaces, but got " <> show actual <> " spaces."
+instance ElaraDiagnostic LexerError where
+    diagnosticMessage (TooMuchIndentation{}) = "Unexpected change in indentation"
+    diagnosticMessage (GenericAlexError _) = "Lexical error"
+    diagnosticMessage (UnterminatedStringLiteral _) = "Unterminated string literal"
+
+    diagnosticCode (TooMuchIndentation{}) = Just Codes.tooMuchIndentation
+    diagnosticCode (GenericAlexError _) = Just Codes.genericLexicalError
+    diagnosticCode (UnterminatedStringLiteral _) = Just Codes.unterminatedStringLiteral
+
+    diagnosticMarkers (TooMuchIndentation _ _ _ s) = [ElaraMarker (RealSourceRegion $ mkSourceRegionIn (Just $ view (input % filePath) s) (view (input % position) s) (view (input % position) s)) PrimaryMarker "this line is indented incorrectly"]
+    diagnosticMarkers (GenericAlexError ai) = [ElaraMarker (RealSourceRegion $ mkSourceRegionIn (Just $ view filePath ai) (view position ai) (view position ai)) PrimaryMarker "lexical error occurred here"]
+    diagnosticMarkers (UnterminatedStringLiteral s) = [ElaraMarker (RealSourceRegion $ mkSourceRegionIn (Just $ view (input % filePath) s) (view (input % position) s) (view (input % position) s)) PrimaryMarker "this string literal is unterminated"]
+
+    diagnosticNotes (TooMuchIndentation _ further actual _) =
         let hint = case further of
                 Nothing -> "Try removing the extra indentation."
                 Just f -> "Try removing the extra indentation or indenting the line by " <> show (f ^. indent - actual) <> " space(s)."
-
-        let baseHints =
-                [ (positionToDiagnosePosition fp pos, This "this line is indented incorrectly")
-                , (positionToDiagnosePosition fp (expected ^. indentPos), Maybe "If the decrease in indentation is intentional, the problematic line should line up with this line.")
-                ]
-        let furtherHints = case further of
-                Nothing -> baseHints
-                Just f -> (positionToDiagnosePosition fp (f ^. indentPos), Maybe ("an offside rule begins here (column " <> show (f ^. indent) <> "). If you think the problematic line is \"related\" to this line, make sure they line up.")) : baseHints
-
-        pure $
-            Err
-                (Just Codes.tooMuchIndentation)
-                msg
-                furtherHints
-                [ Note "When using lightweight syntax, the level of indentation is very important. Currently, I can't tell what expression this line is supposed to be a part of as it doesn't line up with anything, and didn't appear in a place where indentation can begin."
-                , Hint hint
-                ]
-    getReport (GenericAlexError ai) = do
-        let fp = view filePath ai
-        let pos = view position ai
-        let msg = "Lexical error"
-
-        pure $
-            Err
-                (Just Codes.genericLexicalError)
-                msg
-                [(positionToDiagnosePosition fp pos, This "lexical error occurred here")]
-                [ Note "The lexer encountered an invalid character or sequence of characters that it could not process."
-                ]
-    getReport (UnterminatedStringLiteral s) = do
-        let fp = view (input % filePath) s
-        let pos = view (input % position) s
-        let msg = "Unterminated string literal."
-        let hint = "Make sure that the string literal is terminated with a double quote (\")."
-        pure $
-            Err
-                (Just Codes.unterminatedStringLiteral)
-                msg
-                [(positionToDiagnosePosition fp pos, This "this string literal is unterminated")]
-                [ Note "String literals are delimited by double quotes (\")."
-                , Hint hint
-                ]
+         in [ Elara.Error.Note "When using lightweight syntax, the level of indentation is very important. Currently, I can't tell what expression this line is supposed to be a part of as it doesn't line up with anything, and didn't appear in a place where indentation can begin."
+            , Elara.Error.Hint (pretty hint)
+            ]
+    diagnosticNotes (GenericAlexError _) =
+        [ Elara.Error.Note "The lexer encountered an invalid character or sequence of characters that it could not process."
+        ]
+    diagnosticNotes (UnterminatedStringLiteral _) =
+        [ Elara.Error.Note "String literals are delimited by double quotes (\")."
+        , Elara.Error.Hint "Make sure that the string literal is terminated with a double quote (\")."
+        ]
 
 initialLexState :: FilePath -> Text -> ParseState
 initialLexState fp s =

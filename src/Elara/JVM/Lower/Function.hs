@@ -2,14 +2,15 @@ module Elara.JVM.Lower.Function (CallableInfo (..), CallableTarget (..), CallStr
 
 import Effectful
 import Effectful.Error.Static
+
+import H2JVM qualified as JVM
+
 import Elara.Data.Pretty (Pretty)
 import Elara.JVM.Error (JVMLoweringError (..))
-import Elara.JVM.IR qualified as IR
 import Elara.JVM.Lower.Monad
 import Elara.JVM.Lower.Util
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Name qualified as JVM
-import JVM.Data.Abstract.Type qualified as JVM
+
+import Elara.JVM.IR qualified as IR
 
 -- | Represents a callable entity (function, closure, constructor)
 data CallableInfo = CallableInfo

@@ -5,6 +5,8 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{- HLINT ignore "Use fewer imports" -}
+
 {- | This module performs "shunting", the process of rearranging binary operators in expressions to match their defined precedence and associativity.
 The main meat of this module is 'fixOperators', which does the actual rearranging of operators in expressions.
 The logic for this is based on https://stackoverflow.com/a/67992584/6272977, which was very helpful :).
@@ -14,7 +16,6 @@ Most of the other functions in this module are less interesting and mainly plumb
 module Elara.Shunt (
     runGetOpInfoQuery,
     runGetOpTableInQuery,
-    runGetShuntedModuleQuery,
 
     -- * Testing exports
     fixOperators,
@@ -27,51 +28,54 @@ module Elara.Shunt (
 where
 
 import Data.Generics.Wrapped
-import Effectful (Eff, inject, (:>))
+import Effectful (Eff, (:>))
+
+import Data.Set qualified as Set
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
+
 import Elara.AST.Extensions (BinaryOperatorExtension (..), InParensExtension (..))
-import Elara.AST.Module qualified as NewModule
-import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..), VarOrConName (..))
+import Elara.AST.Location
+import Elara.AST.Module
+import Elara.AST.Name (ModuleName, Name (..), Qualified (..), VarName (..))
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
-import Elara.AST.Phases.Renamed (RenamedExpressionExtension (..), TypedLambdaParam (..))
-import Elara.AST.Phases.Renamed qualified as NewR
-import Elara.AST.Phases.Shunted qualified as NewS
-import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), enclosingRegion', unlocated)
-import Elara.AST.Types qualified as New
+import Elara.AST.Phases.Renamed
+import Elara.AST.Phases.Shunted
+import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), enclosingRegion, unlocated)
+import Elara.AST.Types
 import Elara.AST.VarRef
 import Elara.ConstExpr
 import Elara.Data.Unique (Unique (Unique))
-import Elara.Error (ReportableError (report), runErrorOrReport)
+import Elara.Error (ElaraError, ElaraWarning, reportElaraWarning, runErrorAsElaraError)
 import Elara.Prim (associativityAnnotationName, fixityAnnotationName, leftAssociativeAnnotationName, nonAssociativeAnnotationName, rightAssociativeAnnotationName)
-import Elara.Query (Query (..), QueryType (..), SupportsQueries, SupportsQuery (..))
+import Elara.Query (Query (..), RunPhase (..))
 import Elara.Query.Effects
-import Elara.Query.Errors
 import Elara.Rename ()
 import Elara.Rename.Error (RenameError)
-import Elara.Rules.Generic ()
+import Elara.Rules.Generic
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
 import Rock (Rock)
-import Rock qualified
 import Prelude hiding (modify')
 
-instance PhaseCoerce (New.Type loc NewR.Renamed) (New.Type loc NewS.Shunted)
+import Rock qualified
 
-instance PhaseCoerce (New.Type' loc NewR.Renamed) (New.Type' loc NewS.Shunted)
+instance PhaseCoerce (Type loc Renamed) (Type loc Shunted)
 
-instance PhaseCoerce (New.TypeDeclaration loc NewR.Renamed) (New.TypeDeclaration loc NewS.Shunted)
+instance PhaseCoerce (Type' loc Renamed) (Type' loc Shunted)
 
-instance PhaseCoerce (NewModule.Exposing loc NewR.Renamed) (NewModule.Exposing loc NewS.Shunted)
+instance PhaseCoerce (TypeDeclaration loc Renamed) (TypeDeclaration loc Shunted)
 
-instance PhaseCoerce (NewModule.Exposition loc NewR.Renamed) (NewModule.Exposition loc NewS.Shunted)
+instance PhaseCoerce (Exposing loc Renamed) (Exposing loc Shunted)
 
-instance PhaseCoerce (NewModule.Import loc NewR.Renamed) (NewModule.Import loc NewS.Shunted)
+instance PhaseCoerce (Exposition loc Renamed) (Exposition loc Shunted)
 
-instance PhaseCoerce (NewModule.Import' loc NewR.Renamed) (NewModule.Import' loc NewS.Shunted)
+instance PhaseCoerce (Import loc Renamed) (Import loc Shunted)
 
-instance PhaseCoerce (NewModule.ImportExposingOrHiding loc NewR.Renamed) (NewModule.ImportExposingOrHiding loc NewS.Shunted)
+instance PhaseCoerce (Import' loc Renamed) (Import' loc Shunted)
+
+instance PhaseCoerce (ImportExposingOrHiding loc Renamed) (ImportExposingOrHiding loc Shunted)
 
 {- | The default precedence for an operator if none is specified
 >>> defaultPrecedence
@@ -87,33 +91,25 @@ LeftAssociative
 defaultAssociativity :: Associativity
 defaultAssociativity = LeftAssociative
 
-instance SupportsQuery QueryModuleByName NewS.Shunted where
-    type QuerySpecificEffectsOf QueryModuleByName NewS.Shunted = StandardQueryError NewS.Shunted
-    query mn = do
-        (mod', warnings) <- Eff.runWriter $ inject $ runGetShuntedModuleQuery mn
-        traverse_ report warnings
-        pure mod'
+instance RunPhase Shunted where
+    type ASTQueryEffects Shunted q = '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Eff.Error ElaraError, Eff.Writer [ElaraWarning]]
+
+    getModuleByName mn = do
+        (renamed, warnings) <- Eff.runWriter @[ElaraWarning] $ runErrorAsElaraError @RenameError $ Rock.fetch $ Elara.Query.ModuleByName @Renamed mn
+        traverse_ reportElaraWarning warnings
+        shuntWith opLookupQueries renamed
+
+    getDeclarationByName = genericGetDeclarationByName @Shunted getModuleByName
+    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Shunted getDeclarationByName
+    getConstructorDeclaration = genericGetConstructorDeclaration @Shunted getModuleByName
+    getDeclarationAnnotations = genericGetDeclarationAnnotations @Shunted getRequiredDeclarationByName
+    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Shunted getDeclarationAnnotations getConstructorDeclaration
 
 {- | A function that can lookup operator info.
 This module only instantiates this function with a value that looks up operator info from the AST, but
 other implementations are possible, e.g. a hardcoded table, which may be useful for primitives or testing.
 -}
 type OpLookup es = IgnoreLocVarRef Name -> Eff es (Maybe OpInfo)
-
--- | Run the @'Elara.Query.QueryModuleByName' 'Shunted'@ query, which shunts a renamed module
-runGetShuntedModuleQuery ::
-    ModuleName ->
-    Eff
-        ( ConsQueryEffects
-            '[ Eff.Error ShuntError
-             , Eff.Writer (Set ShuntWarning)
-             , Rock Elara.Query.Query
-             ]
-        )
-        (NewModule.Module SourceRegion NewS.Shunted)
-runGetShuntedModuleQuery mn = do
-    renamed <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.RenamedModule mn
-    shuntWith opLookupQueries renamed
 
 -- | An 'OpLookup' that uses the 'Elara.Query.GetOpInfo' query to get operator info, i.e. derives it from the AST annotations.
 opLookupQueries ::
@@ -127,32 +123,42 @@ opLookupQueries name = Rock.fetch (Elara.Query.GetOpInfo name)
 
 -- | Run the @'Elara.Query.GetOpInfo'@ query to get operator info for a given operator
 runGetOpInfoQuery ::
-    SupportsQueries [QueryDeclarationByName, DeclarationAnnotations, QueryConstructorDeclaration] NewR.Renamed =>
     IgnoreLocVarRef Name ->
     Eff
         ( ConsQueryEffects
             '[ Eff.Writer (Set ShuntWarning)
              , Eff.Error ShuntError
              , Rock Elara.Query.Query
+             , Eff.Error ElaraError
+             , Eff.Writer [ElaraWarning]
              ]
         )
         (Maybe OpInfo)
-runGetOpInfoQuery (Global (IgnoreLocation (Located _ declName))) = do
-    fixityAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @NewR.Renamed (declName, fixityAnnotationName)
-    assocAnns <- runErrorOrReport @RenameError $ Rock.fetch $ Elara.Query.DeclarationAnnotationsOfType @NewR.Renamed (declName, associativityAnnotationName)
+runGetOpInfoQuery (Global (IgnoreLocation locatedName@(Located _ declName))) = do
+    (annotations, warnings) <-
+        Eff.runWriter @[ElaraWarning] $
+            runErrorAsElaraError @RenameError $
+                Rock.fetch $
+                    Elara.Query.DeclarationAnnotations @Renamed declName
+    traverse_ reportElaraWarning warnings
+    let fixityAnns = filter (\(Annotation annotName _args) -> annotName ^. unlocated == fixityAnnotationName) annotations
+    let assocAnns = filter (\(Annotation annotName _args) -> annotName ^. unlocated == associativityAnnotationName) annotations
     fixity <- case fixityAnns of
         [] -> pure Nothing
-        [New.Annotation _ [fixityArg]] ->
+        [Annotation _ [fixityArg]] ->
             case interpretNewAnnotationArg fixityArg of
                 Just (ConstInt n) | n >= 0 && n <= 9 -> pure $ Just (mkPrecedence (fromInteger n))
                 _invalid -> pure Nothing
         _invalid -> pure Nothing
 
+    whenNothing_ fixity $
+        Eff.tell (one @(Set _) (UnknownPrecedence locatedName))
+
     assoc <- case assocAnns of
         [] -> pure Nothing
-        [New.Annotation lAssoc _] | lAssoc ^. unlocated == leftAssociativeAnnotationName -> pure $ Just LeftAssociative
-        [New.Annotation rAssoc _] | rAssoc ^. unlocated == rightAssociativeAnnotationName -> pure $ Just RightAssociative
-        [New.Annotation nAssoc _] | nAssoc ^. unlocated == nonAssociativeAnnotationName -> pure $ Just NonAssociative
+        [Annotation lAssoc _] | lAssoc ^. unlocated == leftAssociativeAnnotationName -> pure $ Just LeftAssociative
+        [Annotation rAssoc _] | rAssoc ^. unlocated == rightAssociativeAnnotationName -> pure $ Just RightAssociative
+        [Annotation nAssoc _] | nAssoc ^. unlocated == nonAssociativeAnnotationName -> pure $ Just NonAssociative
         _invalid -> pure Nothing
 
     pure $ case (fixity, assoc) of
@@ -182,90 +188,84 @@ shuntWith ::
     forall es.
     ShuntPipelineEffects es =>
     OpLookup es ->
-    NewModule.Module SourceRegion NewR.Renamed ->
-    Eff es (NewModule.Module SourceRegion NewS.Shunted)
-shuntWith opL (NewModule.Module loc m') = do
+    Module SourceRegion Renamed ->
+    Eff es (Module SourceRegion Shunted)
+shuntWith opL (Module loc m') = do
     declarations' <- traverse (shuntDeclaration opL) m'.moduleDeclarations
     let exposing' = phaseCoerce m'.moduleExposing
     let imports' = phaseCoerce <$> m'.moduleImports
-    pure $ NewModule.Module loc $ NewModule.Module' m'.moduleName exposing' imports' declarations'
+    pure $ Module loc $ Module' m'.moduleName exposing' imports' declarations'
 
 -- | Shunt a single declaration
 shuntDeclaration ::
     forall es.
     ShuntPipelineEffects es =>
     OpLookup es ->
-    New.Declaration SourceRegion NewR.Renamed ->
-    Eff es (New.Declaration SourceRegion NewS.Shunted)
-shuntDeclaration opL (New.Declaration dloc (New.Declaration' mn body)) = do
+    Declaration SourceRegion Renamed ->
+    Eff es (Declaration SourceRegion Shunted)
+shuntDeclaration opL (Declaration dloc (Declaration' mn body)) = do
     body' <- shuntDeclarationBody opL body
-    pure $ New.Declaration dloc (New.Declaration' mn body')
+    pure $ Declaration dloc (Declaration' mn body')
 
 -- | Shunt a declaration body
 shuntDeclarationBody ::
     forall es.
     ShuntPipelineEffects es =>
     OpLookup es ->
-    New.DeclarationBody SourceRegion NewR.Renamed ->
-    Eff es (New.DeclarationBody SourceRegion NewS.Shunted)
-shuntDeclarationBody opL (New.DeclarationBody bloc body') = New.DeclarationBody bloc <$> go body'
+    DeclarationBody SourceRegion Renamed ->
+    Eff es (DeclarationBody SourceRegion Shunted)
+shuntDeclarationBody opL (DeclarationBody bloc body') = DeclarationBody bloc <$> go body'
   where
-    go :: New.DeclarationBody' SourceRegion NewR.Renamed -> Eff es (New.DeclarationBody' SourceRegion NewS.Shunted)
-    go (New.ValueDeclaration name val pats mTy mTypeMeta anns) = do
+    go :: DeclarationBody' SourceRegion Renamed -> Eff es (DeclarationBody' SourceRegion Shunted)
+    go (ValueDeclaration name val _ _ mTypeMeta anns) = do
         val' <- let ?lookup = opL in fixExpr val
         let mTypeMeta' = fmap phaseCoerce mTypeMeta
         anns' <- traverse (let ?lookup = opL in shuntAnnotation) anns
-        pure $ New.ValueDeclaration name val' () () mTypeMeta' anns'
-    go (New.TypeDeclarationBody name vars typeDecl mKind _meta anns) = do
+        pure $ ValueDeclaration name val' () () mTypeMeta' anns'
+    go (TypeDeclarationBody name vars typeDecl mKind _meta anns) = do
         anns' <- traverse (let ?lookup = opL in shuntAnnotation) anns
-        pure $ New.TypeDeclarationBody name vars (phaseCoerce typeDecl) (fmap phaseCoerce mKind) NoExtension anns'
-    go (New.DeclBodyExtension v) = absurd v
+        pure $ TypeDeclarationBody name vars (phaseCoerce typeDecl) (fmap phaseCoerce mKind) NoExtension anns'
+    go (DeclBodyExtension v) = absurd v
 
 -- | Shunt an annotation
-shuntAnnotation :: (ShuntPipelineEffects r, HasOpLookup r) => New.Annotation SourceRegion NewR.Renamed -> Eff r (New.Annotation SourceRegion NewS.Shunted)
-shuntAnnotation (New.Annotation name args) = do
-    args' <- traverse (\(New.AnnotationArg e) -> New.AnnotationArg <$> fixExpr e) args
-    pure $ New.Annotation name args'
+shuntAnnotation :: (ShuntPipelineEffects r, HasOpLookup r) => Annotation SourceRegion Renamed -> Eff r (Annotation SourceRegion Shunted)
+shuntAnnotation (Annotation name args) = do
+    args' <- traverse (\(AnnotationArg e) -> AnnotationArg <$> fixExpr e) args
+    pure $ Annotation name args'
 
 {- | Fix the operators in an expression to the correct precedence and shunt it
 The main entry point for this module that simply combines 'fixOperators' and 'shuntExpr'
 -}
-fixExpr :: (ShuntPipelineEffects r, HasOpLookup r) => NewR.RenamedExpr -> Eff r NewS.ShuntedExpr
+fixExpr :: (ShuntPipelineEffects r, HasOpLookup r) => RenamedExpr -> Eff r ShuntedExpr
 fixExpr e = do
     fixed <- fixOperators e
     shuntExpr fixed
 
 -- | Convert an operator to its qualified 'Name' for lookup
-opNameOf :: New.BinaryOperator SourceRegion NewR.Renamed -> IgnoreLocVarRef Name
-opNameOf (New.SymOp _ (Located _ opRef)) =
-    case opRef of
-        Global (Located l (Qualified n m)) -> Global (IgnoreLocation (Located l (Qualified (NVarName (OperatorVarName n)) m)))
-        Local (Located l (Unique n i)) -> Local (IgnoreLocation (Located l (Unique (NVarName (OperatorVarName n)) i)))
-opNameOf (New.InfixedOp _ vn) = ignoreLocation (toName <$> vn)
-  where
-    toName (VarName n) = NVarName (NormalVarName n)
-    toName (ConName n) = NTypeName n
+opNameOf (SymOp _ (TaggedLocate _ opRef)) =
+    ignoreLocation (withName opRef)
+opNameOf (InfixedOp _ vn) = ignoreLocation vn
 
 {- | Fix the operators in an expression to the correct precedence.
 For example given @((+) = 1l) and ((*) = 2r)@,
 @1 + 2 * 3 * 4 + 5 + 6@ should be parsed as @(((1 + (2 * 3)) * 4) + 5) + 6@.
 -}
-fixOperators :: forall r. (ShuntPipelineEffects r, ?lookup :: OpLookup r) => NewR.RenamedExpr -> Eff r NewR.RenamedExpr
+fixOperators :: forall r. (ShuntPipelineEffects r, ?lookup :: OpLookup r) => RenamedExpr -> Eff r RenamedExpr
 fixOperators = reassoc
   where
-    reassoc :: NewR.RenamedExpr -> Eff r NewR.RenamedExpr
-    reassoc (New.Expr loc meta (New.EExtension (RenamedInParens (InParensExpression e)))) = do
+    reassoc :: RenamedExpr -> Eff r RenamedExpr
+    reassoc (Expr loc meta (EExtension (RenamedInParens (InParensExpression e)))) = do
         e' <- reassoc e
-        pure (New.Expr loc meta (New.EExtension (RenamedInParens (InParensExpression e'))))
-    reassoc (New.Expr loc meta (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r)))) = do
+        pure (Expr loc meta (EExtension (RenamedInParens (InParensExpression e'))))
+    reassoc (Expr loc meta (EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r)))) = do
         l' <- fixOperators l
         r' <- fixOperators r
-        e' <- reassoc' loc operator l' r'
-        pure (New.Expr loc meta e')
+        e' <- reassoc' (unwrapLoc loc) operator l' r'
+        pure (Expr loc meta e')
     reassoc e = pure e
 
-    reassoc' :: SourceRegion -> New.BinaryOperator SourceRegion NewR.Renamed -> NewR.RenamedExpr -> NewR.RenamedExpr -> Eff r NewR.RenamedExpr'
-    reassoc' sr o1 e1 r@(New.Expr _ _ (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression o2 e2 e3)))) = do
+    reassoc' :: SourceRegion -> BinaryOperator SourceRegion Renamed -> RenamedExpr -> RenamedExpr -> Eff r RenamedExpr'
+    reassoc' sr o1 e1 r@(Expr _ _ (EExtension (RenamedBinaryOperator (BinaryOperatorExpression o2 e2 e3)))) = do
         info1 <- getInfoOrWarn o1
         info2 <- getInfoOrWarn o2
         case compare info1.precedence info2.precedence of
@@ -278,13 +278,13 @@ fixOperators = reassoc
       where
         assocLeft = do
             reassociated' <- reassoc' sr o1 e1 e2
-            let reassociated = New.Expr sr Nothing reassociated'
-            pure (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression o2 reassociated e3)))
+            let reassociated = Expr (wrap @ExprNode sr) Nothing reassociated'
+            pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression o2 reassociated e3)))
 
-        assocRight = pure (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression o1 e1 r)))
-    reassoc' _ operator l r = pure (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r)))
+        assocRight = pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression o1 e1 r)))
+    reassoc' _ operator l r = pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r)))
 
-    getInfoOrWarn :: New.BinaryOperator SourceRegion NewR.Renamed -> Eff r OpInfo
+    getInfoOrWarn :: BinaryOperator SourceRegion Renamed -> Eff r OpInfo
     getInfoOrWarn operator = do
         info <- ?lookup (opNameOf operator)
         case info of
@@ -300,102 +300,104 @@ However, it does also convert binary operators into function calls.
 shuntExpr ::
     forall r.
     (ShuntPipelineEffects r, HasOpLookup r) =>
-    NewR.RenamedExpr ->
-    Eff r NewS.ShuntedExpr
-shuntExpr (New.Expr loc meta e') = do
-    (shunted, meta') <- shuntExpr' loc e'
-    pure $ New.Expr loc (phaseCoerce <$> meta <|> meta') shunted
+    RenamedExpr ->
+    Eff r ShuntedExpr
+shuntExpr (Expr loc meta e') = do
+    (shunted, meta') <- shuntExpr' (unwrapLoc loc) e'
+    pure $ Expr loc (phaseCoerce <$> meta <|> meta') shunted
   where
-    shuntExpr' :: SourceRegion -> NewR.RenamedExpr' -> Eff r (NewS.ShuntedExpr', Maybe NewS.ShuntedType)
-    shuntExpr' _ (New.EInt i) = pure (New.EInt i, Nothing)
-    shuntExpr' _ (New.EFloat f) = pure (New.EFloat f, Nothing)
-    shuntExpr' _ (New.EString s) = pure (New.EString s, Nothing)
-    shuntExpr' _ (New.EChar c) = pure (New.EChar c, Nothing)
-    shuntExpr' _ New.EUnit = pure (New.EUnit, Nothing)
-    shuntExpr' _ (New.EVar NoExtension v) = pure (New.EVar NoExtension v, Nothing)
-    shuntExpr' _ (New.ECon NoExtension v) = pure (New.ECon NoExtension v, Nothing)
-    shuntExpr' _ (New.ELam NoExtension (TypedLambdaParam v meta') e) = do
+    shuntExpr' :: SourceRegion -> RenamedExpr' -> Eff r (ShuntedExpr', Maybe ShuntedType)
+    shuntExpr' _ (EInt i) = pure (EInt i, Nothing)
+    shuntExpr' _ (EFloat f) = pure (EFloat f, Nothing)
+    shuntExpr' _ (EString s) = pure (EString s, Nothing)
+    shuntExpr' _ (EChar c) = pure (EChar c, Nothing)
+    shuntExpr' _ EUnit = pure (EUnit, Nothing)
+    shuntExpr' _ (EVar NoExtension v) = pure (EVar NoExtension v, Nothing)
+    shuntExpr' _ (ECon NoExtension v) = pure (ECon NoExtension v, Nothing)
+    shuntExpr' _ (ELam NoExtension (TypedLambdaParam v meta') e) = do
         e' <- fixExpr e
         let meta'' = phaseCoerce <$> meta'
-        pure (New.ELam NoExtension (TypedLambdaParam v meta'') e', Nothing)
-    shuntExpr' _ (New.EApp NoExtension f x) = do
+        pure (ELam NoExtension (TypedLambdaParam v meta'') e', Nothing)
+    shuntExpr' _ (EApp NoExtension f x) = do
         f' <- fixExpr f
         x' <- fixExpr x
-        pure (New.EApp NoExtension f' x', Nothing)
-    shuntExpr' _ (New.ETyApp e t) = do
+        pure (EApp NoExtension f' x', Nothing)
+    shuntExpr' _ (ETyApp e t) = do
         e' <- fixExpr e
-        pure (New.ETyApp e' (phaseCoerce t), Nothing)
-    shuntExpr' _ (New.EIf cond then' else') = do
+        pure (ETyApp e' (phaseCoerce t), Nothing)
+    shuntExpr' _ (EIf cond then' else') = do
         cond' <- fixExpr cond
         then'' <- fixExpr then'
         else'' <- fixExpr else'
-        pure (New.EIf cond' then'' else'', Nothing)
-    shuntExpr' _ (New.EMatch e cases) = do
+        pure (EIf cond' then'' else'', Nothing)
+    shuntExpr' _ (EMatch e cases) = do
         e' <- fixExpr e
         cases' <- traverse (\(p, b) -> (,) <$> shuntPattern p <*> fixExpr b) cases
-        pure (New.EMatch e' cases', Nothing)
-    shuntExpr' _ (New.ELetIn NoExtension vn e body) = do
+        pure (EMatch e' cases', Nothing)
+    shuntExpr' _ (ELetIn NoExtension vn e body) = do
         e' <- fixExpr e
         body' <- fixExpr body
-        pure (New.ELetIn NoExtension vn e' body', Nothing)
-    shuntExpr' _ (New.ELet NoExtension vn e) = do
+        pure (ELetIn NoExtension vn e' body', Nothing)
+    shuntExpr' _ (ELet NoExtension vn e) = do
         e' <- fixExpr e
-        pure (New.ELet NoExtension vn e', Nothing)
-    shuntExpr' _ (New.EBlock es) = do
+        pure (ELet NoExtension vn e', Nothing)
+    shuntExpr' _ (EBlock es) = do
         es' <- traverse fixExpr es
-        pure (New.EBlock es', Nothing)
-    shuntExpr' _ (New.EAnn e t) = do
+        pure (EBlock es', Nothing)
+    shuntExpr' _ (EAnn e t) = do
         e' <- fixExpr e
-        pure (New.EAnn e' (phaseCoerce t), Nothing)
-    shuntExpr' _ (New.EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r))) = do
+        pure (EAnn e' (phaseCoerce t), Nothing)
+    shuntExpr' _ (EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r))) = do
         -- turn the binary operator into 2 function calls
         -- (a `op` b) -> (op a) b
         l' <- fixExpr l
         r' <- fixExpr r
         let (opExpr', opLoc) = operatorToExpr operator
-        let opVar = New.Expr opLoc Nothing opExpr'
-        let callLoc = enclosingRegion' opLoc (exprLoc l')
-        let leftCall = New.Expr callLoc Nothing (New.EApp NoExtension opVar l')
-        pure (New.EApp NoExtension leftCall r', Nothing)
-    shuntExpr' _ (New.EExtension (RenamedInParens (InParensExpression e))) = do
+        let opVar = Expr (wrap @ExprNode opLoc) Nothing opExpr'
+        let callLoc = enclosingRegion opLoc (unwrapLoc (exprLoc l'))
+        let leftCall = Expr (wrap @ExprNode callLoc) Nothing (EApp NoExtension opVar l')
+        pure (EApp NoExtension leftCall r', Nothing)
+    shuntExpr' _ (EExtension (RenamedInParens (InParensExpression e))) = do
         -- Remove parens and just return the inner expression
-        e'@(New.Expr _ _ inner) <- fixExpr e
+        Expr _ _ inner <- fixExpr e
         pure (inner, Nothing)
 
 -- | Convert an operator reference into an expression (for turning binary ops into function calls)
-operatorToExpr :: New.BinaryOperator SourceRegion NewR.Renamed -> (NewS.ShuntedExpr', SourceRegion)
-operatorToExpr (New.SymOp opLoc (Located _ opRef)) =
+operatorToExpr :: BinaryOperator SourceRegion Renamed -> (ShuntedExpr', SourceRegion)
+operatorToExpr (SymOp opLoc (TaggedLocate _ opRef)) =
     let varRef = case opRef of
-            Global (Located l (Qualified n m)) ->
-                Located l (Global (Located l (Qualified (OperatorVarName n) m)))
-            Local (Located l (Unique n i)) ->
-                Located l (Local (Located l (Unique (OperatorVarName n) i)))
-     in (New.EVar NoExtension varRef, opLoc)
-operatorToExpr (New.InfixedOp opLoc inName) =
+            Global (Located l (Qualified n m)) -> Global (Located l (Qualified (OperatorVarName n) m))
+            Local (Located l (Unique n i)) -> Local (Located l (Unique (OperatorVarName n) i))
+     in (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) varRef), opLoc)
+operatorToExpr (InfixedOp opLoc inName) =
     case inName of
-        Global (Located l (Qualified (VarName n) m)) ->
-            (New.EVar NoExtension (Located l (Global (Located l (Qualified (NormalVarName n) m)))), opLoc)
-        Global (Located l (Qualified (ConName n) m)) ->
-            (New.ECon NoExtension (Located l (Qualified n m)), opLoc)
-        Local (Located l (Unique (VarName n) i)) ->
-            (New.EVar NoExtension (Located l (Local (Located l (Unique (NormalVarName n) i)))), opLoc)
-        Local (Located _ (Unique (ConName _) _)) -> error "Shouldn't have local con names"
+        Global (Located l (Qualified (NameValue n) m)) ->
+            (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Global (Located l (Qualified (NormalVarName n) m)))), opLoc)
+        Global (Located l (Qualified (NameOp n) m)) ->
+            (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Global (Located l (Qualified (OperatorVarName n) m)))), opLoc)
+        Global (Located _ (Qualified (NameType n) m)) ->
+            (ECon NoExtension (TaggedLocate (wrap @TypeNode opLoc) (Qualified n m)), opLoc)
+        Local (Located l (Unique (NameValue n) i)) ->
+            (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Local (Located l (Unique (NormalVarName n) i)))), opLoc)
+        Local (Located l (Unique (NameOp n) i)) ->
+            (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Local (Located l (Unique (OperatorVarName n) i)))), opLoc)
+        Local (Located _ (Unique (NameType _) _)) -> error "Shouldn't have local con names"
 
 -- | Get the location of an expression
-exprLoc :: New.Expr SourceRegion p -> SourceRegion
-exprLoc (New.Expr loc _ _) = loc
+exprLoc :: Expr SourceRegion p -> NodeLoc ExprNode SourceRegion
+exprLoc (Expr loc _ _) = loc
 
 -- | Shunt a pattern (trivial conversion since Renamed and Shunted patterns are structurally identical)
-shuntPattern :: NewR.RenamedPattern -> Eff r NewS.ShuntedPattern
-shuntPattern (New.Pattern loc meta p') = New.Pattern loc (phaseCoerce <$> meta) <$> shuntPattern' p'
+shuntPattern :: RenamedPattern -> Eff r ShuntedPattern
+shuntPattern (Pattern loc meta p') = Pattern loc (phaseCoerce <$> meta) <$> shuntPattern' p'
   where
-    shuntPattern' :: NewR.RenamedPattern' -> Eff r NewS.ShuntedPattern'
-    shuntPattern' (New.PVar v) = pure (New.PVar v)
-    shuntPattern' (New.PCon v ps) = New.PCon v <$> traverse shuntPattern ps
-    shuntPattern' New.PWildcard = pure New.PWildcard
-    shuntPattern' (New.PInt i) = pure (New.PInt i)
-    shuntPattern' (New.PFloat f) = pure (New.PFloat f)
-    shuntPattern' (New.PString s) = pure (New.PString s)
-    shuntPattern' (New.PChar c) = pure (New.PChar c)
-    shuntPattern' New.PUnit = pure New.PUnit
-    shuntPattern' (New.PExtension v) = absurd v
+    shuntPattern' :: RenamedPattern' -> Eff r ShuntedPattern'
+    shuntPattern' (PVar v) = pure (PVar v)
+    shuntPattern' (PCon v ps) = PCon v <$> traverse shuntPattern ps
+    shuntPattern' PWildcard = pure PWildcard
+    shuntPattern' (PInt i) = pure (PInt i)
+    shuntPattern' (PFloat f) = pure (PFloat f)
+    shuntPattern' (PString s) = pure (PString s)
+    shuntPattern' (PChar c) = pure (PChar c)
+    shuntPattern' PUnit = pure PUnit
+    shuntPattern' (PExtension v) = absurd v

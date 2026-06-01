@@ -12,16 +12,18 @@ module Elara.AST.Phases.Frontend.Pretty (
     prettyPatternRoundTrip,
 ) where
 
+import Prettyprinter hiding (Pretty (..))
+import Prettyprinter.Render.Terminal (AnsiStyle)
+
 import Elara.AST.Extensions
 import Elara.AST.Phase ()
 import Elara.AST.Phases.Frontend
 import Elara.AST.Pretty
 import Elara.AST.Types
-import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Data.Pretty (Pretty (..), escapeChar)
-import Prettyprinter hiding (Pretty (..))
-import Prettyprinter.Render.Terminal (AnsiStyle)
 import Prelude hiding (group)
+
+import Elara.Data.AtLeast2List qualified as AtLeast2List
 
 instance PrettyPhaseLoc Frontend loc => Pretty (Expr loc Frontend) where
     pretty = prettyExprRoundTrip
@@ -101,8 +103,12 @@ prettyPatternRoundTrip' = \case
     PCon c [] -> prettyConstructorOccurrence @Frontend @loc c
     PCon c ps -> parens (prettyConstructorOccurrence @Frontend @loc c <+> hsep (map prettyPatternRoundTrip ps))
     PWildcard -> "_"
-    PInt i -> pretty i
-    PFloat f -> pretty f
+    PInt i
+        | i < 0 -> parens (pretty i)
+        | otherwise -> pretty i
+    PFloat f
+        | f < 0 -> parens (pretty f)
+        | otherwise -> pretty f
     PString s -> "\"" <> pretty s <> "\""
     PChar c -> "'" <> pretty (escapeChar @Text c) <> "'"
     PUnit -> "()"

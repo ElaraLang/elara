@@ -1,12 +1,14 @@
 -- | Module for JVM Intermediate Representation.
 module Elara.JVM.IR where
 
+import H2JVM qualified as JVM
+import H2JVM.Type qualified as JVM
+
 import Elara.Data.Pretty
 import Elara.Data.Unique
-import JVM.Data.Abstract.Descriptor qualified as JVM
-import JVM.Data.Abstract.Name qualified as JVM
-import JVM.Data.Abstract.Type qualified as JVM
 import Prelude hiding (Op)
+
+import Elara.Prim qualified as Prim
 
 data Module = Module
     { moduleName :: JVM.QualifiedClassName
@@ -84,8 +86,10 @@ data Instruction
     deriving (Show)
 
 data Expr
-    = -- | Literal integer
+    = -- | Literal integer, emitted as a java.lang.Integer object (not a primitive int)
       LitInt Integer
+    | -- | Literal integer emitted as a JVM primitive int
+      PrimitiveLitInt Integer
     | -- | Literal string
       LitString Text
     | -- | Literal double
@@ -144,6 +148,18 @@ data Expr
     | PrimOp PrimOp [Expr]
     | -- | Cast expression to a specific type
       Cast Expr JVM.FieldType
+    | -- | Get the length of an array as an integer
+      ArrayLength Expr
+    | -- | Load an element from an array
+      ArrayLoad
+        -- | The array reference
+        Expr
+        -- | The type of the array elements
+        JVM.FieldType
+        -- | The index expression (must evaluate to an integer)
+        Expr
+    | -- | a binary operator that operates on @int@ values
+      PrimitiveIntOp PrimBinOp Expr Expr
     deriving (Show)
 
 data CallType
@@ -156,26 +172,19 @@ data CallType
         JVM.MethodDescriptor
     deriving (Show)
 
--- | Elara primitive operations
+{- | JVM-level primitive operations.
+
+'CorePrim' wraps a backend-agnostic 'Prim.PrimOp'.
+'UndefinedError' and 'PatternMatchFailedError' are JVM-specific operations synthesised during lowering
+-}
 data PrimOp
-    = UndefinedError
-    | PatternMatchFailedError
-    | IntAdd -- Elara.Prim.(+) : Int -> Int -> Int
-    | IntSubtract -- Elara.Prim.(-) : Int -> Int -> Int
-    | IntMultiply -- Elara.Prim.(*) : Int -> Int -> Int
-    | IntNegate -- Elara.Prim.negate : Int -> Int
-    | PrimEquals -- Elara.Prim.(==) : a -> a -> Bool
-    | PrimCompare -- Elara.Prim.compare : a -> a -> Int
-    | IOBind -- Elara.Prelude.>>= : IO a -> (a -> IO b) -> IO b
-    | DebugWithMsg -- debugWithMsg : String -> a -> a
-    | ThrowError -- Elara.Error.error : String -> a
-    | Println -- Elara.Prelude.println : String -> IO ()
-    | StringCons -- Elara.Prim.stringCons : Char -> String -> String
-    | StringHead -- Elara.Prim.stringHead : String -> Char
-    | StringIsEmpty -- Elara.Prim.stringIsEmpty : String -> Bool
-    | StringTail -- Elara.Prim.stringTail : String -> String
-    | ToString -- Elara.Prim.toString : a -> String
-    deriving (Show, Generic)
+    = -- | A backend-agnostic primitive lowered from Core.
+      CorePrim Prim.PrimOp
+    | -- | Synthesised for @undefined@ calls
+      UndefinedError
+    | -- | Synthesised for non-exhaustive pattern matches
+      PatternMatchFailedError
+    deriving (Generic, Show)
 
 instance Pretty PrimOp
 
@@ -185,13 +194,28 @@ data BinOp = Add | Subtract | Multiply | Divide | And | Or | Equals | NotEquals 
 data Op = Not | Negate
     deriving (Show)
 
+data PrimBinOp
+    = PrimAdd
+    | PrimSubtract
+    | PrimMultiply
+    | PrimDivide
+    | PrimGT
+    deriving (Show)
+
+instance Pretty PrimBinOp where
+    pretty PrimAdd = "+"
+    pretty PrimSubtract = "-"
+    pretty PrimMultiply = "*"
+    pretty PrimDivide = "/"
+    pretty PrimGT = ">"
+
 instance Pretty Module where
     pretty (Module name classes) =
         vsep $
             [ "/* Module:" <+> pretty name <+> "*/"
             , ""
             ]
-                ++ map pretty classes
+                <> map pretty classes
 
 instance Pretty Class where
     pretty (Class name super fields methods constructors) =
@@ -260,6 +284,7 @@ instance Pretty Instruction where
 
 instance Pretty Expr where
     pretty (LitInt i) = pretty i
+    pretty (PrimitiveLitInt i) = pretty i <> "_prim"
     pretty (LitString t) = dquotes (pretty t)
     pretty (LitDouble d) = pretty d
     pretty (LitBool b) = if b then "true" else "false"
@@ -282,6 +307,9 @@ instance Pretty Expr where
     pretty (PrimOp op args) =
         pretty op <> tupled (map pretty args)
     pretty (Cast e t) = parens (pretty e <+> "as" <+> pretty t)
+    pretty (ArrayLength arr) = "arrayLength" <+> parens (pretty arr)
+    pretty (ArrayLoad arr elemType index) = "arrayLoad" <+> parens (pretty arr <+> ":" <+> pretty elemType <+> "[" <+> pretty index <> "]")
+    pretty (PrimitiveIntOp op l r) = parens $ pretty l <+> pretty op <> "_prim" <+> pretty r
 
 prettyCall :: CallType -> [Expr] -> Doc AnsiStyle
 prettyCall type' args = pretty type' <> tupled (map pretty args)

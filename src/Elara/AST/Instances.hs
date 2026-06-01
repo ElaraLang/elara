@@ -5,8 +5,12 @@
 
 module Elara.AST.Instances where
 
+import GHC.Generics (Rep)
+
 import Data.Kind qualified as Kind
+
 import Elara.AST.Extensions
+import Elara.AST.Location (AstNode (ModuleNode, VarNode))
 import Elara.AST.Module
 import Elara.AST.Name (LowerAlphaName, ModuleName)
 import Elara.AST.Phase
@@ -17,7 +21,6 @@ import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..))
 import Elara.AST.Pretty
 import Elara.AST.Types
 import Elara.Data.Pretty
-import GHC.Generics (Rep)
 
 -- | Constraint alias for all the type family components needed for Show/Eq/Ord
 type CoreConstraint (c :: Kind.Type -> Kind.Constraint) loc p =
@@ -35,8 +38,8 @@ type CoreConstraint (c :: Kind.Type -> Kind.Constraint) loc p =
     , c (TopTypeBinder p loc)
     , c (TypeVariable p loc)
     , c (ConstructorBinder p loc)
-    , c (Locate loc LowerAlphaName)
-    , c (Locate loc ModuleName)
+    , c (LocateNode VarNode loc LowerAlphaName)
+    , c (LocateNode ModuleNode loc ModuleName)
     , c (LambdaBinder p loc)
     , c (VariableExtension p)
     , c (LambdaExtension p)
@@ -228,7 +231,7 @@ deriving instance CoreConstraint Show loc p => Show (Exposing loc p)
 deriving instance CoreConstraint Show loc p => Show (Exposition loc p)
 
 -- Pretty instances for core AST types. These live here to avoid cyclic imports between Module and Pretty.
-instance (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc, Pretty (Locate loc ModuleName)) => Pretty (Module loc p) where
+instance (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc, Pretty (LocateNode ModuleNode loc ModuleName)) => Pretty (Module loc p) where
     pretty = prettyModule
 
 instance (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Pretty (Declaration loc p) where

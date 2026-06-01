@@ -1,0 +1,19 @@
+import Prelude
+import Elara.Prim
+import Tuple
+import String
+
+-- the eXtended GCD algorithm takes two integers a, b and returns a tuple (n, alpha, beta) such that:
+-- 1. n is the GCD of a and b
+-- 2. n == alpha * a + beta * b
+def xgcd : Int -> Int -> (Int, Int, Int)
+let xgcd a b =
+    if a == b then (a, 1, 0)
+    else if b == 0 then (0, 0, 0)
+    else
+        let rem = a % b
+        (rem, 1, 2) -- TODO: make this actually correct lol
+
+
+let main =
+    println (xgcd 12 4)

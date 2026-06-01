@@ -1,11 +1,14 @@
 module Elara.JVM.Error (JVMLoweringError (..)) where
 
+import H2JVM (MethodDescriptor)
+import H2JVM.Analyse.StackMap
+
 import Elara.AST.Name
-import Elara.Core qualified as Core
 import Elara.Core.Pretty ()
 import Elara.Data.Pretty
-import Elara.Error (ReportableError)
-import JVM.Data.Abstract.Descriptor (MethodDescriptor)
+import Elara.Error
+
+import Elara.Core qualified as Core
 
 -- | Errors that can occur during JVM lowering and code generation
 data JVMLoweringError
@@ -13,78 +16,78 @@ data JVMLoweringError
       LambdaBinderNotLocal Core.Var
     | -- | A data constructor has more lambda abstractions than type parameters
       MoreLambdasThanTypeArgs Text Int Int
-    | -- | Unknown primitive operation name
-      UnknownPrimitiveKey Text
-    | -- | Unknown primitive type in type signature
-      UnknownPrimitiveType (Qualified Text)
-    | -- | Type variable found in an expression context where a concrete type is required
-      TypeVarInExpr Core.Type
-    | -- | Expression type cannot be lowered to JVM
-      UnsupportedExpressionType Core.CoreExpr
-    | -- | Over-application: more arguments provided than the function expects
-      OverApplicationOf
-        -- | Function name
-        (Text, MethodDescriptor)
-        -- | Expected arguments
-        Int
-        -- | Actual arguments
-        Int
-    | -- | Data constructor over-application
-      DataConOverApplication (Qualified Text) Int Int
-    | -- | Application of non-function value
-      AppOfNonFunction Text
-    | -- | Pattern matching on non-data type
-      PatternMatchOnNonData Core.Type
-    | -- | Type variable in pattern binding (shouldn't happen in Core)
-      TypeVarInPattern
-    | GlobalVarInPattern (Qualified Text)
-    | -- | Unsupported literal type
+    | -- | A data constructor was applied to the wrong number of arguments
+      DataConArityMismatch Text Int Int
+    | -- | Expected a functional type, but got something else
+      NotAFunctionalType Core.Type
+    | -- | A type constructor application was encountered that we don't know how to lower
+      UnsupportedType Core.Type
+    | -- | A variable was encountered that isn't bound in the current scope
+      LocalVariableNotFound Core.Var
+    | -- | Tried to invoke a static method as a local variable
+      InvokeStaticLocal Text
+    | -- | Unresolved reference to a class
+      ClassNotFound Text
+    | -- | Unresolved reference to a method
+      MethodNotFound Text Text MethodDescriptor
+    | -- | Unresolved reference to a field
+      FieldNotFound Text Text Core.Type
+    | -- | A global variable was found in a pattern match (not supported yet)
+      GlobalVarInPattern (Qualified Text)
+    | -- | A literal was encountered that we don't know how to lower
       UnsupportedLiteral Core.Literal
-    deriving (Typeable, Show, Generic)
+    | -- | A type variable was found in a pattern match (not supported)
+      TypeVarInPattern
+    | -- | A callable was applied to too many arguments
+      OverApplicationOf (Text, MethodDescriptor) Int Int
+    | -- | An expression of an unsupported type was encountered
+      UnsupportedExpressionType Core.CoreExpr
+    | -- | A non-function was applied to an argument
+      AppOfNonFunction Text
+    | MethodTooManyLocals Int
+    | MethodTooManyStack Int
+    | H2JVMError StackMapError
+    deriving (Show, Typeable)
 
 instance Exception JVMLoweringError
 
 instance Pretty JVMLoweringError where
-    pretty (LambdaBinderNotLocal var) =
-        "Lambda binder must be a local identifier, but got:" <+> pretty var
-    pretty (MoreLambdasThanTypeArgs name numLambdas numTypes) =
-        "More lambda abstractions than type parameters for" <+> pretty name
-            <> colon
-                <+> pretty numLambdas
-                <+> "lambdas vs"
-                <+> pretty numTypes
-                <+> "type parameters"
-    pretty (UnknownPrimitiveKey key) =
-        "Unknown primitive operation:" <+> pretty key
-    pretty (UnknownPrimitiveType qname) =
-        "Unknown primitive type:" <+> pretty qname
-    pretty (TypeVarInExpr ty) =
-        "Type variable found in expression context:" <+> pretty ty
-    pretty (UnsupportedExpressionType desc) =
-        "Unsupported expression type:" <+> pretty desc
-    pretty (OverApplicationOf qname expected actual) =
-        "Over-application of" <+> pretty qname
-            <> colon
-                <+> "expected"
-                <+> pretty expected
-                <+> "arguments but got"
-                <+> pretty actual
-    pretty (DataConOverApplication con expected actual) =
-        "Data constructor over-application:"
-            <+> pretty con
-            <+> "expects"
-            <+> pretty expected
-            <+> "but got"
-            <+> pretty actual
-    pretty (AppOfNonFunction name) =
-        "Attempted to apply non-function value:" <+> pretty name
-    pretty (PatternMatchOnNonData ty) =
-        "Pattern match on non-data type:" <+> pretty ty
-    pretty TypeVarInPattern =
-        "Type variable found in pattern (internal error)"
+    pretty (LambdaBinderNotLocal v) =
+        "Lambda binder is not local:" <+> pretty v
+    pretty (MoreLambdasThanTypeArgs name expected actual) =
+        "Data constructor" <+> pretty name <+> "has more lambda abstractions (" <> pretty actual <> ") than type parameters (" <> pretty expected <> ")"
+    pretty (DataConArityMismatch name expected actual) =
+        "Data constructor" <+> pretty name <+> "expects" <+> pretty expected <+> "arguments, but got" <+> pretty actual
+    pretty (NotAFunctionalType t) =
+        "Expected a functional type, but got:" <+> pretty t
+    pretty (UnsupportedType app) =
+        "Unsupported type application:" <+> pretty app
+    pretty (LocalVariableNotFound v) =
+        "Local variable not found:" <+> pretty v
+    pretty (InvokeStaticLocal name) =
+        "Cannot invoke static method" <+> pretty name <+> "as a local variable"
+    pretty (ClassNotFound name) =
+        "Class not found:" <+> pretty name
+    pretty (MethodNotFound cls name desc) =
+        "Method not found:" <+> pretty cls <> "." <> pretty name <> pretty desc
+    pretty (FieldNotFound cls name t) =
+        "Field not found:" <+> pretty cls <> "." <> pretty name <+> ":" <+> pretty t
     pretty (GlobalVarInPattern name) =
         "Global variable found in pattern:" <+> pretty name
     pretty (UnsupportedLiteral lit) =
         "Unsupported literal type:" <+> pretty lit
+    pretty TypeVarInPattern =
+        "Type variable found in pattern (not supported)"
+    pretty (OverApplicationOf (name, desc) actual expected) =
+        "Over-application of callable" <+> pretty name <+> pretty desc <> ". Expected" <+> pretty expected <+> "arguments, but got" <+> pretty actual
+    pretty (UnsupportedExpressionType e) =
+        "Unsupported expression type:" <+> pretty e
+    pretty (AppOfNonFunction e) =
+        "Application of non-function:" <+> pretty e
+    pretty (MethodTooManyLocals n) =
+        "Method has too many local variables:" <+> pretty n <> ". The JVM limit is 65535."
+    pretty (MethodTooManyStack n) =
+        "Method has too many stack entries:" <+> pretty n <> ". The JVM limit is 65535."
 
-instance ReportableError JVMLoweringError
+instance ElaraDiagnostic JVMLoweringError where
+    diagnosticMessage = pretty

@@ -9,3 +9,7 @@ path = "d2"
 layout = "dagre"
 inline = true
 output-dir = "docs/d2"
+
+[preprocessor.variables.variables]
+repo_base = "https://github.com/ElaraLang/elara/blob/master"
+hackage_base = "https://elaralang.github.io/elara/"

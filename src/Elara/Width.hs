@@ -3,6 +3,7 @@
 module Elara.Width where
 
 import System.Console.Terminal.Size (Window (..))
+
 import System.Console.Terminal.Size qualified as Size
 
 -- | Get the width of the terminal (in columns)

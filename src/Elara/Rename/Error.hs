@@ -1,21 +1,26 @@
 module Elara.Rename.Error where
 
 import Data.Generics.Product
+import Data.Text.Metrics (levenshtein)
+import Error.Diagnose hiding (Hint, Note)
+
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Data.Text.Metrics (levenshtein)
+
 import Elara.AST.Instances ()
-import Elara.AST.Module qualified as NewModule
+import Elara.AST.Location
 import Elara.AST.Name
-import Elara.AST.Phases.Desugared qualified as NewD
 import Elara.AST.Region
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Rename.Imports (isImportedBy)
-import Error.Diagnose
+
+import Elara.AST.Module qualified as NewModule
+import Elara.AST.Phases.Desugared qualified as NewD
+import Elara.AST.Types qualified as New
+import Elara.Error.Codes qualified as Codes
 
 data RenameError
     = -- | A requested module was not found
@@ -33,7 +38,7 @@ data RenameError
       For example, @type Foo = a@ would trigger this, because @a@ is not bound anywhere
       -}
       UnknownTypeVariable LowerAlphaName
-    | {- | A name was used that isn't in scope — neither defined in the current module nor imported.
+    | {- | A name was used that isn't in scope, either because it doesn't exist or because it wasn't imported.
       Carries the unknown name, the module being renamed (for import suggestions), and the full known-names map (for typo hints)
       -}
       forall name.
@@ -57,7 +62,7 @@ data RenameError
         (New.Expr SourceRegion NewD.Desugared)
         -- | The surrounding declaration, if any, for better error location
         (Maybe (New.DeclarationBody SourceRegion NewD.Desugared))
-    | -- | The current module couldn't be determined (internal compiler error — should not occur in normal use)
+    | -- | The current module couldn't be determined (internal compiler error, should not occur in normal use)
       UnknownCurrentModule
     | {- | A type alias directly or indirectly refers to itself, which is forbidden.
       The first argument is the alias being defined; the second is the use site where the cycle is detected
@@ -70,10 +75,35 @@ data RenameError
 
 deriving instance Show RenameError
 
-instance ReportableError RenameError where
-    report (ModuleNameMismatch expected actual) =
-        let actualName = actual ^. unlocated
-            isImplicitMain =
+instance Exception RenameError
+
+instance ElaraDiagnostic RenameError where
+    diagnosticMessage (ModuleNameMismatch _ _) = "Module name mismatch"
+    diagnosticMessage (UnknownModule mn) = "Unknown module: " <> pretty mn
+    diagnosticMessage (QualifiedInWrongModule actual expected) = "Qualified name belongs to module " <> pretty actual <> " but was used inside module " <> pretty expected
+    diagnosticMessage (NonExistentModuleDeclaration m n) = pretty (n ^. unlocated) <+> "does not exist in module" <+> pretty m
+    diagnosticMessage (UnknownTypeVariable n) = "Unknown type variable: " <> pretty n
+    diagnosticMessage (UnknownName n _ _) = "Unknown name: " <> pretty n
+    diagnosticMessage (BlockEndsWithLet _ _) = "Block ends with a let binding"
+    diagnosticMessage (AmbiguousVarName n _) = "Ambiguous variable name: " <> pretty n
+    diagnosticMessage (AmbiguousTypeName n _) = "Ambiguous type name: " <> pretty n
+    diagnosticMessage UnknownCurrentModule = "Could not determine the current module (internal error)"
+    diagnosticMessage (RecursiveTypeAlias n _) = "Recursive type alias: " <> pretty n
+
+    diagnosticCode (UnknownModule _) = Just Codes.unknownModule
+    diagnosticCode (QualifiedInWrongModule _ _) = Just Codes.qualifiedWithWrongModule
+    diagnosticCode (NonExistentModuleDeclaration _ _) = Just Codes.nonExistentModuleDeclaration
+    diagnosticCode (UnknownTypeVariable _) = Just Codes.unknownTypeVariable
+    diagnosticCode (UnknownName{}) = Just Codes.unknownName
+    diagnosticCode (BlockEndsWithLet _ _) = Just Codes.blockEndsWithLet
+    diagnosticCode (AmbiguousVarName _ _) = Just Codes.ambiguousName
+    diagnosticCode (AmbiguousTypeName _ _) = Just Codes.ambiguousName
+    diagnosticCode UnknownCurrentModule = Just Codes.unknownCurrentModule
+    diagnosticCode (RecursiveTypeAlias _ _) = Just Codes.recursiveTypeAlias
+    diagnosticCode _ = Nothing
+
+    diagnosticMarkers (ModuleNameMismatch expected actual) =
+        let isImplicitMain =
                 case actual of
                     Located (RealSourceRegion r) (ModuleName ("Main" :| [])) -> r ^. startPos == r ^. endPos
                     Located (GeneratedRegion _) (ModuleName ("Main" :| [])) -> True
@@ -81,72 +111,58 @@ instance ReportableError RenameError where
             message =
                 if isImplicitMain
                     then "Module implicitly declared as Main"
-                    else "Module declared as " <> pretty actualName
+                    else "Module declared as " <> pretty (actual ^. unlocated)
+         in [ ElaraMarker (actual ^. sourceRegion) PrimaryMarker message
+            , ElaraMarker (expected ^. sourceRegion) SecondaryMarker ("Imported as " <> pretty (expected ^. unlocated))
+            ]
+    diagnosticMarkers (NonExistentModuleDeclaration _ n) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
+    diagnosticMarkers (UnknownName n _ _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
+    diagnosticMarkers (BlockEndsWithLet (New.Expr (ExprLoc loc) _ _) decl) =
+        ElaraMarker loc PrimaryMarker "this let has no body"
+            : maybe [] (\(New.DeclarationBody dloc _) -> [ElaraMarker (unwrapLoc dloc) SecondaryMarker "inside this declaration"]) decl
+    diagnosticMarkers (AmbiguousVarName n _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
+    diagnosticMarkers (AmbiguousTypeName n _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
+    diagnosticMarkers (RecursiveTypeAlias n usePoint) =
+        [ ElaraMarker (n ^. sourceRegion) SecondaryMarker "alias defined here"
+        , ElaraMarker (usePoint ^. sourceRegion) PrimaryMarker "refers back to itself here"
+        ]
+    diagnosticMarkers _ = []
+
+    diagnosticNotes (ModuleNameMismatch expected actual) =
+        let actualName = actual ^. unlocated
+            isImplicitMain =
+                case actual of
+                    Located (RealSourceRegion r) (ModuleName ("Main" :| [])) -> r ^. startPos == r ^. endPos
+                    Located (GeneratedRegion _) (ModuleName ("Main" :| [])) -> True
+                    _ -> False
             hint =
                 if isImplicitMain
                     then Hint "You can define a module name with the `module` keyword at the top of the file."
                     else Hint "The module name must match the name used to import it."
-         in writeReport $
-                Err
-                    Nothing
-                    "Module name mismatch"
-                    [ (actual ^. sourceRegion % to sourceRegionToDiagnosePosition, This message)
-                    , (expected ^. sourceRegion % to sourceRegionToDiagnosePosition, Where $ "Imported as " <> pretty (expected ^. unlocated))
-                    ]
-                    [ Note $ "Expected module name: " <> pretty (expected ^. unlocated)
-                    , hint
-                    ]
-    report (UnknownModule mn) =
-        writeReport $
-            Err
-                (Just Codes.unknownModule)
-                ("Unknown module: " <> pretty mn)
-                []
-                [Hint "Check that the module name is spelled correctly and that the file exists."]
-    report (QualifiedInWrongModule actual expected) =
-        writeReport $
-            Err
-                (Just Codes.qualifiedWithWrongModule)
-                ("Qualified name belongs to module " <> pretty actual <> " but was used inside module " <> pretty expected)
-                []
-                [Hint $ "Remove the " <> pretty actual <> " qualifier, or move this definition into module " <> pretty actual]
-    report (NonExistentModuleDeclaration m n) =
-        let nPos = sourceRegionToDiagnosePosition (n ^. sourceRegion)
-         in writeReport $
-                Err
-                    (Just Codes.nonExistentModuleDeclaration)
-                    (pretty (n ^. unlocated) <+> "does not exist in module" <+> pretty m)
-                    [(nPos, This "referenced here")]
-                    [Hint $ "Check the spelling, or consult the documentation for " <> pretty m]
-    report (UnknownTypeVariable n) =
-        writeReport $
-            Err
-                (Just Codes.unknownTypeVariable)
-                ("Unknown type variable: " <> pretty n)
-                []
-                [Hint "Type variables must be bound in the enclosing type declaration or forall."]
-    report (UnknownName n m names) = do
-        let nameKind = case n of
-                Located _ (NVarName (NormalVarName _)) -> "variable"
-                Located _ (NVarName (OperatorVarName _)) -> "operator"
-                Located _ (NTypeName _) -> "type"
-        -- search all names to suggest imports / similar names
+         in [ Note $ "Expected module name: " <> pretty (expected ^. unlocated)
+            , hint
+            ]
+    diagnosticNotes (UnknownModule _) = [Hint "Check that the module name is spelled correctly and that the file exists."]
+    diagnosticNotes (QualifiedInWrongModule actual _) = [Hint $ "Remove the " <> pretty actual <> " qualifier, or move this definition into module " <> pretty actual]
+    diagnosticNotes (NonExistentModuleDeclaration m _) = [Hint $ "Check the spelling, or consult the documentation for " <> pretty m]
+    diagnosticNotes (UnknownTypeVariable _) = [Hint "Type variables must be bound in the enclosing type declaration or forall."]
+    diagnosticNotes (UnknownName n m names) =
         let namesMap = Map.mapKeys toName names
-        let allNames = maybe [] toList (fmap toName <<$>> Map.lookup (n ^. unlocated) namesMap)
-        let namesThatMightveBeenIntendedButNotImported =
+            allNames = maybe [] toList (fmap toName <<$>> Map.lookup (n ^. unlocated) namesMap)
+            namesThatMightveBeenIntendedButNotImported =
                 case m of
                     Nothing -> []
                     Just m' -> case filter (not . isImportedBy m') allNames of
                         [] -> []
                         ns ->
-                            [ Hint $
+                            [ Note $
                                 vsep
                                     [ "This name is defined in the following modules, but none of them are imported:"
                                     , hsep (punctuate comma (ns ^.. each % _Ctor' @"Global" % unlocated % field' @"qualifier" % to pretty))
                                     , "Try importing one of the modules."
                                     ]
                             ]
-        let prettyVarRef n'@(Local{}) = pretty (toName $ view unlocated $ varRefVal n') <+> "(local variable)"
+            prettyVarRef n'@(Local{}) = pretty (toName $ view unlocated $ varRefVal n') <+> "(local variable)"
             prettyVarRef (Global (Located _ (Qualified n' m'))) = pretty (toName n') <+> "(imported from" <+> pretty m' <> ")"
             possibleTypos = case m of
                 Nothing -> []
@@ -166,69 +182,36 @@ instance ReportableError RenameError where
                                         , listToText (prettyVarRef <$> ts)
                                         ]
                                 ]
+         in namesThatMightveBeenIntendedButNotImported <> possibleTypos
+    diagnosticNotes (BlockEndsWithLet _ _) =
+        [ Note "Blocks must end with an expression, not a let binding."
+        , Hint "Perhaps you meant to use a let ... in construct?"
+        ]
+    diagnosticNotes (AmbiguousVarName n options) =
+        [ Note $
+            vsep
+                [ "The name is ambiguous, and could refer to any of the following:"
+                , listToText (pretty <$> toList options)
+                ]
+        , Hint "Try qualifying the name with the module name."
+        , Hint "Try removing all but one of the imports causing the ambiguity."
+        , Hint $ "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports."
+        ]
+    diagnosticNotes (AmbiguousTypeName n options) =
+        [ Note $
+            vsep
+                [ "The name is ambiguous, and could refer to any of the following:"
+                , listToText (pretty <$> toList options)
+                ]
+        , Hint "Try qualifying the name with the module name."
+        , Hint "Try removing all but one of the imports causing the ambiguity."
+        , Hint $ "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports."
+        ]
+    diagnosticNotes UnknownCurrentModule = [Note "This is a compiler bug. Please report it."]
+    diagnosticNotes (RecursiveTypeAlias _ _) =
+        [ Note "Type aliases cannot be recursive."
+        , Hint "Define a data type instead: use `|` to create an ADT with a single constructor."
+        ]
 
-        writeReport $
-            Err
-                (Just Codes.unknownName)
-                ("Unknown" <+> nameKind <+> "name: " <> pretty n)
-                [(n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")]
-                (namesThatMightveBeenIntendedButNotImported <> possibleTypos)
-    report (BlockEndsWithLet (New.Expr loc _ _) decl) =
-        writeReport $
-            Err
-                (Just Codes.blockEndsWithLet)
-                "Block ends with a let binding"
-                ( (sourceRegionToDiagnosePosition loc, This "this let has no body")
-                    : maybe [] (\(New.DeclarationBody dloc _) -> [(sourceRegionToDiagnosePosition dloc, Where "inside this declaration")]) decl
-                )
-                [ Note "Blocks must end with an expression, not a let binding."
-                , Hint "Perhaps you meant to use a let ... in construct?"
-                ]
-    report (AmbiguousVarName n options) =
-        writeReport $
-            Err
-                (Just Codes.ambiguousName)
-                ("Ambiguous variable name: " <> pretty n)
-                [(n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")]
-                [ Note $
-                    vsep
-                        [ "The name is ambiguous, and could refer to any of the following:"
-                        , listToText (pretty <$> toList options)
-                        ]
-                , Hint "Try qualifying the name with the module name."
-                , Hint "Try removing all but one of the imports causing the ambiguity."
-                , Hint $ "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports."
-                ]
-    report (AmbiguousTypeName n options) =
-        writeReport $
-            Err
-                (Just Codes.ambiguousName)
-                ("Ambiguous type name: " <> pretty n)
-                [(n ^. sourceRegion % to sourceRegionToDiagnosePosition, This "referenced here")]
-                [ Note $
-                    vsep
-                        [ "The name is ambiguous, and could refer to any of the following:"
-                        , listToText (pretty <$> toList options)
-                        ]
-                , Hint "Try qualifying the name with the module name."
-                , Hint "Try removing all but one of the imports causing the ambiguity."
-                , Hint $ "Try excluding " <> pretty n <> " from the exposing list of all but one of the imports."
-                ]
-    report UnknownCurrentModule =
-        writeReport $
-            Err
-                (Just Codes.unknownCurrentModule)
-                "Could not determine the current module (internal error)"
-                []
-                [Note "This is a compiler bug. Please report it."]
-    report (RecursiveTypeAlias n usePoint) =
-        writeReport $
-            Err
-                (Just Codes.recursiveTypeAlias)
-                ("Recursive type alias: " <> pretty n)
-                [ (n ^. sourceRegion % to sourceRegionToDiagnosePosition, Where "alias defined here")
-                , (usePoint ^. sourceRegion % to sourceRegionToDiagnosePosition, This "refers back to itself here")
-                ]
-                [ Note "Type aliases cannot be recursive."
-                , Hint "Define a data type instead: use `|` to create an ADT with a single constructor."
-                ]
+instance Pretty RenameError where
+    pretty = diagnosticMessage

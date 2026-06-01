@@ -1,108 +1,72 @@
 module Elara.Desugar.Error where
 
+import Error.Diagnose hiding (Annotation, Hint, Note)
+
 import Elara.AST.Instances ()
+import Elara.AST.Location
 import Elara.AST.Name
-import Elara.AST.Phases.Desugared
-import Elara.AST.Phases.Frontend qualified as Frontend
+import Elara.AST.Phases.Desugared (Desugared, DesugaredPattern, DesugaredType)
 import Elara.AST.Region
-import Elara.AST.Types qualified as New
-import Elara.Data.Pretty
+import Elara.Data.Pretty (Pretty (..), viaShow, (<+>))
+import Elara.Desugar.Common
 import Elara.Error
+import Elara.Error.Diagnose (toDiagnoseReports)
+import Elara.Lexer.Token (Lexeme)
+
+import Elara.AST.Phases.Frontend qualified as Frontend
+import Elara.AST.Types qualified as New
 import Elara.Error.Codes qualified as Codes
-import Error.Diagnose
 
 data DesugarError
     = DefWithoutLet DesugaredType
-    | InfixWithoutDeclaration (Located Name) SourceRegion [New.Annotation SourceRegion Desugared]
     | DuplicateDeclaration PartialDeclaration PartialDeclaration
     | PartialNamesNotEqual PartialDeclaration PartialDeclaration
+    | InfixWithoutDeclaration (Located Name) (Located (Qualified Name)) Lexeme
     | TuplePatternTooShort (New.Pattern SourceRegion Frontend.Frontend)
-    deriving (Typeable, Show, Generic)
+    deriving (Generic, Show, Typeable)
 
 instance Exception DesugarError
 
 instance Pretty DesugarError where
-    pretty = viaShow
+    pretty = diagnosticMessage
 
-instance ReportableError DesugarError where
-    getReport (DefWithoutLet ty) =
+instance ElaraDiagnostic DesugarError where
+    diagnosticMessage (DefWithoutLet _) = "Def without let"
+    diagnosticMessage (DuplicateDeclaration a _) = "Duplicate declaration names:" <+> Elara.Data.Pretty.pretty a
+    diagnosticMessage (PartialNamesNotEqual a b) = "Partial names not equal: " <+> Elara.Data.Pretty.pretty a <+> "and" <+> Elara.Data.Pretty.pretty b
+    diagnosticMessage (InfixWithoutDeclaration n _ l) = "Operator fixity declaration without corresponding body: " <+> Elara.Data.Pretty.pretty n <+> "," <+> show l
+    diagnosticMessage (TuplePatternTooShort _) = "Tuple patterns must have at least 2 elements"
+
+    diagnosticCode (DefWithoutLet _) = Just Codes.defWithoutLet
+    diagnosticCode (DuplicateDeclaration _ _) = Just Codes.duplicateDefinition
+    diagnosticCode (PartialNamesNotEqual _ _) = Just Codes.partialNamesNotEqual
+    diagnosticCode (InfixWithoutDeclaration{}) = Just Codes.infixDeclarationWithoutValue
+    diagnosticCode (TuplePatternTooShort _) = Just Codes.tuplePatternTooShort
+
+    diagnosticMarkers (DefWithoutLet ty) =
         let New.Type sr _ _ = ty
-         in Just $
-                Err
-                    (Just Codes.defWithoutLet)
-                    ("Def without let at" <+> pretty sr)
-                    [ (sourceRegionToDiagnosePosition sr, This "Def without let here")
-                    ]
-                    [ Note "A 'def' must always be followed by a let binding"
-                    , Hint "Try adding a 'let' binding after the 'def'"
-                    ]
-    getReport (DuplicateDeclaration a b) =
-        Just $
-            Err
-                (Just Codes.duplicateDefinition)
-                ("Duplicate declaration names:" <+> pretty a)
-                [ (sourceRegionToDiagnosePosition $ partialDeclarationSourceRegion b, This "Name is used here")
-                , (sourceRegionToDiagnosePosition $ partialDeclarationSourceRegion a, This "And also here")
-                ]
-                [ Note "Having multiple variables with the same name makes it impossible to tell which one you want to use!"
-                , Hint "Rename one of the declarations"
-                ]
-    getReport (PartialNamesNotEqual a b) =
-        Just $ Err (Just Codes.partialNamesNotEqual) ("Partial names not equal: " <+> pretty a <+> "and" <+> pretty b) [] []
-    getReport (InfixWithoutDeclaration n _ l) =
-        Just $ Err (Just Codes.infixDeclarationWithoutValue) ("Operator fixity declaration without corresponding body: " <+> pretty n <+> "," <+> show l) [] []
-    getReport (TuplePatternTooShort p) =
+         in [ElaraMarker (unwrapLoc sr) PrimaryMarker "Def without let here"]
+    diagnosticMarkers (DuplicateDeclaration a b) =
+        [ ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion b) PrimaryMarker "Name is used here"
+        , ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion a) PrimaryMarker "And also here"
+        ]
+    diagnosticMarkers (PartialNamesNotEqual a _) = [ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion a) PrimaryMarker "Partial names not equal"]
+    diagnosticMarkers (InfixWithoutDeclaration n _ _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "Operator fixity declaration without corresponding body"]
+    diagnosticMarkers (TuplePatternTooShort p) =
         let New.Pattern sr _ _ = p
-         in Just $
-                Err
-                    (Just Codes.tuplePatternTooShort)
-                    "Tuple patterns must have at least 2 elements"
-                    [(sourceRegionToDiagnosePosition sr, This "This tuple pattern is too short")]
-                    [ Note "A tuple pattern must have at least 2 elements, e.g. (x, y)"
-                    , Note "This is likely an internal error, as these cases should be caught by the parser"
-                    , Hint "If you want an empty tuple, use ()"
-                    ]
+         in [ElaraMarker (unwrapLoc sr) PrimaryMarker "This tuple pattern is too short"]
 
-{- | A partial declaration stores a desugared part of a declaration
-This allows merging of declarations with the same name
-For example, the code
-@
-def a : Int
-...
-...
-let a = 5
-@
-is legal, and the 2 parts of the declaration need to be merged
-
-Firstly, we create a 'JustDef' after seeing the @def@ line, then we merge this with a 'JustLet' after seeing the @let@ line
-to create a 'Both' declaration, which is then resolved to a Desugared.Declaration'
--}
-data PartialDeclaration
-    = -- | A partial declaration with just a def line
-      JustDef
-        -- | Name of the declaration
-        (Located VarName)
-        -- | The *overall* region of the declaration, not just the body!
-        SourceRegion
-        DesugaredType
-        (Maybe [New.Annotation SourceRegion Desugared])
-    | JustLet
-        (Located VarName)
-        SourceRegion
-        DesugaredExpr
-        (Maybe [New.Annotation SourceRegion Desugared])
-    | AllDecl (Located VarName) SourceRegion DesugaredType DesugaredExpr [New.Annotation SourceRegion Desugared]
-    | Immediate Name (New.DeclarationBody SourceRegion Desugared)
-    deriving (Typeable, Show, Generic)
-
-partialDeclarationSourceRegion :: PartialDeclaration -> SourceRegion
-partialDeclarationSourceRegion (JustDef _ sr _ _) = sr
-partialDeclarationSourceRegion (JustLet _ sr _ _) = sr
-partialDeclarationSourceRegion (AllDecl _ sr _ _ _) = sr
-partialDeclarationSourceRegion (Immediate _ (New.DeclarationBody sr _)) = sr
-
-instance Pretty PartialDeclaration where
-    pretty (JustDef n _ _ _) = "JustDef" <+> pretty n
-    pretty (JustLet n _ _ _) = "JustLet" <+> pretty n
-    pretty (AllDecl n _ _ _ _) = "All" <+> pretty n
-    pretty (Immediate n _) = "Immediate" <+> pretty n
+    diagnosticNotes (DefWithoutLet _) =
+        [ Elara.Error.Note "A 'def' must always be followed by a let binding"
+        , Elara.Error.Hint "Try adding a 'let' binding after the 'def'"
+        ]
+    diagnosticNotes (DuplicateDeclaration _ _) =
+        [ Elara.Error.Note "Having multiple variables with the same name makes it impossible to tell which one you want to use!"
+        , Elara.Error.Hint "Rename one of the declarations"
+        ]
+    diagnosticNotes (TuplePatternTooShort _) =
+        [ Elara.Error.Note "A tuple pattern must have at least 2 elements, e.g. (x, y)"
+        , Elara.Error.Note "This is likely an internal error."
+        , Elara.Error.Hint "If you want an empty tuple, use ()"
+        ]
+    diagnosticNotes _ = []

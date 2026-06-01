@@ -1,20 +1,23 @@
 module Elara.Parse.Type where
 
 import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser)
+import Text.Megaparsec (MonadParsec (try), choice, customFailure, (<?>))
+
 import Elara.AST.Extensions (TupleTypeExtension (..))
+import Elara.AST.Location (AstNode (TypeNode, VarNode), NodeLoc (TypeLoc), TaggedLocate, tag, tagLocated)
 import Elara.AST.Name (LowerAlphaName)
 import Elara.AST.Phases.Frontend
-import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion')
+import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion)
 import Elara.AST.Types
-import Elara.Data.AtLeast2List qualified as AtLeast2List
 import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Combinators (sepBy1')
 import Elara.Parse.Error (ElaraParseError (EmptyRecord))
 import Elara.Parse.Names
 import Elara.Parse.Primitives (Parser, inBraces, inParens, located, locatedTokens', token_)
-import Text.Megaparsec (MonadParsec (try), choice, customFailure, (<?>))
 
-typeRegion :: FrontendType -> SourceRegion
+import Elara.Data.AtLeast2List qualified as AtLeast2List
+
+typeRegion :: FrontendType -> NodeLoc TypeNode SourceRegion
 typeRegion (Type loc _ _) = loc
 
 type' :: Parser FrontendType
@@ -34,7 +37,7 @@ typeNotApplication =
         ]
 
 locatedType :: Parser FrontendType' -> Parser FrontendType
-locatedType p = (\(Located sr node) -> Type sr () node) <$> located p
+locatedType p = (\(Located sr node) -> Type (TypeLoc sr) () node) <$> located p
 
 constructorApplication :: Parser (FrontendType -> FrontendType -> FrontendType)
 constructorApplication = liftedBinaryType pass (const TApp)
@@ -46,7 +49,7 @@ liftedBinaryType :: Parser op -> (op -> FrontendType -> FrontendType -> Frontend
 liftedBinaryType op f = do
     op' <- op
     let create l r =
-            let region = enclosingRegion' (typeRegion l) (typeRegion r)
+            let region = enclosingRegion (typeRegion l) (typeRegion r)
              in Type region () (f op' l r)
     pure create
 
@@ -66,7 +69,7 @@ typeTerm =
 typeVar :: Parser FrontendType
 typeVar =
     locatedType $
-        TVar <$> located varId
+        TVar . tagLocated @TypeNode <$> located varId
 
 unit :: Parser FrontendType
 unit =
@@ -75,16 +78,16 @@ unit =
 
 namedType :: Parser FrontendType
 namedType =
-    locatedType $ TUserDefined <$> located conName
+    locatedType $ TUserDefined . tagLocated @TypeNode <$> located conName
 
 recordType :: Parser FrontendType
 recordType = locatedType $ inBraces $ do
     fields <- sepBy1' recordField (token_ TokenComma)
     pure $ TRecord fields
   where
-    recordField :: Parser (Located LowerAlphaName, FrontendType)
+    recordField :: Parser (TaggedLocate VarNode SourceRegion LowerAlphaName, FrontendType)
     recordField = do
-        name <- located varId
+        name <- tagLocated @VarNode <$> located varId
         token_ TokenColon
         t <- type'
         pure (name, t)

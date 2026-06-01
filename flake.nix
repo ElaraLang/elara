@@ -67,10 +67,13 @@
             hixFlake = hix.lib.flake (
               { config, ... }:
               {
-                compiler = "ghc912";
+                compiler = "ghc9123";
                 systems = import inputs.systems;
                 compat.enable = false;
                 envs.dev.ghcid.enable = false;
+                # hix's HLS build can't be patched (overrides don't seem to reach transitive deps like cabal-add)
+                # so we disable it and inject a manually-patched HLS in buildInputs below
+                envs.dev.hls.enable = false;
                 outputs.devShells = {
                   # extending the default devshell to add the pre-commit hooks and some other nice things
                   default = config.pkgs.mkShell {
@@ -86,8 +89,30 @@
 
                       mdbook
                       mdbook-d2
+                      mdbook-variables
                       d2
                       nixd
+
+                      # lots of hls tests break from nix sandboxing
+                      # let's just disable them all hehe
+                      (
+                        let
+                          rawPkgs = import inputs.nixpkgs { system = config.system; };
+                          hlsPkgs = rawPkgs.haskell.packages.ghc9123.override {
+                            overrides = hfinal: hprev: {
+                              # cabal-add test fails due to nix sandboxing
+                              cabal-add = rawPkgs.haskell.lib.dontCheck hprev.cabal-add;
+                              # ditto
+                              fourmolu = rawPkgs.haskell.lib.dontCheck hprev.fourmolu;
+                              # dependency bounds bad
+                              haskell-language-server = rawPkgs.haskell.lib.dontCheck (
+                                rawPkgs.haskell.lib.doJailbreak hprev.haskell-language-server
+                              );
+                            };
+                          };
+                        in
+                        hlsPkgs.haskell-language-server
+                      )
                     ];
                   };
                 };
@@ -98,6 +123,7 @@
                     hackage,
                     enable,
                     notest,
+                    force,
                     unbreak,
                     jailbreak,
                     ...
@@ -121,12 +147,38 @@
                     effectful-core = jailbreak;
                     effectful-plugin = jailbreak;
                     co-log-effectful = jailbreak (unbreak);
+
+                    boring = jailbreak;
+                    some = jailbreak;
+                    hie-compat = jailbreak;
+                    ghcide = jailbreak;
+                    opentelemetry = jailbreak;
                   };
                 packages = {
                   elara = {
-                    buildInputs = pkgs: [ pkgs.alex ];
+                    buildInputs = pkgs: [
+                      pkgs.alex
+                      pkgs.jdk
+                    ];
                     src = ./.;
                     description = "See README for more info";
+
+                    override =
+                      { overrideAttrs, pkgs, ... }:
+                      drv:
+                      overrideAttrs (old: {
+                        unfilteredSrc = ./.;
+
+                        preCheck = ''
+                          ${old.preCheck or ""}
+                          echo "Compiling Java standard library..."
+
+                          JAVA_FILES=$(${pkgs.findutils}/bin/find jvm-stdlib -name "*.java")
+
+                          javac $JAVA_FILES
+                        '';
+                      }) drv;
+
                     cabal = {
                       author = "Alexander Wood";
                       build-type = "Simple";
@@ -138,7 +190,13 @@
                         maintainer = "Alexander Wood <alexljwood24@hotmail.co.uk>";
                         homepage = "https://github.com/ElaraLang/elara#readme";
                         synopsis = "See README for more info";
+                        github = "ElaraLang/elara";
+
+                        extra-source-files = [
+                          "jvm-stdlib/**/*.java"
+                        ];
                       };
+
                       language = "GHC2024";
                       prelude = {
                         enable = true;
@@ -214,12 +272,15 @@
                         "-O0"
                         "-threaded"
                         "-rtsopts"
-                        "-with-rtsopts=-N"
                       ];
                     };
                     library = {
                       enable = true;
                       source-dirs = "src";
+
+                      dependencies = [
+                        "witch"
+                      ];
 
                       component = {
                         build-tools = [
@@ -249,6 +310,7 @@
                         "template-haskell"
                         "neat-interpolation"
                         "hspec-megaparsec"
+
                       ];
                       source-dirs = "test";
                     };

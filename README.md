@@ -82,7 +82,7 @@ Elara is extremely buggy and temperamental at the moment, but it _should_ functi
 
 ```sh
 cd jvm-stdlib
-javac Elara/Error.java Elara/Func.java Elara/Func2.java Elara/IO.java Elara/Int.java Elara/Prelude.java Elara/Unit.java Elara/Func0.java
+javac Elara/Error.java Elara/Func.java Elara/Func2.java Elara/IO.java Elara/Int.java Elara/Prelude.java Elara/Func0.java
 cd ../
 ```
 

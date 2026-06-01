@@ -4,12 +4,13 @@ module Lex.Common where
 
 import Effectful (runPureEff)
 import Effectful.Error.Static (runError)
+import Test.Syd
+
 import Elara.AST.Region (unlocated)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.ReadFile (FileContents (..))
-import Test.Syd
 
 lex' :: Text -> [Lexeme]
 lex' contents = do

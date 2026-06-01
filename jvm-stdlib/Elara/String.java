@@ -4,7 +4,6 @@ public class String {
     private final Character head;
     private final String tail;
 
-
     public String(char head, String tail) {
         this.head = head;
         this.tail = tail;
@@ -71,4 +70,26 @@ public class String {
         }
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        String other = (String) obj;
+        if (isEmpty() && other.isEmpty())
+            return true;
+        if (isEmpty() || other.isEmpty())
+            return false;
+        return head.equals(other.head) && tail.equals(other.tail);
+    }
+
+    @Override
+    public int hashCode() {
+        if (isEmpty()) {
+            return 0;
+        } else {
+            return head.hashCode() * 31 + tail.hashCode();
+        }
+    }
 }

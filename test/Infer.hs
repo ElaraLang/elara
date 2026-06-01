@@ -4,35 +4,38 @@
 -- | Type inference tests
 module Infer (spec) where
 
-import Boilerplate (fakeTypeEnvironment, runQueryEffects)
-import Common (evalReportableM)
 import Effectful
 import Effectful.Error.Static (runErrorNoCallStack)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Effectful.Writer.Static.Local (runWriter)
+import Hedgehog (Property, annotateShow, evalIO, failure, forAll, property)
+import Test.Syd
+import Test.Syd.Hedgehog ()
+
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+
+import Boilerplate (fakeTypeEnvironment, runQueryEffects)
+import Common (evalReportableM)
+import Elara.AST.Location (NodeLoc (..))
 import Elara.AST.Name (Qualified, TypeName)
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.Types qualified as New
 import Elara.Data.Pretty (AnsiStyle)
-import Elara.Error (ReportableError (..), SomeReportableError, runErrorOrReport)
-import Elara.Error.Effect (evalDiagnosticWriter)
-import Elara.Prim (floatName, intName, mkPrimQual, stringName)
+import Elara.Error
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.ConstraintGeneration (generateConstraints)
 import Elara.TypeInfer.Context (emptyContextStack)
 import Elara.TypeInfer.Environment (InferError, emptyLocalTypeEnvironment)
 import Elara.TypeInfer.Error (UnifyError)
 import Elara.TypeInfer.Type (Constraint, Monotype (..))
-import Hedgehog (Property, annotateShow, evalIO, failure, forAll, property)
-import Hedgehog.Gen qualified as Gen
-import Hedgehog.Range qualified as Range
-import Infer.Unify qualified as Unify
 import Print (prettyToString)
 import Region (testRegion)
-import Test.Syd
-import Test.Syd.Hedgehog ()
 import Prelude hiding (fail)
+
+import Elara.AST.Types qualified as New
+import Infer.Unify qualified as Unify
 
 spec :: Spec
 spec = describe "Infers types correctly" $ do
@@ -41,16 +44,17 @@ spec = describe "Infers types correctly" $ do
     additionalLiteralTests
     Unify.spec
 
-runInfer :: forall loc a. loc ~ SourceRegion => _ -> IO (Either SomeReportableError (a, Constraint loc))
+runInfer :: forall loc a. loc ~ SourceRegion => _ -> IO (Either ElaraError (a, Constraint loc))
 runInfer =
-    runEff
+    fmap fst
+        . runEff
         . runQueryEffects
         . evalState emptyLocalTypeEnvironment
         . evalState fakeTypeEnvironment
-        . evalDiagnosticWriter
-        . runErrorNoCallStack @SomeReportableError
-        . runErrorOrReport @(InferError loc)
-        . runErrorOrReport @(UnifyError loc)
+        . runWriter @[ElaraWarning]
+        . runErrorNoCallStack @ElaraError
+        . runErrorAsElaraError @(InferError loc)
+        . runErrorAsElaraError @(UnifyError loc)
         . runWriter @(Constraint loc)
         . runReader emptyContextStack
 
@@ -65,19 +69,19 @@ literalTests = describe "Literal Type Inference" $ do
         result <- runInfer @SourceRegion $ generateConstraints (mkIntExpr 42)
         result `shouldSucceed` \((_, ty), constraints) -> do
             constraints `shouldBe` mempty
-            isPrimType (mkPrimQual intName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimInt))) ty `shouldBe` True
 
     it "infers Float type correctly" $ do
         result <- runInfer $ generateConstraints (mkFloatExpr 42.0)
         result `shouldSucceed` \((_, ty), constraints) -> do
             constraints `shouldBe` mempty
-            isPrimType (mkPrimQual floatName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimFloat))) ty `shouldBe` True
 
     it "infers String type correctly" $ do
         result <- runInfer $ generateConstraints (mkStringExpr "hello")
         result `shouldSucceed` \((_, ty), constraints) -> do
             constraints `shouldBe` mempty
-            isPrimType (mkPrimQual stringName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimString))) ty `shouldBe` True
 
 {- | Property test to ensure that literal types maintain invariants.
 Specifically, that the inferred type for literals is always a primitive type constructor.
@@ -121,17 +125,17 @@ additionalLiteralTests = describe "Additional Literal Type Inference" $ do
     it "infers negative Int literal correctly" $ do
         result <- runInfer @SourceRegion $ generateConstraints (mkIntExpr (-42))
         result `shouldSucceed` \((_, ty), _) -> do
-            isPrimType (mkPrimQual intName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimInt))) ty `shouldBe` True
 
     it "infers empty String correctly" $ do
         result <- runInfer @SourceRegion $ generateConstraints (mkStringExpr "")
         result `shouldSucceed` \((_, ty), _) -> do
-            isPrimType (mkPrimQual stringName) ty `shouldBe` True
+            isPrimType (knownQualified (knownTypeInfo (KnownOpaque PrimString))) ty `shouldBe` True
 
 -- | Helper to assert that inference succeeded
-shouldSucceed :: Either SomeReportableError b -> (b -> IO a3) -> IO a3
+shouldSucceed :: Either ElaraError b -> (b -> IO a3) -> IO a3
 shouldSucceed (Left err) _ =
-    withFrozenCallStack $ expectationFailure $ "Inference failed: " ++ prettyToString ((\x -> x @AnsiStyle) <$> errorCode err)
+    withFrozenCallStack $ expectationFailure $ "Inference failed: " <> prettyToString ((\(ErrorCode x) -> x @AnsiStyle) <$> diagnosticCode err)
 shouldSucceed (Right result) assertion = withFrozenCallStack $ assertion result
 
 -- | Create a 'ShuntedExpr' representing an integer literal
@@ -148,7 +152,7 @@ mkStringExpr s = mkExpr' (New.EString s)
 
 -- | Helper to create a 'ShuntedExpr' from a 'ShuntedExpr''
 mkExpr' :: ShuntedExpr' -> ShuntedExpr
-mkExpr' = New.Expr testRegion Nothing
+mkExpr' = New.Expr (ExprLoc testRegion) Nothing
 
 -- | Helper to create a 'ShuntedExpr' from a constructor taking one argument
 mkExpr :: (a -> ShuntedExpr') -> a -> ShuntedExpr

@@ -2,6 +2,9 @@
 
 module Elara.Parse.Module where
 
+import Text.Megaparsec (SourcePos (sourceName), getSourcePos, sepEndBy)
+
+import Elara.AST.Location (AstNode (..), tagLocated)
 import Elara.AST.Module (Exposing (..), Exposition (..), Import (..), Import' (..), ImportExposingOrHiding (..), Module (..), Module' (..))
 import Elara.AST.Name
 import Elara.AST.Phases.Frontend (Frontend)
@@ -10,9 +13,9 @@ import Elara.Lexer.Token (Token (..))
 import Elara.Parse.Declaration (declaration)
 import Elara.Parse.Indents (lineSeparator)
 import Elara.Parse.Names (opName, varName)
-import Elara.Parse.Names qualified as Parse (moduleName)
 import Elara.Parse.Primitives
-import Text.Megaparsec (getSourcePos, sepEndBy)
+
+import Elara.Parse.Names qualified as Parse (moduleName)
 
 module' :: Parser (Module SourceRegion Frontend)
 module' = do
@@ -20,14 +23,21 @@ module' = do
         startPos <- getSourcePos
         _ <- optional lineSeparator
         mHeader <- optional (header <* optional lineSeparator)
-        let _name = maybe (Located (RealSourceRegion $ mkSourceRegion startPos startPos) (ModuleName ("Main" :| []))) fst mHeader
+        let _name =
+                maybe
+                    ( Located
+                        (GeneratedRegion startPos.sourceName)
+                        (ModuleName ("Main" :| []))
+                    )
+                    fst
+                    mHeader
         imports <- sepEndBy import' lineSeparator
 
         declarations <- sepEndBy (declaration _name) lineSeparator
 
         pure $
             Module'
-                { moduleName = _name
+                { moduleName = tagLocated @ModuleNode _name
                 , moduleExposing = maybe ExposingAll snd mHeader
                 , moduleImports = imports
                 , moduleDeclarations = declarations
@@ -64,17 +74,17 @@ exposition :: Parser (Exposition SourceRegion Frontend)
 exposition = exposedValue <|> exposedOp
   where
     exposedValue, exposedOp :: Parser (Exposition SourceRegion Frontend)
-    exposedValue = ExposedValue <$> located varName
-    exposedOp = ExposedOp <$> located (inParens opName)
+    exposedValue = ExposedValue <$> taggedLocated _ varName
+    exposedOp = ExposedOp <$> taggedLocated _ (inParens opName)
 
 import' :: Parser (Import SourceRegion Frontend)
 import' = do
     Located loc inner <- located $ do
         token_ TokenImport
 
-        moduleName' <- located Parse.moduleName
+        moduleName' <- taggedLocated _ Parse.moduleName
         isQualified <- isJust <$> optional (token_ TokenQualified)
-        as <- optional . located $ do
+        as <- optional . taggedLocated ModuleNode $ do
             token_ TokenAs
             Parse.moduleName
 

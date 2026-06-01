@@ -1,8 +1,9 @@
 module Elara.Parse.Combinators (sepBy1', sepEndBy1', liftedBinary) where
 
-import Elara.AST.Region (Located (Located), enclosingRegion', sourceRegion)
-import Elara.Parse.Primitives (Parser)
 import Text.Megaparsec (try)
+
+import Elara.AST.Region (Located (Located), enclosingRegion, sourceRegion)
+import Elara.Parse.Primitives (Parser)
 
 {- | Safe version of 'Control.Applicative.Combinators.sepBy1' that backtracks if the parser after the separator fails.
 Could also be considered a lazy version of [sepBy1]
@@ -26,6 +27,6 @@ sepEndBy1' p sep = do
 liftedBinary op f _Expr = do
     op' <- op
     let create l r =
-            let region = enclosingRegion' (l ^. _Expr % sourceRegion) (r ^. _Expr % sourceRegion)
+            let region = enclosingRegion (l ^. _Expr % sourceRegion) (r ^. _Expr % sourceRegion)
              in Located region (f op' l r) ^. re _Expr
     pure create

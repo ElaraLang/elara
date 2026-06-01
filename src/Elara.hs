@@ -26,19 +26,29 @@ module Elara (
 )
 where
 
-import Data.Dependent.HashMap qualified as DHashMap
 import Data.Generics.Product (field')
-import Data.Set qualified as Set
-import Effectful (Eff, IOE, Subset, (:>))
+import Effectful (Eff, IOE, Subset, inject, (:>))
 import Effectful.Colog
-import Effectful.Concurrent (Concurrent, runConcurrent)
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
+import Effectful.Writer.Static.Local (Writer)
+import Error.Diagnose (Report (..))
+import H2JVM
+import Prettyprinter.Render.Text
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath (takeBaseName, takeDirectory)
+import System.IO (hSetEncoding, utf8)
+
+import Data.Dependent.HashMap qualified as DHashMap
+import Data.HashMap.Strict qualified as HashMap
+import Data.Set qualified as Set
+
 import Elara.AST.Instances ()
-import Elara.AST.Module qualified as New
+import Elara.AST.Location (stripTag)
 import Elara.AST.Name (ModuleName, NameLike, nameText)
-import Elara.AST.Phase (Locate)
-import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.AST.Phase
+import Elara.AST.Phases.Renamed (Renamed)
+import Elara.AST.Phases.Typed (Typed)
 import Elara.AST.Region
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)
@@ -46,33 +56,32 @@ import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
-import Elara.Interpreter qualified as Interpreter
+import Elara.Error.Diagnose
 import Elara.JVM.Error (JVMLoweringError)
-import Elara.JVM.IR qualified as IR
 import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, structuredDebugToLogWith)
-import Elara.Parse.Error (WParseErrorBundle)
-import Elara.Query qualified
+import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
+import Elara.Parse.Stream
+import Elara.Query.Effects
 import Elara.ReadFile (ModulePathError)
 import Elara.Rename.Error (RenameError)
-import Elara.Rules qualified
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
-import Elara.Shunt.Error (ShuntError)
-import Error.Diagnose (Report (..))
-import JVM.Data.Abstract.ClassFile (ClassFile (..))
-import JVM.Data.Convert.Monad (CodeConverterError)
-import Prettyprinter.Render.Text
+import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Print
+import Prelude hiding (reader)
+
+import Elara.AST.Module qualified as New
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.Interpreter qualified as Interpreter
+import Elara.JVM.IR qualified as IR
+import Elara.Query qualified
+import Elara.Rules qualified
 import Rock qualified
 import Rock.Memo qualified
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath (takeBaseName, takeDirectory)
-import System.IO (hSetEncoding, utf8)
-import Prelude hiding (reader)
 
 -- | Backend target for code generation and execution
 data Backend = Interpreter | JVM
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 -- | What action to take after compilation
 data CompileAction
@@ -82,17 +91,16 @@ data CompileAction
       CompileAndEmit !Backend
     | -- | Compile and execute the emitted code.
       CompileAndRun !Backend
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 -- | Orphan instance, TODO: sort this out by improving h2jvm
-instance ReportableError CodeConverterError where
-    report x =
-        writeReport $
-            Err
-                Nothing
-                (show x)
-                []
-                []
+instance Pretty CodeConverterError where
+    pretty = viaShow
+
+instance Exception CodeConverterError
+
+instance ElaraDiagnostic CodeConverterError where
+    diagnosticMessage = pretty
 
 -- | Result of compilation, containing information useful to consumers.
 data CompileResult = CompileResult
@@ -107,8 +115,8 @@ data CompileResult = CompileResult
 
 -- | Top-level compiler entrypoint. Returns a 'CompileResult' describing what was compiled.
 compile ::
-    ( Error SomeReportableError :> es
-    , DiagnosticWriter (Doc AnsiStyle) :> es
+    ( Error ElaraError :> es
+    , Writer [ElaraWarning] :> es
     , Log (Doc AnsiStyle) :> es
     , UniqueGen :> es
     , IOE :> es
@@ -140,8 +148,8 @@ compile settings action = withCompilerEnv settings $ do
 Note that this contains only local state, so things like memoisation will not persist across multiple calls to 'withCompilerEnv'.
 -}
 withCompilerEnv ::
-    ( Error SomeReportableError :> es
-    , DiagnosticWriter (Doc AnsiStyle) :> es
+    ( Error ElaraError :> es
+    , Writer [ElaraWarning] :> es
     , IOE :> es
     , Log (Doc AnsiStyle) :> es
     , HasCallStack
@@ -155,26 +163,40 @@ withCompilerEnv ::
 withCompilerEnv settings action = do
     logConfig <- liftIO getLogConfigFromEnv
     let shouldEnableLogging = elaraDebug || minLogLevel logConfig <= Info
-    startedVar <- liftIO $ newIORef DHashMap.empty
+        shouldTraceQueries = DumpQueryGraph `Set.member` settings.dumpTargets
+    startedVar <- liftIO $ newMVar DHashMap.empty
     depsVar <- liftIO $ newIORef mempty
-    runFileSystem $
-        uniqueGenToGlobalIO $
-            (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
-                runConcurrent $
-                    runErrorOrReport @ModulePathError $
+    currentQueryVar <- liftIO $ newIORef HashMap.empty
+    edgesVar <- liftIO $ newIORef Set.empty
+    result <-
+        runFileSystem $
+            uniqueGenToGlobalIO $
+                (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
+                    runErrorAsElaraError @ModulePathError $
                         Rock.runRock
-                            (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings))
+                            ( if shouldTraceQueries
+                                then
+                                    Rock.Memo.tracingRules
+                                        currentQueryVar
+                                        edgesVar
+                                        (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings))
+                                else Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings)
+                            )
                             action
+    when shouldTraceQueries $ do
+        edges <- liftIO $ readIORef edgesVar
+        liftIO $ createDirectoryIfMissing True settings.outputDir
+        liftIO $ writeFile (settings.outputDir <> "/query-graph.d2") (queryEdgesToD2 edges)
+    pure result
 
 {- | Discover input files and resolve module names.
 Returns a list of (module name, source file path) pairs.
 -}
 resolveModules ::
     ( Rock.Rock Elara.Query.Query :> es
-    , Error SomeReportableError :> es
-    , DiagnosticWriter (Doc AnsiStyle) :> es
+    , Error ElaraError :> es
+    , Writer [ElaraWarning] :> es
     , StructuredDebug :> es
-    , Concurrent :> es
     , FileSystem :> es
     , UniqueGen :> es
     , IOE :> es
@@ -184,22 +206,20 @@ resolveModules ::
     Eff es [(ModuleName, FilePath)]
 resolveModules = do
     files <- toList <$> Rock.fetch Elara.Query.InputFiles
-    modNames <- for files $ \file -> do
+    for files $ \file -> do
         (New.Module _ m) <-
-            runErrorOrReport @(WParseErrorBundle _ _) $
+            runErrorAsElaraError @(WParseErrorBundle TokenStream ElaraParseError) $
                 Rock.fetch $
                     Elara.Query.ParsedFile file
-        pure (New.moduleName m ^. unlocated)
-    pure (zip modNames files)
+        pure (m.moduleName ^. unlocated, file)
 
 -- | Dump whichever stages are enabled in 'CompilerSettings'.
 dumpStages ::
     forall es.
     ( Rock.Rock Elara.Query.Query :> es
-    , Error SomeReportableError :> es
-    , DiagnosticWriter (Doc AnsiStyle) :> es
+    , Error ElaraError :> es
+    , Writer [ElaraWarning] :> es
     , StructuredDebug :> es
-    , Concurrent :> es
     , FileSystem :> es
     , UniqueGen :> es
     , IOE :> es
@@ -217,29 +237,30 @@ dumpStages settings resolved = do
 
     when (DumpLexed `Set.member` dumpTargets) $ do
         lexed <- for files $ \file -> do
-            fmap (file,) $ runErrorOrReport @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
+            fmap (file,) $ runErrorAsElaraError @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
         dumpGraph outDir lexed (toText . takeBaseName . fst) ".lexed.elr"
         logDebug "Dumped lexed files"
 
     let dumpGraphInfo' ::
-            forall error module' xs.
-            (ReportableError error, Subset xs (Error error : es), Pretty module', StructuredDebug :> xs) =>
-            (module' -> Text) -> (ModuleName -> Elara.Query.Query xs module') -> DumpTarget -> Text -> Text -> Eff es ()
+            forall error module' xs localEs.
+            (ElaraDiagnostic error, Exception error, QueryEffects localEs, IOE :> localEs, Rock.Rock Elara.Query.Query :> localEs, Subset xs (Error error : localEs), Error ElaraError :> localEs, Pretty module', StructuredDebug :> xs) =>
+            (module' -> Text) -> (ModuleName -> Elara.Query.Query xs module') -> DumpTarget -> Text -> Text -> Eff localEs ()
         dumpGraphInfo' nameFunc query target name suffix =
-            runErrorOrReport @error $
+            runErrorAsElaraError @error $
                 dumpGraphInfo outDir nameFunc query (target `Set.member` dumpTargets) moduleNames name suffix
 
         coreNameFunc :: CoreModule bind -> Text
         coreNameFunc m = m ^. field' @"name" % to nameText
 
-        newModuleNameFunc :: NameLike (Locate loc ModuleName) => New.Module loc p -> Text
-        newModuleNameFunc (New.Module _ m) = New.moduleName m ^. to nameText
+        newModuleNameFunc :: New.Module SourceRegion p -> Text
+        newModuleNameFunc (New.Module _ m) = nameText $ stripTag (New.moduleName m)
 
     dumpGraphInfo' @(WParseErrorBundle _ _) newModuleNameFunc Elara.Query.ParsedModule DumpParsed "parsed" ".parsed.elr"
     dumpGraphInfo' @DesugarError newModuleNameFunc Elara.Query.DesugaredModule DumpDesugared "desugared" ".desugared.elr"
-    dumpGraphInfo' @RenameError newModuleNameFunc Elara.Query.RenamedModule DumpRenamed "renamed" ".renamed.elr"
-    dumpGraphInfo' @ShuntError newModuleNameFunc (Elara.Query.ModuleByName @NewS.Shunted) DumpShunted "shunted" ".shunted.elr"
-    dumpGraphInfo' @ShuntError newModuleNameFunc Elara.Query.TypeCheckedModule DumpTyped "typed" ".typed.elr"
+    dumpGraphInfo' @RenameError newModuleNameFunc (Elara.Query.ModuleByName @Renamed) DumpRenamed "renamed" ".renamed.elr"
+    runWriterAsElaraWarning @ShuntWarning
+        (dumpGraphInfo' @ShuntError newModuleNameFunc (Elara.Query.ModuleByName @NewS.Shunted) DumpShunted "shunted" ".shunted.elr")
+    dumpGraphInfo' @ShuntError newModuleNameFunc (Elara.Query.ModuleByName @Typed) DumpTyped "typed" ".typed.elr"
     dumpGraphInfo' @ShuntError coreNameFunc Elara.Query.GetCoreModule DumpCore "core" ".core.elr"
     dumpGraphInfo' @ShuntError coreNameFunc Elara.Query.GetANFCoreModule DumpCore "core.anf" ".core.anf.elr"
     dumpGraphInfo' @ClosureLiftError coreNameFunc Elara.Query.GetClosureLiftedModule DumpCore "core.closure_lifted" ".core.closure_lifted.elr"
@@ -247,13 +268,13 @@ dumpStages settings resolved = do
 
     when (DumpIR `Set.member` dumpTargets) $ do
         irModules <- for moduleNames $ \m ->
-            runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMIRModule m
+            runErrorAsElaraError @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMIRModule m
         dumpGraph outDir irModules (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
         logDebug "Dumped JVM IR modules"
 
     when (DumpJVM `Set.member` dumpTargets) $ do
         classFiles <- for moduleNames $ \m ->
-            runErrorOrReport @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMClassFiles m
+            runErrorAsElaraError @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMClassFiles m
         dumpGraph outDir (concat classFiles) (\(cf :: ClassFile) -> prettyToUnannotatedText cf.name) ".classfile.txt"
   where
     CompilerSettings{dumpTargets} = settings
@@ -261,10 +282,9 @@ dumpStages settings resolved = do
 -- | Emit JVM .class files to disk for all modules. Returns emitted file paths.
 emitJVM ::
     ( Rock.Rock Elara.Query.Query :> es
-    , Error SomeReportableError :> es
-    , DiagnosticWriter (Doc AnsiStyle) :> es
+    , Error ElaraError :> es
+    , Writer [ElaraWarning] :> es
     , StructuredDebug :> es
-    , Concurrent :> es
     , FileSystem :> es
     , UniqueGen :> es
     , IOE :> es
@@ -278,8 +298,8 @@ emitJVM ::
 emitJVM settings moduleNames = do
     fmap concat $ for moduleNames $ \modName -> do
         classBytes <-
-            runErrorOrReport @JVMLoweringError $
-                runErrorOrReport @CodeConverterError $
+            runErrorAsElaraError @JVMLoweringError $
+                runErrorAsElaraError @CodeConverterError $
                     Rock.fetch (Elara.Query.GetJVMClassBytes modName)
         for classBytes $ \(fp, bytes) -> do
             let fullPath = settings.outputDir <> "/" <> fp
@@ -289,10 +309,9 @@ emitJVM settings moduleNames = do
 -- | Run the interpreter on the compiled modules (prints output to stdout).
 runInterpreter ::
     ( Rock.Rock Elara.Query.Query :> es
-    , Error SomeReportableError :> es
-    , DiagnosticWriter (Doc AnsiStyle) :> es
+    , Error ElaraError :> es
+    , Writer [ElaraWarning] :> es
     , StructuredDebug :> es
-    , Concurrent :> es
     , FileSystem :> es
     , UniqueGen :> es
     , IOE :> es
@@ -359,6 +378,11 @@ dumpGraphInfo outDir nameFunc query when' moduleNames stage suffix = do
             Rock.fetch $ query m
         dumpGraph outDir modules nameFunc suffix
         logDebug ("Dumped " <> pretty (length modules) <> " " <> pretty stage <> " modules")
+
+-- | Render a set of query dependency edges as a d2 diagram string.
+queryEdgesToD2 :: Set.Set (String, String) -> String
+queryEdgesToD2 edges =
+    concatMap (\(a, b) -> "\"" <> a <> "\" -> \"" <> b <> "\"\n") (Set.toList edges)
 
 createAndWriteFile :: FilePath -> LByteString -> IO ()
 createAndWriteFile path content = do

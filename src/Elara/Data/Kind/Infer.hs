@@ -31,29 +31,35 @@ where
 
 import Control.Monad (foldM)
 import Data.Generics.Product (field)
-import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
+import Error.Diagnose hiding (Hint, Note)
+import Optics (set, traverseOf_)
+
+import Data.Map qualified as Map
+import Data.Set qualified as Set
+
+import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Phase
-import Elara.AST.Phases.Kinded qualified as NewK
-import Elara.AST.Phases.MidKinded qualified as NewM
-import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Region (Located, SourceRegion, sourceRegionToDiagnosePosition, unlocated)
-import Elara.AST.Types qualified as New
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging (debugWith, logDebug)
 import Elara.Prim (primKindCheckContext)
-import Elara.Query qualified
 import Elara.Query.Effects (QueryEffects)
-import Error.Diagnose
-import Optics (set, traverseOf_)
+
+import Elara.AST.Phases.Kinded qualified as NewK
+import Elara.AST.Phases.MidKinded qualified as NewM
+import Elara.AST.Phases.Shunted qualified as NewS
+import Elara.AST.Types qualified as New
+import Elara.Error.Codes qualified as Codes
+import Elara.Query qualified
 import Rock qualified
 
 {- | Tracks the origin of a kind constraint for better error messages.
@@ -80,8 +86,8 @@ data ConstraintOrigin
     | -- | Generic primitive constraint, e.g. "Unit must be of kind Type". This should be replaced with more specific origins where possible.
       PrimitiveConstraint Text
     | -- | The declaration of a user defined type
-      UserDefinedTypeConstraint (Located (Qualified TypeName))
-    deriving (Show, Eq, Generic)
+      UserDefinedTypeConstraint (TaggedLocate TypeNode SourceRegion (Qualified TypeName))
+    deriving (Eq, Generic, Show)
 
 instance Pretty ConstraintOrigin where
     pretty = \case
@@ -96,7 +102,7 @@ instance Pretty ConstraintOrigin where
 
 originPositions :: ConstraintOrigin -> [(Position, Marker (Doc AnsiStyle))]
 originPositions = \case
-    FunctionApplication (New.Type loc _ _) _ -> [(sourceRegionToDiagnosePosition loc, This "Function application")]
+    FunctionApplication (New.Type loc _ _) _ -> [(sourceRegionToDiagnosePosition $ getLocation loc, This "Function application")]
     _ -> []
 
 data InferState = InferState
@@ -107,7 +113,7 @@ data InferState = InferState
     , constraints :: [(ElaraKind, ElaraKind, ConstraintOrigin)]
     , substitution :: Map KindVar ElaraKind
     }
-    deriving (Eq, Show, Generic)
+    deriving (Eq, Generic, Show)
 
 type KindInfer r =
     ( State InferState :> r
@@ -137,52 +143,41 @@ data KindInferError
 
 instance Pretty KindInferError
 
-instance ReportableError KindInferError where
-    report (UnknownKind name kinds) =
-        writeReport $
-            Err
-                (Just "Unknown Kind of Type")
-                ( vsep
-                    [ "Unknown kind of type" <+> pretty name
-                    , "We know kinds for:" <+> pretty (Map.keysSet kinds)
-                    , pretty $ prettyCallStack callStack
-                    ]
-                )
-                []
-                []
-    report (CannotUnify a b origin) =
-        writeReport $
-            Err
-                (Just "Cannot Unify Kinds")
-                (vsep ["Cannot unify kinds" <+> pretty a <+> "and" <+> pretty b, "Origin:" <+> pretty origin])
-                (originPositions origin)
-                []
-    report (NotFunctionKind k) =
-        writeReport $
-            Err
-                (Just "Not Function Kind")
-                (vsep ["Expected a function kind, got" <+> pretty k])
-                []
-                []
-    report (UnboundVar var env) =
-        writeReport $
-            Err
-                (Just "Unbound Variable")
-                ( vsep
-                    [ "Unbound variable" <+> pretty var
-                    , "Known variables:" <+> pretty (Map.keysSet env)
-                    , pretty $ prettyCallStack callStack
-                    ]
-                )
-                []
-                []
-    report (OccursCheckFailed var kind) =
-        writeReport $
-            Err
-                (Just "Occurs Check Failed")
-                (vsep ["Occurs check failed for" <+> pretty var <+> "and" <+> pretty kind])
-                []
-                []
+instance Exception KindInferError
+
+instance ElaraDiagnostic KindInferError where
+    diagnosticMessage (UnknownKind name kinds) =
+        vsep
+            [ "Unknown kind of type" <+> pretty name
+            , "We know kinds for:" <+> pretty (Map.keysSet kinds)
+            ]
+    diagnosticMessage (CannotUnify a b origin) =
+        vsep ["Cannot unify kinds" <+> pretty a <+> "and" <+> pretty b, "Origin:" <+> pretty origin]
+    diagnosticMessage (NotFunctionKind k) =
+        "Expected a function kind, got" <+> pretty k
+    diagnosticMessage (UnboundVar var env) =
+        vsep
+            [ "Unbound variable" <+> pretty var
+            , "Known variables:" <+> pretty (Map.keysSet env)
+            ]
+    diagnosticMessage (OccursCheckFailed var kind) =
+        "Occurs check failed for" <+> pretty var <+> "and" <+> pretty kind
+
+    diagnosticCode (UnknownKind _ _) = Just Codes.unknownKind
+    diagnosticCode (CannotUnify{}) = Just Codes.cannotUnifyKinds
+    diagnosticCode (NotFunctionKind _) = Just Codes.notFunctionKind
+    diagnosticCode (UnboundVar _ _) = Just Codes.unboundKindVar
+    diagnosticCode (OccursCheckFailed _ _) = Just Codes.occursCheckFailedKind
+
+    diagnosticMarkers (CannotUnify _ _ origin) =
+        case origin of
+            FunctionApplication (New.Type loc _ _) _ -> [ElaraMarker (getLocation loc) PrimaryMarker "Function application"]
+            _ -> []
+    diagnosticMarkers _ = []
+
+    diagnosticNotes (UnknownKind _ _) = [Note (pretty $ prettyCallStack callStack)]
+    diagnosticNotes (UnboundVar _ _) = [Note (pretty $ prettyCallStack callStack)]
+    diagnosticNotes _ = []
 
 declareTypeVar :: State InferState :> r => Unique LowerAlphaName -> KindVar -> Eff r ()
 declareTypeVar var kindVar = modify (over (field @"env") (Map.insert (Right var) kindVar))

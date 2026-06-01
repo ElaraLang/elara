@@ -1,5 +1,10 @@
 module Parse.Expressions where
 
+import Hedgehog hiding (Var)
+import NeatInterpolation (text)
+import Test.Syd
+import Test.Syd.Hedgehog ()
+
 import Arbitrary.AST (genExpr)
 import Elara.AST.Extensions
 import Elara.AST.Name
@@ -7,15 +12,11 @@ import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Frontend
 import Elara.AST.Phases.Frontend.Pretty ()
 import Elara.AST.Types
-import Elara.Parse.Expression (exprParser)
-import Hedgehog hiding (Var)
-import NeatInterpolation (text)
+import Elara.Parse.Grammar (exprParser)
 import Normalise (mkExpr, mkPat, stripExpr, stripNewInParens)
 import Orphans ()
 import Parse.Common
 import Print (showPrettyUnannotated)
-import Test.Syd
-import Test.Syd.Hedgehog ()
 
 spec :: Spec
 spec = describe "Parses expressions correctly" $ do
@@ -26,7 +27,7 @@ spec = describe "Parses expressions correctly" $ do
 weirdEdgeCases :: Spec
 weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
     it "Parses the funky lambda thing properly" $
-        property $
+        property $ do
             "(\\x -> x + 2) 3"
                 `shouldParseExpr` mkExpr
                     ( EApp
@@ -61,7 +62,7 @@ weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
                     )
     it "Parses the weird let-in thing properly" $
         property $
-            "let a  = 0 in {let a  = -98905857 }"
+            "let a = 0 in {let a  = -98905857 }"
                 `shouldParseExpr` mkExpr
                     ( ELetIn
                         NoExtension

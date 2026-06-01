@@ -2,3 +2,7 @@ packages: elara.cabal
 package *
     profiling: False
     profiling-detail: late
+
+
+package elara
+    haddock-options: --source-module="https://github.com/ElaraLang/elara/tree/main/%F" --source-entity="https://github.com/ElaraLang/elara/tree/main/%F#L%L"

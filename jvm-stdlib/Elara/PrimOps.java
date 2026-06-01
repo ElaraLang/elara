@@ -1,5 +1,10 @@
 package Elara;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.lang.String;
+
 public class PrimOps {
 
     public static <T> T debugWithMsg(String msg, T value) {
@@ -7,11 +12,11 @@ public class PrimOps {
         return value;
     }
 
-    public static String toString(Object obj) {
+    public static Elara.String toString(Object obj) {
         if (obj == null) {
-            return new String("null");
+            return new Elara.String("null");
         } else {
-            return new String(obj.toString());
+            return new Elara.String(obj.toString());
         }
     }
 
@@ -36,6 +41,18 @@ public class PrimOps {
         } else {
             throw new RuntimeException("Cannot compare non-comparable objects");
         }
+    }
+
+    public static IO<Elara.String> readFile(Elara.String path) {
+        return new IO<>(() -> {
+            try {
+                Path filePath = Paths.get(path.toString());
+                byte[] bytes = Files.readAllBytes(filePath);
+                return new Elara.String(new String(bytes));
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Failed to read file: " + path.toString(), e);
+            }
+        });
     }
 
 }

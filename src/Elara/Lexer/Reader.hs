@@ -1,20 +1,23 @@
 module Elara.Lexer.Reader where
 
+import Effectful (Eff, inject, (:>))
+import Effectful.Error.Static
+import Effectful.State.Static.Local
+
+import Data.Text qualified as Text
+
+import Effectful.State.Extra (use', (.=))
 import Elara.AST.Region (Located (Located), SourceRegion (..), unlocated)
+import Elara.Data.Pretty
+import Elara.Error (runErrorAsElaraError)
 import Elara.Lexer.Lexer
 import Elara.Lexer.Token
 import Elara.Lexer.Utils
-
-import Data.Text qualified as Text
-import Effectful (Eff, inject, (:>))
-import Effectful.Error.Static
-import Effectful.State.Extra (use', (.=))
-import Effectful.State.Static.Local
-import Elara.Error (runErrorOrReport)
-import Elara.Logging (StructuredDebug)
+import Elara.Logging (StructuredDebug, logDebug, logDebugWith)
 import Elara.Query (Query (GetFileContents))
 import Elara.Query.Effects
 import Elara.ReadFile (FileContents (FileContents))
+
 import Rock qualified
 
 readToken :: LexMonad Lexeme
@@ -47,8 +50,9 @@ readToken = do
                     maybe readToken pure res
 
 readTokens :: LexMonad [Lexeme]
-readTokens = do
+readTokens = logDebugWith "readTokens" $ do
     tok <- readToken
+    logDebug $ "Read " <+> pretty tok
     case tok ^. unlocated of
         TokenEOF -> pure []
         _ -> do
@@ -63,7 +67,7 @@ readTokensWith (FileContents fp s) = do
 
 getLexedFile :: FilePath -> Eff (ConsQueryEffects '[Error LexerError, Rock.Rock Query]) [Lexeme]
 getLexedFile fp = do
-    fileContents <- runErrorOrReport $ Rock.fetch (GetFileContents fp)
+    fileContents <- runErrorAsElaraError $ Rock.fetch (GetFileContents fp)
     readTokensWith fileContents
 
 lexer :: (Lexeme -> LexMonad a) -> LexMonad a

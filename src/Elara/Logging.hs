@@ -60,17 +60,20 @@ module Elara.Logging (
 ) where
 
 import Colog.Core.Action (LogAction (..), cmapM)
-import Data.Text qualified as T
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Effectful (Dispatch (..), DispatchOf, Eff, Effect, IOE, (:>))
-import Effectful.Colog qualified as Log
 import Effectful.Dispatch.Dynamic (LocalEnv, interpret, localSeqUnlift, reinterpret, send)
-import Effectful.State.Static.Local qualified as S
-import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
 import GHC.Exts
 import GHC.Stack (srcLocFile, srcLocStartLine)
 import GHC.TypeLits (KnownSymbol (..), symbolVal)
+
+import Data.Text qualified as T
+import Effectful.Colog qualified as Log
+import Effectful.State.Static.Local qualified as S
+
+import Elara.Data.Pretty
+
+import Elara.Data.Pretty.Styles qualified as Style
 
 {- | Log levels for structured debug messages
 Using our own type instead of co-log's Severity for better integration with Pretty
@@ -80,7 +83,7 @@ data LogLevel
     | Info
     | Warning
     | Error
-    deriving (Eq, Ord, Show, Generic)
+    deriving (Eq, Generic, Ord, Show)
 
 instance Pretty LogLevel where
     pretty Debug = Style.keyword "DEBUG"

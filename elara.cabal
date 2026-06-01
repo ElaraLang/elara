@@ -9,12 +9,29 @@ version:        0.1.0
 synopsis:       See README for more info
 description:    See README for more info
 homepage:       https://github.com/ElaraLang/elara#readme
+bug-reports:    https://github.com/ElaraLang/elara/issues
 author:         Alexander Wood
 maintainer:     Alexander Wood <alexljwood24@hotmail.co.uk>
 copyright:      2022 Alexander Wood
 license:        MIT
 license-file:   LICENSE
 build-type:     Simple
+extra-source-files:
+    jvm-stdlib/Elara/Error.java
+    jvm-stdlib/Elara/Func.java
+    jvm-stdlib/Elara/Func0.java
+    jvm-stdlib/Elara/Func2.java
+    jvm-stdlib/Elara/Func3.java
+    jvm-stdlib/Elara/Int.java
+    jvm-stdlib/Elara/IO.java
+    jvm-stdlib/Elara/Prelude.java
+    jvm-stdlib/Elara/PrimOps.java
+    jvm-stdlib/Elara/RuntimeSystem.java
+    jvm-stdlib/Elara/String.java
+
+source-repository head
+  type: git
+  location: https://github.com/ElaraLang/elara
 
 library
   exposed-modules:
@@ -23,6 +40,7 @@ library
       Elara
       Elara.AST.Extensions
       Elara.AST.Instances
+      Elara.AST.Location
       Elara.AST.Module
       Elara.AST.Name
       Elara.AST.Phase
@@ -63,10 +81,11 @@ library
       Elara.Data.Unique.Effect
       Elara.Data.Unwrap
       Elara.Desugar
+      Elara.Desugar.Common
       Elara.Desugar.Error
       Elara.Error
       Elara.Error.Codes
-      Elara.Error.Effect
+      Elara.Error.Diagnose
       Elara.Error.Internal
       Elara.Interpreter
       Elara.JVM.Emit
@@ -100,6 +119,7 @@ library
       Elara.Parse.Declaration
       Elara.Parse.Error
       Elara.Parse.Expression
+      Elara.Parse.Grammar
       Elara.Parse.Indents
       Elara.Parse.Literal
       Elara.Parse.Module
@@ -143,6 +163,7 @@ library
       Elara.TypeInfer.Generalise
       Elara.TypeInfer.Monad
       Elara.TypeInfer.Render
+      Elara.TypeInfer.Substitute
       Elara.TypeInfer.Syntax
       Elara.TypeInfer.Type
       Elara.TypeInfer.Unique
@@ -166,7 +187,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts
   build-tool-depends:
       alex:alex
   build-depends:
@@ -212,6 +233,7 @@ library
     , text-metrics
     , time
     , utf8-string
+    , witch
   mixins:
       base hiding (Prelude)
   default-language: GHC2024
@@ -235,7 +257,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , algebraic-graphs
@@ -329,7 +351,7 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -with-rtsopts=-N -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
     , QuickCheck

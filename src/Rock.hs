@@ -9,15 +9,15 @@ module Rock where
 
 import Data.GADT.Compare (GEq, geq)
 import Data.GADT.Show (GShow (gshowsPrec))
-
 import Data.Kind (Type)
 import Data.Some
 import Data.Typeable
 import Effectful (Dispatch (Static), DispatchOf, Eff, Effect, IOE, Subset, inject, (:>))
 import Effectful.Dispatch.Static (SideEffects (NoSideEffects), StaticRep, evalStaticRep, getStaticRep)
-import Elara.Logging
 import GHC.Show (Show (..), showChar, showParen, showString)
 import Unsafe.Coerce (unsafeCoerce)
+
+import Elara.Logging
 import Prelude hiding (atomicModifyIORef, newIORef, readIORef)
 
 -- * Types
@@ -53,50 +53,6 @@ fetch key = do
 --
 data IOQuery f es a where
     IOQuery :: f es a -> IOQuery f (IOE : es) a
-
-{- | Track the query dependencies of a 'Task' in a 'DHashMap'.
-track ::
-    forall f es k g a.
-    (GEq k, Hashable (Some k), IOE :> es, Rock f :> es) =>
-    (forall es' a'. f es' a' -> a' -> (k a', g a')) ->
-    Eff es a ->
-    Eff es (a, DHashMap k g)
-track f = trackM $ \key value -> pure (f key value)
--}
-
--- trackM ::
---     forall f es k g a.
---     (GEq k, Hashable (Some k), IOE :> es, Rock f :> es) =>
---     (forall es' a'. f es' a' -> a' -> Eff es' (k a', g a')) ->
---     Eff es a ->
---     Eff es (a, DHashMap k g)
--- trackM f task = do
---     depsVar <- newIORef mempty
---     let
---         record' ::
---             ( (forall a' es'. f es' a' -> Eff es' a') ->
---               (forall a' es'. (IOQuery f) es' a' -> Eff es' a')
---             )
---         record' fetch' (IOQuery key) = do
---             value <- raise $ fetch' key
---             (k, g) <- raise $ f key value
---             atomicModifyIORef depsVar $ (,()) . DHashMap.insert k g
---             pure value
---     result <- transRock record' (raise task)
---     deps <- readIORef depsVar
---     pure (result, deps)
-
--- transRock ::
---     forall f g es a.
---     Rock f :> es =>
---     ( (forall a' es'. f es' a' -> Eff es' a') ->
---       (forall a' es'. g es' a' -> Eff es' a')
---     ) ->
---     Eff (Rock g : es) a ->
---     Eff es a
--- transRock f m = do
---     Rock r <- getStaticRep @(Rock f)
---     evalStaticRep (Rock (f r)) m
 
 -- * Utils
 

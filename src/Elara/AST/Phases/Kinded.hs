@@ -2,6 +2,7 @@
 
 module Elara.AST.Phases.Kinded where
 
+import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, OpName, Qualified, TypeName, VarName)
 import Elara.AST.Phase
 import Elara.AST.Region (SourceRegion)
@@ -13,17 +14,17 @@ import Elara.Data.Unique (Unique)
 data Kinded
 
 instance ElaraPhase Kinded where
-    type ValueOccurrence Kinded loc = Locate loc (VarRef VarName)
-    type ConstructorOccurrence Kinded loc = Locate loc (Qualified TypeName)
-    type TypeOccurrence Kinded loc = Locate loc (Qualified TypeName)
-    type OperatorOccurrence Kinded loc = Locate loc (VarRef OpName)
-    type InfixedOccurrence Kinded loc = VarRef VarName
+    type ValueOccurrence Kinded loc = LocateNode VarNode loc (VarRef VarName)
+    type ConstructorOccurrence Kinded loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeOccurrence Kinded loc = LocateNode TypeNode loc (Qualified TypeName)
+    type OperatorOccurrence Kinded loc = LocateNode VarNode loc (VarRef OpName)
+    type InfixedOccurrence Kinded loc = LocateNode VarNode loc (VarRef VarName)
 
-    type ValueBinder Kinded loc = Locate loc (Unique VarName)
-    type TopValueBinder Kinded loc = Locate loc (Qualified VarName)
-    type TopTypeBinder Kinded loc = Locate loc (Qualified TypeName)
-    type TypeVariable Kinded loc = Locate loc (Unique LowerAlphaName)
-    type ConstructorBinder Kinded loc = Locate loc (Qualified TypeName)
+    type ValueBinder Kinded loc = LocateNode VarNode loc (Unique VarName)
+    type TopValueBinder Kinded loc = LocateNode VarNode loc (Qualified VarName)
+    type TopTypeBinder Kinded loc = LocateNode TypeNode loc (Qualified TypeName)
+    type TypeVariable Kinded loc = LocateNode TypeNode loc (Unique LowerAlphaName)
+    type ConstructorBinder Kinded loc = LocateNode TypeNode loc (Qualified TypeName)
     type LambdaBinder Kinded loc = TypedLambdaParam (Unique VarName) loc Kinded
 
     type ExpressionMeta Kinded loc = Maybe (Type loc Kinded)
@@ -48,5 +49,7 @@ instance ElaraPhase Kinded where
     type TypeDeclMetadata Kinded loc = ElaraKind
 
 type KindedType = Type SourceRegion Kinded
+
 type KindedType' = Type' SourceRegion Kinded
+
 type KindedTypeDeclaration = TypeDeclaration SourceRegion Kinded

@@ -1,6 +1,6 @@
 module Elara.Parse.Names where
 
-import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), OpName (..), TypeName (..), VarName (NormalVarName, OperatorVarName), VarOrConName (..))
+import Elara.AST.Name (LowerAlphaName (..), MaybeQualified (..), ModuleName (..), Name (..), OpName (..), TypeName (..), VarName (..))
 import Elara.Lexer.Token
 import Elara.Parse.Primitives (Parser, inParens, satisfyMap)
 
@@ -10,8 +10,8 @@ moduleName = satisfyMap $ \case
     TokenConstructorIdentifier n -> Just $ ModuleName (one n)
     _ -> Nothing
 
-varOrConName :: Parser (MaybeQualified VarOrConName)
-varOrConName = (ConName <<$>> conName) <|> (VarName <<$>> normalVarName)
+varOrConName :: Parser (MaybeQualified Name)
+varOrConName = (NameType <<$>> conName) <|> (NameValue <<$>> normalVarName)
 
 varName :: Parser (MaybeQualified VarName)
 varName = operatorVarName' <|> normalVarName'

@@ -2,15 +2,17 @@
 
 module Elara.AST.Phases.Desugared where
 
+import Prettyprinter (Doc)
+import Prettyprinter.Render.Terminal (AnsiStyle)
+
 import Elara.AST.Extensions
-import Elara.AST.Name (LowerAlphaName, MaybeQualified, OpName, TypeName, VarName, VarOrConName)
+import Elara.AST.Location
+import Elara.AST.Name (LowerAlphaName, MaybeQualified, Name, OpName, TypeName, VarName)
 import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
 import Elara.Data.Pretty (Pretty (..))
-import Prettyprinter (Doc)
-import Prettyprinter.Render.Terminal (AnsiStyle)
 
 {- | Desugared AST stage. Key changes from Frontend:
 * Lambdas have exactly 1 argument (multi-arg desugared into nested)
@@ -21,18 +23,18 @@ data Desugared
 
 instance ElaraPhase Desugared where
     -- Occurrences (same as Frontend)
-    type ValueOccurrence Desugared loc = Locate loc (MaybeQualified VarName)
-    type ConstructorOccurrence Desugared loc = Locate loc (MaybeQualified TypeName)
-    type TypeOccurrence Desugared loc = Locate loc (MaybeQualified TypeName)
-    type OperatorOccurrence Desugared loc = Locate loc (MaybeQualified OpName)
-    type InfixedOccurrence Desugared loc = Locate loc (MaybeQualified VarOrConName)
+    type ValueOccurrence Desugared loc = LocateNode VarNode loc (MaybeQualified VarName)
+    type ConstructorOccurrence Desugared loc = LocateNode TypeNode loc (MaybeQualified TypeName)
+    type TypeOccurrence Desugared loc = LocateNode TypeNode loc (MaybeQualified TypeName)
+    type OperatorOccurrence Desugared loc = LocateNode VarNode loc (MaybeQualified OpName)
+    type InfixedOccurrence Desugared loc = LocateNode VarNode loc (MaybeQualified Name)
 
     -- Binders (same as Frontend)
-    type ValueBinder Desugared loc = Locate loc VarName
-    type TopValueBinder Desugared loc = Locate loc VarName
-    type TopTypeBinder Desugared loc = Locate loc TypeName
-    type TypeVariable Desugared loc = Locate loc LowerAlphaName
-    type ConstructorBinder Desugared loc = Locate loc TypeName
+    type ValueBinder Desugared loc = LocateNode VarNode loc VarName
+    type TopValueBinder Desugared loc = LocateNode VarNode loc VarName
+    type TopTypeBinder Desugared loc = LocateNode TypeNode loc TypeName
+    type TypeVariable Desugared loc = LocateNode TypeNode loc LowerAlphaName
+    type ConstructorBinder Desugared loc = LocateNode TypeNode loc TypeName
     type LambdaBinder Desugared loc = Pattern loc Desugared -- always single pattern now
 
     -- Metadata

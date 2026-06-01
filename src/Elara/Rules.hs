@@ -3,35 +3,38 @@
 
 module Elara.Rules where
 
-import Data.Text qualified as Text
 import Effectful
 import Effectful.Error.Static (runError, throwError, throwError_)
+import System.FilePath (takeDirectory, (</>))
+
+import Data.Text qualified as Text
 import Effectful.State.Static.Local qualified as Local
+
 import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.Region (Located (..), unlocated)
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
-import Elara.Error (SomeReportableError (..))
-import Elara.JVM.Query qualified
+import Elara.Error (ElaraError (..))
 import Elara.Lexer.Reader (getLexedFile)
 import Elara.ModuleIndex (ModuleEntry (..), buildModuleIndex)
-import Elara.ModuleIndex qualified as ModuleIndex
 import Elara.Parse (getParsedFileQuery, getParsedModuleQuery)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
 import Elara.ReadFile (ModulePathError (..), getInputFiles, runGetFileContentsQuery)
-import Elara.Rename (getRenamedModule)
+import Elara.Rename
 import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery)
 import Elara.Settings (CompilerSettings (..), mainFile)
-import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery, runGetShuntedModuleQuery)
+import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery)
 import Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery)
-import Elara.TypeInfer (runGetTypeAliasQuery, runGetTypeCheckedModuleQuery, runInferSCCQuery, runKindOfQuery, runTypeCheckedDeclarationQuery, runTypeCheckedExprQuery, runTypeOfQuery)
+import Elara.TypeInfer (runGetTypeAliasQuery, runInferSCCQuery, runKindOfQuery, runTypeCheckedDeclarationQuery, runTypeCheckedExprQuery, runTypeOfQuery)
+
+import Elara.JVM.Query qualified
+import Elara.ModuleIndex qualified as ModuleIndex
 import Rock qualified
-import System.FilePath (takeDirectory, (</>))
 
 rules :: HasCallStack => CompilerSettings -> Rock.Rules Query
 rules compilerSettings key = case key of
@@ -51,7 +54,7 @@ rules compilerSettings key = case key of
                             Rock.fetch (Elara.Query.ParsedFile mainPath)
                     case parsedOrError of
                         Left (cs, err) -> do
-                            withFrozenCallStack $ throwError_ (SomeReportableError err)
+                            withFrozenCallStack $ throwError_ (ElaraError err)
                         Right (Module _ m) ->
                             if moduleName m ^. unlocated == mn
                                 then pure (Just mainPath)
@@ -87,17 +90,12 @@ rules compilerSettings key = case key of
              in ordNub [root </> path | root <- roots, path <- paths]
     ParsedModule mn -> inject $ getParsedModuleQuery mn
     DesugaredModule mn -> inject $ getDesugaredModule mn
-    RenamedModule mn ->
-        Local.evalState primitiveRenameState $
-            inject $
-                getRenamedModule mn
-    ShuntedModule mn -> inject $ runGetShuntedModuleQuery mn
-    ModuleByName @ast mn -> query @QueryModuleByName @ast mn
-    DeclarationByName @ast name -> query @QueryDeclarationByName @ast name
-    RequiredDeclarationByName @ast name -> query @QueryRequiredDeclarationByName @ast name
-    ConstructorDeclaration @ast conRef -> query @QueryConstructorDeclaration @ast conRef
-    DeclarationAnnotations @ast name -> query @DeclarationAnnotations @ast name
-    DeclarationAnnotationsOfType @ast (name, annotationName) -> query @DeclarationAnnotationsOfType @ast (name, annotationName)
+    ModuleByName @ast mn -> getModuleByName @ast mn
+    DeclarationByName @ast name -> getDeclarationByName @ast name
+    RequiredDeclarationByName @ast name -> getRequiredDeclarationByName @ast name
+    ConstructorDeclaration @ast conRef -> getConstructorDeclaration @ast conRef
+    DeclarationAnnotations @ast name -> getDeclarationAnnotations @ast name
+    DeclarationAnnotationsOfType @ast (name, annotationName) -> getDeclarationAnnotationsOfType @ast (name, annotationName)
     GetOpInfo opName -> inject $ runGetOpInfoQuery opName
     GetOpTableIn mn -> inject $ runGetOpTableInQuery mn
     FreeVarsOf name -> inject $ runFreeVarsQuery name
@@ -106,7 +104,6 @@ rules compilerSettings key = case key of
         subgraph <- inject $ runReachableSubgraphQuery name
         pure $ buildSCCs subgraph
     SCCKeyOf _ -> error "SCCKeyOf not implemented"
-    TypeCheckedModule mn -> inject $ runGetTypeCheckedModuleQuery mn
     TypeCheckedExpr exprId -> inject $ runTypeCheckedExprQuery exprId
     TypeCheckedDeclaration name -> inject $ runTypeCheckedDeclarationQuery name
     InferSCC sccKey -> inject $ runInferSCCQuery sccKey

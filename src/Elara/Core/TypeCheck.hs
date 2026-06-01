@@ -8,25 +8,29 @@ It doesn't do any inference! As Core is already typed, it just checks that the t
 -}
 module Elara.Core.TypeCheck (typeCheckCoreModule, TypeCheckError (..)) where
 
-import Data.Set qualified as Set
 import Effectful
 import Effectful.Error.Static
-import Effectful.State.Extra (locally, scoped)
 import Effectful.State.Static.Local (State, evalState, get, modify)
+
+import Data.Set qualified as Set
+
+import Effectful.State.Extra (locally, scoped)
 import Elara.AST.VarRef
 import Elara.Core (CoreExpr, Var (..))
-import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 import Elara.Core.Analysis (freeTypeVars)
 import Elara.Core.Generic
 import Elara.Core.Module
 import Elara.Core.ToANF (fromANF, fromANFAtom, fromANFCExpr)
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Error.Codes qualified as Codes
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim.Core
 import TODO (todo)
+
+import Elara.Core qualified as Core
+import Elara.Core.ANF qualified as ANF
+import Elara.Error.Codes qualified as Codes
 
 data TypeCheckError
     = UnknownVariable {unknownVariable :: Var, unknownVariableScope :: Set.Set (UnlocatedVarRef Text)}
@@ -45,15 +49,40 @@ data TypeCheckError
     | InfiniteType Var CoreExpr
     | OccursCheck Var CoreExpr
     | PatternMatchMissingBinders {alt :: Core.AltCon, altType :: Core.Type, providedBinders :: [Var], expr :: CoreExpr}
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
-instance Pretty TypeCheckError
+instance Pretty TypeCheckError where
+    pretty = diagnosticMessage
 
-instance ReportableError TypeCheckError where
-    errorCode = \case
-        UnknownVariable{} -> Just Codes.unknownVariableTC
-        CoreTypeMismatch{} -> Just Codes.coreTypeMismatch
-        _ -> Nothing @Codes.ErrorCode
+instance ElaraDiagnostic TypeCheckError where
+    diagnosticMessage (UnknownVariable v _) = "Unknown variable:" <+> pretty v
+    diagnosticMessage (CoreTypeMismatch expected actual _) =
+        "Core type mismatch. Expected:" <+> pretty expected <+> "but got:" <+> pretty actual
+    diagnosticMessage (CoreTypeMismatchIncompleteExpected expected actual _) =
+        "Core type mismatch. Expected:" <+> pretty expected <+> "but got:" <+> pretty actual
+    diagnosticMessage (UnificationError e1 e2) = "Unification error between" <+> pretty e1 <+> "and" <+> pretty e2
+    diagnosticMessage (InfiniteType v e) = "Infinite type:" <+> pretty v <+> "in" <+> pretty e
+    diagnosticMessage (OccursCheck v e) = "Occurs check failed:" <+> pretty v <+> "in" <+> pretty e
+    diagnosticMessage (PatternMatchMissingBinders{}) = "Pattern match missing binders"
+
+    diagnosticCode (UnknownVariable{}) = Just Codes.unknownVariableTC
+    diagnosticCode (CoreTypeMismatch{}) = Just Codes.coreTypeMismatch
+    diagnosticCode _ = Nothing
+
+    diagnosticNotes (UnknownVariable _ scope) = [Note ("Scope:" <+> pretty (Set.toList scope))]
+    diagnosticNotes (PatternMatchMissingBinders alt altType providedBinders expr) =
+        [ Note ("Constructor:" <+> pretty alt)
+        , Note ("Expected type:" <+> pretty altType)
+        , Note ("Provided binders:" <+> pretty providedBinders)
+        , Note ("Expression:" <+> pretty expr)
+        ]
+    diagnosticNotes (CoreTypeMismatch _ _ (e1, e2)) =
+        [ Note ("Expression with expected type:" <+> pretty e1)
+        , Note ("Expression with actual type:" <+> pretty e2)
+        ]
+    diagnosticNotes _ = []
+
+instance Exception TypeCheckError
 
 newtype TcState = TcState
     { scope :: Set.Set (UnlocatedVarRef Text)
@@ -138,7 +167,7 @@ typeCheckC match@(ANF.Match scrutinee of' alts) = scoped $ do
             Core.LitAlt lit -> do
                 let litType = typeCheckLit lit
                 altExprType <- typeCheck altExpr
-                if litType == scrutineeType
+                if litType `equalUnderSubst` scrutineeType
                     then pure altExprType
                     else throwError $ CoreTypeMismatch litType scrutineeType (fromANFCExpr match, fromANF altExpr)
             Core.DataAlt con' -> do
@@ -208,6 +237,7 @@ typeCheckA (ANF.TyApp e t) = do
                     , source = (fromANFAtom e, fromANFAtom (ANF.TyApp e t))
                     }
 typeCheckA (ANF.TyLam t e) = todo
+typeCheckA (ANF.ANFPrimOp _ t) = pure t
 
 {- | Relation that defines 2 types as equal iff they are equal under a substitution of type variables
 For example @forall a. a@ and @forall b. b@ are equal in this relation,

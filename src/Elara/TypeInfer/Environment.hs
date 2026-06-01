@@ -1,19 +1,23 @@
 module Elara.TypeInfer.Environment where
 
 import Data.GADT.Compare (GCompare (gcompare), GEq (..), GOrdering (..))
-import Data.Map qualified as Map
 import Data.Type.Equality
 import Effectful
 import Effectful.Error.Static
-import Effectful.State.Extra (locally)
 import Effectful.State.Static.Local
+import Error.Diagnose hiding (Hint, Note)
+import Unsafe.Coerce (unsafeCoerce)
+
+import Data.Map qualified as Map
+
+import Effectful.State.Extra (locally)
 import Elara.AST.Name
+import Elara.AST.Region (SourceRegion)
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Error
+import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.TypeInfer.Type
-import Error.Diagnose
-import Unsafe.Coerce (unsafeCoerce)
 
 -- | A type environment Γ, which maps type variables and data constructors to types
 newtype TypeEnvironment loc
@@ -33,7 +37,7 @@ data TypeEnvKey loc
       DataConKey DataCon
     | -- | A term variable x
       TermVarKey (Qualified VarName)
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, Generic, Ord, Show)
 
 -- | This is safe I think because phantom type
 instance GEq TypeEnvKey where
@@ -126,16 +130,20 @@ lookupLocalVar name = get >>= lookupLocalVarType name
 data InferError loc
     = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
     | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
-    deriving (Show, Generic)
+    deriving (Generic, Show)
 
 instance Pretty loc => Pretty (InferError loc)
 
-instance Pretty loc => ReportableError (InferError loc) where
-    report (UnboundTermVar (TermVarKey key) (TypeEnvironment env)) =
-        writeReport $
-            Err
-                Nothing
-                ("Unbound term variable " <> pretty key)
-                []
-                [Note $ "Possible names:" <> listToText (pretty <$> Map.keys env)]
-    report o = defaultReport o
+instance (Show loc, Pretty loc, Typeable loc) => Exception (InferError loc)
+
+instance {-# OVERLAPPABLE #-} (Show loc, Pretty loc, Typeable loc) => ElaraDiagnostic (InferError loc) where
+    diagnosticReports _ = []
+
+instance ElaraDiagnostic (InferError SourceRegion) where
+    diagnosticMessage (UnboundTermVar (TermVarKey key) _) = "Unbound term variable" <+> pretty key
+    diagnosticMessage (UnboundTermVar (DataConKey key) _) = "Unbound data constructor" <+> pretty key
+    diagnosticMessage (UnboundLocalVar name _) = "Unbound local variable" <+> pretty name
+
+    diagnosticNotes (UnboundTermVar _ (TypeEnvironment env)) = [Elara.Error.Note $ "Possible names:" <+> listToText (pretty <$> Map.keys env)]
+    diagnosticNotes (UnboundLocalVar _ (LocalTypeEnvironment env)) = [Elara.Error.Note $ "Possible names:" <+> listToText (pretty <$> Map.keys env)]
+    diagnosticNotes _ = []

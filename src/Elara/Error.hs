@@ -2,74 +2,146 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+-- | Errors, Warnings, and Diagnostics
 module Elara.Error (
-    ReportableError (..),
-    SomeReportableError (..),
-    runErrorOrReport,
-    defaultReport,
-    addPosition,
-    concatDiagnostics,
-    module Elara.Error.Effect,
-) where
+    -- * New Error System
+    ElaraDiagnostic (..),
+    ElaraError (..),
+    ElaraWarning (..),
+    ElaraSeverity (..),
+    ElaraMarker (..),
+    ElaraMarkerType (..),
+    ElaraNote (..),
+    ElaraReport (..),
+    reportElaraWarning,
+    runErrorAsElaraError,
+    runWriterAsElaraWarning,
+    module Elara.Error.Codes,
+)
+where
 
 import Effectful (Eff, (:>))
+
 import Effectful.Error.Static qualified as Eff
+import Effectful.Writer.Static.Local qualified as Eff
+import GHC.Show qualified
+
+import Elara.AST.Region (SourceRegion)
 import Elara.Data.Pretty
 import Elara.Error.Codes
-import Elara.Error.Effect
-import Error.Diagnose
 import Prelude hiding (asks, readFile)
 
-class ReportableError e where
-    errorCode :: e -> Maybe ErrorCode
-    errorCode = const Nothing
+-- | A data-focused diagnostic that can be rendered to various formats (terminal, LSP, etc.)
+class Typeable e => ElaraDiagnostic e where
+    diagnosticReports :: e -> [ElaraReport]
+    default diagnosticReports :: e -> [ElaraReport]
+    diagnosticReports e = [ElaraReport (diagnosticSeverity e) (diagnosticCode e) (diagnosticMessage e) (diagnosticMarkers e) (diagnosticNotes e)]
 
-    getReport :: e -> Maybe (Report (Doc AnsiStyle))
-    getReport = const Nothing
+    diagnosticSeverity :: e -> ElaraSeverity
+    diagnosticSeverity = const ErrorSeverity
 
-    report :: DiagnosticWriter (Doc AnsiStyle) :> r => e -> Eff r ()
-    default report :: (Pretty e, DiagnosticWriter (Doc AnsiStyle) :> r) => e -> Eff r ()
-    report = defaultReport
+    diagnosticCode :: e -> Maybe ErrorCode
+    diagnosticCode = const Nothing
 
-defaultReport ::
-    (ReportableError e, Pretty e, DiagnosticWriter (Doc AnsiStyle) :> r) =>
-    e -> Eff r ()
-defaultReport e =
-    {-# HLINT ignore "Use id" #-}
-    -- i love impredicative types
-    let code = (\x -> x) <$> errorCode e
-        report = getReport e
-     in writeReport (fromMaybe (Err code (pretty e) [] []) report)
+    diagnosticMessage :: e -> Doc AnsiStyle
+    default diagnosticMessage :: Pretty e => e -> Doc AnsiStyle
+    diagnosticMessage = pretty
 
-data SomeReportableError = forall x. ReportableError x => SomeReportableError x
-instance ReportableError SomeReportableError where
-    errorCode (SomeReportableError e) = errorCode e
-    getReport (SomeReportableError e) = getReport e
-    report (SomeReportableError e) = report e
+    diagnosticMarkers :: e -> [ElaraMarker]
+    diagnosticMarkers = const []
 
-addPosition :: (Position, Marker msg) -> Report msg -> Report msg
-addPosition marker (Err code m markers notes) = Err code m (marker : markers) notes
-addPosition marker (Warn code m markers notes) = Warn code m (marker : markers) notes
+    diagnosticNotes :: e -> [ElaraNote]
+    diagnosticNotes = const []
 
--- | Concatenate two diagnostics, keeping the first one's file map. Use this instead of the Semigroup instance for Diagnostics.
-concatDiagnostics :: Diagnostic msg -> Diagnostic msg -> Diagnostic msg
-concatDiagnostics diag = (<> diag)
+data ElaraSeverity = ErrorSeverity | WarningSeverity
+    deriving (Eq, Show)
 
-runErrorOrReport ::
+data ElaraMarker = ElaraMarker
+    { markerRegion :: SourceRegion
+    , markerType :: ElaraMarkerType
+    , markerMessage :: Doc AnsiStyle
+    }
+    deriving (Generic, Show)
+
+data ElaraMarkerType = PrimaryMarker | SecondaryMarker | InfoMarker
+    deriving (Eq, Show)
+
+data ElaraNote = Note (Doc AnsiStyle) | Hint (Doc AnsiStyle)
+    deriving (Generic, Show)
+
+data ElaraReport = ElaraReport
+    { reportSeverity :: ElaraSeverity
+    , reportCode :: Maybe ErrorCode
+    , reportMessage :: Doc AnsiStyle
+    , reportMarkers :: [ElaraMarker]
+    , reportNotes :: [ElaraNote]
+    }
+    deriving (Generic, Show)
+
+-- | A type-erased error that implements 'ElaraDiagnostic' and 'Exception'.
+data ElaraError = forall e. (Exception e, ElaraDiagnostic e) => ElaraError e
+
+instance Show ElaraError where
+    show (ElaraError e) = GHC.Show.show e
+
+instance Exception ElaraError
+
+instance ElaraDiagnostic ElaraError where
+    diagnosticReports (ElaraError e) = diagnosticReports e
+    diagnosticMessage (ElaraError e) = diagnosticMessage e
+    diagnosticSeverity (ElaraError e) = diagnosticSeverity e
+    diagnosticCode (ElaraError e) = diagnosticCode e
+    diagnosticMarkers (ElaraError e) = diagnosticMarkers e
+    diagnosticNotes (ElaraError e) = diagnosticNotes e
+
+instance Pretty ElaraError where
+    pretty (ElaraError e) = diagnosticMessage e
+
+-- | A type-erased warning that implements 'ElaraDiagnostic'.
+data ElaraWarning = forall w. (Typeable w, ElaraDiagnostic w) => ElaraWarning w
+
+instance ElaraDiagnostic ElaraWarning where
+    diagnosticReports (ElaraWarning w) = diagnosticReports w
+    diagnosticMessage (ElaraWarning w) = diagnosticMessage w
+    diagnosticSeverity (ElaraWarning w) = diagnosticSeverity w
+    diagnosticCode (ElaraWarning w) = diagnosticCode w
+    diagnosticMarkers (ElaraWarning w) = diagnosticMarkers w
+    diagnosticNotes (ElaraWarning w) = diagnosticNotes w
+
+instance Pretty ElaraWarning where
+    pretty (ElaraWarning w) = diagnosticMessage w
+
+reportElaraWarning :: (Typeable w, ElaraDiagnostic w, Eff.Writer [ElaraWarning] :> es) => w -> Eff es ()
+reportElaraWarning w = Eff.tell [ElaraWarning w]
+
+runErrorAsElaraError ::
     forall e r a.
-    ( DiagnosticWriter (Doc AnsiStyle) :> r
-    , Eff.Error SomeReportableError :> r
-    , ReportableError e
-    ) =>
+    (Exception e, ElaraDiagnostic e, Eff.Error ElaraError :> r) =>
     Eff (Eff.Error e ': r) a ->
     Eff r a
-runErrorOrReport e = withFrozenCallStack $ do
-    x <- Eff.runError e
-    case x of
-        Left (callStack, err) -> do
-            let ?callStack = callStack -- silly
-             in Eff.throwError_ (SomeReportableError err)
+runErrorAsElaraError e = withFrozenCallStack $ do
+    r <- Eff.runError e
+    case r of
+        Left (_callStack, err) -> let ?callStack = _callStack in Eff.throwError (ElaraError err)
         Right a -> pure a
+
+runWriterAsElaraWarning ::
+    forall w r a f.
+    ( Typeable w
+    , ElaraDiagnostic w
+    , Eff.Writer [ElaraWarning] :> r
+    , (Monoid (f w))
+    , Foldable f
+    ) =>
+    Eff (Eff.Writer (f w) ': r) a ->
+    Eff r a
+runWriterAsElaraWarning m = do
+    (result, specificWarnings) <- Eff.runWriter m
+
+    Eff.tell (ElaraWarning <$> toList specificWarnings)
+
+    pure result

@@ -9,12 +9,14 @@ This acts as the entrypoint to the stage, bringing each stage into a common abst
 module Elara.Pipeline where
 
 import Colog.Core (LogAction (..))
-import Data.Text.IO qualified as Text
 import Effectful (Eff, IOE, (:>))
 import Effectful.Colog (Log, runLogAction)
+
+import Data.Text.IO qualified as Text
+import System.IO qualified
+
 import Elara.Data.Pretty
 import Print (printPretty)
-import System.IO qualified
 
 -- Create a co-log LogAction that prints to stdout and appends to a log file.
 -- Returns an IO action that constructs the LogAction so callers (e.g. `Main`) can

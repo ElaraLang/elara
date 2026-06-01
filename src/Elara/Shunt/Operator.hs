@@ -1,18 +1,20 @@
 module Elara.Shunt.Operator (OpTable, Associativity (..), Precedence, mkPrecedence, OpInfo (..), prettyOp, prettyOpTable) where
 
 import Data.Map qualified as Map
+
 import Elara.AST.Name
-import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.Types qualified as New
 import Elara.AST.VarRef
 import Elara.Data.Pretty
+
+import Elara.AST.Phases.Renamed qualified as NewR
+import Elara.AST.Types qualified as New
 import Elara.Data.Pretty.Styles qualified as Style
 
 type OpTable = Map (IgnoreLocVarRef Name) OpInfo
 
 newtype Precedence = Precedence Int
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 instance Pretty Precedence where
     pretty (Precedence i) = pretty i
@@ -27,7 +29,7 @@ data OpInfo = OpInfo
     { precedence :: !Precedence
     , associativity :: !Associativity
     }
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 instance Pretty OpInfo where
     pretty (OpInfo p LeftAssociative) = Style.keyword "infixl" <+> pretty p
@@ -38,7 +40,7 @@ data Associativity
     = LeftAssociative
     | RightAssociative
     | NonAssociative
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 prettyOp :: New.BinaryOperator SourceRegion NewR.Renamed -> Doc AnsiStyle
 prettyOp (New.SymOp _ opRef) = Style.operator $ pretty opRef

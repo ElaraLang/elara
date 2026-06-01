@@ -7,8 +7,9 @@ import Elara.AST.Phase (ExpressionExtension)
 import Elara.AST.Phases.Desugared (Desugared, DesugaredExpressionExtension (..))
 import Elara.AST.Phases.Frontend (Frontend, FrontendExpressionExtension (..))
 import Elara.AST.Phases.Renamed (Renamed, RenamedExpressionExtension (..))
-import Elara.AST.Types qualified as New
 import Elara.Data.AtLeast2List (AtLeast2List)
+
+import Elara.AST.Types qualified as New
 
 data ConstVal
     = ConstInt Integer
@@ -17,7 +18,7 @@ data ConstVal
     | ConstUnit
     | ConstList [ConstVal]
     | ConstTuple (AtLeast2List ConstVal)
-    deriving (Show, Eq)
+    deriving (Eq, Show)
 
 class InterpretConstExpr p where
     interpretExprExtension :: ExpressionExtension p loc -> Maybe ConstVal

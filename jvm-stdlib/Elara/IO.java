@@ -1,19 +1,18 @@
 package Elara;
 
-import java.util.function.Supplier;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class IO<T> {
-    private final Supplier<T> run;
+    private final Func0<T> run;
 
-    public IO(Supplier<T> run) {
+    public IO(Func0<T> run) {
         this.run = run;
     }
 
     public void run() {
-        this.run.get();
+        this.run.run();
     }
 
     public static <T> IO<T> pure(T t) {
@@ -21,15 +20,9 @@ public class IO<T> {
     }
 
     public <B> IO<B> bind(Func<T, IO<B>> f) {
-        return new IO<>(() -> f.run(this.run.get()).run.get());
+        return new IO<>(() -> f.run(this.run.run()).run.run());
     }
 
-    public static IO<Unit> println(Object s) {
-        return new IO<>(() -> {
-            System.out.println(s);
-            return Unit.unit;
-        });
-    }
 
     public static IO<String> readFile(Elara.String path) {
         return new IO<>(() -> {

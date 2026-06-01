@@ -4,11 +4,13 @@
 module Elara.Data.Kind where
 
 import Data.Data (Data)
+import GHC.Generics (Rep)
+
 import Elara.AST.Name (LowerAlphaName)
 import Elara.Data.Pretty
-import Elara.Data.Pretty.Styles qualified as Style
 import Elara.Data.Unique
-import GHC.Generics (Rep)
+
+import Elara.Data.Pretty.Styles qualified as Style
 
 data ElaraKind
     = -- | The kind of monotypes (@Type@ or @*@ in Haskell)
@@ -18,7 +20,7 @@ data ElaraKind
     | -- | A kind variable for poly-kinds (probably not supported yet)
       VarKind KindVar
     | KindScheme [KindVar] ElaraKind
-    deriving (Show, Eq, Data, Ord, Generic)
+    deriving (Data, Eq, Generic, Ord, Show)
 
 instance
     forall x.

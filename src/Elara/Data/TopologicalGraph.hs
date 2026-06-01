@@ -7,10 +7,12 @@ module Elara.Data.TopologicalGraph where
 import Data.Array
 import Data.Containers.ListUtils (nubOrd)
 import Data.Graph
+import Relude.Extra (firstF)
+
+import Text.Show qualified as Show
+
 import Elara.Data.Pretty
 import Elara.Utils (uncurry3)
-import Relude.Extra (firstF)
-import Text.Show qualified as Show
 
 class Ord (Key a) => HasDependencies a where
     type Key a

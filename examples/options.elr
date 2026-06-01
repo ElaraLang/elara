@@ -21,5 +21,5 @@ let describe opt =
 let main =
     let res1 = safeDiv 10 2
     let res2 = safeDiv 10 0
-    println ("10 / 2: " ++ describe res1) >>
+    println ("10 / 2: " ++ describe res1) *>
     println ("10 / 0: " ++ describe res2)
