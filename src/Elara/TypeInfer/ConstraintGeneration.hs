@@ -28,6 +28,7 @@ import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedPattern, ShuntedPattern')
 import Elara.AST.Phases.Typed (Typed, TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.Region (Located (Located), SourceRegion)
 import Elara.AST.VarRef
+import Elara.Data.AtLeast2List (AtLeast2List (..))
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Kind.Infer (KindInferError, inferTypeKind)
 import Elara.Data.Pretty
@@ -35,7 +36,7 @@ import Elara.Data.Unique (Unique)
 import Elara.Logging (StructuredDebug, debugWithResult, logDebug, logDebugWith)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Query.Effects (QueryEffects)
-import Elara.TypeInfer.Context (ContextStack (..), InferenceContext (..))
+import Elara.TypeInfer.Context (InferenceContext (..))
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToInferType, kindedToTypedType)
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupTypeMaybe, withLocalType)
 import Elara.TypeInfer.Error (UnifyError (..), UnifyErrorKind (..), mkUnifyError, mkUnifyErrorFromConstraint)
@@ -43,7 +44,7 @@ import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Substitute
-import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), equalityWithContext, functionMonotypeArgs, functionMonotypeResult, monotypeLoc, reduce, simpleEquality, substitution)
+import Elara.TypeInfer.Type (Constraint (..), ContextStack, Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), equalityWithContext, functionMonotypeArgs, functionMonotypeResult, monotypeLoc, reduce, simpleEquality, substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 
 import Elara.AST.Types qualified as New
@@ -65,7 +66,7 @@ type ConstraintGenEffects r loc =
 -- | Common effects required for Unification
 type UnifyEffects r loc =
     ( Error (UnifyError loc) :> r
-    , Reader ContextStack :> r
+    , Reader (ContextStack loc) :> r
     , StructuredDebug :> r
     , Rock.Rock Elara.Query.Query :> r
     , QueryEffects r
@@ -225,8 +226,15 @@ generateConstraints' expr' =
                     let fnName = extractFunctionName e1
 
                     -- Create constraint with context about this being a function application
-                    let ctx = Just $ CheckingFunctionArgument 1 fnName (unwrapLoc exprLoc)
-                    let equalityConstraint = equalityWithContext (unwrapLoc exprLoc) t1 (Function e1Loc t2 (TypeVar e2Loc resultTyVar [])) e1Loc e2Loc ctx
+                    let ctx = Just $ CheckingFunctionArgument 1 fnName t1 (unwrapLoc exprLoc)
+                    let equalityConstraint =
+                            equalityWithContext
+                                (unwrapLoc exprLoc)
+                                t1
+                                (Function e1Loc t2 (TypeVar e2Loc resultTyVar []))
+                                e1Loc
+                                e1Loc -- the expected type and actual type are both at the same location (the function being applied)
+                                ctx
                     logDebug (pretty equalityConstraint)
                     tell equalityConstraint
 
@@ -382,6 +390,7 @@ generatePatternConstraints (New.Pattern loc _expectedType pattern') over = logDe
     pure (New.Pattern loc monotype typedPattern', monotype)
 
 generatePatternConstraints' ::
+    forall r loc.
     ConstraintGenEffects r loc =>
     ShuntedPattern' ->
     {- | the type of the pattern we are matching against
@@ -426,7 +435,7 @@ generatePatternConstraints' pattern' over =
                     logDebug $ "res: " <> pretty res
 
                     when (length argTys /= length args) $ do
-                        ctx <- ask @ContextStack
+                        ctx <- ask @(ContextStack loc)
                         -- Create an error with the pattern arity mismatch
                         throwError $
                             mkUnifyError
@@ -470,7 +479,32 @@ simplifyConstraint ::
 simplifyConstraint given tch wanted = debugWithResult ("simplifyConstraint: " <> pretty (given, wanted)) $ do
     givenSubst <- reduceGiven given
     logDebug ("simplifyConstraint: givenSubst: " <> pretty givenSubst)
-    runReader tch (solve (substituteAll givenSubst wanted))
+
+    -- try the simple solve first
+    fastResult <- runError @(UnifyError _) (runReader tch (solve (substituteAll givenSubst wanted)))
+
+    case fastResult of
+        Right (residual, unifier) ->
+            -- it worked :D
+            pure (residual, unifier)
+        Left (_, err) -> do
+            --  run the greedy solver to try and get more information
+            ((_residual, unifier), errors) <-
+                runState [] $
+                    runReader tch (solveAccumulating (substituteAll givenSubst wanted))
+
+            let improvedErrors =
+                    errors <&> \e ->
+                        e
+                            { ueExpected = substituteAll unifier (ueExpected e)
+                            , ueActual = substituteAll unifier (ueActual e)
+                            }
+
+            case improvedErrors of
+                [] -> throwError err -- Fallback if state was somehow empty
+                [singleErr] -> throwError singleErr
+                err1 : err2 : errs ->
+                    throwError (MultipleUnifyErrors $ AtLeast2List err1 err2 errs)
 
 reduceGiven ::
     (UnifyEffects r loc, Monoid (Constraint loc)) =>
@@ -497,7 +531,27 @@ solve (Conjunction _ a b) = do
     pure (c1 <> c2, s1 <> s2)
 solve EmptyConstraint{} = pure mempty
 
+{- | Like `solve`, but instead of throwing an error immediately when unification fails, it accumulates the error in the state and continues solving the rest of the constraints.
+Solves as many constraints as possible, accumulating errors for any that fail, and returns the remaining unsolved constraints and the combined substitution.
+-}
+solveAccumulating ::
+    (UnifyEffects r loc, Monoid (Constraint loc), Reader (Set UniqueTyVar) :> r, State [UnifyError loc] :> r) =>
+    Constraint loc ->
+    Eff r (Constraint loc, Substitution loc)
+solveAccumulating constraint@Equality{eqLeft = a, eqRight = b} = do
+    let ?constraint = Just constraint
+    catchError (unify a b) $ \_ err -> do
+        modify (err :)
+        pure (constraint, mempty)
+solveAccumulating (Conjunction _loc a b) = do
+    -- solve right to left
+    (c2, s2) <- solveAccumulating b
+    (c1, s1) <- solveAccumulating (substituteAll s2 a)
+    pure (c1 <> c2, s1 <> s2)
+solveAccumulating EmptyConstraint{} = pure mempty
+
 unifyGiven ::
+    forall r loc.
     (UnifyEffects r loc, Monoid (Constraint loc)) =>
     Maybe (Constraint loc) -> Monotype loc -> Monotype loc -> Eff r (Substitution loc)
 unifyGiven _ (TypeVar _ a _) b = bindGiven a b
@@ -507,7 +561,7 @@ unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor _ b bs)
     | a == b =
         if length as /= length bs
             then do
-                ctx <- ask @ContextStack
+                ctx <- ask @(ContextStack loc)
                 throwError $ mkUnifyError (ArityMismatch (length as) (length bs)) t1 t2 l1 ctx
             else unifyGivenMany constraint as bs
     | otherwise = do
@@ -517,12 +571,12 @@ unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor _ b bs)
             (Just a', _) -> unifyGiven constraint a' t2
             (_, Just b') -> unifyGiven constraint t1 b'
             (Nothing, Nothing) -> do
-                ctx <- ask @ContextStack
+                ctx <- ask @(ContextStack loc)
                 case constraint of
                     Just c -> throwError $ mkUnifyErrorFromConstraint (TypeConstructorMismatch a b) t1 t2 c ctx
                     Nothing -> throwError $ mkUnifyError (TypeConstructorMismatch a b) t1 t2 l1 ctx
 unifyGiven constraint a b = do
-    ctx <- ask @ContextStack
+    ctx <- ask @(ContextStack loc)
     case constraint of
         Just c -> throwError $ mkUnifyErrorFromConstraint TypeMismatch a b c ctx
         Nothing -> throwError $ mkUnifyError TypeMismatch a b (monotypeLoc a) ctx
@@ -558,7 +612,7 @@ unify a b = do
         | a == b =
             if length as /= length bs
                 then do
-                    ctx <- ask @ContextStack
+                    ctx <- ask @(ContextStack loc)
                     throwError $ mkUnifyError (ArityMismatch (length as) (length bs)) t1 t2 l1 ctx
                 else unifyMany as bs
         | otherwise = do
@@ -573,7 +627,7 @@ unify a b = do
                     logDebug $ "unify: expanded alias for " <> pretty b <> ": " <> pretty b'
                     unify t1 b'
                 (Nothing, Nothing) -> do
-                    ctx <- ask @ContextStack
+                    ctx <- ask @(ContextStack loc)
                     case ?constraint of
                         Just c -> throwError $ mkUnifyErrorFromConstraint (TypeConstructorMismatch a b) t1 t2 c ctx
                         Nothing -> throwError $ mkUnifyError (TypeConstructorMismatch a b) t1 t2 l1 ctx
@@ -582,7 +636,7 @@ unify a b = do
         case expanded of
             Just t1' -> unify' t1' t2
             Nothing -> do
-                ctx <- ask @ContextStack
+                ctx <- ask @(ContextStack loc)
                 case ?constraint of
                     Just c -> throwError $ mkUnifyErrorFromConstraint TypeMismatch t1 t2 c ctx
                     Nothing -> throwError $ mkUnifyError TypeMismatch t1 t2 (monotypeLoc t1) ctx
@@ -591,13 +645,13 @@ unify a b = do
         case expanded of
             Just t2' -> unify' t1 t2'
             Nothing -> do
-                ctx <- ask @ContextStack
+                ctx <- ask @(ContextStack loc)
                 case ?constraint of
                     Just c -> throwError $ mkUnifyErrorFromConstraint TypeMismatch t1 t2 c ctx
                     Nothing -> throwError $ mkUnifyError TypeMismatch t1 t2 (monotypeLoc t1) ctx
     unify' (Function _ a b) (Function _ c d) = unifyMany [a, b] [c, d]
     unify' a b = do
-        ctx <- ask @ContextStack
+        ctx <- ask @(ContextStack loc)
         case ?constraint of
             Just c -> throwError $ mkUnifyErrorFromConstraint TypeMismatch a b c ctx
             Nothing -> throwError $ mkUnifyError TypeMismatch a b (monotypeLoc a) ctx
@@ -638,7 +692,7 @@ unify a b = do
         decompose h1 args1 h2 args2 = do
             if length args1 /= length args2
                 then do
-                    ctx <- ask @ContextStack
+                    ctx <- ask @(ContextStack loc)
                     let errorKind =
                             if h1 == h2
                                 then ArityMismatch (length args1) (length args2)
@@ -674,12 +728,13 @@ expandAlias name args = do
         Nothing -> pure Nothing
 
 bindGiven ::
-    (StructuredDebug :> r, Reader ContextStack :> r, Error (UnifyError loc) :> r, Show loc) =>
+    forall loc r.
+    (StructuredDebug :> r, Reader (ContextStack loc) :> r, Error (UnifyError loc) :> r, Show loc) =>
     TypeVariable -> Monotype loc -> Eff r (Substitution loc)
 bindGiven a t =
     if member a (ftv t)
         then do
-            ctx <- ask @ContextStack
+            ctx <- ask @(ContextStack loc)
             let tvType = TypeVar (monotypeLoc t) a []
             throwError $ mkUnifyError (OccursCheck a) tvType t (monotypeLoc t) ctx
         else pure (substitution (tvValue a, t))
@@ -690,7 +745,7 @@ bindGiven a t =
 unifyVar ::
     forall loc r.
     ( StructuredDebug :> r
-    , Reader ContextStack :> r
+    , Reader (ContextStack loc) :> r
     , Error (UnifyError loc) :> r
     , Reader (Set UniqueTyVar) :> r
     , Show loc
@@ -705,7 +760,7 @@ unifyVar a t = do
   where
     bindVar :: UniqueTyVar -> Monotype loc -> Eff r (Constraint loc, Substitution loc)
     bindVar tv t | member tv (fuv t) = do
-        ctx <- ask @ContextStack
+        ctx <- ask @(ContextStack loc)
         let tvType = TypeVar (monotypeLoc t) (UnificationVar tv) []
         throwError $ mkUnifyError (OccursCheck (UnificationVar tv)) tvType t (monotypeLoc t) ctx
     bindVar tv t = do
@@ -715,7 +770,11 @@ unifyVar a t = do
             then pure (EmptyConstraint (monotypeLoc t), substitution (tv, t))
             else pure (simpleEquality (monotypeLoc t) (TypeVar (monotypeLoc t) (UnificationVar tv) []) t, mempty)
 
+{- | unify a series of types at once. this is essentially a "'zipWith' 'unify'",
+but should give better error message than doing each unify separately.
+-}
 unifyMany ::
+    forall loc r.
     ( UnifyEffects r loc
     , Monoid (Constraint loc)
     , ?constraint :: Maybe (Constraint loc)
@@ -726,10 +785,10 @@ unifyMany ::
     Eff r (Constraint loc, Substitution loc)
 unifyMany [] [] = pure (mempty, mempty)
 unifyMany [] (b : _) = do
-    ctx <- ask @ContextStack
+    ctx <- ask @(ContextStack loc)
     throwError $ mkUnifyError UnifyMismatch b b (monotypeLoc b) ctx
 unifyMany (a : _) [] = do
-    ctx <- ask @ContextStack
+    ctx <- ask @(ContextStack loc)
     throwError $ mkUnifyError UnifyMismatch a a (monotypeLoc a) ctx
 unifyMany (a : as) (b : bs) = do
     (c1, s1) <- unify a b

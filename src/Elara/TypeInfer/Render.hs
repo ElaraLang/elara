@@ -11,6 +11,7 @@ where
 
 import Elara.AST.Name (Qualified (..), TypeName (..))
 import Elara.Data.Pretty
+import Elara.Data.Unique (Unique (..))
 import Elara.Prim (KnownTypeInfo (..), knownTypeInfo, lookupByQualifiedTypeName)
 import Elara.TypeInfer.Type (Monotype (..), Polytype (..), Type (..), TypeVariable (..))
 
@@ -50,8 +51,10 @@ renderMonotypeArrow m = renderMonotype m
 
 -- | Render a type variable
 renderTypeVariable :: TypeVariable -> Doc AnsiStyle
-renderTypeVariable (UnificationVar tv) = Style.varName (pretty tv)
-renderTypeVariable (SkolemVar tv) = Style.varName ("#" <> pretty tv)
+renderTypeVariable (UnificationVar (Unique (Just name) _)) = Style.varName (pretty name)
+renderTypeVariable (UnificationVar (Unique Nothing i)) = Style.varName ("_" <> pretty i)
+renderTypeVariable (SkolemVar (Unique (Just name) _)) = Style.varName ("#" <> pretty name)
+renderTypeVariable (SkolemVar (Unique Nothing i)) = Style.varName ("#_" <> pretty i)
 
 -- | Render a polytype with user-friendly names
 renderPolytype :: Polytype loc -> Doc AnsiStyle

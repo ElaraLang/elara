@@ -9,11 +9,12 @@ import Elara.Data.Pretty
 This is used to provide better error messages by explaining
 WHY two types are being compared.
 -}
-data InferenceContext
+data InferenceContext typ
     = -- | Checking an argument to a function call
       CheckingFunctionArgument
         { argPosition :: !Int
         , functionName :: !(Maybe (Qualified VarName))
+        , functionType :: !typ
         , callSite :: !SourceRegion
         }
     | -- | Checking the result type of a function call
@@ -50,31 +51,33 @@ data InferenceContext
     deriving (Eq, Generic, Ord, Show)
 
 -- | A stack of inference contexts, with the most recent context at the head.
-newtype ContextStack = ContextStack [InferenceContext]
+newtype ContextStack typ = ContextStack [InferenceContext typ]
     deriving (Eq, Generic, Show)
     deriving newtype (Monoid, Semigroup)
 
 -- | Create an empty context stack
-emptyContextStack :: ContextStack
+emptyContextStack :: ContextStack typ
 emptyContextStack = ContextStack []
 
 -- | Push a context onto the stack
-pushContext :: InferenceContext -> ContextStack -> ContextStack
+pushContext :: InferenceContext typ -> ContextStack typ -> ContextStack typ
 pushContext ctx (ContextStack stack) = ContextStack (ctx : stack)
 
 -- | Get the current (most recent) context, if any
-currentContext :: ContextStack -> Maybe InferenceContext
+currentContext :: ContextStack typ -> Maybe (InferenceContext typ)
 currentContext (ContextStack []) = Nothing
 currentContext (ContextStack (x : _)) = Just x
 
 -- | Get all contexts in the stack (most recent first)
-allContexts :: ContextStack -> [InferenceContext]
+allContexts :: ContextStack typ -> [InferenceContext typ]
 allContexts (ContextStack stack) = stack
 
-instance Pretty InferenceContext where
+instance Pretty typ => Pretty (InferenceContext typ) where
     pretty = \case
-        CheckingFunctionArgument pos mFn _ ->
-            "while checking argument" <+> pretty pos <+> maybe mempty (\fn -> "of" <+> squotes (pretty fn)) mFn
+        CheckingFunctionArgument pos (Just fnName) _ _ ->
+            "while checking argument" <+> pretty pos <+> "of" <+> squotes (pretty fnName)
+        CheckingFunctionArgument pos Nothing _ _ ->
+            "while checking argument" <+> pretty pos
         CheckingFunctionResult _ ->
             "while checking function result"
         CheckingIfCondition _ ->
@@ -90,6 +93,6 @@ instance Pretty InferenceContext where
         CheckingAnnotation _ ->
             "while checking type annotation"
 
-instance Pretty ContextStack where
+instance Pretty typ => Pretty (ContextStack typ) where
     pretty (ContextStack []) = mempty
     pretty (ContextStack ctxs) = vsep (pretty <$> ctxs)

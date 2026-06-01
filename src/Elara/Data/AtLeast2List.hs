@@ -3,6 +3,8 @@ module Elara.Data.AtLeast2List where
 
 import Data.Foldable1 (Foldable1 (..))
 
+import Elara.Data.Pretty (Pretty (pretty))
+
 data AtLeast2List a = AtLeast2List a a [a]
     deriving (Eq, Generic, Ord, Show)
 
@@ -49,3 +51,6 @@ instance Traversable AtLeast2List where
 
 instance Semigroup (AtLeast2List a) where
     (AtLeast2List x1 y1 xs1) <> (AtLeast2List x2 y2 xs2) = AtLeast2List x1 y1 (xs1 <> (x2 : y2 : xs2))
+
+instance Pretty a => Pretty (AtLeast2List a) where
+    pretty al = pretty (Prelude.toList al)

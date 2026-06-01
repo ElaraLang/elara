@@ -35,6 +35,8 @@ module Elara.TypeInfer.Type (
     Substitution (..),
     Substitutable (..),
     substitution,
+    InferenceContext,
+    ContextStack,
 )
 where
 
@@ -44,10 +46,13 @@ import Data.Map qualified as Map
 import Elara.AST.Name
 import Elara.AST.Region (SourceRegion, generatedSourceRegion)
 import Elara.Data.Pretty (Pretty (..), hsep, parens)
-import Elara.TypeInfer.Context (InferenceContext)
 import Elara.TypeInfer.Unique
 
 import Elara.Data.Pretty.Styles qualified as Style
+import Elara.TypeInfer.Context qualified as Ctx
+
+type InferenceContext loc = Ctx.InferenceContext (Monotype loc)
+type ContextStack loc = Ctx.ContextStack (Monotype loc)
 
 data TypeVariable = UnificationVar UniqueTyVar | SkolemVar UniqueTyVar
     deriving (Eq, Generic, Ord, Show)
@@ -89,7 +94,7 @@ data Constraint loc
         -- ^ Where the left type was used/expected
         , eqRightUsage :: loc
         -- ^ Where the right type was found/provided
-        , eqContext :: Maybe InferenceContext
+        , eqContext :: Maybe (InferenceContext loc)
         -- ^ Why we're comparing these types
         }
     deriving (Eq, Generic, Ord, Show)
@@ -114,7 +119,7 @@ simpleEquality loc left right =
         }
 
 -- | Smart constructor for equality constraints with context
-equalityWithContext :: loc -> Monotype loc -> Monotype loc -> loc -> loc -> Maybe InferenceContext -> Constraint loc
+equalityWithContext :: loc -> Monotype loc -> Monotype loc -> loc -> loc -> Maybe (InferenceContext loc) -> Constraint loc
 equalityWithContext loc left right leftUsage rightUsage ctx =
     Equality
         { eqLoc = loc

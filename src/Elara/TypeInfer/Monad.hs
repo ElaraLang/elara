@@ -12,13 +12,13 @@ import Elara.Logging
 import Elara.Query.Effects
 import Elara.TypeInfer.Context (ContextStack)
 import Elara.TypeInfer.Environment
-import Elara.TypeInfer.Type (Constraint)
+import Elara.TypeInfer.Type (Constraint, Monotype)
 
 import Elara.Query qualified
 import Rock qualified
 
 type InferEffectsCons loc xs =
-    Reader ContextStack
+    Reader (ContextStack (Monotype loc))
         ': Writer (Constraint loc)
         ': State (LocalTypeEnvironment loc)
         ': State (TypeEnvironment loc)
@@ -29,7 +29,7 @@ type InferEffectsCons loc xs =
         ': xs
 
 type Infer loc r =
-    ( Reader ContextStack :> r
+    ( Reader (ContextStack (Monotype loc)) :> r
     , Writer (Constraint loc) :> r
     , State (LocalTypeEnvironment loc) :> r
     , State (TypeEnvironment loc) :> r

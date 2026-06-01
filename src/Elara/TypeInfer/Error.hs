@@ -9,18 +9,20 @@ module Elara.TypeInfer.Error (
     -- * Error Construction
     mkUnifyError,
     mkUnifyErrorFromConstraint,
-) where
+)
+where
 
-import Error.Diagnose hiding (Hint, Note)
+import Data.Map qualified as Map
 
 import Elara.AST.Name (Qualified, TypeName, VarName)
-import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition)
+import Elara.AST.Region (SourceRegion)
+import Elara.Data.AtLeast2List (AtLeast2List)
 import Elara.Data.Pretty
-import Elara.Error (ElaraDiagnostic (..), ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..))
-import Elara.Error.Diagnose (toDiagnoseReports)
+import Elara.Data.Unique (Unique (..), uniqueId)
+import Elara.Error (ElaraDiagnostic (..), ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..), ElaraReport (..))
 import Elara.TypeInfer.Context (ContextStack (..), InferenceContext (..), allContexts, currentContext, pushContext)
 import Elara.TypeInfer.Render (renderMonotype)
-import Elara.TypeInfer.Type (Constraint (..), DataCon, Monotype (..), Type, TypeVariable, constraintLoc, monotypeLoc)
+import Elara.TypeInfer.Type (Constraint (..), DataCon, Monotype (..), Type, TypeVariable (..), constraintLoc, monotypeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar)
 
 import Elara.Error.Codes qualified as Codes
@@ -58,13 +60,14 @@ data UnifyError loc
         -- ^ Where the actual type was found/provided
         , ueConstraintSite :: !loc
         -- ^ Where the constraint was generated
-        , ueContext :: !ContextStack
+        , ueContext :: !(ContextStack (Monotype loc))
         -- ^ Why we were comparing these types
         }
     | -- | Unresolved constraint at the end of type checking
       UnresolvedConstraint (Qualified VarName) (Constraint loc)
     | -- | Polytypes can't be used as type aliases (legacy, keep for backwards compat)
       PolytypeAlias ([UniqueTyVar], Type loc)
+    | MultipleUnifyErrors (AtLeast2List (UnifyError loc))
     deriving (Generic, Show)
 
 -- | Create a UnifyError from a constraint and error kind
@@ -73,7 +76,7 @@ mkUnifyError ::
     Monotype loc ->
     Monotype loc ->
     loc ->
-    ContextStack ->
+    ContextStack (Monotype loc) ->
     UnifyError loc
 mkUnifyError kind expected actual constraintSite ctx =
     UnifyError
@@ -86,24 +89,24 @@ mkUnifyError kind expected actual constraintSite ctx =
         , ueContext = ctx
         }
 
--- | Create a UnifyError from a constraint, using its context information
+-- | Create a UnifyError from a constraint, using its context information to fill in the error details.
 mkUnifyErrorFromConstraint ::
     UnifyErrorKind ->
     Monotype loc ->
     Monotype loc ->
     Constraint loc ->
-    ContextStack ->
+    ContextStack (Monotype loc) ->
     UnifyError loc
 mkUnifyErrorFromConstraint kind expected actual constraint ctx =
     UnifyError
         { ueKind = kind
-        , ueExpected = expected
-        , ueActual = actual
+        , ueExpected = actual -- swap the two
+        , ueActual = expected
         , ueExpectedUsage = case constraint of
-            Equality{eqLeftUsage} -> eqLeftUsage
+            Equality{eqRightUsage} -> eqRightUsage
             _ -> monotypeLoc expected
         , ueActualUsage = case constraint of
-            Equality{eqRightUsage} -> eqRightUsage
+            Equality{eqLeftUsage} -> eqLeftUsage
             _ -> monotypeLoc actual
         , ueConstraintSite = constraintLoc constraint
         , ueContext = case constraint of
@@ -124,10 +127,10 @@ instance Pretty UnifyErrorKind where
         PolytypeAliasError -> "Polytype aliases are not supported"
 
 -- | Build the main message for a unification error
-buildMainMessage :: ContextStack -> UnifyErrorKind -> Doc AnsiStyle
+buildMainMessage :: ContextStack (Monotype loc) -> UnifyErrorKind -> Doc AnsiStyle
 buildMainMessage ctx kind = case currentContext ctx of
-    Just (CheckingFunctionArgument _ mFn _) ->
-        "Type mismatch" <> maybe mempty (\fn -> " in call to" <+> squotes (pretty fn)) mFn
+    Just (CheckingFunctionArgument _ mFn t _) ->
+        "Type mismatch" <> maybe mempty (\fn -> " in call to" <+> squotes (pretty fn)) mFn <> " with type" <+> renderMonotype t
     Just (CheckingIfCondition _) ->
         "If condition must be Bool"
     Just (CheckingIfBranches _ _) ->
@@ -145,13 +148,15 @@ buildMainMessage ctx kind = case currentContext ctx of
         PatternArityMismatch con _ _ -> "Wrong number of pattern arguments for" <+> pretty con
         _ -> "Type mismatch"
 
--- | Relation that defines 2 types as equal iff they are equal under a substitution of type variables
 instance (Show loc, Pretty loc, Typeable loc) => Exception (UnifyError loc)
 
 instance ElaraDiagnostic (UnifyError SourceRegion) where
     diagnosticMessage UnifyError{..} = buildMainMessage ueContext ueKind
     diagnosticMessage (UnresolvedConstraint name constraint) = "Unresolved constraint in" <+> pretty name <> ":" <+> pretty constraint
     diagnosticMessage (PolytypeAlias _) = "Polytypes cannot be used as type aliases"
+    diagnosticMessage (MultipleUnifyErrors errors) =
+        "Multiple unification errors occurred: "
+            <> hsep (fmap diagnosticMessage (toList errors))
 
     diagnosticCode UnifyError{..} = case ueKind of
         TypeMismatch -> Just Codes.typeMismatch
@@ -161,28 +166,109 @@ instance ElaraDiagnostic (UnifyError SourceRegion) where
     diagnosticCode _ = Nothing
 
     diagnosticMarkers (UnifyError{..}) =
-        let expectedUsage = ueExpectedUsage :: SourceRegion
-            actualUsage = ueActualUsage :: SourceRegion
-         in [ ElaraMarker expectedUsage SecondaryMarker ("expected" <+> renderMonotype ueExpected)
-            , ElaraMarker actualUsage PrimaryMarker ("but found" <+> renderMonotype ueActual)
-            ]
+        do
+            let allVars = ordNub (collectVars ueExpected <> collectVars ueActual)
+                nameMap = buildNiceNameMap allVars
+                expected' = renameVariables nameMap ueExpected
+                actual' = renameVariables nameMap ueActual
+            [ ElaraMarker ueExpectedUsage SecondaryMarker ("expected" <+> renderMonotype expected')
+                , ElaraMarker ueActualUsage PrimaryMarker ("but found" <+> renderMonotype actual')
+                ]
     diagnosticMarkers (UnresolvedConstraint _ constraint) = [ElaraMarker (constraintLoc constraint) PrimaryMarker (pretty constraint)]
     diagnosticMarkers (PolytypeAlias _) = []
+    diagnosticMarkers (MultipleUnifyErrors errors) = concatMap diagnosticMarkers (toList errors)
 
-    diagnosticNotes (UnifyError{..}) =
-        let contextNotes = fmap (Elara.Error.Note . pretty) (allContexts ueContext)
-            unifyNote = Elara.Error.Note ("while unifying" <+> renderMonotype ueExpected <+> "with" <+> renderMonotype ueActual)
+    diagnosticNotes (UnifyError{..}) = do
+        let allVars = ordNub (collectVars ueExpected <> collectVars ueActual)
+            nameMap = buildNiceNameMap allVars
+            expected' = renameVariables nameMap ueExpected
+            actual' = renameVariables nameMap ueActual
+            renamedContext = renameContext nameMap ueContext
+
+            contextNotes = fmap (Elara.Error.Note . pretty) (allContexts renamedContext)
+            unifyNote = Elara.Error.Note ("while unifying" <+> renderMonotype expected' <+> "with" <+> renderMonotype actual')
             typeNotes =
-                [ Elara.Error.Note ("expected type:" <+> renderMonotype ueExpected)
-                , Elara.Error.Note ("actual type:  " <+> renderMonotype ueActual)
+                [ Elara.Error.Note ("expected type:" <+> renderMonotype expected')
+                , Elara.Error.Note ("actual type:  " <+> renderMonotype actual')
                 ]
-            hints = case currentContext ueContext of
-                Just (CheckingFunctionArgument pos _ _) ->
-                    [Elara.Error.Hint ("Check argument" <+> pretty pos <+> "has the correct type")]
+            fnTypeNote = case currentContext renamedContext of
+                Just (CheckingFunctionArgument _ (Just fnName) fnType _) ->
+                    let label = case fnType of
+                            Function{} -> "The function"
+                            _ -> "The value"
+                     in [Elara.Error.Note (label <+> squotes (pretty fnName) <+> "has type:" <+> renderMonotype fnType)]
+                _ -> []
+            nonFunctionHint = case (expected', actual') of
+                (Function{}, TypeConstructor _ name _) ->
+                    [Elara.Error.Hint ("Type" <+> pretty name <+> "is not a function and cannot be applied to arguments")]
+                _ -> []
+            baseHint = case currentContext ueContext of
                 Just (CheckingIfCondition _) ->
                     [Elara.Error.Hint "The condition of an 'if' expression must have type Bool"]
                 Just (CheckingIfBranches _ _) ->
                     [Elara.Error.Hint "Both branches of an 'if' must return the same type"]
                 _ -> []
-         in contextNotes ++ [unifyNote] ++ typeNotes ++ hints
+         in contextNotes <> fnTypeNote <> [unifyNote] <> typeNotes <> baseHint <> nonFunctionHint
+    diagnosticNotes (MultipleUnifyErrors errors) =
+        concat $
+            zipWith
+                ( \i err ->
+                    Elara.Error.Note (pretty i <> ".") : diagnosticNotes err
+                )
+                [1 ..]
+                (toList errors)
     diagnosticNotes _ = []
+
+    diagnosticReports (MultipleUnifyErrors errors) =
+        concatMap diagnosticReports (toList errors)
+    diagnosticReports e =
+        [ ElaraReport
+            (diagnosticSeverity e)
+            (diagnosticCode e)
+            (diagnosticMessage e)
+            (diagnosticMarkers e)
+            (diagnosticNotes e)
+        ]
+
+-- | collect all the type variables that appear in a 'Monotype'
+collectVars :: Monotype loc -> [UniqueTyVar]
+collectVars (TypeVar _ tv args) =
+    let v = case tv of
+            UnificationVar u -> u
+            SkolemVar u -> u
+     in v : concatMap collectVars args
+collectVars (TypeConstructor _ _ args) = concatMap collectVars args
+collectVars (Function _ t1 t2) = collectVars t1 <> collectVars t2
+
+-- | Build a mapping from type variables to nice names (a, b, c, ..., t0, t1, ...).
+buildNiceNameMap :: [UniqueTyVar] -> Map UniqueTyVar Text
+buildNiceNameMap tvs =
+    let nameless = ordNub [tv | tv@(Unique Nothing _) <- tvs]
+        nameList = [one c | c <- ['a' .. 'z']] <> ["t" <> show n | n <- [0 :: Int ..]]
+     in Map.fromList (zip nameless nameList)
+
+-- | Rename type variables in a monotype to have nice names for error messages
+renameVariables :: Map UniqueTyVar Text -> Monotype loc -> Monotype loc
+renameVariables m = \case
+    TypeVar loc tv args ->
+        let renameUnique u =
+                case Map.lookup u m of
+                    Just name -> Unique (Just name) (u ^. uniqueId)
+                    Nothing -> u
+            tv' = case tv of
+                UnificationVar u -> UnificationVar (renameUnique u)
+                SkolemVar u -> SkolemVar (renameUnique u)
+         in TypeVar loc tv' (renameVariables m <$> args)
+    TypeConstructor loc dc args ->
+        TypeConstructor loc dc (renameVariables m <$> args)
+    Function loc t1 t2 ->
+        Function loc (renameVariables m t1) (renameVariables m t2)
+
+renameContext :: Map UniqueTyVar Text -> ContextStack (Monotype SourceRegion) -> ContextStack (Monotype SourceRegion)
+renameContext m (ContextStack stack) = ContextStack (fmap renameContext' stack)
+  where
+    renameContext' :: InferenceContext (Monotype SourceRegion) -> InferenceContext (Monotype SourceRegion)
+    renameContext' = \case
+        CheckingFunctionArgument pos fnName t cs ->
+            CheckingFunctionArgument pos fnName (renameVariables m t) cs
+        other -> other

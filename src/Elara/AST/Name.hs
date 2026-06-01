@@ -237,7 +237,7 @@ instance Pretty (MaybeQualified VarName) where
     pretty (MaybeQualified n Nothing) = pretty n
 
 instance Pretty TypeName where
-    pretty (TypeName n) = pretty n
+    pretty (TypeName n) = Style.typeName (pretty n)
 
 instance Pretty OpName where
     pretty (OpName n) = Style.operator (pretty n)
