@@ -47,6 +47,9 @@ spec = describe "Golden tests" $ do
         it "Type aliases" $
             runGolden defaultSettings backend "type-aliases"
 
+        it "Expression type ascriptions" $
+            runGolden defaultSettings backend "type-ascriptions"
+
         it "ADTs with pattern matching" $
             runGolden defaultSettings backend "adt-shapes"
 

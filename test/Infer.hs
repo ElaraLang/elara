@@ -22,11 +22,13 @@ import Elara.AST.Location (NodeLoc (..))
 import Elara.AST.Name (Qualified, TypeName)
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.Region (SourceRegion)
+import Elara.Data.Kind.Infer (KindInferError)
 import Elara.Data.Pretty (AnsiStyle)
 import Elara.Error
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.ConstraintGeneration (generateConstraints)
 import Elara.TypeInfer.Context (emptyContextStack)
+import Elara.TypeInfer.Convert (TypeConvertError)
 import Elara.TypeInfer.Environment (InferError, emptyLocalTypeEnvironment)
 import Elara.TypeInfer.Error (UnifyError)
 import Elara.TypeInfer.Type (Constraint, Monotype (..))
@@ -35,6 +37,7 @@ import Region (testRegion)
 import Prelude hiding (fail)
 
 import Elara.AST.Types qualified as New
+import Elara.Data.Kind.Infer qualified as Kind
 import Infer.Unify qualified as Unify
 
 spec :: Spec
@@ -49,10 +52,13 @@ runInfer =
     fmap fst
         . runEff
         . runQueryEffects
+        . evalState Kind.initialInferState
         . evalState emptyLocalTypeEnvironment
         . evalState fakeTypeEnvironment
         . runWriter @[ElaraWarning]
         . runErrorNoCallStack @ElaraError
+        . runErrorAsElaraError @KindInferError
+        . runErrorAsElaraError @TypeConvertError
         . runErrorAsElaraError @(InferError loc)
         . runErrorAsElaraError @(UnifyError loc)
         . runWriter @(Constraint loc)

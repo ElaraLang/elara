@@ -2,16 +2,17 @@ module Elara.TypeInfer.Convert where
 
 import Effectful (Eff, (:>))
 import Effectful.Error.Static
+import Relude.Extra (secondF)
 
 import Elara.AST.Location
 import Elara.AST.Name
-import Elara.AST.Phases.Kinded (KindedType, KindedType')
+import Elara.AST.Phases.Kinded (Kinded, KindedType, KindedType')
+import Elara.AST.Phases.Typed (Typed)
 import Elara.AST.Region (SourceRegion, unlocated)
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
-import Elara.Error (ElaraDiagnostic (..), ElaraError, ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..), ElaraReport (..), ElaraSeverity (..))
-import Elara.Error.Diagnose (toDiagnoseReports)
+import Elara.Error (ElaraDiagnostic (..), ElaraMarker (..), ElaraMarkerType (..))
 import Elara.Prim (mkPrimQual)
 import Elara.TypeInfer.Type
 
@@ -98,3 +99,20 @@ instance ElaraDiagnostic TypeConvertError where
 
     diagnosticMarkers (HigherRankTypesNotSupported t) = [ElaraMarker (polytypeLoc t) PrimaryMarker "Higher rank type here"]
     diagnosticMarkers (NotSupported _) = []
+
+{- | Convert from a 'Kinded' type, to a 'Typed' type.
+A very simple traversal, since the only significant difference between the two is with type variables
+-}
+kindedToTypedType :: New.Type SourceRegion Kinded -> New.Type SourceRegion Typed
+kindedToTypedType (New.Type loc meta t') = New.Type loc meta (kindedToTypedType' t')
+
+kindedToTypedType' :: New.Type' SourceRegion Kinded -> New.Type' SourceRegion Typed
+kindedToTypedType' = \case
+    New.TVar v -> New.TVar ((Just . nameText) <<$>> v)
+    New.TFun t1 t2 -> New.TFun (kindedToTypedType t1) (kindedToTypedType t2)
+    New.TUnit -> New.TUnit
+    New.TApp t1 t2 -> New.TApp (kindedToTypedType t1) (kindedToTypedType t2)
+    New.TUserDefined n -> New.TUserDefined n
+    New.TRecord fields -> New.TRecord (secondF kindedToTypedType fields)
+    New.TList t -> New.TList (kindedToTypedType t)
+    New.TExtension v -> absurd v

@@ -28,12 +28,14 @@ import Elara.AST.Phases.Typed (Typed, TypedExpr, TypedExpr', TypedPattern, Typed
 import Elara.AST.Region (Located (Located), SourceRegion)
 import Elara.AST.VarRef
 import Elara.Data.Kind (ElaraKind (..))
+import Elara.Data.Kind.Infer (KindInferError, inferTypeKind)
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Logging (StructuredDebug, debugWithResult, logDebug, logDebugWith)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Query.Effects (QueryEffects)
 import Elara.TypeInfer.Context (ContextStack (..), InferenceContext (..))
+import Elara.TypeInfer.Convert (TypeConvertError, astTypeToInferType, kindedToTypedType)
 import Elara.TypeInfer.Environment (LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addLocalType, lookupLocalVar, lookupTypeMaybe, withLocalType)
 import Elara.TypeInfer.Error (UnifyError (..), UnifyErrorKind (..), mkUnifyError, mkUnifyErrorFromConstraint)
 import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
@@ -44,6 +46,7 @@ import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Subs
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 
 import Elara.AST.Types qualified as New
+import Elara.Data.Kind.Infer qualified as Kind
 import Elara.Query qualified
 import Rock qualified
 
@@ -51,6 +54,9 @@ import Rock qualified
 type ConstraintGenEffects r loc =
     ( Infer loc r
     , Error (UnifyError loc) :> r
+    , Error TypeConvertError :> r
+    , State Kind.InferState :> r
+    , Error KindInferError :> r
     , loc ~ SourceRegion
     , HasCallStack
     )
@@ -346,7 +352,18 @@ generateConstraints' expr' =
                     modify (addLocalType varName (Lifted varType))
 
                     pure (New.ELet NoExtension (TaggedLocate loc varName) typedVarExpr, varType)
-                New.EAnn _ _ -> error "TODO: EAnn constraint generation"
+                New.EAnn e ty -> do
+                    -- type annotations / ascriptions
+                    kindedTy <- inferTypeKind ty
+                    expected <- astTypeToInferType kindedTy
+                    (typedExpr, actualType) <- generateConstraints e
+                    let loc = exprLocation e
+
+                    -- (x : T) simply emits a constraint that `typeOf(x) ~ T`
+                    tell (simpleEquality (unwrapLoc loc) expected actualType)
+
+                    let typedTy = kindedToTypedType kindedTy
+                    pure (New.EAnn typedExpr typedTy, expected)
                 New.EExtension v -> absurd v
 
 {- | Generate constraints for a pattern, returning the typed pattern and the type of the pattern, and generating constraints for the pattern

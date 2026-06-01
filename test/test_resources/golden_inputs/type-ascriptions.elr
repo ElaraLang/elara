@@ -1,0 +1,7 @@
+import Elara.Prim
+import Prelude
+
+def main : IO ()
+let main =
+    let x = (42 : Int)
+    println (toString x)

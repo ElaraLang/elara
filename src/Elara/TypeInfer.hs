@@ -45,7 +45,7 @@ import Elara.Shunt ()
 import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Context (emptyContextStack)
-import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind)
+import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind, kindedToTypedType)
 import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addType', emptyLocalTypeEnvironment, emptyTypeEnvironment)
 import Elara.TypeInfer.Error (UnifyError (..))
 import Elara.TypeInfer.Ftv (Fuv (..))
@@ -491,20 +491,6 @@ createTypeVar (TaggedLocate _ u) = fmap (Just . nameText) u
 kindedToTypedTypeDecl :: New.TypeDeclaration SourceRegion NewK.Kinded -> New.TypeDeclaration SourceRegion Typed
 kindedToTypedTypeDecl (New.ADT ctors) = New.ADT (secondF (fmap kindedToTypedType) ctors)
 kindedToTypedTypeDecl (New.Alias t) = New.Alias (kindedToTypedType t)
-
-kindedToTypedType :: New.Type SourceRegion NewK.Kinded -> New.Type SourceRegion Typed
-kindedToTypedType (New.Type loc meta t') = New.Type loc meta (kindedToTypedType' t')
-
-kindedToTypedType' :: New.Type' SourceRegion NewK.Kinded -> New.Type' SourceRegion Typed
-kindedToTypedType' = \case
-    New.TVar v -> New.TVar ((Just . nameText) <<$>> v)
-    New.TFun t1 t2 -> New.TFun (kindedToTypedType t1) (kindedToTypedType t2)
-    New.TUnit -> New.TUnit
-    New.TApp t1 t2 -> New.TApp (kindedToTypedType t1) (kindedToTypedType t2)
-    New.TUserDefined n -> New.TUserDefined n
-    New.TRecord fields -> New.TRecord (secondF kindedToTypedType fields)
-    New.TList t -> New.TList (kindedToTypedType t)
-    New.TExtension v -> absurd v
 
 inferAnnotation :: forall r. (InferPipelineEffects r, Infer SourceRegion r) => New.Annotation SourceRegion Shunted -> Eff r (New.Annotation SourceRegion Typed)
 inferAnnotation (New.Annotation name args) = do

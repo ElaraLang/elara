@@ -30,6 +30,7 @@ import Elara.Parse.Literal (charLiteral, floatLiteral, integerLiteral, stringLit
 import Elara.Parse.Names (conName, opId, opName, unqualifiedVarName, varId, varName, varOrConName)
 import Elara.Parse.Pattern
 import Elara.Parse.Primitives (Parser, located, token_, withPredicate)
+import Elara.Parse.Type (type')
 import Prelude hiding (Op)
 
 import Elara.Data.AtLeast2List qualified as AtLeast2List
@@ -158,21 +159,36 @@ This allows us to avoid exponential backtracking when parsing nested tuples
 -}
 parensOrTuple :: ExpressionGrammar -> Parser FrontendExpr
 parensOrTuple grammar = do
+    let parensBody = do
+            first <- grammar.pExpression <?> "expression in parentheses or tuple"
+            choice
+                [ typeAnnotation first
+                , restOfTupleOrParens first
+                ]
     Located loc res <- located $ do
-        token_ TokenLeftParen
-        first <- grammar.pExpression <?> "expression in parentheses or tuple"
+        token_ TokenLeftParen *> parensBody
+    pure $ Expr (ExprLoc loc) () res
+  where
+    typeAnnotation first = do
+        token_ TokenColon
+        ty <- type' <?> "type annotation"
+        token_ TokenRightParen
+        pure (EAnn first ty)
+
+    restOfTupleOrParens first = do
+        -- try and parse a comma, on this line or the next
         optional (try (optional lineSeparator *> token_ TokenComma)) >>= \case
+            Just () -> do
+                -- if present, this must be a tuple, so we expect at least 1 more expression, separated by commas
+                rest <- sepEndBy1' grammar.pExpression (token_ TokenComma)
+                -- and then a closing parenthesis
+                token_ TokenRightParen <?> "')' to close tuple"
+                pure (EExtension (FrontendTuple (TupleExpression (AtLeast2List.fromHeadAndTail first rest))))
             Nothing -> do
+                -- if not present, this is just a parenthesised expression, so we expect a closing parenthesis next
                 optional lineSeparator
                 token_ TokenRightParen
-                pure $ Left first
-            Just () -> do
-                rest <- sepEndBy1' grammar.pExpression (token_ TokenComma)
-                token_ TokenRightParen <?> "')' to close tuple"
-                pure $ Right (AtLeast2List.fromHeadAndTail first rest)
-    pure $ case res of
-        Left e -> Expr (ExprLoc loc) () (EExtension (FrontendInParens (InParensExpression e)))
-        Right items -> Expr (ExprLoc loc) () (EExtension (FrontendTuple (TupleExpression items)))
+                pure (EExtension (FrontendInParens (InParensExpression first)))
 
 variable :: Parser FrontendExpr
 variable =
