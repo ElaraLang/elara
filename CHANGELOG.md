@@ -206,6 +206,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Improve error message on module not parsing - ([2d7c76c](https://github.com/ElaraLang/elara/commit/2d7c76cc0e57eefee17de1e2795d0bcc405143fa)) 
 - :thread: Update RTS flags to prevent threading issues - ([b0fc917](https://github.com/ElaraLang/elara/commit/b0fc917c583137868e55fe0417b5c93a514d5dcd)) 
 - Compiler error - ([a5470f2](https://github.com/ElaraLang/elara/commit/a5470f2c7a5612e3ed13e9f5c1faacca4724bd92)) 
+- Badly formatted (well, supposedly) github action script - ([bbbda6e](https://github.com/ElaraLang/elara/commit/bbbda6e68cba652249f67886398d17341aa14ffb)) 
 
 ### 🚜 Refactor
 
