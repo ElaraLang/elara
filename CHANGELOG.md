@@ -63,6 +63,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(type-infer)* :sparkles: Add type applications! - ([542189b](https://github.com/ElaraLang/elara/commit/542189b1e391d2c9c2cf840dac0678a43a9483ce)) 
 - *(type-infer)* :lipstick: Improve presentation of ScalarMismatch error - ([e1410f4](https://github.com/ElaraLang/elara/commit/e1410f4c17c581039f64c987c4cddf02319a8c91)) 
 - *(type-infer)* :loud_sound: Add pretty instance for ReachableSubgraph - ([60a1584](https://github.com/ElaraLang/elara/commit/60a15842c0a4d88e6ed3fe2cbbbea7baa37ba840)) 
+- *(type-infer)* :technologist: Significantly improve type errors - ([dff0441](https://github.com/ElaraLang/elara/commit/dff04418827e4221247170d5deed72db821fc388)) 
+- *(type-infer)* Add pattern arity mismatch error - ([55a7701](https://github.com/ElaraLang/elara/commit/55a770126c01a95da1fbbba939693ce00645ae3e)) 
 - :sparkles: Add pretty instance for 6-tuple - ([1189208](https://github.com/ElaraLang/elara/commit/118920892de6df9abac0afc92ff733203f01765f)) 
 - :sparkles: Allow certain AST elements to be assigned polytypes - ([43022fe](https://github.com/ElaraLang/elara/commit/43022fe145869564df71a763160b870992a1b762)) 
 - Add more error codes - ([0792ed4](https://github.com/ElaraLang/elara/commit/0792ed499722d5e5628a0cb689a74576ff6d7f1a)) 
@@ -83,6 +85,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add support for getArgs and readFile primops in jvm backend - ([1107294](https://github.com/ElaraLang/elara/commit/11072949e9311ba8f3e4f516489c61f6b849bd34)) 
 - Improve support of larger tuples - ([3de4907](https://github.com/ElaraLang/elara/commit/3de49076dfa1aafb3de5be219ee4251b09c18c20)) 
 - :sparkles: add type annotation / ascription syntax - ([7351516](https://github.com/ElaraLang/elara/commit/7351516b2c8f68f4165c522a338a40be8bd0c053)) 
+- :label: Add basic higher-kinded type support - ([28bb0af](https://github.com/ElaraLang/elara/commit/28bb0afc4c0d4158c0ddda953b2af56e830fd161)) 
 
 ### 🐛 Bug Fixes
 
