@@ -20,13 +20,13 @@ import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
 
 import Effectful.State.Extra (scoped)
-import Elara.AST.Location
+import Elara.AST.Location (AstNode (..), NodeLoc (..), TaggedLocate (..), unwrapLoc, wrap)
 import Elara.AST.Name (Qualified, TypeName, VarName (..))
 import Elara.AST.Phase (NoExtension (..))
-import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedPattern, ShuntedPattern')
 import Elara.AST.Phases.Typed (Typed, TypedExpr, TypedExpr', TypedPattern, TypedPattern')
 import Elara.AST.Region (Located (Located), SourceRegion)
+import Elara.AST.Types (TypedLambdaParam (..))
 import Elara.AST.VarRef
 import Elara.Data.AtLeast2List (AtLeast2List (..))
 import Elara.Data.Kind (ElaraKind (..))
@@ -44,7 +44,7 @@ import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Substitute
-import Elara.TypeInfer.Type (Constraint (..), ContextStack, Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), equalityWithContext, functionMonotypeArgs, functionMonotypeResult, monotypeLoc, reduce, simpleEquality, substitution)
+import Elara.TypeInfer.Type (Constraint (..), ContextStack, Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), equalityWithContext, functionMonotypeArgs, functionMonotypeResult, monotypeLoc, reduce, setMonotypeLoc, simpleEquality, substituteAllContextStack, substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 
 import Elara.AST.Types qualified as New
@@ -217,28 +217,23 @@ generateConstraints' expr' =
                     (e1', t1) <- generateConstraints e1
                     (e2', t2) <- generateConstraints e2
 
-                    resultTyVar <- UnificationVar <$> makeUniqueTyVar
+                    argTyVar <- UnificationVar <$> makeUniqueTyVar
+                    resTyVar <- UnificationVar <$> makeUniqueTyVar
 
                     let e1Loc = exprRegion e1
                     let e2Loc = exprRegion e2
+                    let appLoc = unwrapLoc exprLoc
 
-                    -- Try to extract the function name for better error messages
+                    -- Ensure t1 is a function
+                    let functionShape = Function e1Loc (TypeVar e2Loc argTyVar []) (TypeVar appLoc resTyVar [])
+                    tell (simpleEquality appLoc functionShape t1)
+
+                    -- Unify expected argument type with actual argument type
                     let fnName = extractFunctionName e1
+                    let argCtx = Just $ CheckingFunctionArgument 1 fnName t1 t2 appLoc
+                    tell (equalityWithContext appLoc (TypeVar e2Loc argTyVar []) t2 e1Loc e2Loc argCtx)
 
-                    -- Create constraint with context about this being a function application
-                    let ctx = Just $ CheckingFunctionArgument 1 fnName t1 (unwrapLoc exprLoc)
-                    let equalityConstraint =
-                            equalityWithContext
-                                (unwrapLoc exprLoc)
-                                t1
-                                (Function e1Loc t2 (TypeVar e2Loc resultTyVar []))
-                                e1Loc
-                                e1Loc -- the expected type and actual type are both at the same location (the function being applied)
-                                ctx
-                    logDebug (pretty equalityConstraint)
-                    tell equalityConstraint
-
-                    pure (New.EApp NoExtension e1' e2', TypeVar e2Loc resultTyVar [])
+                    pure (New.EApp NoExtension e1' e2', TypeVar appLoc resTyVar [])
 
                 -- LET
                 {-
@@ -498,6 +493,7 @@ simplifyConstraint given tch wanted = debugWithResult ("simplifyConstraint: " <>
                         e
                             { ueExpected = substituteAll unifier (ueExpected e)
                             , ueActual = substituteAll unifier (ueActual e)
+                            , ueContext = substituteAllContextStack unifier (ueContext e)
                             }
 
             case improvedErrors of
@@ -544,9 +540,8 @@ solveAccumulating constraint@Equality{eqLeft = a, eqRight = b} = do
         modify (err :)
         pure (constraint, mempty)
 solveAccumulating (Conjunction _loc a b) = do
-    -- solve right to left
-    (c2, s2) <- solveAccumulating b
-    (c1, s1) <- solveAccumulating (substituteAll s2 a)
+    (c1, s1) <- solveAccumulating a
+    (c2, s2) <- solveAccumulating (substituteAll s1 b)
     pure (c1 <> c2, s1 <> s2)
 solveAccumulating EmptyConstraint{} = pure mempty
 
@@ -557,7 +552,7 @@ unifyGiven ::
 unifyGiven _ (TypeVar _ a _) b = bindGiven a b
 unifyGiven _ a (TypeVar _ b _) = bindGiven b a
 unifyGiven constraint (Function _ a b) (Function _ c d) = unifyGivenMany constraint [a, b] [c, d]
-unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor _ b bs)
+unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor l2 b bs)
     | a == b =
         if length as /= length bs
             then do
@@ -565,8 +560,8 @@ unifyGiven constraint t1@(TypeConstructor l1 a as) t2@(TypeConstructor _ b bs)
                 throwError $ mkUnifyError (ArityMismatch (length as) (length bs)) t1 t2 l1 ctx
             else unifyGivenMany constraint as bs
     | otherwise = do
-        expandedA <- expandAlias a as
-        expandedB <- expandAlias b bs
+        expandedA <- expandAlias l1 a as
+        expandedB <- expandAlias l2 b bs
         case (expandedA, expandedB) of
             (Just a', _) -> unifyGiven constraint a' t2
             (_, Just b') -> unifyGiven constraint t1 b'
@@ -608,7 +603,7 @@ unify a b = do
     unify' (TypeVar _ (UnificationVar a) []) b = unifyVar a b
     unify' a (TypeVar _ (UnificationVar b) []) = unifyVar b a
     unify' t1 t2 | isApplied t1 || isApplied t2 = unifyApplied t1 t2
-    unify' t1@(TypeConstructor l1 a as) t2@(TypeConstructor _l2 b bs)
+    unify' t1@(TypeConstructor l1 a as) t2@(TypeConstructor l2 b bs)
         | a == b =
             if length as /= length bs
                 then do
@@ -616,8 +611,8 @@ unify a b = do
                     throwError $ mkUnifyError (ArityMismatch (length as) (length bs)) t1 t2 l1 ctx
                 else unifyMany as bs
         | otherwise = do
-            expandedA <- expandAlias a as
-            expandedB <- expandAlias b bs
+            expandedA <- expandAlias l1 a as
+            expandedB <- expandAlias l2 b bs
             logDebug $ "unify: trying to expand aliases: " <> pretty (expandedA, expandedB)
             case (expandedA, expandedB) of
                 (Just a', _) -> do
@@ -631,8 +626,8 @@ unify a b = do
                     case ?constraint of
                         Just c -> throwError $ mkUnifyErrorFromConstraint (TypeConstructorMismatch a b) t1 t2 c ctx
                         Nothing -> throwError $ mkUnifyError (TypeConstructorMismatch a b) t1 t2 l1 ctx
-    unify' t1@(TypeConstructor _ a as) t2 = do
-        expanded <- expandAlias a as
+    unify' t1@(TypeConstructor loc a as) t2 = do
+        expanded <- expandAlias loc a as
         case expanded of
             Just t1' -> unify' t1' t2
             Nothing -> do
@@ -640,8 +635,8 @@ unify a b = do
                 case ?constraint of
                     Just c -> throwError $ mkUnifyErrorFromConstraint TypeMismatch t1 t2 c ctx
                     Nothing -> throwError $ mkUnifyError TypeMismatch t1 t2 (monotypeLoc t1) ctx
-    unify' t1 t2@(TypeConstructor _ b bs) = do
-        expanded <- expandAlias b bs
+    unify' t1 t2@(TypeConstructor loc b bs) = do
+        expanded <- expandAlias loc b bs
         case expanded of
             Just t2' -> unify' t1 t2'
             Nothing -> do
@@ -675,14 +670,14 @@ unify a b = do
         let (h2, args2) = splitApp t2
         -- Try to expand alias for t1 first
         expanded1 <- case h1 of
-            TypeConstructor _ a _ -> expandAlias a args1
+            TypeConstructor loc a _ -> expandAlias loc a args1
             _ -> pure Nothing
         case expanded1 of
             Just t1' -> unify t1' t2
             Nothing -> do
                 -- If t1 is not an alias, try to expand alias for t2
                 expanded2 <- case h2 of
-                    TypeConstructor _ b _ -> expandAlias b args2
+                    TypeConstructor loc b _ -> expandAlias loc b args2
                     _ -> pure Nothing
                 case expanded2 of
                     Just t2' -> unify t1 t2'
@@ -709,10 +704,11 @@ expandAlias ::
     ( UnifyEffects r loc
     , loc ~ SourceRegion
     ) =>
+    loc ->
     Qualified TypeName ->
     [Monotype loc] ->
     Eff r (Maybe (Monotype loc))
-expandAlias name args = do
+expandAlias loc name args = do
     aliasDef <- Rock.fetch (Elara.Query.GetTypeAlias name)
 
     case aliasDef of
@@ -723,7 +719,7 @@ expandAlias name args = do
                 else do
                     let s = Substitution $ fromList (zip (view typed <$> params) args)
                     case body of
-                        Lifted m -> pure (Just $ substituteAll s m)
+                        Lifted m -> pure (Just $ setMonotypeLoc loc $ substituteAll s m)
                         Polytype{} -> throwError $ PolytypeAlias (params, body)
         Nothing -> pure Nothing
 

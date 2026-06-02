@@ -15,6 +15,7 @@ data InferenceContext typ
         { argPosition :: !Int
         , functionName :: !(Maybe (Qualified VarName))
         , functionType :: !typ
+        , actualArgumentType :: !typ
         , callSite :: !SourceRegion
         }
     | -- | Checking the result type of a function call
@@ -74,9 +75,9 @@ allContexts (ContextStack stack) = stack
 
 instance Pretty typ => Pretty (InferenceContext typ) where
     pretty = \case
-        CheckingFunctionArgument pos (Just fnName) _ _ ->
+        CheckingFunctionArgument pos (Just fnName) _ _ _ ->
             "while checking argument" <+> pretty pos <+> "of" <+> squotes (pretty fnName)
-        CheckingFunctionArgument pos Nothing _ _ ->
+        CheckingFunctionArgument pos Nothing _ _ _ ->
             "while checking argument" <+> pretty pos
         CheckingFunctionResult _ ->
             "while checking function result"

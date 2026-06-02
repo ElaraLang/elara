@@ -169,6 +169,9 @@ unsolvedTypeSnuckIn = "E3023"
 unknownVariable :: ErrorCode
 unknownVariable = "E3024"
 
+patternArityMismatch :: ErrorCode
+patternArityMismatch = "E3025"
+
 invokeStaticLocal :: ErrorCode
 invokeStaticLocal = "E4001"
 

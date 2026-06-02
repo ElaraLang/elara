@@ -16,6 +16,7 @@ module Elara.TypeInfer.Type (
     monotypeLoc,
     functionMonotypeResult,
     functionMonotypeArgs,
+    setMonotypeLoc,
 
     -- * Constraints
     Constraint (..),
@@ -37,6 +38,8 @@ module Elara.TypeInfer.Type (
     substitution,
     InferenceContext,
     ContextStack,
+    substituteContextStack,
+    substituteAllContextStack,
 )
 where
 
@@ -197,6 +200,11 @@ monotypeLoc (TypeVar loc _ _) = loc
 monotypeLoc (TypeConstructor loc _ _) = loc
 monotypeLoc (Function loc _ _) = loc
 
+setMonotypeLoc :: loc -> Monotype loc -> Monotype loc
+setMonotypeLoc loc (TypeVar _ tv args) = TypeVar loc tv args
+setMonotypeLoc loc (TypeConstructor _ dc args) = TypeConstructor loc dc args
+setMonotypeLoc loc (Function _ t1 t2) = Function loc t1 t2
+
 functionMonotypeResult :: Monotype loc -> Monotype loc
 functionMonotypeResult = \case
     Function _ _ b -> functionMonotypeResult b
@@ -259,9 +267,9 @@ instance Eq loc => Substitutable Constraint loc where
 
 instance Substitutable Monotype loc where
     substitute tv t (TypeVar loc (SkolemVar v) vs) = TypeVar loc (SkolemVar v) (substitute tv t <$> vs) -- skolems are rigid
-    substitute tv t (TypeVar _ (UnificationVar v) vs)
+    substitute tv t (TypeVar loc (UnificationVar v) vs)
         | tv == v =
-            applyMonotype t (substitute tv t <$> vs)
+            setMonotypeLoc loc (applyMonotype t (substitute tv t <$> vs))
     substitute tv t (TypeVar loc tv' vs) = TypeVar loc tv' (substitute tv t <$> vs)
     substitute tv t (TypeConstructor loc dc ts) = TypeConstructor loc dc (substitute tv t <$> ts)
     substitute tv t (Function loc t1 t2) = Function loc (substitute tv t t1) (substitute tv t t2)
@@ -271,7 +279,7 @@ instance Substitutable Monotype loc where
         UnificationVar v ->
             -- make sure we recursively apply substitutions until we reach a fixed point
             let r = case Map.lookup v m of
-                    Just t' -> substituteAll subst (applyMonotype t' (substituteAll subst <$> tvs))
+                    Just t' -> setMonotypeLoc loc (substituteAll subst (applyMonotype t' (substituteAll subst <$> tvs)))
                     Nothing -> TypeVar loc (UnificationVar v) (substituteAll subst <$> tvs)
              in if r == t then t else substituteAll (Substitution m) r
     substituteAll s (TypeConstructor loc dc ts) = TypeConstructor loc dc (substituteAll s <$> ts)
@@ -292,6 +300,22 @@ instance Eq loc => Substitutable Type loc where
 
     substituteAll s (Lifted m) = Lifted (substituteAll s m)
     substituteAll s (Polytype (Forall loc tvs c m)) = Polytype (Forall loc tvs (substituteAll s c) (substituteAll s m))
+
+substituteContextStack :: UniqueTyVar -> Monotype loc -> Ctx.ContextStack (Monotype loc) -> Ctx.ContextStack (Monotype loc)
+substituteContextStack tv t (Ctx.ContextStack stack) = Ctx.ContextStack (substituteInferenceContext tv t <$> stack)
+
+substituteAllContextStack :: Eq loc => Substitution loc -> Ctx.ContextStack (Monotype loc) -> Ctx.ContextStack (Monotype loc)
+substituteAllContextStack subst (Ctx.ContextStack stack) = Ctx.ContextStack (substituteAllInferenceContext subst <$> stack)
+
+substituteInferenceContext :: UniqueTyVar -> Monotype loc -> Ctx.InferenceContext (Monotype loc) -> Ctx.InferenceContext (Monotype loc)
+substituteInferenceContext tv t = \case
+    Ctx.CheckingFunctionArgument pos name fType aType site -> Ctx.CheckingFunctionArgument pos name (substitute tv t fType) (substitute tv t aType) site
+    other -> other
+
+substituteAllInferenceContext :: Eq loc => Substitution loc -> Ctx.InferenceContext (Monotype loc) -> Ctx.InferenceContext (Monotype loc)
+substituteAllInferenceContext subst = \case
+    Ctx.CheckingFunctionArgument pos name fType aType site -> Ctx.CheckingFunctionArgument pos name (substituteAll subst fType) (substituteAll subst aType) site
+    other -> other
 
 instance Pretty loc => Pretty (Type loc) where
     pretty (Polytype poly) = pretty poly

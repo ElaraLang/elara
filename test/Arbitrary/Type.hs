@@ -26,7 +26,7 @@ genMonotype :: Gen (Monotype ())
 genMonotype =
     Gen.recursive
         Gen.choice
-        [ TypeVar () <$> genUniqueTypeVar
+        [ TypeVar () <$> genUniqueTypeVar <*> pure []
         , TypeConstructor () <$> Gen.element primitiveTypeNames <*> pure [] -- Primitive types have no args
         ]
         [ TypeConstructor () <$> Gen.element (qualifiedTest <$> typeConstructorNames) <*> Gen.list (Range.linear 0 2) genMonotype
