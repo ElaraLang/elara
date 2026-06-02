@@ -1,12 +1,8 @@
 module Elara.TypeInfer.Environment where
 
-import Data.GADT.Compare (GCompare (gcompare), GEq (..), GOrdering (..))
-import Data.Type.Equality
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
-import Error.Diagnose hiding (Hint, Note)
-import Unsafe.Coerce (unsafeCoerce)
 
 import Data.Map qualified as Map
 
@@ -16,7 +12,6 @@ import Elara.AST.Region (SourceRegion)
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.TypeInfer.Type
 
 -- | A type environment Γ, which maps type variables and data constructors to types
@@ -38,34 +33,6 @@ data TypeEnvKey loc
     | -- | A term variable x
       TermVarKey (Qualified VarName)
     deriving (Eq, Generic, Ord, Show)
-
--- | This is safe I think because phantom type
-instance GEq TypeEnvKey where
-    geq :: forall k (a :: k) (b :: k). TypeEnvKey a -> TypeEnvKey b -> Maybe (a :~: b)
-    geq (DataConKey a) (DataConKey b) =
-        if a == b
-            then Just (unsafeCoerce Refl)
-            else Nothing
-    geq (TermVarKey a) (TermVarKey b) =
-        if a == b
-            then Just (unsafeCoerce Refl)
-            else Nothing
-    geq _ _ = Nothing
-
-instance GCompare TypeEnvKey where
-    gcompare :: forall k (a :: k) (b :: k). TypeEnvKey a -> TypeEnvKey b -> GOrdering a b
-    gcompare (DataConKey a) (DataConKey b) =
-        case compare a b of
-            LT -> GLT
-            EQ -> unsafeCoerce GEQ
-            GT -> GGT
-    gcompare (DataConKey _) (TermVarKey _) = GLT
-    gcompare (TermVarKey _) (DataConKey _) = GGT
-    gcompare (TermVarKey a) (TermVarKey b) =
-        case compare a b of
-            LT -> GLT
-            EQ -> unsafeCoerce GEQ
-            GT -> GGT
 
 instance Hashable (TypeEnvKey loc)
 
@@ -146,4 +113,3 @@ instance ElaraDiagnostic (InferError SourceRegion) where
 
     diagnosticNotes (UnboundTermVar _ (TypeEnvironment env)) = [Elara.Error.Note $ "Possible names:" <+> listToText (pretty <$> Map.keys env)]
     diagnosticNotes (UnboundLocalVar _ (LocalTypeEnvironment env)) = [Elara.Error.Note $ "Possible names:" <+> listToText (pretty <$> Map.keys env)]
-    diagnosticNotes _ = []
