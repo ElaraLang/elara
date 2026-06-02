@@ -38,17 +38,17 @@
 </span><span id="line-38"></span><span>
 </span><span id="line-39"></span><span class="annot"><a href="Elara.Rules.html#rules"><span class="hs-identifier hs-type">rules</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Settings.html#CompilerSettings"><span class="hs-identifier hs-type">CompilerSettings</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rock.html#Rules"><span class="hs-identifier hs-type">Rock.Rules</span></a></span><span> </span><span class="annot"><a href="Elara.Query.html#Query"><span class="hs-identifier hs-type">Query</span></a></span><span>
 </span><span id="line-40"></span><span id="rules"><span class="annot"><span class="annottext">rules :: HasCallStack =&gt; CompilerSettings -&gt; Rules Query
-</span><a href="Elara.Rules.html#rules"><span class="hs-identifier hs-var hs-var">rules</span></a></span></span><span> </span><span id="local-6989586621680225332"><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680225332"><span class="hs-identifier hs-var">compilerSettings</span></a></span></span><span> </span><span id="local-6989586621680225333"><span class="annot"><span class="annottext">Query es a
-</span><a href="#local-6989586621680225333"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Query es a
-</span><a href="#local-6989586621680225333"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="Elara.Rules.html#rules"><span class="hs-identifier hs-var hs-var">rules</span></a></span></span><span> </span><span id="local-6989586621680234152"><span class="annot"><span class="annottext">CompilerSettings
+</span><a href="#local-6989586621680234152"><span class="hs-identifier hs-var">compilerSettings</span></a></span></span><span> </span><span id="local-6989586621680234153"><span class="annot"><span class="annottext">Query es a
+</span><a href="#local-6989586621680234153"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Query es a
+</span><a href="#local-6989586621680234153"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-41"></span><span>    </span><span class="annot"><span class="annottext">Query es a
 </span><a href="Elara.Query.html#GetCompilerSettings"><span class="hs-identifier hs-var">GetCompilerSettings</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Eff es a
 forall a. a -&gt; Eff es a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">a
 CompilerSettings
-</span><a href="#local-6989586621680225332"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span>
+</span><a href="#local-6989586621680234152"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span>
 </span><span id="line-42"></span><span>    </span><span class="annot"><span class="annottext">Query es a
 </span><a href="Elara.Query.html#InputFiles"><span class="hs-identifier hs-var">InputFiles</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff '[FileSystem] a -&gt; Eff es a
 forall (subEs :: [Effect]) (es :: [Effect]) a.
@@ -56,7 +56,7 @@ Subset subEs es =&gt;
 Eff subEs a -&gt; Eff es a
 </span><span class="hs-identifier hs-var">inject</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CompilerSettings -&gt; Eff '[FileSystem] (HashSet FilePath)
 </span><a href="Elara.ReadFile.html#getInputFiles"><span class="hs-identifier hs-var">getInputFiles</span></a></span><span> </span><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680225332"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680234152"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-43"></span><span>    </span><span class="annot"><span class="annottext">Query es a
 </span><a href="Elara.Query.html#ModuleIndex"><span class="hs-identifier hs-var">ModuleIndex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff '[FileSystem] a -&gt; Eff es a
 forall (subEs :: [Effect]) (es :: [Effect]) a.
@@ -64,16 +64,16 @@ Subset subEs es =&gt;
 Eff subEs a -&gt; Eff es a
 </span><span class="hs-identifier hs-var">inject</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CompilerSettings -&gt; Eff '[FileSystem] ModuleIndex
 </span><a href="Elara.ModuleIndex.html#buildModuleIndex"><span class="hs-identifier hs-var">buildModuleIndex</span></a></span><span> </span><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680225332"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetFileContents"><span class="hs-identifier hs-type">GetFileContents</span></a></span><span> </span><span id="local-6989586621680225387"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225387"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Eff es FileContents
+</span><a href="#local-6989586621680234152"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetFileContents"><span class="hs-identifier hs-type">GetFileContents</span></a></span><span> </span><span id="local-6989586621680234207"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680234207"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Eff es FileContents
 forall (es :: [Effect]).
 (FileSystem :&gt; es, Error ReadFileError :&gt; es, HasCallStack) =&gt;
 FilePath -&gt; Eff es FileContents
 </span><a href="Elara.ReadFile.html#runGetFileContentsQuery"><span class="hs-identifier hs-var">runGetFileContentsQuery</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225387"><span class="hs-identifier hs-var">fp</span></a></span><span>
-</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Elara.Query.html#LexedFile"><span class="hs-identifier hs-type">LexedFile</span></a></span><span> </span><span id="local-6989586621680225431"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225431"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Error LexerError, Rock Query]) [Lexeme]
+</span><a href="#local-6989586621680234207"><span class="hs-identifier hs-var">fp</span></a></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Elara.Query.html#LexedFile"><span class="hs-identifier hs-type">LexedFile</span></a></span><span> </span><span id="local-6989586621680234251"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680234251"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Error LexerError, Rock Query]) [Lexeme]
 -&gt; Eff es [Lexeme]
 forall (subEs :: [Effect]) (es :: [Effect]) a.
 Subset subEs es =&gt;
@@ -86,9 +86,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 -&gt; Eff (ConsQueryEffects '[Error LexerError, Rock Query]) [Lexeme]
 </span><a href="Elara.Lexer.Reader.html#getLexedFile"><span class="hs-identifier hs-var">getLexedFile</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225431"><span class="hs-identifier hs-var">fp</span></a></span><span>
-</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ParsedFile"><span class="hs-identifier hs-type">ParsedFile</span></a></span><span> </span><span id="local-6989586621680225477"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225477"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680234251"><span class="hs-identifier hs-var">fp</span></a></span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ParsedFile"><span class="hs-identifier hs-type">ParsedFile</span></a></span><span> </span><span id="local-6989586621680234297"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680234297"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Error (WParseErrorBundle TokenStream ElaraParseError),
        Rock Query])
@@ -124,13 +124,13 @@ FilePath
           Rock Query])
      (Module SourceRegion Frontend)
 </span><a href="Elara.Parse.html#getParsedFileQuery"><span class="hs-identifier hs-var">getParsedFileQuery</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225477"><span class="hs-identifier hs-var">fp</span></a></span><span>
-</span><span id="line-47"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ModulePath"><span class="hs-identifier hs-type">ModulePath</span></a></span><span> </span><span id="local-6989586621680225613"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225613"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680234297"><span class="hs-identifier hs-var">fp</span></a></span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ModulePath"><span class="hs-identifier hs-type">ModulePath</span></a></span><span> </span><span id="local-6989586621680234433"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680234433"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-48"></span><span>        </span><span class="hs-comment">-- Check main file first (parses main file to check declared name)</span><span>
-</span><span id="line-49"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680225614"><span class="annot"><span class="annottext">checkMain :: Eff es (Maybe FilePath)
-</span><a href="#local-6989586621680225614"><span class="hs-identifier hs-var hs-var hs-var">checkMain</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680225332"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mainFile</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-49"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680234434"><span class="annot"><span class="annottext">checkMain :: Eff es (Maybe FilePath)
+</span><a href="#local-6989586621680234434"><span class="hs-identifier hs-var hs-var hs-var">checkMain</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CompilerSettings
+</span><a href="#local-6989586621680234152"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mainFile</span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-50"></span><span>                </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Eff es (Maybe FilePath)
 forall a. a -&gt; Eff es a
@@ -138,9 +138,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-51"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680225615"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225615"><span class="hs-identifier hs-var">mainPath</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-52"></span><span>                    </span><span id="local-6989586621680225616"><span class="annot"><a href="#local-6989586621680225616"><span class="hs-identifier hs-var">parsedOrError</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-51"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680234435"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680234435"><span class="hs-identifier hs-var">mainPath</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-52"></span><span>                    </span><span id="local-6989586621680234436"><span class="annot"><a href="#local-6989586621680234436"><span class="hs-identifier hs-var">parsedOrError</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
 </span><span id="line-53"></span><span>                        </span><span class="annot"><span class="annottext">forall e (es :: [Effect]) a.
 HasCallStack =&gt;
 Eff (Error e : es) a -&gt; Eff es (Either (CallStack, e) a)
@@ -182,11 +182,11 @@ f xs a -&gt; Eff es a
             '[Error (WParseErrorBundle TokenStream ElaraParseError)])
      (Module SourceRegion Frontend)
 </span><a href="Elara.Query.html#ParsedFile"><span class="hs-identifier hs-var">Elara.Query.ParsedFile</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225615"><span class="hs-identifier hs-var">mainPath</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-55"></span><span>                    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680225616"><span class="hs-identifier hs-type">parsedOrError</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-56"></span><span>                        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680225618"><span class="annot"><span class="annottext">CallStack
-</span><a href="#local-6989586621680225618"><span class="hs-identifier hs-var">cs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680225619"><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError
-</span><a href="#local-6989586621680225619"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680234435"><span class="hs-identifier hs-var">mainPath</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>                    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680234436"><span class="hs-identifier hs-type">parsedOrError</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-56"></span><span>                        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680234438"><span class="annot"><span class="annottext">CallStack
+</span><a href="#local-6989586621680234438"><span class="hs-identifier hs-var">cs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680234439"><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError
+</span><a href="#local-6989586621680234439"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-57"></span><span>                            </span><span class="annot"><span class="annottext">(HasCallStack =&gt; Eff es (Maybe FilePath))
 -&gt; Eff es (Maybe FilePath)
 forall a. HasCallStack =&gt; (HasCallStack =&gt; a) -&gt; a
@@ -202,16 +202,16 @@ e -&gt; Eff es a
 </span><span class="hs-identifier hs-var">throwError_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError -&gt; ElaraError
 forall e. (Exception e, ElaraDiagnostic e) =&gt; e -&gt; ElaraError
 </span><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-var">ElaraError</span></a></span><span> </span><span class="annot"><span class="annottext">WParseErrorBundle TokenStream ElaraParseError
-</span><a href="#local-6989586621680225619"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680234439"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-58"></span><span>                        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Module.html#Module"><span class="hs-identifier hs-type">Module</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680225646"><span class="annot"><span class="annottext">Module' SourceRegion Frontend
-</span><a href="#local-6989586621680225646"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680234466"><span class="annot"><span class="annottext">Module' SourceRegion Frontend
+</span><a href="#local-6989586621680234466"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-59"></span><span>                            </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Module' SourceRegion Frontend
 -&gt; LocateNode ModuleNode SourceRegion ModuleName
 forall {k} loc (p :: k).
 Module' loc p -&gt; LocateNode ModuleNode loc ModuleName
 </span><a href="Elara.AST.Module.html#moduleName"><span class="hs-identifier hs-var">moduleName</span></a></span><span> </span><span class="annot"><span class="annottext">Module' SourceRegion Frontend
-</span><a href="#local-6989586621680225646"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate ModuleNode SourceRegion ModuleName
+</span><a href="#local-6989586621680234466"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate ModuleNode SourceRegion ModuleName
 -&gt; Optic'
      A_Lens
      NoIx
@@ -236,14 +236,14 @@ forall (w :: * -&gt; *) a b. LocatedElement w =&gt; Lens (w a) (w b) a b
 </span><a href="Elara.AST.Region.html#unlocated"><span class="hs-identifier hs-var">unlocated</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225613"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><a href="#local-6989586621680234433"><span class="hs-identifier hs-var">mn</span></a></span><span>
 </span><span id="line-60"></span><span>                                </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Eff es (Maybe FilePath)
 forall a. a -&gt; Eff es a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Maybe FilePath
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225615"><span class="hs-identifier hs-var">mainPath</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680234435"><span class="hs-identifier hs-var">mainPath</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-61"></span><span>                                </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Eff es (Maybe FilePath)
 forall a. a -&gt; Eff es a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -251,20 +251,20 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
 </span><span id="line-62"></span><span>
-</span><span id="line-63"></span><span>        </span><span id="local-6989586621680225649"><span class="annot"><a href="#local-6989586621680225649"><span class="hs-identifier hs-var">maybeMain</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff es (Maybe FilePath)
-</span><a href="#local-6989586621680225614"><span class="hs-identifier hs-var">checkMain</span></a></span><span>
-</span><span id="line-64"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680225649"><span class="hs-identifier hs-type">maybeMain</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-65"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680225650"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225650"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Eff es a
+</span><span id="line-63"></span><span>        </span><span id="local-6989586621680234469"><span class="annot"><a href="#local-6989586621680234469"><span class="hs-identifier hs-var">maybeMain</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff es (Maybe FilePath)
+</span><a href="#local-6989586621680234434"><span class="hs-identifier hs-var">checkMain</span></a></span><span>
+</span><span id="line-64"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680234469"><span class="hs-identifier hs-type">maybeMain</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-65"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680234470"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680234470"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Eff es a
 forall a. a -&gt; Eff es a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">a
 FilePath
-</span><a href="#local-6989586621680225650"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><a href="#local-6989586621680234470"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-66"></span><span>            </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-67"></span><span>                </span><span class="hs-comment">-- Use the module index for lookup</span><span>
-</span><span id="line-68"></span><span>                </span><span id="local-6989586621680225651"><span class="annot"><a href="#local-6989586621680225651"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
+</span><span id="line-68"></span><span>                </span><span id="local-6989586621680234471"><span class="annot"><a href="#local-6989586621680234471"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Query
   (Rock Query : ConsMinimumQueryEffects '[FileSystem]) ModuleIndex
 -&gt; Eff es ModuleIndex
 forall (xs :: [Effect]) (es :: [Effect]) (f :: [Effect] -&gt; * -&gt; *)
@@ -275,7 +275,7 @@ f xs a -&gt; Eff es a
 </span><a href="Rock.html#fetch"><span class="hs-identifier hs-var">Rock.fetch</span></a></span><span> </span><span class="annot"><span class="annottext">Query
   (Rock Query : ConsMinimumQueryEffects '[FileSystem]) ModuleIndex
 </span><a href="Elara.Query.html#ModuleIndex"><span class="hs-identifier hs-var">Elara.Query.ModuleIndex</span></a></span><span>
-</span><span id="line-69"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#lookupModule"><span class="hs-identifier hs-type">ModuleIndex.lookupModule</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680225613"><span class="hs-identifier hs-type">mn</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680225651"><span class="hs-identifier hs-type">idx</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-69"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#lookupModule"><span class="hs-identifier hs-type">ModuleIndex.lookupModule</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680234433"><span class="hs-identifier hs-type">mn</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680234471"><span class="hs-identifier hs-type">idx</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-70"></span><span>                    </span><span class="annot"><span class="annottext">Maybe [ModuleEntry]
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModulePathError -&gt; Eff es a
 forall e (es :: [Effect]) a.
@@ -285,9 +285,9 @@ e -&gt; Eff es a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; [FilePath] -&gt; ModulePathError
 </span><a href="Elara.ReadFile.html#ModuleNotFound"><span class="hs-identifier hs-var">ModuleNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225613"><span class="hs-identifier hs-var">mn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; [FilePath]
-</span><a href="#local-6989586621680225654"><span class="hs-identifier hs-var">generateSearchPaths</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225613"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680234433"><span class="hs-identifier hs-var">mn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; [FilePath]
+</span><a href="#local-6989586621680234474"><span class="hs-identifier hs-var">generateSearchPaths</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680234433"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-71"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModulePathError -&gt; Eff es a
 forall e (es :: [Effect]) a.
 (HasCallStack, Error e :&gt; es, Show e) =&gt;
@@ -296,15 +296,15 @@ e -&gt; Eff es a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; [FilePath] -&gt; ModulePathError
 </span><a href="Elara.ReadFile.html#ModuleNotFound"><span class="hs-identifier hs-var">ModuleNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225613"><span class="hs-identifier hs-var">mn</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-72"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">[</span><span id="local-6989586621680225655"><span class="annot"><span class="annottext">ModuleEntry
-</span><a href="#local-6989586621680225655"><span class="hs-identifier hs-var">single</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Eff es a
+</span><a href="#local-6989586621680234433"><span class="hs-identifier hs-var">mn</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-72"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">[</span><span id="local-6989586621680234475"><span class="annot"><span class="annottext">ModuleEntry
+</span><a href="#local-6989586621680234475"><span class="hs-identifier hs-var">single</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Eff es a
 forall a. a -&gt; Eff es a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">ModuleEntry
-</span><a href="#local-6989586621680225655"><span class="hs-identifier hs-var">single</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">entryPath</span><span>
-</span><span id="line-73"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680225656"><span class="annot"><span class="annottext">[ModuleEntry]
-</span><a href="#local-6989586621680225656"><span class="hs-identifier hs-var">multiple</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModulePathError -&gt; Eff es a
+</span><a href="#local-6989586621680234475"><span class="hs-identifier hs-var">single</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">entryPath</span><span>
+</span><span id="line-73"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680234476"><span class="annot"><span class="annottext">[ModuleEntry]
+</span><a href="#local-6989586621680234476"><span class="hs-identifier hs-var">multiple</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModulePathError -&gt; Eff es a
 forall e (es :: [Effect]) a.
 (HasCallStack, Error e :&gt; es, Show e) =&gt;
 e -&gt; Eff es a
@@ -312,30 +312,30 @@ e -&gt; Eff es a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; [FilePath] -&gt; ModulePathError
 </span><a href="Elara.ReadFile.html#MultipleModulePaths"><span class="hs-identifier hs-var">MultipleModulePaths</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225613"><span class="hs-identifier hs-var">mn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ModuleEntry -&gt; FilePath) -&gt; [ModuleEntry] -&gt; [FilePath]
+</span><a href="#local-6989586621680234433"><span class="hs-identifier hs-var">mn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ModuleEntry -&gt; FilePath) -&gt; [ModuleEntry] -&gt; [FilePath]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-operator">.</span><span class="hs-identifier">entryPath</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[ModuleEntry]
-</span><a href="#local-6989586621680225656"><span class="hs-identifier hs-var">multiple</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680234476"><span class="hs-identifier hs-var">multiple</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-74"></span><span>      </span><span class="hs-keyword">where</span><span>
 </span><span id="line-75"></span><span>        </span><span class="hs-comment">-- Generate search paths for error messages</span><span>
-</span><span id="line-76"></span><span>        </span><span class="annot"><a href="#local-6989586621680225654"><span class="hs-identifier hs-type">generateSearchPaths</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">]</span><span>
-</span><span id="line-77"></span><span>        </span><span id="local-6989586621680225654"><span class="annot"><span class="annottext">generateSearchPaths :: ModuleName -&gt; [FilePath]
-</span><a href="#local-6989586621680225654"><span class="hs-identifier hs-var hs-var">generateSearchPaths</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span id="local-6989586621680225659"><span class="annot"><span class="annottext">NonEmpty Text
-</span><a href="#local-6989586621680225659"><span class="hs-identifier hs-var">parts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-78"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680225660"><span class="annot"><span class="annottext">sourceDirs :: [FilePath]
-</span><a href="#local-6989586621680225660"><span class="hs-identifier hs-var hs-var">sourceDirs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680225332"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">sourceDirs</span><span>
-</span><span id="line-79"></span><span>                </span><span id="local-6989586621680225661"><span class="annot"><span class="annottext">mainFileDir :: [FilePath]
-</span><a href="#local-6989586621680225661"><span class="hs-identifier hs-var hs-var">mainFileDir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680225332"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mainFile</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-80"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680225662"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225662"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath
+</span><span id="line-76"></span><span>        </span><span class="annot"><a href="#local-6989586621680234474"><span class="hs-identifier hs-type">generateSearchPaths</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">]</span><span>
+</span><span id="line-77"></span><span>        </span><span id="local-6989586621680234474"><span class="annot"><span class="annottext">generateSearchPaths :: ModuleName -&gt; [FilePath]
+</span><a href="#local-6989586621680234474"><span class="hs-identifier hs-var hs-var">generateSearchPaths</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span id="local-6989586621680234479"><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680234479"><span class="hs-identifier hs-var">parts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-78"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680234480"><span class="annot"><span class="annottext">sourceDirs :: [FilePath]
+</span><a href="#local-6989586621680234480"><span class="hs-identifier hs-var hs-var">sourceDirs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CompilerSettings
+</span><a href="#local-6989586621680234152"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">sourceDirs</span><span>
+</span><span id="line-79"></span><span>                </span><span id="local-6989586621680234481"><span class="annot"><span class="annottext">mainFileDir :: [FilePath]
+</span><a href="#local-6989586621680234481"><span class="hs-identifier hs-var hs-var">mainFileDir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CompilerSettings
+</span><a href="#local-6989586621680234152"><span class="hs-identifier hs-var">compilerSettings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mainFile</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-80"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680234482"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680234482"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath
 </span><span class="hs-identifier hs-var">takeDirectory</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225662"><span class="hs-identifier hs-var">fp</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621680234482"><span class="hs-identifier hs-var">fp</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-81"></span><span>                    </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-82"></span><span>                </span><span id="local-6989586621680225663"><span class="annot"><span class="annottext">roots :: [FilePath]
-</span><a href="#local-6989586621680225663"><span class="hs-identifier hs-var hs-var">roots</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath]
+</span><span id="line-82"></span><span>                </span><span id="local-6989586621680234483"><span class="annot"><span class="annottext">roots :: [FilePath]
+</span><a href="#local-6989586621680234483"><span class="hs-identifier hs-var hs-var">roots</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath]
 forall a. Ord a =&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">ordNub</span></span><span> </span><span class="annot"><span class="annottext">([FilePath] -&gt; [FilePath]) -&gt; [FilePath] -&gt; [FilePath]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -343,45 +343,45 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-string">&quot;stdlib&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath] -&gt; [FilePath]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680225660"><span class="hs-identifier hs-var">sourceDirs</span></a></span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath] -&gt; [FilePath]
+</span><a href="#local-6989586621680234480"><span class="hs-identifier hs-var">sourceDirs</span></a></span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath] -&gt; [FilePath]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680225661"><span class="hs-identifier hs-var">mainFileDir</span></a></span><span>
-</span><span id="line-83"></span><span>                </span><span id="local-6989586621680225665"><span class="annot"><span class="annottext">hierarchy :: Text
-</span><a href="#local-6989586621680225665"><span class="hs-identifier hs-var hs-var">hierarchy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Text
+</span><a href="#local-6989586621680234481"><span class="hs-identifier hs-var">mainFileDir</span></a></span><span>
+</span><span id="line-83"></span><span>                </span><span id="local-6989586621680234485"><span class="annot"><span class="annottext">hierarchy :: Text
+</span><a href="#local-6989586621680234485"><span class="hs-identifier hs-var hs-var">hierarchy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Text
 </span><span class="hs-identifier hs-var">Text.intercalate</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;/&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NonEmpty Text -&gt; [Text]
 forall a. NonEmpty a -&gt; [a]
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
 </span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text
-</span><a href="#local-6989586621680225659"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-84"></span><span>                </span><span id="local-6989586621680225668"><span class="annot"><span class="annottext">flat :: Text
-</span><a href="#local-6989586621680225668"><span class="hs-identifier hs-var hs-var">flat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Text
+</span><a href="#local-6989586621680234479"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>                </span><span id="local-6989586621680234488"><span class="annot"><span class="annottext">flat :: Text
+</span><a href="#local-6989586621680234488"><span class="hs-identifier hs-var hs-var">flat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Text
 </span><span class="hs-identifier hs-var">Text.intercalate</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NonEmpty Text -&gt; [Text]
 forall a. NonEmpty a -&gt; [a]
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
 </span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text
-</span><a href="#local-6989586621680225659"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-85"></span><span>                </span><span id="local-6989586621680225669"><span class="annot"><span class="annottext">paths :: [FilePath]
-</span><a href="#local-6989586621680225669"><span class="hs-identifier hs-var hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680234479"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>                </span><span id="local-6989586621680234489"><span class="annot"><span class="annottext">paths :: [FilePath]
+</span><a href="#local-6989586621680234489"><span class="hs-identifier hs-var hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-86"></span><span>                    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Text -&gt; FilePath
 forall a. ToString a =&gt; a -&gt; FilePath
 </span><span class="hs-identifier hs-var">toString</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680225665"><span class="hs-identifier hs-var">hierarchy</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><a href="#local-6989586621680234485"><span class="hs-identifier hs-var">hierarchy</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;.elr&quot;</span></span><span>
 </span><span id="line-87"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; FilePath
 forall a. ToString a =&gt; a -&gt; FilePath
 </span><span class="hs-identifier hs-var">toString</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680225665"><span class="hs-identifier hs-var">hierarchy</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><a href="#local-6989586621680234485"><span class="hs-identifier hs-var">hierarchy</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 </span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;mod.elr&quot;</span></span><span>
 </span><span id="line-88"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text -&gt; FilePath
 forall a. ToString a =&gt; a -&gt; FilePath
 </span><span class="hs-identifier hs-var">toString</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680225668"><span class="hs-identifier hs-var">flat</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><a href="#local-6989586621680234488"><span class="hs-identifier hs-var">flat</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;.elr&quot;</span></span><span>
@@ -389,15 +389,15 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span id="line-90"></span><span>             </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath]
 forall a. Ord a =&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">ordNub</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225671"><span class="hs-identifier hs-var">root</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><a href="#local-6989586621680234491"><span class="hs-identifier hs-var">root</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 </span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225672"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621680225671"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225671"><span class="hs-identifier hs-var">root</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680225663"><span class="hs-identifier hs-var">roots</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680225672"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680225672"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680225669"><span class="hs-identifier hs-var">paths</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-91"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ParsedModule"><span class="hs-identifier hs-type">ParsedModule</span></a></span><span> </span><span id="local-6989586621680225716"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225716"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680234492"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621680234491"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680234491"><span class="hs-identifier hs-var">root</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680234483"><span class="hs-identifier hs-var">roots</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680234492"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680234492"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680234489"><span class="hs-identifier hs-var">paths</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-91"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ParsedModule"><span class="hs-identifier hs-type">ParsedModule</span></a></span><span> </span><span id="local-6989586621680234536"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680234536"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Error (WParseErrorBundle TokenStream ElaraParseError),
        Rock Query])
@@ -426,9 +426,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
           Rock Query])
      (Module SourceRegion Frontend)
 </span><a href="Elara.Parse.html#getParsedModuleQuery"><span class="hs-identifier hs-var">getParsedModuleQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225716"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-92"></span><span>    </span><span class="annot"><a href="Elara.Query.html#DesugaredModule"><span class="hs-identifier hs-type">DesugaredModule</span></a></span><span> </span><span id="local-6989586621680225760"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225760"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680234536"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-92"></span><span>    </span><span class="annot"><a href="Elara.Query.html#DesugaredModule"><span class="hs-identifier hs-type">DesugaredModule</span></a></span><span> </span><span id="local-6989586621680234580"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680234580"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects '[Error DesugarError, Rock Query])
   (Module SourceRegion Desugared)
 -&gt; Eff es (Module SourceRegion Desugared)
@@ -449,65 +449,65 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
      (ConsQueryEffects '[Error DesugarError, Rock Query])
      (Module SourceRegion Desugared)
 </span><a href="Elara.Desugar.html#getDesugaredModule"><span class="hs-identifier hs-var">getDesugaredModule</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225760"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-93"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ModuleByName"><span class="hs-identifier hs-type">ModuleByName</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680225769"><span class="annot"><a href="#local-6989586621680225769"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680225770"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225770"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
+</span><a href="#local-6989586621680234580"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-93"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ModuleByName"><span class="hs-identifier hs-type">ModuleByName</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680234589"><span class="annot"><a href="#local-6989586621680234589"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680234590"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680234590"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
 (RunPhase ast, HasCallStack) =&gt;
 ModuleName
 -&gt; Eff
      (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QModule)))
      (Module SourceRegion ast)
-</span><a href="Elara.Query.html#getModuleByName"><span class="hs-identifier hs-var">getModuleByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680225769"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225770"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-94"></span><span>    </span><span class="annot"><a href="Elara.Query.html#DeclarationByName"><span class="hs-identifier hs-type">DeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680225780"><span class="annot"><a href="#local-6989586621680225780"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680225781"><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680225781"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
+</span><a href="Elara.Query.html#getModuleByName"><span class="hs-identifier hs-var">getModuleByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680234589"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680234590"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-94"></span><span>    </span><span class="annot"><a href="Elara.Query.html#DeclarationByName"><span class="hs-identifier hs-type">DeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680234600"><span class="annot"><a href="#local-6989586621680234600"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680234601"><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234601"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
 (RunPhase ast, HasCallStack) =&gt;
 Qualified Name
 -&gt; Eff
      (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QDecl)))
      (Maybe (Declaration SourceRegion ast))
-</span><a href="Elara.Query.html#getDeclarationByName"><span class="hs-identifier hs-var">getDeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680225780"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680225781"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-95"></span><span>    </span><span class="annot"><a href="Elara.Query.html#RequiredDeclarationByName"><span class="hs-identifier hs-type">RequiredDeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680225791"><span class="annot"><a href="#local-6989586621680225791"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680225792"><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680225792"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
+</span><a href="Elara.Query.html#getDeclarationByName"><span class="hs-identifier hs-var">getDeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680234600"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234601"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-95"></span><span>    </span><span class="annot"><a href="Elara.Query.html#RequiredDeclarationByName"><span class="hs-identifier hs-type">RequiredDeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680234611"><span class="annot"><a href="#local-6989586621680234611"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680234612"><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234612"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
 (RunPhase ast, HasCallStack) =&gt;
 Qualified Name
 -&gt; Eff
      (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QReqDecl)))
      (Declaration SourceRegion ast)
-</span><a href="Elara.Query.html#getRequiredDeclarationByName"><span class="hs-identifier hs-var">getRequiredDeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680225791"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680225792"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-96"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ConstructorDeclaration"><span class="hs-identifier hs-type">ConstructorDeclaration</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680225805"><span class="annot"><a href="#local-6989586621680225805"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680225806"><span class="annot"><span class="annottext">ConstructorOccurrence ast SourceRegion
-</span><a href="#local-6989586621680225806"><span class="hs-identifier hs-var">conRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
+</span><a href="Elara.Query.html#getRequiredDeclarationByName"><span class="hs-identifier hs-var">getRequiredDeclarationByName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680234611"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234612"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-96"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ConstructorDeclaration"><span class="hs-identifier hs-type">ConstructorDeclaration</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680234625"><span class="annot"><a href="#local-6989586621680234625"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680234626"><span class="annot"><span class="annottext">ConstructorOccurrence ast SourceRegion
+</span><a href="#local-6989586621680234626"><span class="hs-identifier hs-var">conRef</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
 (RunPhase ast, HasCallStack) =&gt;
 ConstructorOccurrence ast SourceRegion
 -&gt; Eff
      (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QCtor)))
      (Declaration SourceRegion ast)
-</span><a href="Elara.Query.html#getConstructorDeclaration"><span class="hs-identifier hs-var">getConstructorDeclaration</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680225805"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorOccurrence ast SourceRegion
-</span><a href="#local-6989586621680225806"><span class="hs-identifier hs-var">conRef</span></a></span><span>
-</span><span id="line-97"></span><span>    </span><span class="annot"><a href="Elara.Query.html#DeclarationAnnotations"><span class="hs-identifier hs-type">DeclarationAnnotations</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680225816"><span class="annot"><a href="#local-6989586621680225816"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680225817"><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680225817"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
+</span><a href="Elara.Query.html#getConstructorDeclaration"><span class="hs-identifier hs-var">getConstructorDeclaration</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680234625"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorOccurrence ast SourceRegion
+</span><a href="#local-6989586621680234626"><span class="hs-identifier hs-var">conRef</span></a></span><span>
+</span><span id="line-97"></span><span>    </span><span class="annot"><a href="Elara.Query.html#DeclarationAnnotations"><span class="hs-identifier hs-type">DeclarationAnnotations</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680234636"><span class="annot"><a href="#local-6989586621680234636"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span id="local-6989586621680234637"><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234637"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
 (RunPhase ast, HasCallStack) =&gt;
 Qualified Name
 -&gt; Eff
      (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QAnn)))
      [Annotation SourceRegion ast]
-</span><a href="Elara.Query.html#getDeclarationAnnotations"><span class="hs-identifier hs-var">getDeclarationAnnotations</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680225816"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680225817"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-98"></span><span>    </span><span class="annot"><a href="Elara.Query.html#DeclarationAnnotationsOfType"><span class="hs-identifier hs-type">DeclarationAnnotationsOfType</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680225827"><span class="annot"><a href="#local-6989586621680225827"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680225828"><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680225828"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680225829"><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680225829"><span class="hs-identifier hs-var">annotationName</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
+</span><a href="Elara.Query.html#getDeclarationAnnotations"><span class="hs-identifier hs-var">getDeclarationAnnotations</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680234636"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234637"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-98"></span><span>    </span><span class="annot"><a href="Elara.Query.html#DeclarationAnnotationsOfType"><span class="hs-identifier hs-type">DeclarationAnnotationsOfType</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621680234647"><span class="annot"><a href="#local-6989586621680234647"><span class="hs-identifier hs-type hs-type">ast</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680234648"><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234648"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680234649"><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680234649"><span class="hs-identifier hs-var">annotationName</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall ast.
 (RunPhase ast, HasCallStack) =&gt;
 (Qualified Name, Qualified TypeName)
 -&gt; Eff
      (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QAnnType)))
      [Annotation SourceRegion ast]
-</span><a href="Elara.Query.html#getDeclarationAnnotationsOfType"><span class="hs-identifier hs-var">getDeclarationAnnotationsOfType</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680225827"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680225828"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680225829"><span class="hs-identifier hs-var">annotationName</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-99"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetOpInfo"><span class="hs-identifier hs-type">GetOpInfo</span></a></span><span> </span><span id="local-6989586621680225886"><span class="annot"><span class="annottext">IgnoreLocVarRef Name
-</span><a href="#local-6989586621680225886"><span class="hs-identifier hs-var">opName</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="Elara.Query.html#getDeclarationAnnotationsOfType"><span class="hs-identifier hs-var">getDeclarationAnnotationsOfType</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680234647"><span class="hs-identifier hs-type">ast</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234648"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680234649"><span class="hs-identifier hs-var">annotationName</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-99"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetOpInfo"><span class="hs-identifier hs-type">GetOpInfo</span></a></span><span> </span><span id="local-6989586621680234706"><span class="annot"><span class="annottext">IgnoreLocVarRef Name
+</span><a href="#local-6989586621680234706"><span class="hs-identifier hs-var">opName</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Writer (Set ShuntWarning), Error ShuntError, Rock Query,
        Error ElaraError, Writer [ElaraWarning]])
@@ -536,9 +536,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
           Error ElaraError, Writer [ElaraWarning]])
      (Maybe OpInfo)
 </span><a href="Elara.Shunt.html#runGetOpInfoQuery"><span class="hs-identifier hs-var">runGetOpInfoQuery</span></a></span><span> </span><span class="annot"><span class="annottext">IgnoreLocVarRef Name
-</span><a href="#local-6989586621680225886"><span class="hs-identifier hs-var">opName</span></a></span><span>
-</span><span id="line-100"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetOpTableIn"><span class="hs-identifier hs-type">GetOpTableIn</span></a></span><span> </span><span id="local-6989586621680225921"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225921"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680234706"><span class="hs-identifier hs-var">opName</span></a></span><span>
+</span><span id="line-100"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetOpTableIn"><span class="hs-identifier hs-type">GetOpTableIn</span></a></span><span> </span><span id="local-6989586621680234741"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680234741"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects '[Rock Query])
   (Map (IgnoreLocVarRef Name) OpInfo)
 -&gt; Eff es (Map (IgnoreLocVarRef Name) OpInfo)
@@ -559,9 +559,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
      (ConsQueryEffects '[Rock Query])
      (Map (IgnoreLocVarRef Name) OpInfo)
 </span><a href="Elara.Shunt.html#runGetOpTableInQuery"><span class="hs-identifier hs-var">runGetOpTableInQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680225921"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-101"></span><span>    </span><span class="annot"><a href="Elara.Query.html#FreeVarsOf"><span class="hs-identifier hs-type">FreeVarsOf</span></a></span><span> </span><span id="local-6989586621680225958"><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680225958"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680234741"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-101"></span><span>    </span><span class="annot"><a href="Elara.Query.html#FreeVarsOf"><span class="hs-identifier hs-type">FreeVarsOf</span></a></span><span> </span><span id="local-6989586621680234778"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680234778"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
   (HashSet (Qualified VarName))
@@ -586,9 +586,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
      (HashSet (Qualified VarName))
 </span><a href="Elara.SCC.html#runFreeVarsQuery"><span class="hs-identifier hs-var">runFreeVarsQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680225958"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-102"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ReachableSubgraphOf"><span class="hs-identifier hs-type">ReachableSubgraphOf</span></a></span><span> </span><span id="local-6989586621680225993"><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680225993"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) ReachableSubgraph
+</span><a href="#local-6989586621680234778"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-102"></span><span>    </span><span class="annot"><a href="Elara.Query.html#ReachableSubgraphOf"><span class="hs-identifier hs-type">ReachableSubgraphOf</span></a></span><span> </span><span id="local-6989586621680234813"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680234813"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) ReachableSubgraph
 -&gt; Eff es ReachableSubgraph
 forall (subEs :: [Effect]) (es :: [Effect]) a.
 Subset subEs es =&gt;
@@ -601,10 +601,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
 -&gt; Eff (ConsQueryEffects '[Rock Query]) ReachableSubgraph
 </span><a href="Elara.SCC.html#runReachableSubgraphQuery"><span class="hs-identifier hs-var">runReachableSubgraphQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680225993"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-103"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetSCCsOf"><span class="hs-identifier hs-type">GetSCCsOf</span></a></span><span> </span><span id="local-6989586621680226032"><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680226032"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-104"></span><span>        </span><span id="local-6989586621680226033"><span class="annot"><a href="#local-6989586621680226033"><span class="hs-identifier hs-var">subgraph</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) ReachableSubgraph
+</span><a href="#local-6989586621680234813"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-103"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetSCCsOf"><span class="hs-identifier hs-type">GetSCCsOf</span></a></span><span> </span><span id="local-6989586621680234852"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680234852"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-104"></span><span>        </span><span id="local-6989586621680234853"><span class="annot"><a href="#local-6989586621680234853"><span class="hs-identifier hs-var">subgraph</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) ReachableSubgraph
 -&gt; Eff es ReachableSubgraph
 forall (subEs :: [Effect]) (es :: [Effect]) a.
 Subset subEs es =&gt;
@@ -617,15 +617,15 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
 -&gt; Eff (ConsQueryEffects '[Rock Query]) ReachableSubgraph
 </span><a href="Elara.SCC.html#runReachableSubgraphQuery"><span class="hs-identifier hs-var">runReachableSubgraphQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680226032"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-105"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.SCC.html#buildSCCs"><span class="hs-identifier hs-type">buildSCCs</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680226033"><span class="hs-identifier hs-type">subgraph</span></a></span><span>
+</span><a href="#local-6989586621680234852"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-105"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><a href="Elara.SCC.html#buildSCCs"><span class="hs-identifier hs-type">buildSCCs</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680234853"><span class="hs-identifier hs-type">subgraph</span></a></span><span>
 </span><span id="line-106"></span><span>    </span><span class="annot"><a href="Elara.Query.html#SCCKeyOf"><span class="hs-identifier hs-type">SCCKeyOf</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Eff es a
 forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;SCCKeyOf not implemented&quot;</span></span><span>
-</span><span id="line-107"></span><span>    </span><span class="annot"><a href="Elara.Query.html#TypeCheckedExpr"><span class="hs-identifier hs-type">TypeCheckedExpr</span></a></span><span> </span><span id="local-6989586621680226090"><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680226090"><span class="hs-identifier hs-var">exprId</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) a -&gt; Eff es a
+</span><span id="line-107"></span><span>    </span><span class="annot"><a href="Elara.Query.html#TypeCheckedExpr"><span class="hs-identifier hs-type">TypeCheckedExpr</span></a></span><span> </span><span id="local-6989586621680234910"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680234910"><span class="hs-identifier hs-var">exprId</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) a -&gt; Eff es a
 forall (subEs :: [Effect]) (es :: [Effect]) a.
 Subset subEs es =&gt;
 Eff subEs a -&gt; Eff es a
@@ -639,9 +639,9 @@ Qualified VarName
 -&gt; Eff
      (ConsQueryEffects (Rock Query : r)) (Expr SourceRegion Typed)
 </span><a href="Elara.TypeInfer.html#runTypeCheckedExprQuery"><span class="hs-identifier hs-var">runTypeCheckedExprQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680226090"><span class="hs-identifier hs-var">exprId</span></a></span><span>
-</span><span id="line-108"></span><span>    </span><span class="annot"><a href="Elara.Query.html#TypeCheckedDeclaration"><span class="hs-identifier hs-type">TypeCheckedDeclaration</span></a></span><span> </span><span id="local-6989586621680226127"><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680226127"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680234910"><span class="hs-identifier hs-var">exprId</span></a></span><span>
+</span><span id="line-108"></span><span>    </span><span class="annot"><a href="Elara.Query.html#TypeCheckedDeclaration"><span class="hs-identifier hs-type">TypeCheckedDeclaration</span></a></span><span> </span><span id="local-6989586621680234947"><span class="annot"><span class="annottext">Qualified Name
+</span><a href="#local-6989586621680234947"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
   (Declaration SourceRegion Typed)
@@ -666,9 +666,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
      (Declaration SourceRegion Typed)
 </span><a href="Elara.TypeInfer.html#runTypeCheckedDeclarationQuery"><span class="hs-identifier hs-var">runTypeCheckedDeclarationQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
-</span><a href="#local-6989586621680226127"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-109"></span><span>    </span><span class="annot"><a href="Elara.Query.html#InferSCC"><span class="hs-identifier hs-type">InferSCC</span></a></span><span> </span><span id="local-6989586621680226164"><span class="annot"><span class="annottext">SCCKey
-</span><a href="#local-6989586621680226164"><span class="hs-identifier hs-var">sccKey</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680234947"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-109"></span><span>    </span><span class="annot"><a href="Elara.Query.html#InferSCC"><span class="hs-identifier hs-type">InferSCC</span></a></span><span> </span><span id="local-6989586621680234984"><span class="annot"><span class="annottext">SCCKey
+</span><a href="#local-6989586621680234984"><span class="hs-identifier hs-var">sccKey</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
   (Map (Qualified VarName) (Polytype SourceRegion))
@@ -693,9 +693,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
      (Map (Qualified VarName) (Polytype SourceRegion))
 </span><a href="Elara.TypeInfer.html#runInferSCCQuery"><span class="hs-identifier hs-var">runInferSCCQuery</span></a></span><span> </span><span class="annot"><span class="annottext">SCCKey
-</span><a href="#local-6989586621680226164"><span class="hs-identifier hs-var">sccKey</span></a></span><span>
-</span><span id="line-110"></span><span>    </span><span class="annot"><a href="Elara.Query.html#TypeOf"><span class="hs-identifier hs-type">TypeOf</span></a></span><span> </span><span id="local-6989586621680226205"><span class="annot"><span class="annottext">TypeEnvKey loc
-</span><a href="#local-6989586621680226205"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680234984"><span class="hs-identifier hs-var">sccKey</span></a></span><span>
+</span><span id="line-110"></span><span>    </span><span class="annot"><a href="Elara.Query.html#TypeOf"><span class="hs-identifier hs-type">TypeOf</span></a></span><span> </span><span id="local-6989586621680235025"><span class="annot"><span class="annottext">TypeEnvKey loc
+</span><a href="#local-6989586621680235025"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
   a
@@ -727,9 +727,9 @@ TypeEnvKey loc
         '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
      (Type loc)
 </span><a href="Elara.TypeInfer.html#runTypeOfQuery"><span class="hs-identifier hs-var">runTypeOfQuery</span></a></span><span> </span><span class="annot"><span class="annottext">TypeEnvKey loc
-</span><a href="#local-6989586621680226205"><span class="hs-identifier hs-var">key</span></a></span><span>
-</span><span id="line-111"></span><span>    </span><span class="annot"><a href="Elara.Query.html#KindOf"><span class="hs-identifier hs-type">KindOf</span></a></span><span> </span><span id="local-6989586621680226242"><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680226242"><span class="hs-identifier hs-var">qtn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680235025"><span class="hs-identifier hs-var">key</span></a></span><span>
+</span><span id="line-111"></span><span>    </span><span class="annot"><a href="Elara.Query.html#KindOf"><span class="hs-identifier hs-type">KindOf</span></a></span><span> </span><span id="local-6989586621680235062"><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680235062"><span class="hs-identifier hs-var">qtn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
   (Maybe KindVar)
@@ -754,9 +754,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
      (Maybe KindVar)
 </span><a href="Elara.TypeInfer.html#runKindOfQuery"><span class="hs-identifier hs-var">runKindOfQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680226242"><span class="hs-identifier hs-var">qtn</span></a></span><span>
-</span><span id="line-112"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetTypeAlias"><span class="hs-identifier hs-type">GetTypeAlias</span></a></span><span> </span><span id="local-6989586621680226287"><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680226287"><span class="hs-identifier hs-var">qtn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680235062"><span class="hs-identifier hs-var">qtn</span></a></span><span>
+</span><span id="line-112"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetTypeAlias"><span class="hs-identifier hs-type">GetTypeAlias</span></a></span><span> </span><span id="local-6989586621680235107"><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680235107"><span class="hs-identifier hs-var">qtn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Rock Query, Error ElaraError, Writer [ElaraWarning]])
   a
@@ -787,9 +787,9 @@ Qualified TypeName
         (Rock Query : Error ElaraError : Writer [ElaraWarning] : r))
      (Maybe ([UniqueTyVar], Type SourceRegion))
 </span><a href="Elara.TypeInfer.html#runGetTypeAliasQuery"><span class="hs-identifier hs-var">runGetTypeAliasQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680226287"><span class="hs-identifier hs-var">qtn</span></a></span><span>
-</span><span id="line-113"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetCoreModule"><span class="hs-identifier hs-type">GetCoreModule</span></a></span><span> </span><span id="local-6989586621680226323"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226323"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680235107"><span class="hs-identifier hs-var">qtn</span></a></span><span>
+</span><span id="line-113"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetCoreModule"><span class="hs-identifier hs-type">GetCoreModule</span></a></span><span> </span><span id="local-6989586621680235143"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680235143"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects '[Rock Query, Error ElaraError])
   (CoreModule CoreBind)
 -&gt; Eff es (CoreModule CoreBind)
@@ -810,9 +810,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
      (ConsQueryEffects '[Rock Query, Error ElaraError])
      (CoreModule CoreBind)
 </span><a href="Elara.ToCore.html#runGetCoreModuleQuery"><span class="hs-identifier hs-var">runGetCoreModuleQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226323"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-114"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetTyCon"><span class="hs-identifier hs-type">GetTyCon</span></a></span><span> </span><span id="local-6989586621680226359"><span class="annot"><span class="annottext">Qualified Text
-</span><a href="#local-6989586621680226359"><span class="hs-identifier hs-var">qn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680235143"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-114"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetTyCon"><span class="hs-identifier hs-type">GetTyCon</span></a></span><span> </span><span id="local-6989586621680235179"><span class="annot"><span class="annottext">Qualified Text
+</span><a href="#local-6989586621680235179"><span class="hs-identifier hs-var">qn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects '[Rock Query, Error ElaraError]) (Maybe TyCon)
 -&gt; Eff es (Maybe TyCon)
 forall (subEs :: [Effect]) (es :: [Effect]) a.
@@ -829,9 +829,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 -&gt; Eff
      (ConsQueryEffects '[Rock Query, Error ElaraError]) (Maybe TyCon)
 </span><a href="Elara.ToCore.html#runGetTyConQuery"><span class="hs-identifier hs-var">runGetTyConQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Text
-</span><a href="#local-6989586621680226359"><span class="hs-identifier hs-var">qn</span></a></span><span>
-</span><span id="line-115"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetDataCon"><span class="hs-identifier hs-type">GetDataCon</span></a></span><span> </span><span id="local-6989586621680226394"><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680226394"><span class="hs-identifier hs-var">qn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) (Maybe DataCon)
+</span><a href="#local-6989586621680235179"><span class="hs-identifier hs-var">qn</span></a></span><span>
+</span><span id="line-115"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetDataCon"><span class="hs-identifier hs-type">GetDataCon</span></a></span><span> </span><span id="local-6989586621680235214"><span class="annot"><span class="annottext">Qualified TypeName
+</span><a href="#local-6989586621680235214"><span class="hs-identifier hs-var">qn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) (Maybe DataCon)
 -&gt; Eff es (Maybe DataCon)
 forall (subEs :: [Effect]) (es :: [Effect]) a.
 Subset subEs es =&gt;
@@ -844,9 +844,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
 -&gt; Eff (ConsQueryEffects '[Rock Query]) (Maybe DataCon)
 </span><a href="Elara.ToCore.html#runGetDataConQuery"><span class="hs-identifier hs-var">runGetDataConQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified TypeName
-</span><a href="#local-6989586621680226394"><span class="hs-identifier hs-var">qn</span></a></span><span>
-</span><span id="line-116"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetOptimisedCoreModule"><span class="hs-identifier hs-type">GetOptimisedCoreModule</span></a></span><span> </span><span id="local-6989586621680226429"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226429"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) (CoreModule CoreBind)
+</span><a href="#local-6989586621680235214"><span class="hs-identifier hs-var">qn</span></a></span><span>
+</span><span id="line-116"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetOptimisedCoreModule"><span class="hs-identifier hs-type">GetOptimisedCoreModule</span></a></span><span> </span><span id="local-6989586621680235249"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680235249"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) (CoreModule CoreBind)
 -&gt; Eff es (CoreModule CoreBind)
 forall (subEs :: [Effect]) (es :: [Effect]) a.
 Subset subEs es =&gt;
@@ -859,9 +859,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ModuleName
 -&gt; Eff (ConsQueryEffects '[Rock Query]) (CoreModule CoreBind)
 </span><a href="Elara.CoreToCore.html#runGetOptimisedCoreModuleQuery"><span class="hs-identifier hs-var">runGetOptimisedCoreModuleQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226429"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-117"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetANFCoreModule"><span class="hs-identifier hs-type">GetANFCoreModule</span></a></span><span> </span><span id="local-6989586621680226464"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226464"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680235249"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-117"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetANFCoreModule"><span class="hs-identifier hs-type">GetANFCoreModule</span></a></span><span> </span><span id="local-6989586621680235284"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680235284"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects '[Rock Query]) (CoreModule (TopLevelBind Var))
 -&gt; Eff es (CoreModule (TopLevelBind Var))
 forall (subEs :: [Effect]) (es :: [Effect]) a.
@@ -878,9 +878,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 -&gt; Eff
      (ConsQueryEffects '[Rock Query]) (CoreModule (TopLevelBind Var))
 </span><a href="Elara.CoreToCore.html#runGetANFCoreModuleQuery"><span class="hs-identifier hs-var">runGetANFCoreModuleQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226464"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-118"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetClosureLiftedModule"><span class="hs-identifier hs-type">GetClosureLiftedModule</span></a></span><span> </span><span id="local-6989586621680226512"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226512"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680235284"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-118"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetClosureLiftedModule"><span class="hs-identifier hs-type">GetClosureLiftedModule</span></a></span><span> </span><span id="local-6989586621680235332"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680235332"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Rock Query, UniqueGen, StructuredDebug, Error ClosureLiftError])
   (CoreModule (TopLevelBind Var))
@@ -911,9 +911,9 @@ ModuleName
         '[Rock Query, UniqueGen, StructuredDebug, Error ClosureLiftError])
      (CoreModule (TopLevelBind Var))
 </span><a href="Elara.Core.LiftClosures.html#runGetClosureLiftedModuleQuery"><span class="hs-identifier hs-var">runGetClosureLiftedModuleQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226512"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-119"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetFinalisedCoreModule"><span class="hs-identifier hs-type">GetFinalisedCoreModule</span></a></span><span> </span><span id="local-6989586621680226549"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226549"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) (CoreModule CoreBind)
+</span><a href="#local-6989586621680235332"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-119"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetFinalisedCoreModule"><span class="hs-identifier hs-type">GetFinalisedCoreModule</span></a></span><span> </span><span id="local-6989586621680235369"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680235369"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Rock Query]) (CoreModule CoreBind)
 -&gt; Eff es (CoreModule CoreBind)
 forall (subEs :: [Effect]) (es :: [Effect]) a.
 Subset subEs es =&gt;
@@ -929,10 +929,10 @@ ModuleName
 ModuleName
 -&gt; Eff (ConsQueryEffects '[Rock Query]) (CoreModule CoreBind)
 </span><a href="Elara.CoreToCore.html#runGetFinalisedCoreModuleQuery"><span class="hs-identifier hs-var">runGetFinalisedCoreModuleQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226549"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><a href="#local-6989586621680235369"><span class="hs-identifier hs-var">mn</span></a></span><span>
 </span><span id="line-120"></span><span>    </span><span class="hs-comment">-- JVM Backend Queries</span><span>
-</span><span id="line-121"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetJVMIRModule"><span class="hs-identifier hs-type">GetJVMIRModule</span></a></span><span> </span><span id="local-6989586621680226593"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226593"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Error JVMLoweringError, Rock Query]) Module
+</span><span id="line-121"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetJVMIRModule"><span class="hs-identifier hs-type">GetJVMIRModule</span></a></span><span> </span><span id="local-6989586621680235413"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680235413"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff (ConsQueryEffects '[Error JVMLoweringError, Rock Query]) Module
 -&gt; Eff es Module
 forall (subEs :: [Effect]) (es :: [Effect]) a.
 Subset subEs es =&gt;
@@ -948,9 +948,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 -&gt; Eff
      (ConsQueryEffects '[Error JVMLoweringError, Rock Query]) Module
 </span><a href="Elara.JVM.Query.html#runGetJVMIRModuleQuery"><span class="hs-identifier hs-var">Elara.JVM.Query.runGetJVMIRModuleQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226593"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-122"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetJVMClassFiles"><span class="hs-identifier hs-type">GetJVMClassFiles</span></a></span><span> </span><span id="local-6989586621680226638"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226638"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680235413"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetJVMClassFiles"><span class="hs-identifier hs-type">GetJVMClassFiles</span></a></span><span> </span><span id="local-6989586621680235458"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680235458"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects '[Error JVMLoweringError, Rock Query])
   [ClassFile]
 -&gt; Eff es [ClassFile]
@@ -971,9 +971,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
      (ConsQueryEffects '[Error JVMLoweringError, Rock Query])
      [ClassFile]
 </span><a href="Elara.JVM.Query.html#runGetJVMClassFilesQuery"><span class="hs-identifier hs-var">Elara.JVM.Query.runGetJVMClassFilesQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226638"><span class="hs-identifier hs-var">mn</span></a></span><span>
-</span><span id="line-123"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetJVMClassBytes"><span class="hs-identifier hs-type">GetJVMClassBytes</span></a></span><span> </span><span id="local-6989586621680226693"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226693"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
+</span><a href="#local-6989586621680235458"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><span id="line-123"></span><span>    </span><span class="annot"><a href="Elara.Query.html#GetJVMClassBytes"><span class="hs-identifier hs-type">GetJVMClassBytes</span></a></span><span> </span><span id="local-6989586621680235513"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680235513"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff
   (ConsQueryEffects
      '[Error JVMLoweringError, Error CodeConverterError, Rock Query])
   [(FilePath, LByteString)]
@@ -998,5 +998,5 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         '[Error JVMLoweringError, Error CodeConverterError, Rock Query])
      [(FilePath, LByteString)]
 </span><a href="Elara.JVM.Query.html#runGetJVMClassBytesQuery"><span class="hs-identifier hs-var">Elara.JVM.Query.runGetJVMClassBytesQuery</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680226693"><span class="hs-identifier hs-var">mn</span></a></span><span>
+</span><a href="#local-6989586621680235513"><span class="hs-identifier hs-var">mn</span></a></span><span>
 </span><span id="line-124"></span></pre></body></html>
