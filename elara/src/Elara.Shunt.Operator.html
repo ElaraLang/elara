@@ -14,7 +14,7 @@
 </span><span id="line-14"></span><span class="hs-keyword">type</span><span> </span><span id="OpTable"><span class="annot"><a href="Elara.Shunt.Operator.html#OpTable"><span class="hs-identifier hs-var">OpTable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#IgnoreLocVarRef"><span class="hs-identifier hs-type">IgnoreLocVarRef</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span>
 </span><span id="line-15"></span><span>
 </span><span id="line-16"></span><span class="hs-keyword">newtype</span><span> </span><span id="Precedence"><span class="annot"><a href="Elara.Shunt.Operator.html#Precedence"><span class="hs-identifier hs-var">Precedence</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Precedence"><span class="annot"><a href="Elara.Shunt.Operator.html#Precedence"><span class="hs-identifier hs-var">Precedence</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190731"><span id="local-6989586621680190736"><span class="annot"><span class="annottext">Precedence -&gt; Precedence -&gt; Bool
+</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190727"><span id="local-6989586621680190732"><span class="annot"><span class="annottext">Precedence -&gt; Precedence -&gt; Bool
 (Precedence -&gt; Precedence -&gt; Bool)
 -&gt; (Precedence -&gt; Precedence -&gt; Bool) -&gt; Eq Precedence
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -22,7 +22,7 @@ $c== :: Precedence -&gt; Precedence -&gt; Bool
 == :: Precedence -&gt; Precedence -&gt; Bool
 $c/= :: Precedence -&gt; Precedence -&gt; Bool
 /= :: Precedence -&gt; Precedence -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190745"><span id="local-6989586621680190750"><span id="local-6989586621680190754"><span id="local-6989586621680190758"><span id="local-6989586621680190762"><span id="local-6989586621680190766"><span id="local-6989586621680190770"><span class="annot"><span class="annottext">Eq Precedence
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190741"><span id="local-6989586621680190746"><span id="local-6989586621680190750"><span id="local-6989586621680190754"><span id="local-6989586621680190758"><span id="local-6989586621680190762"><span id="local-6989586621680190766"><span class="annot"><span class="annottext">Eq Precedence
 Eq Precedence =&gt;
 (Precedence -&gt; Precedence -&gt; Ordering)
 -&gt; (Precedence -&gt; Precedence -&gt; Bool)
@@ -59,7 +59,7 @@ $cmax :: Precedence -&gt; Precedence -&gt; Precedence
 max :: Precedence -&gt; Precedence -&gt; Precedence
 $cmin :: Precedence -&gt; Precedence -&gt; Precedence
 min :: Precedence -&gt; Precedence -&gt; Precedence
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190782"><span id="local-6989586621680190787"><span id="local-6989586621680190791"><span class="annot"><span class="annottext">Int -&gt; Precedence -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190778"><span id="local-6989586621680190783"><span id="local-6989586621680190787"><span class="annot"><span class="annottext">Int -&gt; Precedence -&gt; ShowS
 [Precedence] -&gt; ShowS
 Precedence -&gt; String
 (Int -&gt; Precedence -&gt; ShowS)
@@ -77,19 +77,19 @@ showList :: [Precedence] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-18"></span><span>
 </span><span id="line-19"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#Precedence"><span class="hs-identifier hs-type">Precedence</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-20"></span><span>    </span><span id="local-6989586621680190800"><span class="annot"><span class="annottext">pretty :: Precedence -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680190800"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Operator.html#Precedence"><span class="hs-identifier hs-type">Precedence</span></a></span><span> </span><span id="local-6989586621680190802"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680190802"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
+</span><span id="line-20"></span><span>    </span><span id="local-6989586621680190796"><span class="annot"><span class="annottext">pretty :: Precedence -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190796"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Operator.html#Precedence"><span class="hs-identifier hs-type">Precedence</span></a></span><span> </span><span id="local-6989586621680190798"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680190798"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680190802"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621680190798"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-21"></span><span>
 </span><span id="line-22"></span><span class="annot"><a href="Elara.Shunt.Operator.html#mkPrecedence"><span class="hs-identifier hs-type">mkPrecedence</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#Precedence"><span class="hs-identifier hs-type">Precedence</span></a></span><span>
 </span><span id="line-23"></span><span id="mkPrecedence"><span class="annot"><span class="annottext">mkPrecedence :: Int -&gt; Precedence
-</span><a href="Elara.Shunt.Operator.html#mkPrecedence"><span class="hs-identifier hs-var hs-var">mkPrecedence</span></a></span></span><span> </span><span id="local-6989586621680190822"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680190822"><span class="hs-identifier hs-var">i</span></a></span></span><span>
+</span><a href="Elara.Shunt.Operator.html#mkPrecedence"><span class="hs-identifier hs-var hs-var">mkPrecedence</span></a></span></span><span> </span><span id="local-6989586621680190818"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680190818"><span class="hs-identifier hs-var">i</span></a></span></span><span>
 </span><span id="line-24"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680190822"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621680190818"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Precedence
@@ -97,7 +97,7 @@ forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;Precedence must be positive&quot;</span></span><span>
 </span><span id="line-25"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680190822"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621680190818"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">9</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Precedence
@@ -107,7 +107,7 @@ forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span id="line-26"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Precedence
 </span><a href="Elara.Shunt.Operator.html#Precedence"><span class="hs-identifier hs-var">Precedence</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680190822"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621680190818"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-27"></span><span>
 </span><span id="line-28"></span><span class="hs-keyword">data</span><span> </span><span id="OpInfo"><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-var">OpInfo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="OpInfo"><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-var">OpInfo</span></a></span></span><span>
 </span><span id="line-29"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="precedence"><span class="annot"><span class="annottext">OpInfo -&gt; Precedence
@@ -115,7 +115,7 @@ forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span id="line-30"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="associativity"><span class="annot"><span class="annottext">OpInfo -&gt; Associativity
 </span><a href="Elara.Shunt.Operator.html#associativity"><span class="hs-identifier hs-var hs-var">associativity</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.Shunt.Operator.html#Associativity"><span class="hs-identifier hs-type">Associativity</span></a></span><span>
 </span><span id="line-31"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-32"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190828"><span id="local-6989586621680190833"><span class="annot"><span class="annottext">OpInfo -&gt; OpInfo -&gt; Bool
+</span><span id="line-32"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190824"><span id="local-6989586621680190829"><span class="annot"><span class="annottext">OpInfo -&gt; OpInfo -&gt; Bool
 (OpInfo -&gt; OpInfo -&gt; Bool)
 -&gt; (OpInfo -&gt; OpInfo -&gt; Bool) -&gt; Eq OpInfo
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -123,7 +123,7 @@ $c== :: OpInfo -&gt; OpInfo -&gt; Bool
 == :: OpInfo -&gt; OpInfo -&gt; Bool
 $c/= :: OpInfo -&gt; OpInfo -&gt; Bool
 /= :: OpInfo -&gt; OpInfo -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190839"><span id="local-6989586621680190844"><span id="local-6989586621680190848"><span id="local-6989586621680190852"><span id="local-6989586621680190855"><span id="local-6989586621680190858"><span id="local-6989586621680190861"><span class="annot"><span class="annottext">Eq OpInfo
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190835"><span id="local-6989586621680190840"><span id="local-6989586621680190844"><span id="local-6989586621680190848"><span id="local-6989586621680190851"><span id="local-6989586621680190854"><span id="local-6989586621680190857"><span class="annot"><span class="annottext">Eq OpInfo
 Eq OpInfo =&gt;
 (OpInfo -&gt; OpInfo -&gt; Ordering)
 -&gt; (OpInfo -&gt; OpInfo -&gt; Bool)
@@ -160,7 +160,7 @@ $cmax :: OpInfo -&gt; OpInfo -&gt; OpInfo
 max :: OpInfo -&gt; OpInfo -&gt; OpInfo
 $cmin :: OpInfo -&gt; OpInfo -&gt; OpInfo
 min :: OpInfo -&gt; OpInfo -&gt; OpInfo
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190864"><span id="local-6989586621680190870"><span id="local-6989586621680190874"><span class="annot"><span class="annottext">Int -&gt; OpInfo -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190860"><span id="local-6989586621680190866"><span id="local-6989586621680190870"><span class="annot"><span class="annottext">Int -&gt; OpInfo -&gt; ShowS
 [OpInfo] -&gt; ShowS
 OpInfo -&gt; String
 (Int -&gt; OpInfo -&gt; ShowS)
@@ -176,9 +176,9 @@ showList :: [OpInfo] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-35"></span><span>    </span><span id="local-6989586621680190885"><span class="annot"><span class="annottext">pretty :: OpInfo -&gt; Doc AnsiStyle
-</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span> </span><span id="local-6989586621680190886"><span class="annot"><span class="annottext">Precedence
-</span><a href="#local-6989586621680190886"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Associativity
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621680190881"><span class="annot"><span class="annottext">pretty :: OpInfo -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span> </span><span id="local-6989586621680190882"><span class="annot"><span class="annottext">Precedence
+</span><a href="#local-6989586621680190882"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Associativity
 </span><a href="Elara.Shunt.Operator.html#LeftAssociative"><span class="hs-identifier hs-var">LeftAssociative</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.Styles.html#keyword"><span class="hs-identifier hs-var">Style.keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;infixl&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -186,9 +186,9 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Precedence -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Precedence
-</span><a href="#local-6989586621680190886"><span class="hs-identifier hs-var">p</span></a></span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span> </span><span id="local-6989586621680190890"><span class="annot"><span class="annottext">Precedence
-</span><a href="#local-6989586621680190890"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Associativity
+</span><a href="#local-6989586621680190882"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span> </span><span id="local-6989586621680190886"><span class="annot"><span class="annottext">Precedence
+</span><a href="#local-6989586621680190886"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Associativity
 </span><a href="Elara.Shunt.Operator.html#RightAssociative"><span class="hs-identifier hs-var">RightAssociative</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.Styles.html#keyword"><span class="hs-identifier hs-var">Style.keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;infixr&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -196,9 +196,9 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Precedence -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Precedence
-</span><a href="#local-6989586621680190890"><span class="hs-identifier hs-var">p</span></a></span><span>
-</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span> </span><span id="local-6989586621680190892"><span class="annot"><span class="annottext">Precedence
-</span><a href="#local-6989586621680190892"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Associativity
+</span><a href="#local-6989586621680190886"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span> </span><span id="local-6989586621680190888"><span class="annot"><span class="annottext">Precedence
+</span><a href="#local-6989586621680190888"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Associativity
 </span><a href="Elara.Shunt.Operator.html#NonAssociative"><span class="hs-identifier hs-var">NonAssociative</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.Styles.html#keyword"><span class="hs-identifier hs-var">Style.keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;infix&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -206,13 +206,13 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Precedence -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Precedence
-</span><a href="#local-6989586621680190892"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><a href="#local-6989586621680190888"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-38"></span><span>
 </span><span id="line-39"></span><span class="hs-keyword">data</span><span> </span><span id="Associativity"><span class="annot"><a href="Elara.Shunt.Operator.html#Associativity"><span class="hs-identifier hs-var">Associativity</span></a></span></span><span>
 </span><span id="line-40"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="LeftAssociative"><span class="annot"><a href="Elara.Shunt.Operator.html#LeftAssociative"><span class="hs-identifier hs-var">LeftAssociative</span></a></span></span><span>
 </span><span id="line-41"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="RightAssociative"><span class="annot"><a href="Elara.Shunt.Operator.html#RightAssociative"><span class="hs-identifier hs-var">RightAssociative</span></a></span></span><span>
 </span><span id="line-42"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="NonAssociative"><span class="annot"><a href="Elara.Shunt.Operator.html#NonAssociative"><span class="hs-identifier hs-var">NonAssociative</span></a></span></span><span>
-</span><span id="line-43"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190895"><span id="local-6989586621680190900"><span class="annot"><span class="annottext">Associativity -&gt; Associativity -&gt; Bool
+</span><span id="line-43"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190891"><span id="local-6989586621680190896"><span class="annot"><span class="annottext">Associativity -&gt; Associativity -&gt; Bool
 (Associativity -&gt; Associativity -&gt; Bool)
 -&gt; (Associativity -&gt; Associativity -&gt; Bool) -&gt; Eq Associativity
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -220,7 +220,7 @@ $c== :: Associativity -&gt; Associativity -&gt; Bool
 == :: Associativity -&gt; Associativity -&gt; Bool
 $c/= :: Associativity -&gt; Associativity -&gt; Bool
 /= :: Associativity -&gt; Associativity -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190905"><span id="local-6989586621680190909"><span id="local-6989586621680190913"><span id="local-6989586621680190916"><span id="local-6989586621680190919"><span id="local-6989586621680190922"><span id="local-6989586621680190925"><span class="annot"><span class="annottext">Eq Associativity
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190901"><span id="local-6989586621680190905"><span id="local-6989586621680190909"><span id="local-6989586621680190912"><span id="local-6989586621680190915"><span id="local-6989586621680190918"><span id="local-6989586621680190921"><span class="annot"><span class="annottext">Eq Associativity
 Eq Associativity =&gt;
 (Associativity -&gt; Associativity -&gt; Ordering)
 -&gt; (Associativity -&gt; Associativity -&gt; Bool)
@@ -257,7 +257,7 @@ $cmax :: Associativity -&gt; Associativity -&gt; Associativity
 max :: Associativity -&gt; Associativity -&gt; Associativity
 $cmin :: Associativity -&gt; Associativity -&gt; Associativity
 min :: Associativity -&gt; Associativity -&gt; Associativity
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190928"><span id="local-6989586621680190930"><span id="local-6989586621680190933"><span class="annot"><span class="annottext">Int -&gt; Associativity -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190924"><span id="local-6989586621680190926"><span id="local-6989586621680190929"><span class="annot"><span class="annottext">Int -&gt; Associativity -&gt; ShowS
 [Associativity] -&gt; ShowS
 Associativity -&gt; String
 (Int -&gt; Associativity -&gt; ShowS)
@@ -277,8 +277,8 @@ showList :: [Associativity] -&gt; ShowS
 </span><span id="line-45"></span><span class="annot"><a href="Elara.Shunt.Operator.html#prettyOp"><span class="hs-identifier hs-type">prettyOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#BinaryOperator"><span class="hs-identifier hs-type">New.BinaryOperator</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Region.html#SourceRegion"><span class="hs-identifier hs-type">SourceRegion</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Renamed.html#Renamed"><span class="hs-identifier hs-type">NewR.Renamed</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
 </span><span id="line-46"></span><span id="prettyOp"><span class="annot"><span class="annottext">prettyOp :: BinaryOperator SourceRegion Renamed -&gt; Doc AnsiStyle
 </span><a href="Elara.Shunt.Operator.html#prettyOp"><span class="hs-identifier hs-var hs-var">prettyOp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#SymOp"><span class="hs-identifier hs-type">New.SymOp</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190965"><span class="annot"><span class="annottext">OperatorOccurrence Renamed SourceRegion
-</span><a href="#local-6989586621680190965"><span class="hs-identifier hs-var">opRef</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190961"><span class="annot"><span class="annottext">OperatorOccurrence Renamed SourceRegion
+</span><a href="#local-6989586621680190961"><span class="hs-identifier hs-var">opRef</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.Styles.html#operator"><span class="hs-identifier hs-var">Style.operator</span></a></span><span> </span><span class="annot"><span class="annottext">(Doc AnsiStyle -&gt; Doc AnsiStyle) -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TaggedLocate
@@ -288,10 +288,10 @@ forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">TaggedLocate
   VarNode SourceRegion (VarRef' LocatedVarRefKind OpName)
 OperatorOccurrence Renamed SourceRegion
-</span><a href="#local-6989586621680190965"><span class="hs-identifier hs-var">opRef</span></a></span><span>
+</span><a href="#local-6989586621680190961"><span class="hs-identifier hs-var">opRef</span></a></span><span>
 </span><span id="line-47"></span><span class="annot"><a href="Elara.Shunt.Operator.html#prettyOp"><span class="hs-identifier hs-var">prettyOp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#InfixedOp"><span class="hs-identifier hs-type">New.InfixedOp</span></a></span><span> </span><span class="annot"><span class="annottext">SourceRegion
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190968"><span class="annot"><span class="annottext">InfixedOccurrence Renamed SourceRegion
-</span><a href="#local-6989586621680190968"><span class="hs-identifier hs-var">vn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190964"><span class="annot"><span class="annottext">InfixedOccurrence Renamed SourceRegion
+</span><a href="#local-6989586621680190964"><span class="hs-identifier hs-var">vn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.Styles.html#operator"><span class="hs-identifier hs-var">Style.operator</span></a></span><span> </span><span class="annot"><span class="annottext">(Doc AnsiStyle -&gt; Doc AnsiStyle) -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -301,15 +301,15 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">VarRef Name
 InfixedOccurrence Renamed SourceRegion
-</span><a href="#local-6989586621680190968"><span class="hs-identifier hs-var">vn</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190964"><span class="hs-identifier hs-var">vn</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;`&quot;</span></span><span>
 </span><span id="line-48"></span><span>
 </span><span id="line-49"></span><span class="annot"><a href="Elara.Shunt.Operator.html#prettyOpTable"><span class="hs-identifier hs-type">prettyOpTable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpTable"><span class="hs-identifier hs-type">OpTable</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
 </span><span id="line-50"></span><span id="prettyOpTable"><span class="annot"><span class="annottext">prettyOpTable :: OpTable -&gt; Doc AnsiStyle
-</span><a href="Elara.Shunt.Operator.html#prettyOpTable"><span class="hs-identifier hs-var hs-var">prettyOpTable</span></a></span></span><span> </span><span id="local-6989586621680190979"><span class="annot"><span class="annottext">OpTable
-</span><a href="#local-6989586621680190979"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Shunt.Operator.html#prettyOpTable"><span class="hs-identifier hs-var hs-var">prettyOpTable</span></a></span></span><span> </span><span id="local-6989586621680190975"><span class="annot"><span class="annottext">OpTable
+</span><a href="#local-6989586621680190975"><span class="hs-identifier hs-var">table</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">brackets</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
 forall ann. [Doc ann] -&gt; Doc ann
@@ -317,23 +317,23 @@ forall ann. [Doc ann] -&gt; Doc ann
 -&gt; [(IgnoreLocVarRef Name, OpInfo)] -&gt; [Doc AnsiStyle]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(IgnoreLocVarRef Name, OpInfo) -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680190982"><span class="hs-identifier hs-var">prettyOpInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OpTable -&gt; [(IgnoreLocVarRef Name, OpInfo)]
+</span><a href="#local-6989586621680190978"><span class="hs-identifier hs-var">prettyOpInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">OpTable -&gt; [(IgnoreLocVarRef Name, OpInfo)]
 forall k a. Map k a -&gt; [(k, a)]
 </span><span class="hs-identifier hs-var">Map.toList</span></span><span> </span><span class="annot"><span class="annottext">OpTable
-</span><a href="#local-6989586621680190979"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190975"><span class="hs-identifier hs-var">table</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-51"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-52"></span><span>    </span><span class="annot"><a href="#local-6989586621680190982"><span class="hs-identifier hs-type">prettyOpInfo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#IgnoreLocVarRef"><span class="hs-identifier hs-type">IgnoreLocVarRef</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
-</span><span id="line-53"></span><span>    </span><span id="local-6989586621680190982"><span class="annot"><span class="annottext">prettyOpInfo :: (IgnoreLocVarRef Name, OpInfo) -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680190982"><span class="hs-identifier hs-var hs-var">prettyOpInfo</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190984"><span class="annot"><span class="annottext">IgnoreLocVarRef Name
-</span><a href="#local-6989586621680190984"><span class="hs-identifier hs-var">opName</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190985"><span class="annot"><span class="annottext">OpInfo
-</span><a href="#local-6989586621680190985"><span class="hs-identifier hs-var">info</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><a href="#local-6989586621680190978"><span class="hs-identifier hs-type">prettyOpInfo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.VarRef.html#IgnoreLocVarRef"><span class="hs-identifier hs-type">IgnoreLocVarRef</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Shunt.Operator.html#OpInfo"><span class="hs-identifier hs-type">OpInfo</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-53"></span><span>    </span><span id="local-6989586621680190978"><span class="annot"><span class="annottext">prettyOpInfo :: (IgnoreLocVarRef Name, OpInfo) -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190978"><span class="hs-identifier hs-var hs-var">prettyOpInfo</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190980"><span class="annot"><span class="annottext">IgnoreLocVarRef Name
+</span><a href="#local-6989586621680190980"><span class="hs-identifier hs-var">opName</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190981"><span class="annot"><span class="annottext">OpInfo
+</span><a href="#local-6989586621680190981"><span class="hs-identifier hs-var">info</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-54"></span><span>        </span><span class="annot"><span class="annottext">OpInfo -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">OpInfo
-</span><a href="#local-6989586621680190985"><span class="hs-identifier hs-var">info</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190981"><span class="hs-identifier hs-var">info</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">IgnoreLocVarRef Name -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">IgnoreLocVarRef Name
-</span><a href="#local-6989586621680190984"><span class="hs-identifier hs-var">opName</span></a></span><span>
+</span><a href="#local-6989586621680190980"><span class="hs-identifier hs-var">opName</span></a></span><span>
 </span><span id="line-55"></span></pre></body></html>
