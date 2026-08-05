@@ -471,6 +471,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Update nix inputs - ([3105181](https://github.com/ElaraLang/elara/commit/31051818c2b4c6d49b3be61b59e81227c3ccadef)) 
 - Fix Fourmolu not detecting some test files correctly - ([259f47d](https://github.com/ElaraLang/elara/commit/259f47d32d714ea19ce29347a1f2999761fe3a33)) 
 - Update flake inputs - ([465c27d](https://github.com/ElaraLang/elara/commit/465c27d241fa549a94368a2f4075587d8b928abf)) 
+- Fix cabal-only build - ([554e3f0](https://github.com/ElaraLang/elara/commit/554e3f05d889e0a3e7fe993ecdb2d9fcfa0f47c2)) 
 
 ### Unfinished
 
