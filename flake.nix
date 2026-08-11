@@ -66,14 +66,81 @@
           let
             hixFlake = hix.lib.flake (
               { config, ... }:
+              let
+                depOverrides =
+                  {
+                    source,
+                    hackage,
+                    enable,
+                    notest,
+                    force,
+                    unbreak,
+                    jailbreak,
+                    ...
+                  }:
+                  {
+                    h2jvm = jailbreak (notest (source.root h2jvm));
+                    unix = enable "os-string";
+                    directory = enable "os-string";
+                    diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
+                    incipit-base = jailbreak;
+                    incipit-core = jailbreak;
+                    ghc-tcplugins-extra = hackage "0.5" "sha256-mOzdicJevaXZdZS4/RA1hU3CWJXMFwMUfmEH3YxX4Q8=";
+
+                    # many things don't yet work on ghc 9.14 without jailbreakng
+                    kind-generics = jailbreak;
+                    kind-generics-th = jailbreak;
+                    svg-builder = jailbreak;
+                    terminfo = jailbreak;
+                    tasty-hspec = jailbreak;
+                    rebase = jailbreak;
+                    dependent-sum-template = jailbreak;
+                    constraints-extras = jailbreak;
+
+                    # 0.7 in package set breaks against containers 0.8 from ghc 9.14
+                    algebraic-graphs = hackage "0.8" "sha256-lkVkS7WqNMC07MZfJ9aBFWPJTTyg1jbp3BWHOJMnL2I=";
+
+                    relude = notest; # doctest fails for some reason
+
+                    optics-core = notest; # test fails on ghc 9.12
+                    optics = notest; # test fails on ghc 9.12
+                    generic-optics = notest; # test fails on ghc 9.12
+
+                    dependent-hashmap = source.root inputs.dependent-hashmap;
+
+                    effectful = jailbreak (hackage "2.6.1.0" "sha256-krNjGxqdbmFpt1g3anTd5ajGtYnyvGaG+AiDLfJN8No=");
+                    effectful-core = jailbreak;
+                    effectful-plugin = jailbreak;
+                    co-log-effectful = jailbreak (unbreak);
+
+                    boring = jailbreak;
+                    some = jailbreak;
+                    hie-compat = jailbreak;
+                    ghcide = jailbreak;
+                    opentelemetry = jailbreak;
+                  };
+              in
               {
-                compiler = "ghc9123";
+                compiler = "ghc9141";
                 systems = import inputs.systems;
                 compat.enable = false;
                 envs.dev.ghcid.enable = false;
                 # hix's HLS build can't be patched (overrides don't seem to reach transitive deps like cabal-add)
                 # so we disable it and inject a manually-patched HLS in buildInputs below
                 envs.dev.hls.enable = false;
+
+                managed = {
+                  enable = true;
+                  latest.compiler = "ghc9141"; # use 9.14 for bounds testing
+                  lower.enable = true;
+
+                  forceBounds.base.upper = "4.23"; # default doesn't work idk exactly why
+
+                  envs = {
+                    solverOverrides = depOverrides;
+                    verbatim.overrides = depOverrides;
+                  };
+                };
                 outputs.devShells = {
                   # extending the default devshell to add the pre-commit hooks and some other nice things
                   default = config.pkgs.mkShell {
@@ -98,7 +165,7 @@
                       (
                         let
                           rawPkgs = import inputs.nixpkgs { system = config.system; };
-                          hlsPkgs = rawPkgs.haskell.packages.ghc9123.override {
+                          hlsPkgs = rawPkgs.haskell.packages.ghc9141.override {
                             overrides = hfinal: hprev: {
                               # cabal-add test fails due to nix sandboxing
                               cabal-add = rawPkgs.haskell.lib.dontCheck hprev.cabal-add;
@@ -117,48 +184,11 @@
                   };
                 };
 
-                overrides =
-                  {
-                    source,
-                    hackage,
-                    enable,
-                    notest,
-                    force,
-                    unbreak,
-                    jailbreak,
-                    ...
-                  }:
-                  {
-                    h2jvm = notest (source.root h2jvm);
-                    unix = enable "os-string";
-                    directory = enable "os-string";
-                    diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
-                    incipit-base = jailbreak;
-                    incipit-core = jailbreak;
-                    ghc-tcplugins-extra = hackage "0.5" "sha256-mOzdicJevaXZdZS4/RA1hU3CWJXMFwMUfmEH3YxX4Q8=";
-
-                    optics-core = notest; # test fails on ghc 9.12
-                    optics = notest; # test fails on ghc 9.12
-                    generic-optics = notest; # test fails on ghc 9.12
-
-                    dependent-hashmap = source.root inputs.dependent-hashmap;
-
-                    effectful = jailbreak (hackage "2.6.1.0" "sha256-krNjGxqdbmFpt1g3anTd5ajGtYnyvGaG+AiDLfJN8No=");
-                    effectful-core = jailbreak;
-                    effectful-plugin = jailbreak;
-                    co-log-effectful = jailbreak (unbreak);
-
-                    boring = jailbreak;
-                    some = jailbreak;
-                    hie-compat = jailbreak;
-                    ghcide = jailbreak;
-                    opentelemetry = jailbreak;
-                  };
+                overrides = depOverrides;
                 packages = {
                   elara = {
                     buildInputs = pkgs: [
                       pkgs.alex
-                      pkgs.jdk
                     ];
                     src = ./.;
                     description = "See README for more info";
@@ -168,6 +198,8 @@
                       drv:
                       overrideAttrs (old: {
                         unfilteredSrc = ./.;
+
+                        nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.jdk ]; # jdk is only needed for checks, breaks static building otherwise
 
                         preCheck = ''
                           ${old.preCheck or ""}

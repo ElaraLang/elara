@@ -159,7 +159,8 @@ instance ElaraDiagnostic LexerError where
     diagnosticMarkers (UnterminatedStringLiteral s) = [ElaraMarker (RealSourceRegion $ mkSourceRegionIn (Just $ view (input % filePath) s) (view (input % position) s) (view (input % position) s)) PrimaryMarker "this string literal is unterminated"]
 
     diagnosticNotes (TooMuchIndentation _ further actual _) =
-        let hint = case further of
+        let hint :: Text
+            hint = case further of
                 Nothing -> "Try removing the extra indentation."
                 Just f -> "Try removing the extra indentation or indenting the line by " <> show (f ^. indent - actual) <> " space(s)."
          in [ Elara.Error.Note "When using lightweight syntax, the level of indentation is very important. Currently, I can't tell what expression this line is supposed to be a part of as it doesn't line up with anything, and didn't appear in a place where indentation can begin."

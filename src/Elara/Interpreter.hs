@@ -185,7 +185,7 @@ prettyValueWithType = \case
     ctor@(Ctor c _) -> pretty ctor <+> "::" <+> pretty c.dataConType
     Closure{} -> "Closure"
     RecClosure{} -> "RecClosure"
-    VPrimOp name -> "Primitive operation" <+> pretty (Prelude.show name)
+    VPrimOp name -> "Primitive operation" <+> pretty (Prelude.show name :: Text)
     PartialApplication f a ->
         "Partial application of"
             <+> prettyValueWithType f

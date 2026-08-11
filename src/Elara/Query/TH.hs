@@ -132,7 +132,7 @@ genHashMatch saltName index con = do
 
     -- RHS Construction: Chain hashWithSalt calls
     -- 1. Start with: salt `hashWithSalt` index
-    let startHash = [|hashWithSalt $(varE saltName) $(litE (IntegerL (toInteger index)))|]
+    let startHash = [|hashWithSalt $(varE saltName) ($(litE (IntegerL (toInteger index))) :: Int)|]
 
     -- 2. Chain fields: ... `hashWithSalt` x1 `hashWithSalt` x2
     let hashField acc name = [|hashWithSalt $acc $(varE name)|]

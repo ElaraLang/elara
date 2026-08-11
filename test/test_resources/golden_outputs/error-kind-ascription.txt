@@ -1,0 +1,11 @@
+[error E3014]: Cannot unify kinds Type and Type -> Type
+     ╭──▶ test/test_resources/golden_inputs/error-kind-ascription.elr@13:18-13:25
+     │
+   6 │ type Wrapper f a = | Wrapper (f a)
+     •      ┬────────────────────────────
+     •      ╰╸ Definition of User defined type Main.Wrapper
+     •
+  13 │     println (i : Wrapper Int Int)
+     •                  ┬────── 
+     •                  ╰╸ Expected kind Type but found Type -> Type
+─────╯

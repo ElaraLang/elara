@@ -1,0 +1,13 @@
+import Elara.Prim
+import Prelude
+
+type TestBox a = | TestBox a
+
+type Wrapper f a = | Wrapper (f a)
+
+def main : IO ()
+let main =
+    let i = (Wrapper (TestBox 1))
+    -- wrapper kind is (Type -> Type) -> Type -> Type.
+    -- passing Int (kind Type) instead of f (kind Type -> Type) should fail kind checking.
+    println (i : Wrapper Int Int)
