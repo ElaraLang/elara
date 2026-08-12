@@ -104,7 +104,18 @@
 
                     optics-core = notest; # test fails on ghc 9.12
                     optics = notest; # test fails on ghc 9.12
-                    generic-optics = notest; # test fails on ghc 9.12
+
+                    # quite a few things are outdated in nixpkgs' pin
+                    generic-optics = notest (hackage "2.3.0.0" "sha256-3xDJDQAlIYg+Xn2j8qgTyrVSe1/C+Ad1HHVImHPTM50=");
+                    generic-lens-core = hackage "2.3.0.0" "sha256-Abntgf3UMhQed5gOc6sDoVilMc0FRRCh8VJCeoQfNRY=";
+                    autodocodec-schema = hackage "0.2.0.2" "sha256-hnpqfkthYWmFP3GSk5jAuxTVv/nf46M8wfvoX+S6MUs=";
+                    autodocodec-nix = hackage "0.1.0.2" "sha256-c1aQ8JNZGqFx+YiIogB7bXTqWkXFfrGCfIJhWlOCEXY=";
+                    autodocodec-yaml = hackage "0.4.0.3" "sha256-uMiorgI9FRt2YxgUIB4R+tpMkFyauinCl2xydyPwoB8=";
+
+                    aeson = hackage "2.3.1.0" "sha256-vWVNPb/kzXR92XmS8/TwfXWfhhhASjx6nRhcWj1aMmg=";
+                    autodocodec = hackage "0.6.0.0" "sha256-sE9+yKdJXIUAdJP/J1yrYS3d5fj7ESMYQAFLu8liXe8=";
+                    opt-env-conf = hackage "0.15.0.2" "sha256-uWUSQxspveZMrv2DaBnoXvFtBphvpzQ5p0eyNxHPOKA=";
+                    sydtest = hackage "0.23.0.0" "sha256-bfpNiMF62Vj4pK2AKJ/yOquDP/bpI8Pjn/mSQVHJQXk=";
 
                     dependent-hashmap = source.root inputs.dependent-hashmap;
 
@@ -133,6 +144,7 @@
                   enable = true;
                   latest.compiler = "ghc9141"; # use 9.14 for bounds testing
                   lower.enable = true;
+                  lower.compiler = "ghc9141"; # ditto for lower bounds testing
 
                   forceBounds.base.upper = "4.23"; # default doesn't work idk exactly why
 
@@ -356,7 +368,6 @@
           # which evaluates cabal2nix for all systems and fails cross-platform.
           builtins.removeAttrs hixFlake [
             "debug"
-            "legacyPackages"
             "lib"
             "overrides"
           ]

@@ -1,0 +1,59 @@
+name: "Dev build"
+on:
+  push:
+    branches:
+      - "master"
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64-linux
+          - os: ubuntu-24.04-arm
+            arch: aarch64-linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: wimpysworld/nothing-but-nix@main
+      - uses: DeterminateSystems/nix-installer-action@main
+        name: Install Nix
+        with:
+          extra-conf: |
+            trusted-public-keys = cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://cache.garnix.io?priority=41 https://cache.nixos.org/
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: cachix/cachix-action@v17
+        with:
+          name: elara
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: Build elara
+        run: nix build .#elara -L
+      - name: Rename binary
+        run: cp result/bin/elara elara-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: elara-${{ matrix.arch }}
+          path: elara-${{ matrix.arch }}
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Publish rolling dev-build release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-build
+          name: "Dev build (rolling)"
+          prerelease: true
+          body: |
+            Automatically rebuilt from the latest `master` commit (${{ github.sha }}).
+            These are dynamically-linked binaries, built directly on each target
+            platform - not static executables.
+          files: artifacts/*

@@ -191,49 +191,49 @@ library
   build-tool-depends:
       alex:alex
   build-depends:
-      aeson
-    , algebraic-graphs
-    , array
-    , base ==4.*
-    , binary
-    , bytestring
-    , co-log-core
-    , co-log-effectful
-    , containers
-    , dependent-hashmap
-    , dependent-sum-template
-    , diagnose
-    , directory
-    , effectful >=2.6.1.0
-    , effectful-core
-    , effectful-plugin
-    , effectful-th
-    , filepath
-    , generic-optics
-    , h2jvm
-    , hashable
-    , kind-generics-th
-    , lens
-    , lifted-base
-    , matrix
-    , megaparsec
-    , mtl
-    , optics
-    , parser-combinators
-    , pretty-simple
-    , prettyprinter
-    , prettyprinter-ansi-terminal
-    , process
-    , relude
-    , safe-exceptions
-    , some
-    , stringsearch
-    , template-haskell
-    , terminal-size
-    , text-metrics
-    , time
-    , utf8-string
-    , witch
+      aeson >=2.3.0.0 && <2.4
+    , algebraic-graphs ==0.8.*
+    , array >=0.5.8.0 && <0.6
+    , base >=4.22.0.0 && <4.23
+    , binary >=0.8.9.3 && <0.9
+    , bytestring >=0.12.2.0 && <0.13
+    , co-log-core >=0.3.2.6 && <0.4
+    , co-log-effectful >=0.0.0.1 && <0.1
+    , containers ==0.8.*
+    , dependent-hashmap >=0.1.0.0 && <0.2
+    , dependent-sum-template >=0.2.0.2 && <0.3
+    , diagnose >=2.0.0 && <2.6
+    , directory >=1.3.10.0 && <1.4
+    , effectful >=2.6.1.0 && <2.7
+    , effectful-core >=2.6.1.0 && <2.7
+    , effectful-plugin >=2.0.0.1 && <2.1
+    , effectful-th >=1.0.0.3 && <1.1
+    , filepath >=1.5.4.0 && <1.6
+    , generic-optics >=2.3.0.0 && <2.4
+    , h2jvm >=0.1.0.0 && <0.2
+    , hashable >=1.5.1.0 && <1.6
+    , kind-generics-th >=0.2.3.3 && <0.3
+    , lens >=5.3.6 && <5.4
+    , lifted-base >=0.2.3.2 && <0.3
+    , matrix >=0.3.6.2 && <0.4
+    , megaparsec >=9.7.0 && <9.8
+    , mtl >=2.3.1 && <2.4
+    , optics >=0.4.2.1 && <0.5
+    , parser-combinators >=1.3.0 && <1.4
+    , pretty-simple >=4.1.0.0 && <4.2
+    , prettyprinter >=1.7.1 && <1.8
+    , prettyprinter-ansi-terminal >=1.1.2 && <1.2
+    , process >=1.6.26.1 && <1.7
+    , relude >=1.2.2.2 && <1.3
+    , safe-exceptions >=0.1.7.4 && <0.2
+    , some >=1.0.6 && <1.1
+    , stringsearch >=0.3.6.6 && <0.4
+    , template-haskell >=2.24.0.0 && <2.25
+    , terminal-size >=0.3.0 && <0.4
+    , text-metrics >=0.3.3 && <0.4
+    , time ==1.15.*
+    , utf8-string >=1.0.1.1 && <1.1
+    , witch >=1.3.1.0 && <1.4
   mixins:
       base hiding (Prelude)
   default-language: GHC2024
@@ -259,51 +259,51 @@ executable elara
       PartialTypeSignatures
   ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
-    , algebraic-graphs
-    , array
-    , autodocodec
-    , base ==4.*
-    , binary
-    , bytestring
-    , co-log-core
-    , co-log-effectful
-    , containers
-    , dependent-hashmap
-    , dependent-sum-template
-    , diagnose
-    , directory
-    , effectful >=2.6.1.0
-    , effectful-core
-    , effectful-plugin
-    , effectful-th
+      aeson >=2.3.0.0 && <2.4
+    , algebraic-graphs ==0.8.*
+    , array >=0.5.8.0 && <0.6
+    , autodocodec >=0.6.0.0 && <0.7
+    , base >=4.22.0.0 && <4.23
+    , binary >=0.8.9.3 && <0.9
+    , bytestring >=0.12.2.0 && <0.13
+    , co-log-core >=0.3.2.6 && <0.4
+    , co-log-effectful >=0.0.0.1 && <0.1
+    , containers ==0.8.*
+    , dependent-hashmap >=0.1.0.0 && <0.2
+    , dependent-sum-template >=0.2.0.2 && <0.3
+    , diagnose >=2.0.0 && <2.6
+    , directory >=1.3.10.0 && <1.4
+    , effectful >=2.6.1.0 && <2.7
+    , effectful-core >=2.6.1.0 && <2.7
+    , effectful-plugin >=2.0.0.1 && <2.1
+    , effectful-th >=1.0.0.3 && <1.1
     , elara
-    , filepath
-    , generic-optics
-    , h2jvm
-    , hashable
-    , kind-generics-th
-    , lens
-    , lifted-base
-    , matrix
-    , megaparsec
-    , mtl
-    , opt-env-conf
-    , optics
-    , parser-combinators
-    , pretty-simple
-    , prettyprinter
-    , prettyprinter-ansi-terminal
-    , process
-    , relude
-    , safe-exceptions
-    , some
-    , stringsearch
-    , template-haskell
-    , terminal-size
-    , text-metrics
-    , time
-    , utf8-string
+    , filepath >=1.5.4.0 && <1.6
+    , generic-optics >=2.3.0.0 && <2.4
+    , h2jvm >=0.1.0.0 && <0.2
+    , hashable >=1.5.1.0 && <1.6
+    , kind-generics-th >=0.2.3.3 && <0.3
+    , lens >=5.3.6 && <5.4
+    , lifted-base >=0.2.3.2 && <0.3
+    , matrix >=0.3.6.2 && <0.4
+    , megaparsec >=9.7.0 && <9.8
+    , mtl >=2.3.1 && <2.4
+    , opt-env-conf >=0.15.0.0 && <0.16
+    , optics >=0.4.2.1 && <0.5
+    , parser-combinators >=1.3.0 && <1.4
+    , pretty-simple >=4.1.0.0 && <4.2
+    , prettyprinter >=1.7.1 && <1.8
+    , prettyprinter-ansi-terminal >=1.1.2 && <1.2
+    , process >=1.6.26.1 && <1.7
+    , relude >=1.2.2.2 && <1.3
+    , safe-exceptions >=0.1.7.4 && <0.2
+    , some >=1.0.6 && <1.1
+    , stringsearch >=0.3.6.6 && <0.4
+    , template-haskell >=2.24.0.0 && <2.25
+    , terminal-size >=0.3.0 && <0.4
+    , text-metrics >=0.3.3 && <0.4
+    , time ==1.15.*
+    , utf8-string >=1.0.1.1 && <1.1
   mixins:
       base hiding (Prelude)
   default-language: GHC2024
@@ -353,56 +353,56 @@ test-suite elara-test
       QuasiQuotes
   ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      HUnit
-    , QuickCheck
-    , aeson
-    , algebraic-graphs
-    , array
-    , base ==4.*
-    , binary
-    , bytestring
-    , co-log-core
-    , co-log-effectful
-    , containers
-    , dependent-hashmap
-    , dependent-sum-template
-    , diagnose
-    , directory
-    , effectful >=2.6.1.0
-    , effectful-core
-    , effectful-plugin
-    , effectful-th
+      HUnit >=1.6.0.0 && <1.7
+    , QuickCheck >=2.15.0.1 && <2.16
+    , aeson >=2.3.0.0 && <2.4
+    , algebraic-graphs ==0.8.*
+    , array >=0.5.8.0 && <0.6
+    , base >=4.22.0.0 && <4.23
+    , binary >=0.8.9.3 && <0.9
+    , bytestring >=0.12.2.0 && <0.13
+    , co-log-core >=0.3.2.6 && <0.4
+    , co-log-effectful >=0.0.0.1 && <0.1
+    , containers ==0.8.*
+    , dependent-hashmap >=0.1.0.0 && <0.2
+    , dependent-sum-template >=0.2.0.2 && <0.3
+    , diagnose >=2.0.0 && <2.6
+    , directory >=1.3.10.0 && <1.4
+    , effectful >=2.6.1.0 && <2.7
+    , effectful-core >=2.6.1.0 && <2.7
+    , effectful-plugin >=2.0.0.1 && <2.1
+    , effectful-th >=1.0.0.3 && <1.1
     , elara
-    , filepath
-    , generic-optics
-    , h2jvm
-    , hashable
-    , hedgehog
-    , hspec-megaparsec
-    , kind-generics-th
-    , lens
-    , lifted-base
-    , matrix
-    , megaparsec
-    , mtl
-    , neat-interpolation
-    , optics
-    , parser-combinators
-    , pretty-simple
-    , prettyprinter
-    , prettyprinter-ansi-terminal
-    , process
-    , relude
-    , safe-exceptions
-    , some
-    , stringsearch
-    , sydtest
-    , sydtest-hedgehog
-    , template-haskell
-    , terminal-size
-    , text-metrics
-    , time
-    , utf8-string
+    , filepath >=1.5.4.0 && <1.6
+    , generic-optics >=2.3.0.0 && <2.4
+    , h2jvm >=0.1.0.0 && <0.2
+    , hashable >=1.5.1.0 && <1.6
+    , hedgehog ==1.7.*
+    , hspec-megaparsec >=2.2.1 && <2.3
+    , kind-generics-th >=0.2.3.3 && <0.3
+    , lens >=5.3.6 && <5.4
+    , lifted-base >=0.2.3.2 && <0.3
+    , matrix >=0.3.6.2 && <0.4
+    , megaparsec >=9.7.0 && <9.8
+    , mtl >=2.3.1 && <2.4
+    , neat-interpolation >=0.5.1.4 && <0.6
+    , optics >=0.4.2.1 && <0.5
+    , parser-combinators >=1.3.0 && <1.4
+    , pretty-simple >=4.1.0.0 && <4.2
+    , prettyprinter >=1.7.1 && <1.8
+    , prettyprinter-ansi-terminal >=1.1.2 && <1.2
+    , process >=1.6.26.1 && <1.7
+    , relude >=1.2.2.2 && <1.3
+    , safe-exceptions >=0.1.7.4 && <0.2
+    , some >=1.0.6 && <1.1
+    , stringsearch >=0.3.6.6 && <0.4
+    , sydtest >=0.23.0.0 && <0.29
+    , sydtest-hedgehog >=0.4.0.0 && <0.5
+    , template-haskell >=2.24.0.0 && <2.25
+    , terminal-size >=0.3.0 && <0.4
+    , text-metrics >=0.3.3 && <0.4
+    , time ==1.15.*
+    , utf8-string >=1.0.1.1 && <1.1
   mixins:
       base hiding (Prelude)
   default-language: GHC2024
