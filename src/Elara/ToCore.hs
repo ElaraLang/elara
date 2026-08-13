@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeAbstractions #-}
+
 -- | Converts typed AST to Core
 module Elara.ToCore (runGetCoreModuleQuery, runGetDataConQuery, runGetTyConQuery) where
 

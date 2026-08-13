@@ -4,6 +4,7 @@
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeAbstractions #-}
 
 {- HLINT ignore "Use fewer imports" -}
 

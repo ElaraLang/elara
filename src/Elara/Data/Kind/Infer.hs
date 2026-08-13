@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeAbstractions #-}
 
 {- | Performs kind inference on a type.
 Algorithm inspired by https://gilmi.me/blog/post/2023/09/30/kind-inference

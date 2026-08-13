@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE TypeAbstractions #-}
 
 module Elara.TypeInfer (
     runTypeOfQuery,

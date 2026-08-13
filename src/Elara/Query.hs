@@ -1,6 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeAbstractions #-}
 {-# LANGUAGE TypeData #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}

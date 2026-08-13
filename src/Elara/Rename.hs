@@ -1,5 +1,6 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE TypeAbstractions #-}
 
 {- | Renaming stage of compilation
 This stage handles:
@@ -434,7 +435,7 @@ renameTypeDeclaration _ declarationName' (New.Alias aliasedType) = do
     whenJust isRecursive $ \r -> do
         logDebug
             ( "Detected recursive type alias: "
-                <> pretty (showColored r)
+                <> pretty (showColored r :: Text)
                 <> " at "
                 <> pretty (r ^. sourceRegion)
             )
