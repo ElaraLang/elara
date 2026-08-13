@@ -54,6 +54,4 @@ jobs:
           prerelease: true
           body: |
             Automatically rebuilt from the latest `master` commit (${{ github.sha }}).
-            These are dynamically-linked binaries, built directly on each target
-            platform - not static executables.
           files: artifacts/*
