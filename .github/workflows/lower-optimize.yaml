@@ -1,0 +1,35 @@
+name: Optimize lower bounds
+on: workflow_dispatch
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  lower-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@main
+        name: Install Nix
+        with:
+          extra-conf: |
+            trusted-public-keys = cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://cache.garnix.io?priority=41 https://cache.nixos.org/
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: cachix/cachix-action@v17
+        with:
+          name: elara
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - id: bounds
+        name: Optimize lower bounds
+        run: nix run .#lower -- optimize --output=ga-pr --build-timeout=3600
+      - name: Create pull request
+        if: steps.bounds.outputs.commit-message
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: ${{ steps.bounds.outputs.branch }}
+          commit-message: ${{ steps.bounds.outputs.commit-message }}
+          title: ${{ steps.bounds.outputs.title }}
+          body: ${{ steps.bounds.outputs.body }}
+          committer: ${{ steps.bounds.outputs.committer }}
+          signoff: ${{ steps.bounds.outputs.signoff }}
+          delete-branch: ${{ steps.bounds.outputs.delete-branch }}
