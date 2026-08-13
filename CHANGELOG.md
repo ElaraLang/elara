@@ -479,6 +479,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Fix cabal-only build - ([554e3f0](https://github.com/ElaraLang/elara/commit/554e3f05d889e0a3e7fe993ecdb2d9fcfa0f47c2)) 
 - :arrow_up: Bump to GHC 9.14 with managed dependencies - ([9a9cd09](https://github.com/ElaraLang/elara/commit/9a9cd091b3b1a9ba9eb1417ce7ee8d30d2b56c94)) 
 - :green_heart: Enable managed dependency bounds - ([b0fb4de](https://github.com/ElaraLang/elara/commit/b0fb4de467cc3f04e98a2c8aea51017d146e1ac8)) 
+- :bug: Restore TypeAbstractions/Text fixes lost in a rebase - ([968c8c5](https://github.com/ElaraLang/elara/commit/968c8c5ce37d79e8f2fafd933c9f317f91aca8f8)) 
 
 ### Unfinished
 
