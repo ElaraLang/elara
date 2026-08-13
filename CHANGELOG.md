@@ -293,6 +293,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(type-infer)* Slightly improve error messages and remove some debugging - ([82b9088](https://github.com/ElaraLang/elara/commit/82b908806578232fbf937c3cae9c88754874a5c3)) 
 - *(type-infer)* Significantly improve Kind inference error messages - ([0f210e7](https://github.com/ElaraLang/elara/commit/0f210e7584eff90426ecdcd725081d26487b8276)) 
 - *(type-infer)* :technologist: Significantly improve type error messages - ([49371f5](https://github.com/ElaraLang/elara/commit/49371f5720ccc80c460c4c9c85abc7f74f120978)) 
+- *(type-infer)* :coffin: remove unneeded weird instances - ([3d1f9ff](https://github.com/ElaraLang/elara/commit/3d1f9ffeca3c10f01bd3f84b52854c31893fdbf2)) 
 - :loud_sound: Refactor structured (i.e. potentially nested) logging into its own effect - ([6492cb2](https://github.com/ElaraLang/elara/commit/6492cb266d6d3c2ffa8603fb201a985b221039b3)) 
 - :recycle: Tidy up a lot of the generic AST code, including removing usages of `unsafeCoerce` - ([a58941f](https://github.com/ElaraLang/elara/commit/a58941f10fafe83ee204c9ba89e89cec904c642d)) 
 - :recycle: More tidying - ([b73678b](https://github.com/ElaraLang/elara/commit/b73678b2bca855dbabe0b4338fa41f63a0ac521f)) 
@@ -472,6 +473,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Fix Fourmolu not detecting some test files correctly - ([259f47d](https://github.com/ElaraLang/elara/commit/259f47d32d714ea19ce29347a1f2999761fe3a33)) 
 - Update flake inputs - ([465c27d](https://github.com/ElaraLang/elara/commit/465c27d241fa549a94368a2f4075587d8b928abf)) 
 - Fix cabal-only build - ([554e3f0](https://github.com/ElaraLang/elara/commit/554e3f05d889e0a3e7fe993ecdb2d9fcfa0f47c2)) 
+- :arrow_up: Bump to GHC 9.14 with managed dependencies - ([9a9cd09](https://github.com/ElaraLang/elara/commit/9a9cd091b3b1a9ba9eb1417ce7ee8d30d2b56c94)) 
+- :green_heart: Enable managed dependency bounds - ([b0fb4de](https://github.com/ElaraLang/elara/commit/b0fb4de467cc3f04e98a2c8aea51017d146e1ac8)) 
 
 ### Unfinished
 
