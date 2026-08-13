@@ -15,8 +15,8 @@ jobs:
         name: Install Nix
         with:
           extra-conf: |
-            trusted-public-keys = cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-            substituters = https://cache.garnix.io?priority=41 https://cache.nixos.org/
+            trusted-public-keys = elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://elara.cachix.org https://cache.nixos.org/
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - uses: cachix/cachix-action@v17
         with:
