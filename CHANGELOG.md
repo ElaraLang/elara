@@ -442,6 +442,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Bump GHC to 9.12.3 and update build config - ([abe6d78](https://github.com/ElaraLang/elara/commit/abe6d784829f74d45c02b16aaf90505240900370)) 
 - Tidy - ([be6d873](https://github.com/ElaraLang/elara/commit/be6d8732f4faae91ed7b5b87ef8cbb0f8b3328db)) 
 - Tidy up code - ([947ac74](https://github.com/ElaraLang/elara/commit/947ac749dda78da479adb12330b8e22338e0e6e0)) 
+- Update actions message - ([f176aed](https://github.com/ElaraLang/elara/commit/f176aed84c96db54618d9a77676c0f609bf4d039)) 
 
 ### ◀️ Revert
 
