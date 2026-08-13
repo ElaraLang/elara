@@ -444,6 +444,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Tidy up code - ([947ac74](https://github.com/ElaraLang/elara/commit/947ac749dda78da479adb12330b8e22338e0e6e0)) 
 - Update actions message - ([f176aed](https://github.com/ElaraLang/elara/commit/f176aed84c96db54618d9a77676c0f609bf4d039)) 
 - Remove garnix, add elara cache - ([4810f64](https://github.com/ElaraLang/elara/commit/4810f6491c70f61b3d5af3ec6b8dc6a5bd44589b)) 
+- :sparkles: Add hix bounds-maintenance workflows - ([bc2d228](https://github.com/ElaraLang/elara/commit/bc2d228b8fde700103c2c973b6bcadda24696a0e)) 
+- :green_heart: Use elara cachix cache in bounds workflows - ([e7f7406](https://github.com/ElaraLang/elara/commit/e7f74066eedfe535dbd3cec988e8470b45065500)) 
 
 ### ◀️ Revert
 
