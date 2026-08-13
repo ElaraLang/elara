@@ -443,6 +443,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Tidy - ([be6d873](https://github.com/ElaraLang/elara/commit/be6d8732f4faae91ed7b5b87ef8cbb0f8b3328db)) 
 - Tidy up code - ([947ac74](https://github.com/ElaraLang/elara/commit/947ac749dda78da479adb12330b8e22338e0e6e0)) 
 - Update actions message - ([f176aed](https://github.com/ElaraLang/elara/commit/f176aed84c96db54618d9a77676c0f609bf4d039)) 
+- Remove garnix, add elara cache - ([4810f64](https://github.com/ElaraLang/elara/commit/4810f6491c70f61b3d5af3ec6b8dc6a5bd44589b)) 
 
 ### ◀️ Revert
 
