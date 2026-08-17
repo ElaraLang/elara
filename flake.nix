@@ -79,26 +79,10 @@
                     ...
                   }:
                   {
-                    h2jvm = jailbreak (notest (source.root h2jvm));
+                    h2jvm = notest (source.root h2jvm);
                     unix = enable "os-string";
                     directory = enable "os-string";
                     diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
-                    incipit-base = jailbreak;
-                    incipit-core = jailbreak;
-                    ghc-tcplugins-extra = hackage "0.5" "sha256-mOzdicJevaXZdZS4/RA1hU3CWJXMFwMUfmEH3YxX4Q8=";
-
-                    # many things don't yet work on ghc 9.14 without jailbreakng
-                    kind-generics = jailbreak;
-                    kind-generics-th = jailbreak;
-                    svg-builder = jailbreak;
-                    terminfo = jailbreak;
-                    tasty-hspec = jailbreak;
-                    rebase = jailbreak;
-                    dependent-sum-template = jailbreak;
-                    constraints-extras = jailbreak;
-
-                    # 0.7 in package set breaks against containers 0.8 from ghc 9.14
-                    algebraic-graphs = hackage "0.8" "sha256-lkVkS7WqNMC07MZfJ9aBFWPJTTyg1jbp3BWHOJMnL2I=";
 
                     relude = notest; # doctest fails for some reason
 
@@ -128,25 +112,18 @@
                     some = jailbreak;
                     hie-compat = jailbreak;
                     ghcide = jailbreak;
-                    opentelemetry = jailbreak;
                   };
               in
               {
-                compiler = "ghc9141";
+                compiler = "ghc912";
                 systems = import inputs.systems;
                 compat.enable = false;
                 envs.dev.ghcid.enable = false;
-                # hix's HLS build can't be patched (overrides don't seem to reach transitive deps like cabal-add)
-                # so we disable it and inject a manually-patched HLS in buildInputs below
-                envs.dev.hls.enable = false;
+                envs.dev.hls.enable = true;
 
                 managed = {
                   enable = true;
-                  latest.compiler = "ghc9141"; # use 9.14 for bounds testing
                   lower.enable = true;
-                  lower.compiler = "ghc9141"; # ditto for lower bounds testing
-
-                  forceBounds.base.upper = "4.23"; # default doesn't work idk exactly why
 
                   envs = {
                     solverOverrides = depOverrides;
@@ -171,27 +148,6 @@
                       mdbook-variables
                       d2
                       nixd
-
-                      # lots of hls tests break from nix sandboxing
-                      # let's just disable them all hehe
-                      (
-                        let
-                          rawPkgs = import inputs.nixpkgs { system = config.system; };
-                          hlsPkgs = rawPkgs.haskell.packages.ghc9141.override {
-                            overrides = hfinal: hprev: {
-                              # cabal-add test fails due to nix sandboxing
-                              cabal-add = rawPkgs.haskell.lib.dontCheck hprev.cabal-add;
-                              # ditto
-                              fourmolu = rawPkgs.haskell.lib.dontCheck hprev.fourmolu;
-                              # dependency bounds bad
-                              haskell-language-server = rawPkgs.haskell.lib.dontCheck (
-                                rawPkgs.haskell.lib.doJailbreak hprev.haskell-language-server
-                              );
-                            };
-                          };
-                        in
-                        hlsPkgs.haskell-language-server
-                      )
                     ];
                   };
                 };
