@@ -192,18 +192,18 @@ library
       alex:alex
   build-depends:
       aeson >=2.3.0.0 && <2.4
-    , algebraic-graphs ==0.8.*
+    , algebraic-graphs ==0.7.*
     , array >=0.5.8.0 && <0.6
-    , base >=4.22.0.0 && <4.23
+    , base >=4.21.1.0 && <4.22
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
     , co-log-effectful >=0.0.0.1 && <0.1
-    , containers ==0.8.*
+    , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3
     , diagnose >=2.0.0 && <2.6
-    , directory >=1.3.10.0 && <1.4
+    , directory >=1.3.9.0 && <1.4
     , effectful >=2.6.1.0 && <2.7
     , effectful-core >=2.6.1.0 && <2.7
     , effectful-plugin >=2.0.0.1 && <2.1
@@ -228,10 +228,10 @@ library
     , safe-exceptions >=0.1.7.4 && <0.2
     , some >=1.0.6 && <1.1
     , stringsearch >=0.3.6.6 && <0.4
-    , template-haskell >=2.24.0.0 && <2.25
+    , template-haskell >=2.23.0.0 && <2.24
     , terminal-size >=0.3.0 && <0.4
     , text-metrics >=0.3.3 && <0.4
-    , time ==1.15.*
+    , time ==1.14.*
     , utf8-string >=1.0.1.1 && <1.1
     , witch >=1.3.1.0 && <1.4
   mixins:
@@ -260,19 +260,19 @@ executable elara
   ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson >=2.3.0.0 && <2.4
-    , algebraic-graphs ==0.8.*
+    , algebraic-graphs ==0.7.*
     , array >=0.5.8.0 && <0.6
     , autodocodec >=0.6.0.0 && <0.7
-    , base >=4.22.0.0 && <4.23
+    , base >=4.21.1.0 && <4.22
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
     , co-log-effectful >=0.0.0.1 && <0.1
-    , containers ==0.8.*
+    , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3
     , diagnose >=2.0.0 && <2.6
-    , directory >=1.3.10.0 && <1.4
+    , directory >=1.3.9.0 && <1.4
     , effectful >=2.6.1.0 && <2.7
     , effectful-core >=2.6.1.0 && <2.7
     , effectful-plugin >=2.0.0.1 && <2.1
@@ -299,10 +299,10 @@ executable elara
     , safe-exceptions >=0.1.7.4 && <0.2
     , some >=1.0.6 && <1.1
     , stringsearch >=0.3.6.6 && <0.4
-    , template-haskell >=2.24.0.0 && <2.25
+    , template-haskell >=2.23.0.0 && <2.24
     , terminal-size >=0.3.0 && <0.4
     , text-metrics >=0.3.3 && <0.4
-    , time ==1.15.*
+    , time ==1.14.*
     , utf8-string >=1.0.1.1 && <1.1
   mixins:
       base hiding (Prelude)
@@ -356,18 +356,18 @@ test-suite elara-test
       HUnit >=1.6.0.0 && <1.7
     , QuickCheck >=2.15.0.1 && <2.16
     , aeson >=2.3.0.0 && <2.4
-    , algebraic-graphs ==0.8.*
+    , algebraic-graphs ==0.7.*
     , array >=0.5.8.0 && <0.6
-    , base >=4.22.0.0 && <4.23
+    , base >=4.21.1.0 && <4.22
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
     , co-log-effectful >=0.0.0.1 && <0.1
-    , containers ==0.8.*
+    , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3
     , diagnose >=2.0.0 && <2.6
-    , directory >=1.3.10.0 && <1.4
+    , directory >=1.3.9.0 && <1.4
     , effectful >=2.6.1.0 && <2.7
     , effectful-core >=2.6.1.0 && <2.7
     , effectful-plugin >=2.0.0.1 && <2.1
@@ -377,7 +377,7 @@ test-suite elara-test
     , generic-optics >=2.3.0.0 && <2.4
     , h2jvm >=0.1.0.0 && <0.2
     , hashable >=1.5.1.0 && <1.6
-    , hedgehog ==1.7.*
+    , hedgehog ==1.5.*
     , hspec-megaparsec >=2.2.1 && <2.3
     , kind-generics-th >=0.2.3.3 && <0.3
     , lens >=5.3.6 && <5.4
@@ -398,10 +398,10 @@ test-suite elara-test
     , stringsearch >=0.3.6.6 && <0.4
     , sydtest >=0.23.0.0 && <0.29
     , sydtest-hedgehog >=0.4.0.0 && <0.5
-    , template-haskell >=2.24.0.0 && <2.25
+    , template-haskell >=2.23.0.0 && <2.24
     , terminal-size >=0.3.0 && <0.4
     , text-metrics >=0.3.3 && <0.4
-    , time ==1.15.*
+    , time ==1.14.*
     , utf8-string >=1.0.1.1 && <1.1
   mixins:
       base hiding (Prelude)

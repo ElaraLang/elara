@@ -14,8 +14,8 @@
         upper = "2.4";
       };
       algebraic-graphs = {
-        lower = "0.8";
-        upper = "0.9";
+        lower = "0.7";
+        upper = "0.8";
       };
       array = {
         lower = "0.5.8.0";
@@ -26,8 +26,8 @@
         upper = "0.7";
       };
       base = {
-        lower = "4.22.0.0";
-        upper = "4.23";
+        lower = "4.21.1.0";
+        upper = "4.22";
       };
       binary = {
         lower = "0.8.9.3";
@@ -46,8 +46,8 @@
         upper = "0.1";
       };
       containers = {
-        lower = "0.8";
-        upper = "0.9";
+        lower = "0.7";
+        upper = "0.8";
       };
       dependent-hashmap = {
         lower = "0.1.0.0";
@@ -62,7 +62,7 @@
         upper = "2.6";
       };
       directory = {
-        lower = "1.3.10.0";
+        lower = "1.3.9.0";
         upper = "1.4";
       };
       effectful = {
@@ -102,8 +102,8 @@
         upper = "1.6";
       };
       hedgehog = {
-        lower = "1.7";
-        upper = "1.8";
+        lower = "1.5";
+        upper = "1.6";
       };
       hspec-megaparsec = {
         lower = "2.2.1";
@@ -190,8 +190,8 @@
         upper = "0.5";
       };
       template-haskell = {
-        lower = "2.24.0.0";
-        upper = "2.25";
+        lower = "2.23.0.0";
+        upper = "2.24";
       };
       terminal-size = {
         lower = "0.3.0";
@@ -202,8 +202,8 @@
         upper = "0.4";
       };
       time = {
-        lower = "1.15";
-        upper = "1.16";
+        lower = "1.14";
+        upper = "1.15";
       };
       utf8-string = {
         lower = "1.0.1.1";
@@ -220,19 +220,19 @@
       HUnit = "1.6.2.0";
       QuickCheck = "2.15.0.1";
       aeson = "2.3.1.0";
-      algebraic-graphs = "0.8";
+      algebraic-graphs = "0.7";
       array = "0.5.8.0";
       autodocodec = "0.6.0.0";
-      base = "4.22.0.0";
+      base = "4.21.1.0";
       binary = "0.8.9.3";
       bytestring = "0.12.2.0";
       co-log-core = "0.3.2.7";
       co-log-effectful = "0.0.0.1";
-      containers = "0.8";
+      containers = "0.7";
       dependent-hashmap = "0.1.0.1";
       dependent-sum-template = "0.2.0.2";
       diagnose = "2.5.1";
-      directory = "1.3.10.0";
+      directory = "1.3.9.0";
       effectful = "2.6.1.0";
       effectful-core = "2.6.1.0";
       effectful-plugin = "2.0.0.1";
@@ -241,7 +241,7 @@
       generic-optics = "2.3.0.0";
       h2jvm = "0.1.0.0";
       hashable = "1.5.1.0";
-      hedgehog = "1.7";
+      hedgehog = "1.5";
       hspec-megaparsec = "2.2.1";
       kind-generics-th = "0.2.3.3";
       lens = "5.3.6";
@@ -263,10 +263,10 @@
       stringsearch = "0.3.6.6";
       sydtest = "0.28.0.0";
       sydtest-hedgehog = "0.4.0.0";
-      template-haskell = "2.24.0.0";
+      template-haskell = "2.23.0.0";
       terminal-size = "0.3.4";
       text-metrics = "0.3.3";
-      time = "1.15";
+      time = "1.14";
       utf8-string = "1.0.2";
       witch = "1.3.1.0";
     };
@@ -274,19 +274,19 @@
       HUnit = "1.6.0.0";
       QuickCheck = "2.15.0.1";
       aeson = "2.3.0.0";
-      algebraic-graphs = "0.8";
+      algebraic-graphs = "0.7";
       array = "0.5.8.0";
       autodocodec = "0.6.0.0";
-      base = "4.22.0.0";
+      base = "4.21.1.0";
       binary = "0.8.9.3";
       bytestring = "0.12.2.0";
       co-log-core = "0.3.2.6";
       co-log-effectful = "0.0.0.1";
-      containers = "0.8";
+      containers = "0.7";
       dependent-hashmap = "0.1.0.0";
       dependent-sum-template = "0.2.0.2";
       diagnose = "2.0.0";
-      directory = "1.3.10.0";
+      directory = "1.3.9.0";
       effectful = "2.6.1.0";
       effectful-core = "2.6.1.0";
       effectful-plugin = "2.0.0.1";
@@ -295,7 +295,7 @@
       generic-optics = "2.3.0.0";
       h2jvm = "0.1.0.0";
       hashable = "1.5.1.0";
-      hedgehog = "1.7";
+      hedgehog = "1.5";
       hspec-megaparsec = "2.2.1";
       kind-generics-th = "0.2.3.3";
       lens = "5.3.6";
@@ -317,10 +317,10 @@
       stringsearch = "0.3.6.6";
       sydtest = "0.23.0.0";
       sydtest-hedgehog = "0.4.0.0";
-      template-haskell = "2.24.0.0";
+      template-haskell = "2.23.0.0";
       terminal-size = "0.3.0";
       text-metrics = "0.3.3";
-      time = "1.15";
+      time = "1.14";
       utf8-string = "1.0.1.1";
       witch = "1.3.1.0";
     };
@@ -331,18 +331,18 @@
       HUnit = "1.6.0.0";
       QuickCheck = "2.15.0.1";
       aeson = "2.3.0.0";
-      algebraic-graphs = "0.8";
+      algebraic-graphs = "0.7";
       array = "0.5.8.0";
       autodocodec = "0.6.0.0";
       binary = "0.8.9.3";
       bytestring = "0.12.2.0";
       co-log-core = "0.3.2.6";
       co-log-effectful = "0.0.0.1";
-      containers = "0.8";
+      containers = "0.7";
       dependent-hashmap = "0.1.0.0";
       dependent-sum-template = "0.2.0.2";
       diagnose = "2.0.0";
-      directory = "1.3.10.0";
+      directory = "1.3.9.0";
       effectful = "2.6.1.0";
       effectful-core = "2.6.1.0";
       effectful-plugin = "2.0.0.1";
@@ -350,7 +350,7 @@
       filepath = "1.5.4.0";
       generic-optics = "2.3.0.0";
       hashable = "1.5.1.0";
-      hedgehog = "1.7";
+      hedgehog = "1.5";
       hspec-megaparsec = "2.2.1";
       kind-generics-th = "0.2.3.3";
       lens = "5.3.6";
@@ -374,7 +374,7 @@
       sydtest-hedgehog = "0.4.0.0";
       terminal-size = "0.3.0";
       text-metrics = "0.3.3";
-      time = "1.15";
+      time = "1.14";
       utf8-string = "1.0.1.1";
       witch = "1.3.1.0";
     };
