@@ -7,6 +7,12 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ## [unreleased]
 
+### Build
+
+- *(nix)* Revert to ghc912, drop 9.14 tooling patches - ([f426ff3](https://github.com/ElaraLang/elara/commit/f426ff33d83039fc14e30eabbe8ff96982b50832)) 
+
+## [dev-build](https://github.com/ElaraLang/elara/compare/v0.1.0..dev-build) - 2026-08-13
+
 ### 🚀 Features
 
 - *(annotations)* Thread annotation types through ast - ([9747b6a](https://github.com/ElaraLang/elara/commit/9747b6a3e87fbd298f21d3591accc2f5135d71fa)) 
