@@ -598,11 +598,6 @@
         hash = "179ksdrrhj3m3ishgy62bxxm5dfa2flg58vxbqz8h895006wj46z";
         repo = "hackage.haskell.org";
       };
-      hedgehog = {
-        version = "1.7";
-        hash = "04cjnz4i1qs3v9bza8a3ry1czapwqgxazhywkjzq2rg1544gjmby";
-        repo = "hackage.haskell.org";
-      };
       hsc2hs = {
         version = "0.68.10";
         hash = "0wdg17kicnp6qbgynha216vihx7nnsglvhn5c089dqpa14hg35zw";
