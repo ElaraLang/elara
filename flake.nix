@@ -123,7 +123,9 @@
 
                 managed = {
                   enable = true;
+                  latest.compiler = "ghc912";
                   lower.enable = true;
+                  lower.compiler = "ghc912";
 
                   envs = {
                     solverOverrides = depOverrides;
