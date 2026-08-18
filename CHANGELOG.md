@@ -9,17 +9,17 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ### 🐛 Bug Fixes
 
-- *(nix)* Pin managed latest/lower compiler to ghc912 - ([e646837](https://github.com/ElaraLang/elara/commit/e646837c6c6433be6d3649870c2a708ab3058e4b)) 
-- *(nix)* Strip GHC out of the elara release binary's closure - ([a7dcf89](https://github.com/ElaraLang/elara/commit/a7dcf89375f963e91215893884edb792837dbb98)) 
-- *(nix)* Drop stale hedgehog 1.7 pin from managed lower overrides - ([7fa02b5](https://github.com/ElaraLang/elara/commit/7fa02b58a43b340bab0b1e9a07c9f992a7e30580)) 
+- *(nix)* Pin managed latest/lower compiler to ghc912 - ([ab19502](https://github.com/ElaraLang/elara/commit/ab19502ae263ee86911417f6349498c8a515752f)) 
+- *(nix)* Strip GHC out of the elara release binary's closure - ([a6c8f47](https://github.com/ElaraLang/elara/commit/a6c8f47b992f8f42d1d7663556e16abbeb31d2fd)) 
+- *(nix)* Drop stale hedgehog 1.7 pin from managed lower overrides - ([f259891](https://github.com/ElaraLang/elara/commit/f25989149be40f57c11769bd0bc63782889582e3)) 
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(dev-build)* Nix bundle instead of raw nix build output - ([08100fa](https://github.com/ElaraLang/elara/commit/08100fa8c2de7a9c66b7056b8f4b2dcf30f94560)) 
+- *(dev-build)* Nix bundle instead of raw nix build output - ([f802c41](https://github.com/ElaraLang/elara/commit/f802c41fd038bc1e731eecdc37b0c83e4e49310e)) 
 
 ### Build
 
-- *(nix)* Revert to ghc912, drop 9.14 tooling patches - ([f426ff3](https://github.com/ElaraLang/elara/commit/f426ff33d83039fc14e30eabbe8ff96982b50832)) 
+- *(nix)* Revert to ghc912, drop 9.14 tooling patches - ([e7fbafc](https://github.com/ElaraLang/elara/commit/e7fbafc14fcfe766fdd52b35e414db07eaf1c2df)) 
 
 ## [dev-build](https://github.com/ElaraLang/elara/compare/v0.1.0..dev-build) - 2026-08-13
 
