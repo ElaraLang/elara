@@ -11,6 +11,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(nix)* Pin managed latest/lower compiler to ghc912 - ([e646837](https://github.com/ElaraLang/elara/commit/e646837c6c6433be6d3649870c2a708ab3058e4b)) 
 
+### ⚙️ Miscellaneous Tasks
+
+- *(dev-build)* Nix bundle instead of raw nix build output - ([08100fa](https://github.com/ElaraLang/elara/commit/08100fa8c2de7a9c66b7056b8f4b2dcf30f94560)) 
+
 ### Build
 
 - *(nix)* Revert to ghc912, drop 9.14 tooling patches - ([f426ff3](https://github.com/ElaraLang/elara/commit/f426ff33d83039fc14e30eabbe8ff96982b50832)) 
