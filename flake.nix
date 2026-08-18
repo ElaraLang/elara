@@ -333,6 +333,17 @@
             apps = builtins.mapAttrs (_system: apps: builtins.removeAttrs apps [ "gen-overrides" ]) (
               hixFlake.apps or { }
             );
+            # elara's lib .dyn_hi files reference GHC's own interfaces, dragging
+            # the whole compiler+docs into its closure; strip to just bin/
+            packages = builtins.mapAttrs (
+              system: pkgs:
+              pkgs
+              // {
+                elara-bin =
+                  (import inputs.nixpkgs { inherit system; }).haskell.lib.justStaticExecutables
+                    pkgs.elara;
+              }
+            ) (hixFlake.packages or { });
           };
       }
     );
