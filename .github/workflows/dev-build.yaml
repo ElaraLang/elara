@@ -28,10 +28,10 @@ jobs:
         with:
           name: elara
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - name: Build elara
-        run: nix build .#elara -L
+      - name: Bundle elara
+        run: nix bundle -o elara-bundle ".#packages.${{ matrix.arch }}.elara"
       - name: Rename binary
-        run: cp result/bin/elara elara-${{ matrix.arch }}
+        run: cp elara-bundle elara-${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
           name: elara-${{ matrix.arch }}
