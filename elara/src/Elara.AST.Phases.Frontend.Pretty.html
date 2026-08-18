@@ -25,79 +25,79 @@ Pretty class defined in Elara.Data.Pretty).
 </span><span id="line-25"></span><span>
 </span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.AtLeast2List.html"><span class="hs-identifier">Elara.Data.AtLeast2List</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">AtLeast2List</span></span><span>
 </span><span id="line-27"></span><span>
-</span><span id="line-28"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680191540"><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191540"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191540"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-29"></span><span>    </span><span id="local-6989586621680191646"><span class="annot"><span class="annottext">pretty :: Expr loc Frontend -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680191646"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
+</span><span id="line-28"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680190422"><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190422"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190422"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621680190528"><span class="annot"><span class="annottext">pretty :: Expr loc Frontend -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190528"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span>
 </span><span id="line-30"></span><span>
-</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680191552"><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191552"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191552"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-32"></span><span>    </span><span id="local-6989586621680191653"><span class="annot"><span class="annottext">pretty :: Pattern loc Frontend -&gt; Doc AnsiStyle
+</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680190434"><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190434"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190434"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>    </span><span id="local-6989586621680190535"><span class="annot"><span class="annottext">pretty :: Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pattern loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span>
 </span><span id="line-33"></span><span>
-</span><span id="line-34"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680191555"><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191555"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191555"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-35"></span><span>    </span><span id="local-6989586621680191663"><span class="annot"><span class="annottext">pretty :: Type loc Frontend -&gt; Doc AnsiStyle
+</span><span id="line-34"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680190437"><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190437"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190437"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621680190545"><span class="annot"><span class="annottext">pretty :: Type loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type loc Frontend -&gt; Doc AnsiStyle
 forall {k} loc (p :: k).
 (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) =&gt;
 Type loc p -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Pretty.html#prettyType"><span class="hs-identifier hs-var">prettyType</span></a></span><span>
 </span><span id="line-36"></span><span>
-</span><span id="line-37"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-type">prettyExprRoundTrip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680191665"><span class="annot"><a href="#local-6989586621680191665"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191665"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191665"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-37"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-type">prettyExprRoundTrip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680190547"><span class="annot"><a href="#local-6989586621680190547"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190547"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190547"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
 </span><span id="line-38"></span><span id="prettyExprRoundTrip"><span class="annot"><span class="annottext">prettyExprRoundTrip :: forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var hs-var">prettyExprRoundTrip</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc ExprNode loc
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680191670"><span class="annot"><span class="annottext">ExpressionMeta Frontend loc
-</span><a href="#local-6989586621680191670"><span class="hs-identifier hs-var">_meta</span></a></span></span><span> </span><span id="local-6989586621680191671"><span class="annot"><span class="annottext">Expr' loc Frontend
-</span><a href="#local-6989586621680191671"><span class="hs-identifier hs-var">node</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr' loc Frontend -&gt; Doc AnsiStyle
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190552"><span class="annot"><span class="annottext">ExpressionMeta Frontend loc
+</span><a href="#local-6989586621680190552"><span class="hs-identifier hs-var">_meta</span></a></span></span><span> </span><span id="local-6989586621680190553"><span class="annot"><span class="annottext">Expr' loc Frontend
+</span><a href="#local-6989586621680190553"><span class="hs-identifier hs-var">node</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr' loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr' loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip%27"><span class="hs-identifier hs-var">prettyExprRoundTrip'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr' loc Frontend
-</span><a href="#local-6989586621680191671"><span class="hs-identifier hs-var">node</span></a></span><span>
+</span><a href="#local-6989586621680190553"><span class="hs-identifier hs-var">node</span></a></span><span>
 </span><span id="line-39"></span><span>
-</span><span id="line-40"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip%27"><span class="hs-identifier hs-type">prettyExprRoundTrip'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680191566"><span class="annot"><a href="#local-6989586621680191566"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191566"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191566"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip%27"><span class="hs-identifier hs-type">prettyExprRoundTrip'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680190448"><span class="annot"><a href="#local-6989586621680190448"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190448"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190448"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
 </span><span id="line-41"></span><span id="prettyExprRoundTrip%27"><span class="annot"><span class="annottext">prettyExprRoundTrip' :: forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr' loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip%27"><span class="hs-identifier hs-var hs-var">prettyExprRoundTrip'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EInt"><span class="hs-identifier hs-type">EInt</span></a></span><span> </span><span id="local-6989586621680191773"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680191773"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Doc AnsiStyle
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EInt"><span class="hs-identifier hs-type">EInt</span></a></span><span> </span><span id="local-6989586621680190655"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680190655"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680191773"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EFloat"><span class="hs-identifier hs-type">EFloat</span></a></span><span> </span><span id="local-6989586621680191775"><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680191775"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190655"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EFloat"><span class="hs-identifier hs-type">EFloat</span></a></span><span> </span><span id="local-6989586621680190657"><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680190657"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680191775"><span class="hs-identifier hs-var">f</span></a></span><span>
-</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EString"><span class="hs-identifier hs-type">EString</span></a></span><span> </span><span id="local-6989586621680191777"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680191777"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680190657"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EString"><span class="hs-identifier hs-type">EString</span></a></span><span> </span><span id="local-6989586621680190659"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680190659"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;\&quot;&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680191777"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190659"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;\&quot;&quot;</span></span><span>
-</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EChar"><span class="hs-identifier hs-type">EChar</span></a></span><span> </span><span id="local-6989586621680191779"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680191779"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EChar"><span class="hs-identifier hs-type">EChar</span></a></span><span> </span><span id="local-6989586621680190661"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621680190661"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;'&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall s. IsString s =&gt; Char -&gt; s
 </span><a href="Elara.Data.Pretty.html#escapeChar"><span class="hs-identifier hs-var">escapeChar</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680191779"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190661"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;'&quot;</span></span><span>
@@ -105,29 +105,29 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="Elara.AST.Types.html#EUnit"><span class="hs-identifier hs-var">EUnit</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;()&quot;</span></span><span>
 </span><span id="line-47"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EVar"><span class="hs-identifier hs-type">EVar</span></a></span><span> </span><span class="annot"><span class="annottext">VariableExtension Frontend
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680191782"><span class="annot"><span class="annottext">ValueOccurrence Frontend loc
-</span><a href="#local-6989586621680191782"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall p loc.
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190664"><span class="annot"><span class="annottext">ValueOccurrence Frontend loc
+</span><a href="#local-6989586621680190664"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall p loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ValueOccurrence p loc -&gt; Doc AnsiStyle
 forall {k} (p :: k) loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ValueOccurrence p loc -&gt; Doc AnsiStyle
-</span><a href="Elara.AST.Pretty.html#prettyValueOccurrence"><span class="hs-identifier hs-var">prettyValueOccurrence</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680191566"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ValueOccurrence Frontend loc
-</span><a href="#local-6989586621680191782"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="Elara.AST.Pretty.html#prettyValueOccurrence"><span class="hs-identifier hs-var">prettyValueOccurrence</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680190448"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ValueOccurrence Frontend loc
+</span><a href="#local-6989586621680190664"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-48"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#ECon"><span class="hs-identifier hs-type">ECon</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorNodeExtension Frontend
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680191785"><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
-</span><a href="#local-6989586621680191785"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall p loc.
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190667"><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
+</span><a href="#local-6989586621680190667"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall p loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ConstructorOccurrence p loc -&gt; Doc AnsiStyle
 forall {k} (p :: k) loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ConstructorOccurrence p loc -&gt; Doc AnsiStyle
-</span><a href="Elara.AST.Pretty.html#prettyConstructorOccurrence"><span class="hs-identifier hs-var">prettyConstructorOccurrence</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680191566"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
-</span><a href="#local-6989586621680191785"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><a href="Elara.AST.Pretty.html#prettyConstructorOccurrence"><span class="hs-identifier hs-var">prettyConstructorOccurrence</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680190448"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
+</span><a href="#local-6989586621680190667"><span class="hs-identifier hs-var">c</span></a></span><span>
 </span><span id="line-49"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#ELam"><span class="hs-identifier hs-type">ELam</span></a></span><span> </span><span class="annot"><span class="annottext">LambdaExtension Frontend
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680191788"><span class="annot"><span class="annottext">LambdaBinder Frontend loc
-</span><a href="#local-6989586621680191788"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680191789"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191789"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190670"><span class="annot"><span class="annottext">LambdaBinder Frontend loc
+</span><a href="#local-6989586621680190670"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680190671"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190671"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-50"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -139,7 +139,7 @@ PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">LambdaBinder Frontend loc
 Pattern loc Frontend
-</span><a href="#local-6989586621680191788"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190670"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;-&gt;&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -151,11 +151,11 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191789"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190671"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-51"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EApp"><span class="hs-identifier hs-type">EApp</span></a></span><span> </span><span class="annot"><span class="annottext">ApplicationExtension Frontend
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680191793"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191793"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680191794"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191794"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190675"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190675"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680190676"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190676"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-52"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
@@ -163,22 +163,22 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191793"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190675"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191794"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-53"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#ETyApp"><span class="hs-identifier hs-type">ETyApp</span></a></span><span> </span><span id="local-6989586621680191796"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191796"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680191797"><span class="annot"><span class="annottext">Type loc Frontend
-</span><a href="#local-6989586621680191797"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190676"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#ETyApp"><span class="hs-identifier hs-type">ETyApp</span></a></span><span> </span><span id="local-6989586621680190678"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190678"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680190679"><span class="annot"><span class="annottext">Type loc Frontend
+</span><a href="#local-6989586621680190679"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191796"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190678"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;@&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -190,11 +190,11 @@ forall {k} loc (p :: k).
 (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) =&gt;
 Type loc p -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Pretty.html#prettyType"><span class="hs-identifier hs-var">prettyType</span></a></span><span> </span><span class="annot"><span class="annottext">Type loc Frontend
-</span><a href="#local-6989586621680191797"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-54"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EIf"><span class="hs-identifier hs-type">EIf</span></a></span><span> </span><span id="local-6989586621680191799"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191799"><span class="hs-identifier hs-var">cond</span></a></span></span><span> </span><span id="local-6989586621680191800"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191800"><span class="hs-identifier hs-var">then_</span></a></span></span><span> </span><span id="local-6989586621680191801"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191801"><span class="hs-identifier hs-var">else_</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190679"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EIf"><span class="hs-identifier hs-type">EIf</span></a></span><span> </span><span id="local-6989586621680190681"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190681"><span class="hs-identifier hs-var">cond</span></a></span></span><span> </span><span id="local-6989586621680190682"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190682"><span class="hs-identifier hs-var">then_</span></a></span></span><span> </span><span id="local-6989586621680190683"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190683"><span class="hs-identifier hs-var">else_</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-55"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -205,7 +205,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191799"><span class="hs-identifier hs-var">cond</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190681"><span class="hs-identifier hs-var">cond</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;then&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -215,7 +215,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191800"><span class="hs-identifier hs-var">then_</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190682"><span class="hs-identifier hs-var">then_</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;else&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -225,10 +225,10 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191801"><span class="hs-identifier hs-var">else_</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-56"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EMatch"><span class="hs-identifier hs-type">EMatch</span></a></span><span> </span><span id="local-6989586621680191803"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191803"><span class="hs-identifier hs-var">scrut</span></a></span></span><span> </span><span id="local-6989586621680191804"><span class="annot"><span class="annottext">[(Pattern loc Frontend, Expr loc Frontend)]
-</span><a href="#local-6989586621680191804"><span class="hs-identifier hs-var">alts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190683"><span class="hs-identifier hs-var">else_</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EMatch"><span class="hs-identifier hs-type">EMatch</span></a></span><span> </span><span id="local-6989586621680190685"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190685"><span class="hs-identifier hs-var">scrut</span></a></span></span><span> </span><span id="local-6989586621680190686"><span class="annot"><span class="annottext">[(Pattern loc Frontend, Expr loc Frontend)]
+</span><a href="#local-6989586621680190686"><span class="hs-identifier hs-var">alts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-57"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span>
@@ -241,7 +241,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191803"><span class="hs-identifier hs-var">scrut</span></a></span><span>
+</span><a href="#local-6989586621680190685"><span class="hs-identifier hs-var">scrut</span></a></span><span>
 </span><span id="line-60"></span><span>                </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -279,23 +279,23 @@ forall {loc} {loc}.
  Pretty (LocateNode VarNode loc VarName),
  Pretty (LocateNode VarNode loc LowerAlphaName)) =&gt;
 (Pattern loc Frontend, Expr loc Frontend) -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680191807"><span class="hs-identifier hs-var">prettyAlt</span></a></span><span> </span><span class="annot"><span class="annottext">[(Pattern loc Frontend, Expr loc Frontend)]
-</span><a href="#local-6989586621680191804"><span class="hs-identifier hs-var">alts</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190689"><span class="hs-identifier hs-var">prettyAlt</span></a></span><span> </span><span class="annot"><span class="annottext">[(Pattern loc Frontend, Expr loc Frontend)]
+</span><a href="#local-6989586621680190686"><span class="hs-identifier hs-var">alts</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-63"></span><span>                </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;}&quot;</span></span><span>
 </span><span id="line-64"></span><span>            </span><span class="hs-special">)</span><span>
 </span><span id="line-65"></span><span>      </span><span class="hs-keyword">where</span><span>
-</span><span id="line-66"></span><span>        </span><span id="local-6989586621680191807"><span class="annot"><span class="annottext">prettyAlt :: (Pattern loc Frontend, Expr loc Frontend) -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680191807"><span class="hs-identifier hs-var hs-var">prettyAlt</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680191851"><span class="annot"><span class="annottext">Pattern loc Frontend
-</span><a href="#local-6989586621680191851"><span class="hs-identifier hs-var">pat</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680191852"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191852"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pattern loc Frontend -&gt; Doc AnsiStyle
+</span><span id="line-66"></span><span>        </span><span id="local-6989586621680190689"><span class="annot"><span class="annottext">prettyAlt :: (Pattern loc Frontend, Expr loc Frontend) -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190689"><span class="hs-identifier hs-var hs-var">prettyAlt</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680190733"><span class="annot"><span class="annottext">Pattern loc Frontend
+</span><a href="#local-6989586621680190733"><span class="hs-identifier hs-var">pat</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680190734"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190734"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pattern loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Pattern loc Frontend
-</span><a href="#local-6989586621680191851"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190733"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;-&gt;&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -305,12 +305,12 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191852"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><a href="#local-6989586621680190734"><span class="hs-identifier hs-var">body</span></a></span><span>
 </span><span id="line-67"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#ELetIn"><span class="hs-identifier hs-type">ELetIn</span></a></span><span> </span><span class="annot"><span class="annottext">LetExtension Frontend
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680191854"><span class="annot"><span class="annottext">ValueBinder Frontend loc
-</span><a href="#local-6989586621680191854"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680191855"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191855"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span id="local-6989586621680191856"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191856"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190736"><span class="annot"><span class="annottext">ValueBinder Frontend loc
+</span><a href="#local-6989586621680190736"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680190737"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190737"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span id="local-6989586621680190738"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190738"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-68"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -322,8 +322,8 @@ ValueBinder p loc -&gt; Doc AnsiStyle
 forall {k} (p :: k) loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ValueBinder p loc -&gt; Doc AnsiStyle
-</span><a href="Elara.AST.Pretty.html#prettyValueBinder"><span class="hs-identifier hs-var">prettyValueBinder</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680191566"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ValueBinder Frontend loc
-</span><a href="#local-6989586621680191854"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.AST.Pretty.html#prettyValueBinder"><span class="hs-identifier hs-var">prettyValueBinder</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680190448"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ValueBinder Frontend loc
+</span><a href="#local-6989586621680190736"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;=&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -333,7 +333,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191855"><span class="hs-identifier hs-var">val</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190737"><span class="hs-identifier hs-var">val</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;in&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -343,11 +343,11 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191856"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190738"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-69"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#ELet"><span class="hs-identifier hs-type">ELet</span></a></span><span> </span><span class="annot"><span class="annottext">LetExtension Frontend
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680191859"><span class="annot"><span class="annottext">ValueBinder Frontend loc
-</span><a href="#local-6989586621680191859"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680191860"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191860"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190741"><span class="annot"><span class="annottext">ValueBinder Frontend loc
+</span><a href="#local-6989586621680190741"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680190742"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190742"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-70"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -359,8 +359,8 @@ ValueBinder p loc -&gt; Doc AnsiStyle
 forall {k} (p :: k) loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ValueBinder p loc -&gt; Doc AnsiStyle
-</span><a href="Elara.AST.Pretty.html#prettyValueBinder"><span class="hs-identifier hs-var">prettyValueBinder</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680191566"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ValueBinder Frontend loc
-</span><a href="#local-6989586621680191859"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.AST.Pretty.html#prettyValueBinder"><span class="hs-identifier hs-var">prettyValueBinder</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680190448"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ValueBinder Frontend loc
+</span><a href="#local-6989586621680190741"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;=&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -370,9 +370,9 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191860"><span class="hs-identifier hs-var">val</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-71"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EBlock"><span class="hs-identifier hs-type">EBlock</span></a></span><span> </span><span id="local-6989586621680191862"><span class="annot"><span class="annottext">NonEmpty (Expr loc Frontend)
-</span><a href="#local-6989586621680191862"><span class="hs-identifier hs-var">exprs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190742"><span class="hs-identifier hs-var">val</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EBlock"><span class="hs-identifier hs-type">EBlock</span></a></span><span> </span><span id="local-6989586621680190744"><span class="annot"><span class="annottext">NonEmpty (Expr loc Frontend)
+</span><a href="#local-6989586621680190744"><span class="hs-identifier hs-var">exprs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-72"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;{&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
@@ -392,18 +392,18 @@ Expr loc Frontend -&gt; Doc AnsiStyle
 forall a. NonEmpty a -&gt; [a]
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
 </span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty (Expr loc Frontend)
-</span><a href="#local-6989586621680191862"><span class="hs-identifier hs-var">exprs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190744"><span class="hs-identifier hs-var">exprs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;}&quot;</span></span><span>
-</span><span id="line-73"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EAnn"><span class="hs-identifier hs-type">EAnn</span></a></span><span> </span><span id="local-6989586621680191865"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191865"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680191866"><span class="annot"><span class="annottext">Type loc Frontend
-</span><a href="#local-6989586621680191866"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
+</span><span id="line-73"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EAnn"><span class="hs-identifier hs-type">EAnn</span></a></span><span> </span><span id="local-6989586621680190747"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190747"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680190748"><span class="annot"><span class="annottext">Type loc Frontend
+</span><a href="#local-6989586621680190748"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191865"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190747"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -413,24 +413,24 @@ forall {k} loc (p :: k).
 (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) =&gt;
 Type loc p -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Pretty.html#prettyType"><span class="hs-identifier hs-var">prettyType</span></a></span><span> </span><span class="annot"><span class="annottext">Type loc Frontend
-</span><a href="#local-6989586621680191866"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-74"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EExtension"><span class="hs-identifier hs-type">EExtension</span></a></span><span> </span><span id="local-6989586621680191868"><span class="annot"><span class="annottext">ExpressionExtension Frontend loc
-</span><a href="#local-6989586621680191868"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FrontendExpressionExtension loc -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190748"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-74"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#EExtension"><span class="hs-identifier hs-type">EExtension</span></a></span><span> </span><span id="local-6989586621680190750"><span class="annot"><span class="annottext">ExpressionExtension Frontend loc
+</span><a href="#local-6989586621680190750"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FrontendExpressionExtension loc -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 FrontendExpressionExtension loc -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyFrontendExprExtRoundTrip"><span class="hs-identifier hs-var">prettyFrontendExprExtRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">ExpressionExtension Frontend loc
 FrontendExpressionExtension loc
-</span><a href="#local-6989586621680191868"><span class="hs-identifier hs-var">ext</span></a></span><span>
+</span><a href="#local-6989586621680190750"><span class="hs-identifier hs-var">ext</span></a></span><span>
 </span><span id="line-75"></span><span>
-</span><span id="line-76"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyFrontendExprExtRoundTrip"><span class="hs-identifier hs-type">prettyFrontendExprExtRoundTrip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680191611"><span class="annot"><a href="#local-6989586621680191611"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191611"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpressionExtension"><span class="hs-identifier hs-type">FrontendExpressionExtension</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191611"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-76"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyFrontendExprExtRoundTrip"><span class="hs-identifier hs-type">prettyFrontendExprExtRoundTrip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680190493"><span class="annot"><a href="#local-6989586621680190493"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190493"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendExpressionExtension"><span class="hs-identifier hs-type">FrontendExpressionExtension</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190493"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
 </span><span id="line-77"></span><span id="prettyFrontendExprExtRoundTrip"><span class="annot"><span class="annottext">prettyFrontendExprExtRoundTrip :: forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 FrontendExpressionExtension loc -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyFrontendExprExtRoundTrip"><span class="hs-identifier hs-var hs-var">prettyFrontendExprExtRoundTrip</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-78"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendMultiLam"><span class="hs-identifier hs-type">FrontendMultiLam</span></a></span><span> </span><span id="local-6989586621680191902"><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680191902"><span class="hs-identifier hs-var">pats</span></a></span></span><span> </span><span id="local-6989586621680191903"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191903"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendMultiLam"><span class="hs-identifier hs-type">FrontendMultiLam</span></a></span><span> </span><span id="local-6989586621680190784"><span class="annot"><span class="annottext">[Pattern loc Frontend]
+</span><a href="#local-6989586621680190784"><span class="hs-identifier hs-var">pats</span></a></span></span><span> </span><span id="local-6989586621680190785"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190785"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-79"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -446,7 +446,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680191902"><span class="hs-identifier hs-var">pats</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190784"><span class="hs-identifier hs-var">pats</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;-&gt;&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -458,11 +458,11 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191903"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-80"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendLetWithPatterns"><span class="hs-identifier hs-type">FrontendLetWithPatterns</span></a></span><span> </span><span id="local-6989586621680191905"><span class="annot"><span class="annottext">LocateNode VarNode loc VarName
-</span><a href="#local-6989586621680191905"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680191906"><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680191906"><span class="hs-identifier hs-var">pats</span></a></span></span><span> </span><span id="local-6989586621680191907"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191907"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190785"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendLetWithPatterns"><span class="hs-identifier hs-type">FrontendLetWithPatterns</span></a></span><span> </span><span id="local-6989586621680190787"><span class="annot"><span class="annottext">LocateNode VarNode loc VarName
+</span><a href="#local-6989586621680190787"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680190788"><span class="annot"><span class="annottext">[Pattern loc Frontend]
+</span><a href="#local-6989586621680190788"><span class="hs-identifier hs-var">pats</span></a></span></span><span> </span><span id="local-6989586621680190789"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190789"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-81"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -471,7 +471,7 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">LocateNode VarNode loc VarName -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">LocateNode VarNode loc VarName
-</span><a href="#local-6989586621680191905"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190787"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
 forall ann. [Doc ann] -&gt; Doc ann
@@ -483,7 +483,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680191906"><span class="hs-identifier hs-var">pats</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190788"><span class="hs-identifier hs-var">pats</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;=&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -493,12 +493,12 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191907"><span class="hs-identifier hs-var">val</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-82"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendLetInWithPatterns"><span class="hs-identifier hs-type">FrontendLetInWithPatterns</span></a></span><span> </span><span id="local-6989586621680191909"><span class="annot"><span class="annottext">LocateNode VarNode loc VarName
-</span><a href="#local-6989586621680191909"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680191910"><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680191910"><span class="hs-identifier hs-var">pats</span></a></span></span><span> </span><span id="local-6989586621680191911"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191911"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span id="local-6989586621680191912"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191912"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190789"><span class="hs-identifier hs-var">val</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendLetInWithPatterns"><span class="hs-identifier hs-type">FrontendLetInWithPatterns</span></a></span><span> </span><span id="local-6989586621680190791"><span class="annot"><span class="annottext">LocateNode VarNode loc VarName
+</span><a href="#local-6989586621680190791"><span class="hs-identifier hs-var">binder</span></a></span></span><span> </span><span id="local-6989586621680190792"><span class="annot"><span class="annottext">[Pattern loc Frontend]
+</span><a href="#local-6989586621680190792"><span class="hs-identifier hs-var">pats</span></a></span></span><span> </span><span id="local-6989586621680190793"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190793"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span id="local-6989586621680190794"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190794"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-83"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
@@ -507,7 +507,7 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">LocateNode VarNode loc VarName -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">LocateNode VarNode loc VarName
-</span><a href="#local-6989586621680191909"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190791"><span class="hs-identifier hs-var">binder</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
 forall ann. [Doc ann] -&gt; Doc ann
@@ -519,7 +519,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680191910"><span class="hs-identifier hs-var">pats</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190792"><span class="hs-identifier hs-var">pats</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;=&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -529,7 +529,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191911"><span class="hs-identifier hs-var">val</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190793"><span class="hs-identifier hs-var">val</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;in&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -539,11 +539,11 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191912"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-84"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendBinaryOperator"><span class="hs-identifier hs-type">FrontendBinaryOperator</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#BinaryOperatorExpression"><span class="hs-identifier hs-type">BinaryOperatorExpression</span></a></span><span> </span><span id="local-6989586621680191915"><span class="annot"><span class="annottext">BinaryOperator loc Frontend
-</span><a href="#local-6989586621680191915"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621680191916"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191916"><span class="hs-identifier hs-var">lhs</span></a></span></span><span> </span><span id="local-6989586621680191917"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191917"><span class="hs-identifier hs-var">rhs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190794"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendBinaryOperator"><span class="hs-identifier hs-type">FrontendBinaryOperator</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#BinaryOperatorExpression"><span class="hs-identifier hs-type">BinaryOperatorExpression</span></a></span><span> </span><span id="local-6989586621680190797"><span class="annot"><span class="annottext">BinaryOperator loc Frontend
+</span><a href="#local-6989586621680190797"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621680190798"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190798"><span class="hs-identifier hs-var">lhs</span></a></span></span><span> </span><span id="local-6989586621680190799"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190799"><span class="hs-identifier hs-var">rhs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-85"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
@@ -551,7 +551,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191916"><span class="hs-identifier hs-var">lhs</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190798"><span class="hs-identifier hs-var">lhs</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall loc p.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
@@ -560,16 +560,16 @@ forall {k} loc (p :: k).
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 BinaryOperator loc p -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Pretty.html#prettyBinaryOperator"><span class="hs-identifier hs-var">prettyBinaryOperator</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOperator loc Frontend
-</span><a href="#local-6989586621680191915"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190797"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191917"><span class="hs-identifier hs-var">rhs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-86"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendInParens"><span class="hs-identifier hs-type">FrontendInParens</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#InParensExpression"><span class="hs-identifier hs-type">InParensExpression</span></a></span><span> </span><span id="local-6989586621680191921"><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191921"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190799"><span class="hs-identifier hs-var">rhs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendInParens"><span class="hs-identifier hs-type">FrontendInParens</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#InParensExpression"><span class="hs-identifier hs-type">InParensExpression</span></a></span><span> </span><span id="local-6989586621680190803"><span class="annot"><span class="annottext">Expr loc Frontend
+</span><a href="#local-6989586621680190803"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-87"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr loc Frontend -&gt; Doc AnsiStyle
@@ -577,9 +577,9 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Expr loc Frontend
-</span><a href="#local-6989586621680191921"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-88"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendList"><span class="hs-identifier hs-type">FrontendList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#ListExpression"><span class="hs-identifier hs-type">ListExpression</span></a></span><span> </span><span id="local-6989586621680191924"><span class="annot"><span class="annottext">[Expr loc Frontend]
-</span><a href="#local-6989586621680191924"><span class="hs-identifier hs-var">es</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190803"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-88"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendList"><span class="hs-identifier hs-type">FrontendList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#ListExpression"><span class="hs-identifier hs-type">ListExpression</span></a></span><span> </span><span id="local-6989586621680190806"><span class="annot"><span class="annottext">[Expr loc Frontend]
+</span><a href="#local-6989586621680190806"><span class="hs-identifier hs-var">es</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-89"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;[&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
@@ -596,12 +596,12 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr loc Frontend]
-</span><a href="#local-6989586621680191924"><span class="hs-identifier hs-var">es</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190806"><span class="hs-identifier hs-var">es</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;]&quot;</span></span><span>
-</span><span id="line-90"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendTuple"><span class="hs-identifier hs-type">FrontendTuple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#TupleExpression"><span class="hs-identifier hs-type">TupleExpression</span></a></span><span> </span><span id="local-6989586621680191927"><span class="annot"><span class="annottext">AtLeast2List (Expr loc Frontend)
-</span><a href="#local-6989586621680191927"><span class="hs-identifier hs-var">items</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-90"></span><span>    </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#FrontendTuple"><span class="hs-identifier hs-type">FrontendTuple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Extensions.html#TupleExpression"><span class="hs-identifier hs-type">TupleExpression</span></a></span><span> </span><span id="local-6989586621680190809"><span class="annot"><span class="annottext">AtLeast2List (Expr loc Frontend)
+</span><a href="#local-6989586621680190809"><span class="hs-identifier hs-var">items</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-91"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
@@ -619,32 +619,32 @@ Expr loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyExprRoundTrip"><span class="hs-identifier hs-var">prettyExprRoundTrip</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AtLeast2List (Expr loc Frontend) -&gt; [Expr loc Frontend]
 forall a. AtLeast2List a -&gt; [a]
 </span><a href="Elara.Data.AtLeast2List.html#toList"><span class="hs-identifier hs-var">AtLeast2List.toList</span></a></span><span> </span><span class="annot"><span class="annottext">AtLeast2List (Expr loc Frontend)
-</span><a href="#local-6989586621680191927"><span class="hs-identifier hs-var">items</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190809"><span class="hs-identifier hs-var">items</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-92"></span><span>
-</span><span id="line-93"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-type">prettyPatternRoundTrip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680191929"><span class="annot"><a href="#local-6989586621680191929"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191929"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191929"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-93"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-type">prettyPatternRoundTrip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680190811"><span class="annot"><a href="#local-6989586621680190811"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190811"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190811"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
 </span><span id="line-94"></span><span id="prettyPatternRoundTrip"><span class="annot"><span class="annottext">prettyPatternRoundTrip :: forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var hs-var">prettyPatternRoundTrip</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Types.html#Pattern"><span class="hs-identifier hs-type">Pattern</span></a></span><span> </span><span class="annot"><span class="annottext">NodeLoc PatternNode loc
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680191938"><span class="annot"><span class="annottext">PatternMeta Frontend loc
-</span><a href="#local-6989586621680191938"><span class="hs-identifier hs-var">meta</span></a></span></span><span> </span><span id="local-6989586621680191939"><span class="annot"><span class="annottext">Pattern' loc Frontend
-</span><a href="#local-6989586621680191939"><span class="hs-identifier hs-var">node</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-95"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680191940"><span class="annot"><span class="annottext">pp :: Doc AnsiStyle
-</span><a href="#local-6989586621680191940"><span class="hs-identifier hs-var hs-var">pp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pattern' loc Frontend -&gt; Doc AnsiStyle
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621680190820"><span class="annot"><span class="annottext">PatternMeta Frontend loc
+</span><a href="#local-6989586621680190820"><span class="hs-identifier hs-var">meta</span></a></span></span><span> </span><span id="local-6989586621680190821"><span class="annot"><span class="annottext">Pattern' loc Frontend
+</span><a href="#local-6989586621680190821"><span class="hs-identifier hs-var">node</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-95"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680190822"><span class="annot"><span class="annottext">pp :: Doc AnsiStyle
+</span><a href="#local-6989586621680190822"><span class="hs-identifier hs-var hs-var">pp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pattern' loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern' loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip%27"><span class="hs-identifier hs-var">prettyPatternRoundTrip'</span></a></span><span> </span><span class="annot"><span class="annottext">Pattern' loc Frontend
-</span><a href="#local-6989586621680191939"><span class="hs-identifier hs-var">node</span></a></span><span>
+</span><a href="#local-6989586621680190821"><span class="hs-identifier hs-var">node</span></a></span><span>
 </span><span id="line-96"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">PatternMeta Frontend loc
-</span><a href="#local-6989586621680191938"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680190820"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-97"></span><span>            </span><span class="annot"><span class="annottext">Maybe (Type loc Frontend)
 PatternMeta Frontend loc
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
-</span><a href="#local-6989586621680191940"><span class="hs-identifier hs-var">pp</span></a></span><span>
-</span><span id="line-98"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680191942"><span class="annot"><span class="annottext">Type loc Frontend
-</span><a href="#local-6989586621680191942"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
-</span><a href="#local-6989586621680191940"><span class="hs-identifier hs-var">pp</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190822"><span class="hs-identifier hs-var">pp</span></a></span><span>
+</span><span id="line-98"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680190824"><span class="annot"><span class="annottext">Type loc Frontend
+</span><a href="#local-6989586621680190824"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680190822"><span class="hs-identifier hs-var">pp</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -654,34 +654,34 @@ forall {k} loc (p :: k).
 (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) =&gt;
 Type loc p -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Pretty.html#prettyType"><span class="hs-identifier hs-var">prettyType</span></a></span><span> </span><span class="annot"><span class="annottext">Type loc Frontend
-</span><a href="#local-6989586621680191942"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680190824"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-99"></span><span>
-</span><span id="line-100"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip%27"><span class="hs-identifier hs-type">prettyPatternRoundTrip'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680191627"><span class="annot"><a href="#local-6989586621680191627"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191627"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Pattern%27"><span class="hs-identifier hs-type">Pattern'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191627"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-100"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip%27"><span class="hs-identifier hs-type">prettyPatternRoundTrip'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680190509"><span class="annot"><a href="#local-6989586621680190509"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190509"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Types.html#Pattern%27"><span class="hs-identifier hs-type">Pattern'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190509"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
 </span><span id="line-101"></span><span id="prettyPatternRoundTrip%27"><span class="annot"><span class="annottext">prettyPatternRoundTrip' :: forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern' loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip%27"><span class="hs-identifier hs-var hs-var">prettyPatternRoundTrip'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-102"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PVar"><span class="hs-identifier hs-type">PVar</span></a></span><span> </span><span id="local-6989586621680191979"><span class="annot"><span class="annottext">ValueBinder Frontend loc
-</span><a href="#local-6989586621680191979"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall p loc.
+</span><span id="line-102"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PVar"><span class="hs-identifier hs-type">PVar</span></a></span><span> </span><span id="local-6989586621680190861"><span class="annot"><span class="annottext">ValueBinder Frontend loc
+</span><a href="#local-6989586621680190861"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall p loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ValueBinder p loc -&gt; Doc AnsiStyle
 forall {k} (p :: k) loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ValueBinder p loc -&gt; Doc AnsiStyle
-</span><a href="Elara.AST.Pretty.html#prettyValueBinder"><span class="hs-identifier hs-var">prettyValueBinder</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680191627"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ValueBinder Frontend loc
-</span><a href="#local-6989586621680191979"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-103"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PCon"><span class="hs-identifier hs-type">PCon</span></a></span><span> </span><span id="local-6989586621680191981"><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
-</span><a href="#local-6989586621680191981"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall p loc.
+</span><a href="Elara.AST.Pretty.html#prettyValueBinder"><span class="hs-identifier hs-var">prettyValueBinder</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680190509"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ValueBinder Frontend loc
+</span><a href="#local-6989586621680190861"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-103"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PCon"><span class="hs-identifier hs-type">PCon</span></a></span><span> </span><span id="local-6989586621680190863"><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
+</span><a href="#local-6989586621680190863"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall p loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ConstructorOccurrence p loc -&gt; Doc AnsiStyle
 forall {k} (p :: k) loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ConstructorOccurrence p loc -&gt; Doc AnsiStyle
-</span><a href="Elara.AST.Pretty.html#prettyConstructorOccurrence"><span class="hs-identifier hs-var">prettyConstructorOccurrence</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680191627"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
-</span><a href="#local-6989586621680191981"><span class="hs-identifier hs-var">c</span></a></span><span>
-</span><span id="line-104"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PCon"><span class="hs-identifier hs-type">PCon</span></a></span><span> </span><span id="local-6989586621680191982"><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
-</span><a href="#local-6989586621680191982"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680191983"><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680191983"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.AST.Pretty.html#prettyConstructorOccurrence"><span class="hs-identifier hs-var">prettyConstructorOccurrence</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680190509"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
+</span><a href="#local-6989586621680190863"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-104"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PCon"><span class="hs-identifier hs-type">PCon</span></a></span><span> </span><span id="local-6989586621680190864"><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
+</span><a href="#local-6989586621680190864"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680190865"><span class="annot"><span class="annottext">[Pattern loc Frontend]
+</span><a href="#local-6989586621680190865"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall p loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
@@ -689,8 +689,8 @@ ConstructorOccurrence p loc -&gt; Doc AnsiStyle
 forall {k} (p :: k) loc.
 (PrettyPhase p, PrettyPhaseLoc p loc) =&gt;
 ConstructorOccurrence p loc -&gt; Doc AnsiStyle
-</span><a href="Elara.AST.Pretty.html#prettyConstructorOccurrence"><span class="hs-identifier hs-var">prettyConstructorOccurrence</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680191627"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
-</span><a href="#local-6989586621680191982"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.AST.Pretty.html#prettyConstructorOccurrence"><span class="hs-identifier hs-var">prettyConstructorOccurrence</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680190509"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><span class="annottext">ConstructorOccurrence Frontend loc
+</span><a href="#local-6989586621680190864"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
 forall ann. [Doc ann] -&gt; Doc ann
@@ -702,14 +702,14 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680191983"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190865"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-105"></span><span>    </span><span class="annot"><span class="annottext">Pattern' loc Frontend
 </span><a href="Elara.AST.Types.html#PWildcard"><span class="hs-identifier hs-var">PWildcard</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;_&quot;</span></span><span>
-</span><span id="line-106"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PInt"><span class="hs-identifier hs-type">PInt</span></a></span><span> </span><span id="local-6989586621680191986"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680191986"><span class="hs-identifier hs-var">i</span></a></span></span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PInt"><span class="hs-identifier hs-type">PInt</span></a></span><span> </span><span id="local-6989586621680190868"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680190868"><span class="hs-identifier hs-var">i</span></a></span></span><span>
 </span><span id="line-107"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680191986"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+</span><a href="#local-6989586621680190868"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Integer
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -717,16 +717,16 @@ forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680191986"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190868"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-108"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621680191986"><span class="hs-identifier hs-var">i</span></a></span><span>
-</span><span id="line-109"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PFloat"><span class="hs-identifier hs-type">PFloat</span></a></span><span> </span><span id="local-6989586621680191989"><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680191989"><span class="hs-identifier hs-var">f</span></a></span></span><span>
+</span><a href="#local-6989586621680190868"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-109"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PFloat"><span class="hs-identifier hs-type">PFloat</span></a></span><span> </span><span id="local-6989586621680190871"><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680190871"><span class="hs-identifier hs-var">f</span></a></span></span><span>
 </span><span id="line-110"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680191989"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+</span><a href="#local-6989586621680190871"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Double
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -734,54 +734,54 @@ forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Double -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680191989"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190871"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-111"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Double
-</span><a href="#local-6989586621680191989"><span class="hs-identifier hs-var">f</span></a></span><span>
-</span><span id="line-112"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PString"><span class="hs-identifier hs-type">PString</span></a></span><span> </span><span id="local-6989586621680191991"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680191991"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><a href="#local-6989586621680190871"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-112"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PString"><span class="hs-identifier hs-type">PString</span></a></span><span> </span><span id="local-6989586621680190873"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680190873"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;\&quot;&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680191991"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190873"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;\&quot;&quot;</span></span><span>
-</span><span id="line-113"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PChar"><span class="hs-identifier hs-type">PChar</span></a></span><span> </span><span id="local-6989586621680191993"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680191993"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span id="line-113"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PChar"><span class="hs-identifier hs-type">PChar</span></a></span><span> </span><span id="local-6989586621680190875"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621680190875"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;'&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall s. IsString s =&gt; Char -&gt; s
 </span><a href="Elara.Data.Pretty.html#escapeChar"><span class="hs-identifier hs-var">escapeChar</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680191993"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190875"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;'&quot;</span></span><span>
 </span><span id="line-114"></span><span>    </span><span class="annot"><span class="annottext">Pattern' loc Frontend
 </span><a href="Elara.AST.Types.html#PUnit"><span class="hs-identifier hs-var">PUnit</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;()&quot;</span></span><span>
-</span><span id="line-115"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PExtension"><span class="hs-identifier hs-type">PExtension</span></a></span><span> </span><span id="local-6989586621680191996"><span class="annot"><span class="annottext">PatternExtension Frontend loc
-</span><a href="#local-6989586621680191996"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ListTuplePatternExtension loc Frontend -&gt; Doc AnsiStyle
+</span><span id="line-115"></span><span>    </span><span class="annot"><a href="Elara.AST.Types.html#PExtension"><span class="hs-identifier hs-type">PExtension</span></a></span><span> </span><span id="local-6989586621680190878"><span class="annot"><span class="annottext">PatternExtension Frontend loc
+</span><a href="#local-6989586621680190878"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ListTuplePatternExtension loc Frontend -&gt; Doc AnsiStyle
 forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 ListTuplePatternExtension loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyListTuplePatternExtRoundTrip"><span class="hs-identifier hs-var">prettyListTuplePatternExtRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">PatternExtension Frontend loc
 ListTuplePatternExtension loc Frontend
-</span><a href="#local-6989586621680191996"><span class="hs-identifier hs-var">ext</span></a></span><span>
+</span><a href="#local-6989586621680190878"><span class="hs-identifier hs-var">ext</span></a></span><span>
 </span><span id="line-116"></span><span>
-</span><span id="line-117"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyListTuplePatternExtRoundTrip"><span class="hs-identifier hs-type">prettyListTuplePatternExtRoundTrip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680191633"><span class="annot"><a href="#local-6989586621680191633"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191633"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Extensions.html#ListTuplePatternExtension"><span class="hs-identifier hs-type">ListTuplePatternExtension</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680191633"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
+</span><span id="line-117"></span><span class="annot"><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyListTuplePatternExtRoundTrip"><span class="hs-identifier hs-type">prettyListTuplePatternExtRoundTrip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680190515"><span class="annot"><a href="#local-6989586621680190515"><span class="hs-identifier hs-type">loc</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Elara.AST.Pretty.html#PrettyPhaseLoc"><span class="hs-identifier hs-type">PrettyPhaseLoc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190515"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Extensions.html#ListTuplePatternExtension"><span class="hs-identifier hs-type">ListTuplePatternExtension</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680190515"><span class="hs-identifier hs-type">loc</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Phases.Frontend.html#Frontend"><span class="hs-identifier hs-type">Frontend</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">AnsiStyle</span></span><span>
 </span><span id="line-118"></span><span id="prettyListTuplePatternExtRoundTrip"><span class="annot"><span class="annottext">prettyListTuplePatternExtRoundTrip :: forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 ListTuplePatternExtension loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyListTuplePatternExtRoundTrip"><span class="hs-identifier hs-var hs-var">prettyListTuplePatternExtRoundTrip</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-119"></span><span>    </span><span class="annot"><a href="Elara.AST.Extensions.html#ListPattern"><span class="hs-identifier hs-type">ListPattern</span></a></span><span> </span><span id="local-6989586621680192011"><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680192011"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-119"></span><span>    </span><span class="annot"><a href="Elara.AST.Extensions.html#ListPattern"><span class="hs-identifier hs-type">ListPattern</span></a></span><span> </span><span id="local-6989586621680190893"><span class="annot"><span class="annottext">[Pattern loc Frontend]
+</span><a href="#local-6989586621680190893"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-120"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;[&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
@@ -798,12 +798,12 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">[Pattern loc Frontend]
-</span><a href="#local-6989586621680192011"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190893"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;]&quot;</span></span><span>
-</span><span id="line-121"></span><span>    </span><span class="annot"><a href="Elara.AST.Extensions.html#TuplePattern"><span class="hs-identifier hs-type">TuplePattern</span></a></span><span> </span><span id="local-6989586621680192013"><span class="annot"><span class="annottext">NonEmpty (Pattern loc Frontend)
-</span><a href="#local-6989586621680192013"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-121"></span><span>    </span><span class="annot"><a href="Elara.AST.Extensions.html#TuplePattern"><span class="hs-identifier hs-type">TuplePattern</span></a></span><span> </span><span id="local-6989586621680190895"><span class="annot"><span class="annottext">NonEmpty (Pattern loc Frontend)
+</span><a href="#local-6989586621680190895"><span class="hs-identifier hs-var">ps</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-122"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Doc AnsiStyle] -&gt; Doc AnsiStyle
@@ -822,10 +822,10 @@ Pattern loc Frontend -&gt; Doc AnsiStyle
 forall a. NonEmpty a -&gt; [a]
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
 </span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty (Pattern loc Frontend)
-</span><a href="#local-6989586621680192013"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-123"></span><span>    </span><span class="annot"><a href="Elara.AST.Extensions.html#ConsPattern"><span class="hs-identifier hs-type">ConsPattern</span></a></span><span> </span><span id="local-6989586621680192015"><span class="annot"><span class="annottext">Pattern loc Frontend
-</span><a href="#local-6989586621680192015"><span class="hs-identifier hs-var">hd</span></a></span></span><span> </span><span id="local-6989586621680192016"><span class="annot"><span class="annottext">Pattern loc Frontend
-</span><a href="#local-6989586621680192016"><span class="hs-identifier hs-var">tl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680190895"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-123"></span><span>    </span><span class="annot"><a href="Elara.AST.Extensions.html#ConsPattern"><span class="hs-identifier hs-type">ConsPattern</span></a></span><span> </span><span id="local-6989586621680190897"><span class="annot"><span class="annottext">Pattern loc Frontend
+</span><a href="#local-6989586621680190897"><span class="hs-identifier hs-var">hd</span></a></span></span><span> </span><span id="local-6989586621680190898"><span class="annot"><span class="annottext">Pattern loc Frontend
+</span><a href="#local-6989586621680190898"><span class="hs-identifier hs-var">tl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-124"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann
 </span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pattern loc Frontend -&gt; Doc AnsiStyle
@@ -833,7 +833,7 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Pattern loc Frontend
-</span><a href="#local-6989586621680192015"><span class="hs-identifier hs-var">hd</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680190897"><span class="hs-identifier hs-var">hd</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;::&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -843,5 +843,5 @@ forall loc.
 PrettyPhaseLoc Frontend loc =&gt;
 Pattern loc Frontend -&gt; Doc AnsiStyle
 </span><a href="Elara.AST.Phases.Frontend.Pretty.html#prettyPatternRoundTrip"><span class="hs-identifier hs-var">prettyPatternRoundTrip</span></a></span><span> </span><span class="annot"><span class="annottext">Pattern loc Frontend
-</span><a href="#local-6989586621680192016"><span class="hs-identifier hs-var">tl</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680190898"><span class="hs-identifier hs-var">tl</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-125"></span></pre></body></html>

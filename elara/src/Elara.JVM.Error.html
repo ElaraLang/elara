@@ -47,7 +47,7 @@
 </span><span id="line-47"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="MethodTooManyLocals"><span class="annot"><a href="Elara.JVM.Error.html#MethodTooManyLocals"><span class="hs-identifier hs-var">MethodTooManyLocals</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-48"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="MethodTooManyStack"><span class="annot"><a href="Elara.JVM.Error.html#MethodTooManyStack"><span class="hs-identifier hs-var">MethodTooManyStack</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-49"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="H2JVMError"><span class="annot"><a href="Elara.JVM.Error.html#H2JVMError"><span class="hs-identifier hs-var">H2JVMError</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">StackMapError</span></span><span>
-</span><span id="line-50"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680178557"><span id="local-6989586621680178616"><span id="local-6989586621680178620"><span class="annot"><span class="annottext">Int -&gt; JVMLoweringError -&gt; ShowS
+</span><span id="line-50"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680177439"><span id="local-6989586621680177498"><span id="local-6989586621680177502"><span class="annot"><span class="annottext">Int -&gt; JVMLoweringError -&gt; ShowS
 [JVMLoweringError] -&gt; ShowS
 JVMLoweringError -&gt; String
 (Int -&gt; JVMLoweringError -&gt; ShowS)
@@ -64,30 +64,30 @@ $cshowList :: [JVMLoweringError] -&gt; ShowS
 showList :: [JVMLoweringError] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">)</span><span>
 </span><span id="line-51"></span><span>
-</span><span id="line-52"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680178629"><span id="local-6989586621680178633"><span id="local-6989586621680178636"><span id="local-6989586621680178639"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.JVM.Error.html#JVMLoweringError"><span class="hs-identifier hs-type">JVMLoweringError</span></a></span></span></span></span></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680177511"><span id="local-6989586621680177515"><span id="local-6989586621680177518"><span id="local-6989586621680177521"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.JVM.Error.html#JVMLoweringError"><span class="hs-identifier hs-type">JVMLoweringError</span></a></span></span></span></span></span><span>
 </span><span id="line-53"></span><span>
 </span><span id="line-54"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Error.html#JVMLoweringError"><span class="hs-identifier hs-type">JVMLoweringError</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-55"></span><span>    </span><span id="local-6989586621680178730"><span class="annot"><span class="annottext">pretty :: JVMLoweringError -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680178730"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#LambdaBinderNotLocal"><span class="hs-identifier hs-type">LambdaBinderNotLocal</span></a></span><span> </span><span id="local-6989586621680178732"><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680178732"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-55"></span><span>    </span><span id="local-6989586621680177612"><span class="annot"><span class="annottext">pretty :: JVMLoweringError -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177612"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#LambdaBinderNotLocal"><span class="hs-identifier hs-type">LambdaBinderNotLocal</span></a></span><span> </span><span id="local-6989586621680177614"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680177614"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-56"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Lambda binder is not local:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680178732"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-57"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#MoreLambdasThanTypeArgs"><span class="hs-identifier hs-type">MoreLambdasThanTypeArgs</span></a></span><span> </span><span id="local-6989586621680178734"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178734"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680178735"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178735"><span class="hs-identifier hs-var">expected</span></a></span></span><span> </span><span id="local-6989586621680178736"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178736"><span class="hs-identifier hs-var">actual</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177614"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#MoreLambdasThanTypeArgs"><span class="hs-identifier hs-type">MoreLambdasThanTypeArgs</span></a></span><span> </span><span id="local-6989586621680177616"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177616"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680177617"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680177617"><span class="hs-identifier hs-var">expected</span></a></span></span><span> </span><span id="local-6989586621680177618"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680177618"><span class="hs-identifier hs-var">actual</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-58"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Data constructor&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178734"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177616"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;has more lambda abstractions (&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -95,7 +95,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178736"><span class="hs-identifier hs-var">actual</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177618"><span class="hs-identifier hs-var">actual</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;) than type parameters (&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -103,21 +103,21 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178735"><span class="hs-identifier hs-var">expected</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177617"><span class="hs-identifier hs-var">expected</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;)&quot;</span></span><span>
-</span><span id="line-59"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#DataConArityMismatch"><span class="hs-identifier hs-type">DataConArityMismatch</span></a></span><span> </span><span id="local-6989586621680178737"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178737"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680178738"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178738"><span class="hs-identifier hs-var">expected</span></a></span></span><span> </span><span id="local-6989586621680178739"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178739"><span class="hs-identifier hs-var">actual</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#DataConArityMismatch"><span class="hs-identifier hs-type">DataConArityMismatch</span></a></span><span> </span><span id="local-6989586621680177619"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177619"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680177620"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680177620"><span class="hs-identifier hs-var">expected</span></a></span></span><span> </span><span id="local-6989586621680177621"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680177621"><span class="hs-identifier hs-var">actual</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-60"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Data constructor&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178737"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177619"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;expects&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -125,7 +125,7 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178738"><span class="hs-identifier hs-var">expected</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177620"><span class="hs-identifier hs-var">expected</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;arguments, but got&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -133,66 +133,66 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178739"><span class="hs-identifier hs-var">actual</span></a></span><span>
-</span><span id="line-61"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#NotAFunctionalType"><span class="hs-identifier hs-type">NotAFunctionalType</span></a></span><span> </span><span id="local-6989586621680178740"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680178740"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177621"><span class="hs-identifier hs-var">actual</span></a></span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#NotAFunctionalType"><span class="hs-identifier hs-type">NotAFunctionalType</span></a></span><span> </span><span id="local-6989586621680177622"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680177622"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-62"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Expected a functional type, but got:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680178740"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-63"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#UnsupportedType"><span class="hs-identifier hs-type">UnsupportedType</span></a></span><span> </span><span id="local-6989586621680178741"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680178741"><span class="hs-identifier hs-var">app</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177622"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#UnsupportedType"><span class="hs-identifier hs-type">UnsupportedType</span></a></span><span> </span><span id="local-6989586621680177623"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680177623"><span class="hs-identifier hs-var">app</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-64"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Unsupported type application:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680178741"><span class="hs-identifier hs-var">app</span></a></span><span>
-</span><span id="line-65"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#LocalVariableNotFound"><span class="hs-identifier hs-type">LocalVariableNotFound</span></a></span><span> </span><span id="local-6989586621680178742"><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680178742"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177623"><span class="hs-identifier hs-var">app</span></a></span><span>
+</span><span id="line-65"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#LocalVariableNotFound"><span class="hs-identifier hs-type">LocalVariableNotFound</span></a></span><span> </span><span id="local-6989586621680177624"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680177624"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-66"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Local variable not found:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680178742"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-67"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#InvokeStaticLocal"><span class="hs-identifier hs-type">InvokeStaticLocal</span></a></span><span> </span><span id="local-6989586621680178743"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178743"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177624"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#InvokeStaticLocal"><span class="hs-identifier hs-type">InvokeStaticLocal</span></a></span><span> </span><span id="local-6989586621680177625"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177625"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-68"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Cannot invoke static method&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178743"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177625"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;as a local variable&quot;</span></span><span>
-</span><span id="line-69"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#ClassNotFound"><span class="hs-identifier hs-type">ClassNotFound</span></a></span><span> </span><span id="local-6989586621680178744"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178744"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#ClassNotFound"><span class="hs-identifier hs-type">ClassNotFound</span></a></span><span> </span><span id="local-6989586621680177626"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177626"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-70"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Class not found:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178744"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-71"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#MethodNotFound"><span class="hs-identifier hs-type">MethodNotFound</span></a></span><span> </span><span id="local-6989586621680178745"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178745"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680178746"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178746"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680178747"><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680178747"><span class="hs-identifier hs-var">desc</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177626"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#MethodNotFound"><span class="hs-identifier hs-type">MethodNotFound</span></a></span><span> </span><span id="local-6989586621680177627"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177627"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680177628"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177628"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680177629"><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680177629"><span class="hs-identifier hs-var">desc</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-72"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Method not found:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178745"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177627"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -200,23 +200,23 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178746"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177628"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680178747"><span class="hs-identifier hs-var">desc</span></a></span><span>
-</span><span id="line-73"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#FieldNotFound"><span class="hs-identifier hs-type">FieldNotFound</span></a></span><span> </span><span id="local-6989586621680178748"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178748"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680178749"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178749"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680178750"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680178750"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177629"><span class="hs-identifier hs-var">desc</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#FieldNotFound"><span class="hs-identifier hs-type">FieldNotFound</span></a></span><span> </span><span id="local-6989586621680177630"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177630"><span class="hs-identifier hs-var">cls</span></a></span></span><span> </span><span id="local-6989586621680177631"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177631"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621680177632"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680177632"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-74"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Field not found:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178748"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177630"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -224,7 +224,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178749"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177631"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -232,46 +232,46 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680178750"><span class="hs-identifier hs-var">t</span></a></span><span>
-</span><span id="line-75"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#GlobalVarInPattern"><span class="hs-identifier hs-type">GlobalVarInPattern</span></a></span><span> </span><span id="local-6989586621680178751"><span class="annot"><span class="annottext">Qualified Text
-</span><a href="#local-6989586621680178751"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177632"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#GlobalVarInPattern"><span class="hs-identifier hs-type">GlobalVarInPattern</span></a></span><span> </span><span id="local-6989586621680177633"><span class="annot"><span class="annottext">Qualified Text
+</span><a href="#local-6989586621680177633"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-76"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Global variable found in pattern:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Qualified Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Text
-</span><a href="#local-6989586621680178751"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-77"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#UnsupportedLiteral"><span class="hs-identifier hs-type">UnsupportedLiteral</span></a></span><span> </span><span id="local-6989586621680178752"><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621680178752"><span class="hs-identifier hs-var">lit</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177633"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#UnsupportedLiteral"><span class="hs-identifier hs-type">UnsupportedLiteral</span></a></span><span> </span><span id="local-6989586621680177634"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621680177634"><span class="hs-identifier hs-var">lit</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-78"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Unsupported literal type:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
-</span><a href="#local-6989586621680178752"><span class="hs-identifier hs-var">lit</span></a></span><span>
+</span><a href="#local-6989586621680177634"><span class="hs-identifier hs-var">lit</span></a></span><span>
 </span><span id="line-79"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">JVMLoweringError
 </span><a href="Elara.JVM.Error.html#TypeVarInPattern"><span class="hs-identifier hs-var">TypeVarInPattern</span></a></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-80"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Type variable found in pattern (not supported)&quot;</span></span><span>
-</span><span id="line-81"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#OverApplicationOf"><span class="hs-identifier hs-type">OverApplicationOf</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680178753"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178753"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680178754"><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680178754"><span class="hs-identifier hs-var">desc</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680178755"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178755"><span class="hs-identifier hs-var">actual</span></a></span></span><span> </span><span id="local-6989586621680178756"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178756"><span class="hs-identifier hs-var">expected</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-81"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#OverApplicationOf"><span class="hs-identifier hs-type">OverApplicationOf</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680177635"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177635"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680177636"><span class="annot"><span class="annottext">MethodDescriptor
+</span><a href="#local-6989586621680177636"><span class="hs-identifier hs-var">desc</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680177637"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680177637"><span class="hs-identifier hs-var">actual</span></a></span></span><span> </span><span id="local-6989586621680177638"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680177638"><span class="hs-identifier hs-var">expected</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-82"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Over-application of callable&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178753"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177635"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">MethodDescriptor
-</span><a href="#local-6989586621680178754"><span class="hs-identifier hs-var">desc</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177636"><span class="hs-identifier hs-var">desc</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;. Expected&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -279,7 +279,7 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178756"><span class="hs-identifier hs-var">expected</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177638"><span class="hs-identifier hs-var">expected</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;arguments, but got&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -287,53 +287,53 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178755"><span class="hs-identifier hs-var">actual</span></a></span><span>
-</span><span id="line-83"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#UnsupportedExpressionType"><span class="hs-identifier hs-type">UnsupportedExpressionType</span></a></span><span> </span><span id="local-6989586621680178757"><span class="annot"><span class="annottext">CoreExpr
-</span><a href="#local-6989586621680178757"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177637"><span class="hs-identifier hs-var">actual</span></a></span><span>
+</span><span id="line-83"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#UnsupportedExpressionType"><span class="hs-identifier hs-type">UnsupportedExpressionType</span></a></span><span> </span><span id="local-6989586621680177639"><span class="annot"><span class="annottext">CoreExpr
+</span><a href="#local-6989586621680177639"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-84"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Unsupported expression type:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">CoreExpr -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">CoreExpr
-</span><a href="#local-6989586621680178757"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-85"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#AppOfNonFunction"><span class="hs-identifier hs-type">AppOfNonFunction</span></a></span><span> </span><span id="local-6989586621680178758"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178758"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177639"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-85"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#AppOfNonFunction"><span class="hs-identifier hs-type">AppOfNonFunction</span></a></span><span> </span><span id="local-6989586621680177640"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680177640"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-86"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Application of non-function:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680178758"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-87"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#MethodTooManyLocals"><span class="hs-identifier hs-type">MethodTooManyLocals</span></a></span><span> </span><span id="local-6989586621680178759"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178759"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621680177640"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-87"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#MethodTooManyLocals"><span class="hs-identifier hs-type">MethodTooManyLocals</span></a></span><span> </span><span id="local-6989586621680177641"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680177641"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-88"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Method has too many local variables:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178759"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177641"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;. The JVM limit is 65535.&quot;</span></span><span>
-</span><span id="line-89"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#MethodTooManyStack"><span class="hs-identifier hs-type">MethodTooManyStack</span></a></span><span> </span><span id="local-6989586621680178760"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178760"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-89"></span><span>    </span><span class="annot"><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Error.html#MethodTooManyStack"><span class="hs-identifier hs-type">MethodTooManyStack</span></a></span><span> </span><span id="local-6989586621680177642"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680177642"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-90"></span><span>        </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Method has too many stack entries:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621680178760"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177642"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;. The JVM limit is 65535.&quot;</span></span><span>
 </span><span id="line-91"></span><span>
-</span><span id="line-92"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680178764"><span id="local-6989586621680178768"><span id="local-6989586621680178771"><span id="local-6989586621680178775"><span id="local-6989586621680178778"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Error.html#JVMLoweringError"><span class="hs-identifier hs-type">JVMLoweringError</span></a></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-93"></span><span>    </span><span id="local-6989586621680178782"><span class="annot"><span class="annottext">diagnosticMessage :: JVMLoweringError -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680178782"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMessage</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">JVMLoweringError -&gt; Doc AnsiStyle
+</span><span id="line-92"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680177646"><span id="local-6989586621680177650"><span id="local-6989586621680177653"><span id="local-6989586621680177657"><span id="local-6989586621680177660"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Error.html#JVMLoweringError"><span class="hs-identifier hs-type">JVMLoweringError</span></a></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-93"></span><span>    </span><span id="local-6989586621680177664"><span class="annot"><span class="annottext">diagnosticMessage :: JVMLoweringError -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680177664"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMessage</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">JVMLoweringError -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span>
 </span><span id="line-94"></span></pre></body></html>
