@@ -613,11 +613,6 @@
         hash = "0w925cqfynq7yarc7w28q7f7y4r5cf9y9l7xlxzknigiabm8mwlf";
         repo = "hackage.haskell.org";
       };
-      lifted-async = {
-        version = "0.11.0";
-        hash = "0c0njy8k70swqnp16wyrrkd1bxjsf3pxi34hxka1y1ifp3haccap";
-        repo = "hackage.haskell.org";
-      };
       lifted-base = {
         version = "0.2.3.2";
         hash = "10wx30rrmg1gg315r88mv5hr72aw4gm37ddhnhh715q8l59gh21s";
