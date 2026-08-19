@@ -350,21 +350,30 @@
               // {
                 elara-bin = elaraBin;
                 # glibc, not musl -- musl's cross GHC can't build effectful-plugin
-                elara-static = rawPkgs.haskell.lib.appendConfigureFlags elaraBin (
-                  [
-                    "--enable-executable-static"
-                    "--disable-tests"
-                  ]
-                  ++ rawPkgs.lib.optionals rawPkgs.stdenv.hostPlatform.isLinux (
-                    map (p: "--extra-lib-dirs=${p}/lib") [
-                      rawPkgs.glibc.static
-                      (forceStatic rawPkgs.gmp)
-                      (forceStatic rawPkgs.libffi)
-                      (rawPkgs.ncurses.override { enableStatic = true; })
-                      (forceStatic rawPkgs.numactl)
+                elara-static =
+                  (rawPkgs.haskell.lib.appendConfigureFlags elaraBin (
+                    [
+                      "--enable-executable-static"
+                      "--disable-tests"
                     ]
-                  )
-                );
+                    ++ rawPkgs.lib.optionals rawPkgs.stdenv.hostPlatform.isLinux (
+                      map (p: "--extra-lib-dirs=${p}/lib") [
+                        rawPkgs.glibc.static
+                        (forceStatic rawPkgs.gmp)
+                        (forceStatic rawPkgs.libffi)
+                        (rawPkgs.ncurses.override { enableStatic = true; })
+                        (forceStatic rawPkgs.numactl)
+                        (forceStatic rawPkgs.zlib)
+                        (forceStatic rawPkgs.bzip2)
+                        (forceStatic rawPkgs.xz)
+                        (forceStatic rawPkgs.zstd)
+                        (forceStatic rawPkgs.elfutils)
+                      ]
+                    )
+                  )).overrideAttrs
+                    (_: {
+                      doCheck = false;
+                    });
               }
             ) (hixFlake.packages or { });
           };
