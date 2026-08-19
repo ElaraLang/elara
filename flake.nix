@@ -363,15 +363,18 @@
                         (forceStatic rawPkgs.libffi)
                         (rawPkgs.ncurses.override { enableStatic = true; })
                         (forceStatic rawPkgs.numactl)
-                        (forceStatic rawPkgs.zlib)
-                        (forceStatic rawPkgs.bzip2)
-                        (forceStatic rawPkgs.xz)
-                        (forceStatic rawPkgs.zstd)
-                        (forceStatic rawPkgs.elfutils)
                       ]
                     )
-                    ++ rawPkgs.lib.optionals rawPkgs.stdenv.hostPlatform.isLinux (
-                      map (l: "--ghc-option=-optl-l${l}") [
+                    # x86_64's GHC RTS links libdw for backtraces; aarch64's doesn't
+                    ++ rawPkgs.lib.optionals (system == "x86_64-linux") (
+                      map (p: "--extra-lib-dirs=${p}/lib") [
+                        rawPkgs.zlib.static
+                        (rawPkgs.bzip2.override { enableStatic = true; }).out
+                        (rawPkgs.xz.override { enableStatic = true; }).out
+                        (rawPkgs.zstd.override { enableStatic = true; }).out
+                        (forceStatic rawPkgs.elfutils).out
+                      ]
+                      ++ map (l: "--ghc-option=-optl-l${l}") [
                         "elf"
                         "z"
                         "bz2"
