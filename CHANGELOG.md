@@ -18,6 +18,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Explicit -l flags for elfutils' static transitive deps - ([ae2dc2b](https://github.com/ElaraLang/elara/commit/ae2dc2bc8b55e60ff2ed94d901b4bac0cc09b712)) 
 - *(nix)* Correct output selection for static zlib/bzip2/xz/zstd, scope elfutils to x86_64 - ([375fdef](https://github.com/ElaraLang/elara/commit/375fdef59813f902135f8a73275ee1bf7cf9fd76)) 
 - *(nix)* Pass absolute .a paths to linker, avoid -l/-L ordering issue - ([8f07f77](https://github.com/ElaraLang/elara/commit/8f07f779e0bc46ec998d646c67d3c4377bfcec4a)) 
+- *(nix)* Drop lifted-async 0.11.0 pin, conflicts with hedgehog-1.5's <0.11 bound - ([1edee01](https://github.com/ElaraLang/elara/commit/1edee0114eb8022b2f3f43d21f15ac8132396f42)) 
 
 ### 🚜 Refactor
 
