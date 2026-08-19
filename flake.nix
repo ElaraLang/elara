@@ -370,6 +370,15 @@
                         (forceStatic rawPkgs.elfutils)
                       ]
                     )
+                    ++ rawPkgs.lib.optionals rawPkgs.stdenv.hostPlatform.isLinux (
+                      map (l: "--ghc-option=-optl-l${l}") [
+                        "elf"
+                        "z"
+                        "bz2"
+                        "lzma"
+                        "zstd"
+                      ]
+                    )
                   )).overrideAttrs
                     (_: {
                       doCheck = false;
