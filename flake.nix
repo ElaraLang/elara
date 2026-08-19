@@ -337,11 +337,20 @@
             # the whole compiler+docs into its closure; strip to just bin/
             packages = builtins.mapAttrs (
               system: pkgs:
+              let
+                rawPkgs = import inputs.nixpkgs { inherit system; };
+                elaraBin = rawPkgs.haskell.lib.justStaticExecutables pkgs.elara;
+              in
               pkgs
               // {
-                elara-bin =
-                  (import inputs.nixpkgs { inherit system; }).haskell.lib.justStaticExecutables
-                    pkgs.elara;
+                elara-bin = elaraBin;
+                # glibc, not musl -- musl's cross-compiled GHC can't build
+                # effectful-plugin (Plugins require -fno-external-interpreter,
+                # which conflicts with the -fexternal-interpreter musl cross
+                # needs for TH). Just static-link the final executable instead.
+                elara-static = rawPkgs.haskell.lib.appendConfigureFlags elaraBin [
+                  "--enable-executable-static"
+                ];
               }
             ) (hixFlake.packages or { });
           };
