@@ -14,6 +14,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Drop stale hedgehog 1.7 pin from managed lower overrides - ([f259891](https://github.com/ElaraLang/elara/commit/f25989149be40f57c11769bd0bc63782889582e3)) 
 - *(nix)* Supply static glibc/gmp/libffi/ncurses/numactl for elara-static - ([c10c629](https://github.com/ElaraLang/elara/commit/c10c629ac4279ea50b207c1f88b8047466158a9f)) 
 - *(nix)* Disable tests for elara-static, avoids libdw static-link chain - ([3ca8d51](https://github.com/ElaraLang/elara/commit/3ca8d516f5eb537e35758a5a3939c2430c017f0f)) 
+- *(nix)* Disable checkPhase, add elfutils+compression libs for elara-static - ([8abe628](https://github.com/ElaraLang/elara/commit/8abe628ee44119137bd86ba391cbd47f8b44cd43)) 
 
 ### ⚙️ Miscellaneous Tasks
 
