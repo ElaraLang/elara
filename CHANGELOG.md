@@ -16,6 +16,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### ⚙️ Miscellaneous Tasks
 
 - *(dev-build)* Nix bundle instead of raw nix build output - ([f802c41](https://github.com/ElaraLang/elara/commit/f802c41fd038bc1e731eecdc37b0c83e4e49310e)) 
+- *(dev-build)* Try hix's static musl build instead of nix bundle - ([6f8278c](https://github.com/ElaraLang/elara/commit/6f8278c77f19d7384c3e146450cf80d3a4aeb4fd)) 
 
 ### Build
 
