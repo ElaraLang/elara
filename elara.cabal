@@ -228,7 +228,7 @@ library
     , safe-exceptions >=0.1.7.4 && <0.2
     , some >=1.0.6 && <1.1
     , stringsearch >=0.3.6.6 && <0.4
-    , template-haskell >=2.23.0.0 && <2.24
+    , template-haskell >=2.23.0.0 && <2.25
     , terminal-size >=0.3.0 && <0.4
     , text-metrics >=0.3.3 && <0.4
     , time ==1.14.*
@@ -299,7 +299,7 @@ executable elara
     , safe-exceptions >=0.1.7.4 && <0.2
     , some >=1.0.6 && <1.1
     , stringsearch >=0.3.6.6 && <0.4
-    , template-haskell >=2.23.0.0 && <2.24
+    , template-haskell >=2.23.0.0 && <2.25
     , terminal-size >=0.3.0 && <0.4
     , text-metrics >=0.3.3 && <0.4
     , time ==1.14.*
@@ -398,7 +398,7 @@ test-suite elara-test
     , stringsearch >=0.3.6.6 && <0.4
     , sydtest >=0.23.0.0 && <0.29
     , sydtest-hedgehog >=0.4.0.0 && <0.5
-    , template-haskell >=2.23.0.0 && <2.24
+    , template-haskell >=2.23.0.0 && <2.25
     , terminal-size >=0.3.0 && <0.4
     , text-metrics >=0.3.3 && <0.4
     , time ==1.14.*
