@@ -12,6 +12,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Pin managed latest/lower compiler to ghc912 - ([ab19502](https://github.com/ElaraLang/elara/commit/ab19502ae263ee86911417f6349498c8a515752f)) 
 - *(nix)* Strip GHC out of the elara release binary's closure - ([a6c8f47](https://github.com/ElaraLang/elara/commit/a6c8f47b992f8f42d1d7663556e16abbeb31d2fd)) 
 - *(nix)* Drop stale hedgehog 1.7 pin from managed lower overrides - ([f259891](https://github.com/ElaraLang/elara/commit/f25989149be40f57c11769bd0bc63782889582e3)) 
+- *(nix)* Supply static glibc/gmp/libffi/ncurses/numactl for elara-static - ([c10c629](https://github.com/ElaraLang/elara/commit/c10c629ac4279ea50b207c1f88b8047466158a9f)) 
 
 ### ⚙️ Miscellaneous Tasks
 
