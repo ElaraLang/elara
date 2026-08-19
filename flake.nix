@@ -333,24 +333,35 @@
             apps = builtins.mapAttrs (_system: apps: builtins.removeAttrs apps [ "gen-overrides" ]) (
               hixFlake.apps or { }
             );
-            # elara's lib .dyn_hi files reference GHC's own interfaces, dragging
-            # the whole compiler+docs into its closure; strip to just bin/
+            # strip elara's lib output -- its .dyn_hi files drag GHC+docs into the closure
             packages = builtins.mapAttrs (
               system: pkgs:
               let
                 rawPkgs = import inputs.nixpkgs { inherit system; };
                 elaraBin = rawPkgs.haskell.lib.justStaticExecutables pkgs.elara;
+                forceStatic =
+                  pkg:
+                  pkg.overrideAttrs (old: {
+                    dontDisableStatic = true;
+                    configureFlags = (old.configureFlags or [ ]) ++ [ "--enable-static" ];
+                  });
               in
               pkgs
               // {
                 elara-bin = elaraBin;
-                # glibc, not musl -- musl's cross-compiled GHC can't build
-                # effectful-plugin (Plugins require -fno-external-interpreter,
-                # which conflicts with the -fexternal-interpreter musl cross
-                # needs for TH). Just static-link the final executable instead.
-                elara-static = rawPkgs.haskell.lib.appendConfigureFlags elaraBin [
-                  "--enable-executable-static"
-                ];
+                # glibc, not musl -- musl's cross GHC can't build effectful-plugin
+                elara-static = rawPkgs.haskell.lib.appendConfigureFlags elaraBin (
+                  [ "--enable-executable-static" ]
+                  ++ rawPkgs.lib.optionals rawPkgs.stdenv.hostPlatform.isLinux (
+                    map (p: "--extra-lib-dirs=${p}/lib") [
+                      rawPkgs.glibc.static
+                      (forceStatic rawPkgs.gmp)
+                      (forceStatic rawPkgs.libffi)
+                      (rawPkgs.ncurses.override { enableStatic = true; })
+                      (forceStatic rawPkgs.numactl)
+                    ]
+                  )
+                );
               }
             ) (hixFlake.packages or { });
           };
