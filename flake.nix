@@ -367,19 +367,20 @@
                     )
                     # x86_64's GHC RTS links libdw for backtraces; aarch64's doesn't
                     ++ rawPkgs.lib.optionals (system == "x86_64-linux") (
-                      map (p: "--extra-lib-dirs=${p}/lib") [
-                        rawPkgs.zlib.static
-                        (rawPkgs.bzip2.override { enableStatic = true; }).out
-                        (rawPkgs.xz.override { enableStatic = true; }).out
-                        (rawPkgs.zstd.override { enableStatic = true; }).out
-                        (forceStatic rawPkgs.elfutils).out
-                      ]
-                      ++ map (l: "--ghc-option=-optl-l${l}") [
-                        "elf"
-                        "z"
-                        "bz2"
-                        "lzma"
-                        "zstd"
+                      let
+                        zlibStatic = rawPkgs.zlib.static;
+                        bzip2Static = (rawPkgs.bzip2.override { enableStatic = true; }).out;
+                        xzStatic = (rawPkgs.xz.override { enableStatic = true; }).out;
+                        zstdStatic = (rawPkgs.zstd.override { enableStatic = true; }).out;
+                        elfutilsStatic = (forceStatic rawPkgs.elfutils).out;
+                      in
+                      [ "--extra-lib-dirs=${elfutilsStatic}/lib" ]
+                      ++ map (a: "--ghc-option=-optl${a}") [
+                        "${elfutilsStatic}/lib/libelf.a"
+                        "${zlibStatic}/lib/libz.a"
+                        "${bzip2Static}/lib/libbz2.a"
+                        "${xzStatic}/lib/liblzma.a"
+                        "${zstdStatic}/lib/libzstd.a"
                       ]
                     )
                   )).overrideAttrs
