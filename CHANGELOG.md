@@ -19,6 +19,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Correct output selection for static zlib/bzip2/xz/zstd, scope elfutils to x86_64 - ([375fdef](https://github.com/ElaraLang/elara/commit/375fdef59813f902135f8a73275ee1bf7cf9fd76)) 
 - *(nix)* Pass absolute .a paths to linker, avoid -l/-L ordering issue - ([8f07f77](https://github.com/ElaraLang/elara/commit/8f07f779e0bc46ec998d646c67d3c4377bfcec4a)) 
 
+### 🚜 Refactor
+
+- *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
+
 ### ⚙️ Miscellaneous Tasks
 
 - *(dev-build)* Nix bundle instead of raw nix build output - ([f802c41](https://github.com/ElaraLang/elara/commit/f802c41fd038bc1e731eecdc37b0c83e4e49310e)) 
