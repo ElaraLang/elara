@@ -321,9 +321,7 @@
               }
             );
           in
-          # Strip non-standard hix outputs that fail the Nix flake schema
-          # validator when merged by flake-parts, and remove gen-overrides app
-          # which evaluates cabal2nix for all systems and fails cross-platform.
+          # non-standard hix outputs fail flake-parts' schema check; gen-overrides fails cross-platform
           builtins.removeAttrs hixFlake [
             "debug"
             "lib"
@@ -348,11 +346,11 @@
               in
               pkgs
               // {
-                elara-bin = elaraBin;
-                # glibc, not musl -- musl's cross GHC can't build effectful-plugin
-                elara-static =
-                  (rawPkgs.haskell.lib.appendConfigureFlags elaraBin (
-                    [
+                elara-static = elaraBin.overrideAttrs (old: {
+                  doCheck = false;
+                  configureFlags =
+                    (old.configureFlags or [ ])
+                    ++ [
                       "--enable-executable-static"
                       "--disable-tests"
                     ]
@@ -382,11 +380,8 @@
                         "${xzStatic}/lib/liblzma.a"
                         "${zstdStatic}/lib/libzstd.a"
                       ]
-                    )
-                  )).overrideAttrs
-                    (_: {
-                      doCheck = false;
-                    });
+                    );
+                });
               }
             ) (hixFlake.packages or { });
           };
