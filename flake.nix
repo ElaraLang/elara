@@ -351,7 +351,10 @@
                 elara-bin = elaraBin;
                 # glibc, not musl -- musl's cross GHC can't build effectful-plugin
                 elara-static = rawPkgs.haskell.lib.appendConfigureFlags elaraBin (
-                  [ "--enable-executable-static" ]
+                  [
+                    "--enable-executable-static"
+                    "--disable-tests"
+                  ]
                   ++ rawPkgs.lib.optionals rawPkgs.stdenv.hostPlatform.isLinux (
                     map (p: "--extra-lib-dirs=${p}/lib") [
                       rawPkgs.glibc.static
