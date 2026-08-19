@@ -16,6 +16,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Disable tests for elara-static, avoids libdw static-link chain - ([3ca8d51](https://github.com/ElaraLang/elara/commit/3ca8d516f5eb537e35758a5a3939c2430c017f0f)) 
 - *(nix)* Disable checkPhase, add elfutils+compression libs for elara-static - ([8abe628](https://github.com/ElaraLang/elara/commit/8abe628ee44119137bd86ba391cbd47f8b44cd43)) 
 - *(nix)* Explicit -l flags for elfutils' static transitive deps - ([ae2dc2b](https://github.com/ElaraLang/elara/commit/ae2dc2bc8b55e60ff2ed94d901b4bac0cc09b712)) 
+- *(nix)* Correct output selection for static zlib/bzip2/xz/zstd, scope elfutils to x86_64 - ([375fdef](https://github.com/ElaraLang/elara/commit/375fdef59813f902135f8a73275ee1bf7cf9fd76)) 
 
 ### ⚙️ Miscellaneous Tasks
 
