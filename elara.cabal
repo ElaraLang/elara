@@ -194,7 +194,7 @@ library
       aeson >=2.2.3.0 && <2.4
     , algebraic-graphs >=0.0.1 && <0.8
     , array >=0.5.8.0 && <0.6
-    , base >=4.21.1.0 && <4.22
+    , base >=4.21.1.0 && <4.23
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
@@ -263,7 +263,7 @@ executable elara
     , algebraic-graphs >=0.0.1 && <0.8
     , array >=0.5.8.0 && <0.6
     , autodocodec >=0.2.3.0 && <0.7
-    , base >=4.21.1.0 && <4.22
+    , base >=4.21.1.0 && <4.23
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
@@ -358,7 +358,7 @@ test-suite elara-test
     , aeson >=2.2.3.0 && <2.4
     , algebraic-graphs >=0.0.1 && <0.8
     , array >=0.5.8.0 && <0.6
-    , base >=4.21.1.0 && <4.22
+    , base >=4.21.1.0 && <4.23
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
