@@ -24,6 +24,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
 
+### 🎨 Styling
+
+- Nix fmt - ([0668a4e](https://github.com/ElaraLang/elara/commit/0668a4ec22b8fb4b426bb2ab576780e0f905386b)) 
+
 ### ⚙️ Miscellaneous Tasks
 
 - *(dev-build)* Nix bundle instead of raw nix build output - ([f802c41](https://github.com/ElaraLang/elara/commit/f802c41fd038bc1e731eecdc37b0c83e4e49310e)) 
