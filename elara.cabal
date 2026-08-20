@@ -216,7 +216,7 @@ library
     , lens >=5.3.6 && <5.4
     , lifted-base >=0.2.3.2 && <0.3
     , matrix >=0.3.6.2 && <0.4
-    , megaparsec >=9.5.0 && <9.8
+    , megaparsec >=9.5.0 && <9.9
     , mtl >=2.3.1 && <2.4
     , optics >=0.4.2.1 && <0.5
     , parser-combinators >=1.0.0 && <1.4
@@ -286,7 +286,7 @@ executable elara
     , lens >=5.3.6 && <5.4
     , lifted-base >=0.2.3.2 && <0.3
     , matrix >=0.3.6.2 && <0.4
-    , megaparsec >=9.5.0 && <9.8
+    , megaparsec >=9.5.0 && <9.9
     , mtl >=2.3.1 && <2.4
     , opt-env-conf >=0.0.0.0 && <0.16
     , optics >=0.4.2.1 && <0.5
@@ -383,7 +383,7 @@ test-suite elara-test
     , lens >=5.3.6 && <5.4
     , lifted-base >=0.2.3.2 && <0.3
     , matrix >=0.3.6.2 && <0.4
-    , megaparsec >=9.5.0 && <9.8
+    , megaparsec >=9.5.0 && <9.9
     , mtl >=2.3.1 && <2.4
     , neat-interpolation >=0.5.1.4 && <0.6
     , optics >=0.4.2.1 && <0.5
