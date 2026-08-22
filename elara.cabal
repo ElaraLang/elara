@@ -192,7 +192,7 @@ library
       alex:alex
   build-depends:
       aeson >=2.2.3.0 && <2.4
-    , algebraic-graphs >=0.0.1 && <0.8
+    , algebraic-graphs >=0.0.1 && <0.9
     , array >=0.5.8.0 && <0.6
     , base >=4.21.1.0 && <4.22
     , binary >=0.8.9.3 && <0.9
@@ -260,7 +260,7 @@ executable elara
   ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson >=2.2.3.0 && <2.4
-    , algebraic-graphs >=0.0.1 && <0.8
+    , algebraic-graphs >=0.0.1 && <0.9
     , array >=0.5.8.0 && <0.6
     , autodocodec >=0.2.3.0 && <0.7
     , base >=4.21.1.0 && <4.22
@@ -356,7 +356,7 @@ test-suite elara-test
       HUnit >=1.6.0.0 && <1.7
     , QuickCheck >=2.14.3 && <2.16
     , aeson >=2.2.3.0 && <2.4
-    , algebraic-graphs >=0.0.1 && <0.8
+    , algebraic-graphs >=0.0.1 && <0.9
     , array >=0.5.8.0 && <0.6
     , base >=4.21.1.0 && <4.22
     , binary >=0.8.9.3 && <0.9
@@ -377,7 +377,7 @@ test-suite elara-test
     , generic-optics >=2.2.1.0 && <2.4
     , h2jvm >=0.1.0.0 && <0.2
     , hashable >=1.5.1.0 && <1.6
-    , hedgehog ==1.5.*
+    , hedgehog >=1.5 && <1.8
     , hspec-megaparsec >=2.2.1 && <2.3
     , kind-generics-th >=0.2.3.3 && <0.3
     , lens >=5.3.6 && <5.4
@@ -396,7 +396,7 @@ test-suite elara-test
     , safe-exceptions >=0.1.7.4 && <0.2
     , some >=1.0.6 && <1.1
     , stringsearch >=0.3.6.6 && <0.4
-    , sydtest >=0.12.0.0 && <0.29
+    , sydtest >=0.12.0.0 && <0.30
     , sydtest-hedgehog >=0.4.0.0 && <0.5
     , template-haskell >=2.23.0.0 && <2.24
     , terminal-size >=0.3.0 && <0.4
