@@ -326,7 +326,7 @@
     };
   };
   initial = {
-    latest = { };
+    latest = {};
     lower = {
       HUnit = "1.6.0.0";
       QuickCheck = "2.15.0.1";
@@ -754,9 +754,9 @@
     };
   };
   solver = {
-    latest = { };
-    lower = { };
+    latest = {};
+    lower = {};
   };
-  packages = { };
+  packages = {};
   resolving = false;
 }
