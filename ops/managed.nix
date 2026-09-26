@@ -15,7 +15,7 @@
       };
       algebraic-graphs = {
         lower = "0.0.1";
-        upper = "0.8";
+        upper = "0.9";
       };
       array = {
         lower = "0.5.8.0";
@@ -103,7 +103,7 @@
       };
       hedgehog = {
         lower = "1.5";
-        upper = "1.6";
+        upper = "1.8";
       };
       hspec-megaparsec = {
         lower = "2.2.1";
@@ -183,7 +183,7 @@
       };
       sydtest = {
         lower = "0.12.0.0";
-        upper = "0.29";
+        upper = "0.32";
       };
       sydtest-hedgehog = {
         lower = "0.4.0.0";
@@ -219,8 +219,8 @@
     latest = {
       HUnit = "1.6.2.0";
       QuickCheck = "2.15.0.1";
-      aeson = "2.3.1.0";
-      algebraic-graphs = "0.7";
+      aeson = "2.3.2.0";
+      algebraic-graphs = "0.8";
       array = "0.5.8.0";
       autodocodec = "0.6.0.0";
       base = "4.21.1.0";
@@ -241,7 +241,7 @@
       generic-optics = "2.3.0.0";
       h2jvm = "0.1.0.0";
       hashable = "1.5.1.0";
-      hedgehog = "1.5";
+      hedgehog = "1.7";
       hspec-megaparsec = "2.2.1";
       kind-generics-th = "0.2.3.3";
       lens = "5.3.6";
@@ -250,7 +250,7 @@
       megaparsec = "9.7.0";
       mtl = "2.3.1";
       neat-interpolation = "0.5.1.4";
-      opt-env-conf = "0.15.0.2";
+      opt-env-conf = "0.15.0.3";
       optics = "0.4.2.1";
       parser-combinators = "1.3.1";
       pretty-simple = "4.1.4.0";
@@ -261,7 +261,7 @@
       safe-exceptions = "0.1.7.4";
       some = "1.0.6";
       stringsearch = "0.3.6.6";
-      sydtest = "0.28.0.0";
+      sydtest = "0.31.0.0";
       sydtest-hedgehog = "0.4.0.0";
       template-haskell = "2.23.0.0";
       terminal-size = "0.3.4";
@@ -326,7 +326,7 @@
     };
   };
   initial = {
-    latest = { };
+    latest = {};
     lower = {
       HUnit = "1.6.0.0";
       QuickCheck = "2.15.0.1";
@@ -382,8 +382,13 @@
   overrides = {
     latest = {
       aeson = {
-        version = "2.3.1.0";
-        hash = "0s1jb8ymlp0qkmx3qjj03239yxbxy3sg74krv5yp9kg4pwylsrdx";
+        version = "2.3.2.0";
+        hash = "0kd3l4hkgvr9ihrv88mpy2nw02cc287g1zwi9imwj7d8n6ch6rzr";
+        repo = "hackage.haskell.org";
+      };
+      algebraic-graphs = {
+        version = "0.8";
+        hash = "0qig4y9ki1qmvklkdmm07i6wjqqmh7b2fpy6xjsc0d5anm5n8icn";
         repo = "hackage.haskell.org";
       };
       autodocodec = {
@@ -436,16 +441,6 @@
         hash = "1r0yjl4f76zk2x59yh58470w1mxrk1d18ay22zzxzdblafrp7p74";
         repo = "hackage.haskell.org";
       };
-      generic-lens-core = {
-        version = "2.3.0.0";
-        hash = "05im3y27lhjjy6hi0i85rlqsan510fmp63lqfwg18cnlzn0yvf81";
-        repo = "hackage.haskell.org";
-      };
-      generic-optics = {
-        version = "2.3.0.0";
-        hash = "179ksdrrhj3m3ishgy62bxxm5dfa2flg58vxbqz8h895006wj46z";
-        repo = "hackage.haskell.org";
-      };
       genvalidity = {
         version = "1.1.1.0";
         hash = "09xwwzq1kfz37y1z81ddryp8kr84f1l1j5qj6b6qzn4kal4s215z";
@@ -466,9 +461,14 @@
         hash = "0kk7c4y2ymim2k62r5bzmsbqw6m0pr1hxvgf5bnkgy71lfr8pwg9";
         repo = "hackage.haskell.org";
       };
+      hedgehog = {
+        version = "1.7";
+        hash = "04cjnz4i1qs3v9bza8a3ry1czapwqgxazhywkjzq2rg1544gjmby";
+        repo = "hackage.haskell.org";
+      };
       opt-env-conf = {
-        version = "0.15.0.2";
-        hash = "181qrw8kgcj7lwwk99vgk036vwayx0cni0zxmr6fdg993d1i4rdr";
+        version = "0.15.0.3";
+        hash = "1ng0mghf7zxfyaipnfc59xs4758zpkhnv437isbsga2jwfvgqipn";
         repo = "hackage.haskell.org";
       };
       optparse-applicative = {
@@ -497,8 +497,8 @@
         repo = "hackage.haskell.org";
       };
       sydtest = {
-        version = "0.28.0.0";
-        hash = "105frfhkjhmq6ivwyvwfkf5p0jc1b3cwydpqsx8ppy10dmg7dnqa";
+        version = "0.31.0.0";
+        hash = "1dsv2wpyzhagzkq3h52is2j1n18sq5rsc3nvy4mbdvz4ab3fj3gv";
         repo = "hackage.haskell.org";
       };
       sydtest-hedgehog = {
@@ -754,9 +754,9 @@
     };
   };
   solver = {
-    latest = { };
-    lower = { };
+    latest = {};
+    lower = {};
   };
-  packages = { };
+  packages = {};
   resolving = false;
 }
