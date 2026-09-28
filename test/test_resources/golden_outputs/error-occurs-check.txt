@@ -1,0 +1,8 @@
+[error E3012]: Infinite type detected
+     ╭──▶ test/test_resources/golden_inputs/error-occurs-check.elr@5:7-5:14
+     │
+   5 │ let f x = x x
+     •       ┬──────
+     •       ├╸ expected a
+     •       ╰╸ but found a -> b
+─────╯

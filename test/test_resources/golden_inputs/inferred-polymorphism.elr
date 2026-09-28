@@ -1,0 +1,10 @@
+import Prelude
+import Elara.Prim
+import String
+
+let main =
+    let id x = x
+    let a = id 5
+    let b = id "hello"
+    println (toString a) *>
+    println b

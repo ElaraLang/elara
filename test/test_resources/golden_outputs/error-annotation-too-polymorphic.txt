@@ -1,0 +1,10 @@
+[error E3010]: Type mismatch: Int vs #a
+     ╭──▶ test/test_resources/golden_inputs/error-annotation-too-polymorphic.elr@5:13-5:19
+     │
+   5 │ def ident : a -> a
+     •             ┬─────
+     •             ╰╸ expected #a
+   6 │ let ident x = x + 1
+     •           ┬────────
+     •           ╰╸ but found Int
+─────╯

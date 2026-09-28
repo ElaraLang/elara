@@ -1,0 +1,8 @@
+import Prelude
+import Elara.Prim
+import String
+
+def ident : a -> a
+let ident x = x + 1
+
+let main = println (toString (ident 5))

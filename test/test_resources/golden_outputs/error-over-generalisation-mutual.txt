@@ -1,0 +1,11 @@
+[error E3011]: Type mismatch in call to 'String.(++)': String is not compatible with Int
+     ╭──▶ test/test_resources/golden_inputs/error-over-generalisation-mutual.elr@6:7-6:55
+     │
+   6 │ let g y = if y < 0 then f y else (y + 1, y ++ "hello")
+     •       ┬──────────────────────────────────┬─┬──────────
+     •       │                                  │ ╰╸ expected argument 1 to have type String
+     •       │                                  ╰╸ but it has type Int
+     •       ╰╸ expected String but found Int
+     •
+     │ Note: The function 'String.(++)' has type: String -> String -> String
+─────╯

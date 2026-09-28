@@ -1,0 +1,10 @@
+import Prelude
+import Elara.Prim
+import String
+
+let main =
+    let apply g v = g v
+    let a = apply (\z -> z) 1
+    let b = apply (\z -> z) "hi"
+    println (toString a) *>
+    println b

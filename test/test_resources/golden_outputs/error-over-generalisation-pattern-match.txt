@@ -1,0 +1,14 @@
+[error E3011]: Type mismatch in call to 'String.(++)': String is not compatible with Int
+     ╭──▶ test/test_resources/golden_inputs/error-over-generalisation-pattern-match.elr@7:19-7:26
+     │
+   7 │     let y = match wrapped with
+     •                   ┬────── 
+     •                   ╰╸ expected String but found Int
+     •
+   9 │     (y + 1, y ++ "hello")
+     •             ┬ ┬─ 
+     •             │ ╰╸ expected argument 1 to have type String
+     •             ╰╸ but it has type Int
+     •
+     │ Note: The function 'String.(++)' has type: String -> String -> String
+─────╯

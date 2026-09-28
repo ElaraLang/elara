@@ -1,0 +1,11 @@
+[error E3011]: Type mismatch in call to 'String.(++)': String is not compatible with Int
+     ╭──▶ test/test_resources/golden_inputs/error-over-generalisation-closure.elr@7:15-7:18
+     │
+   7 │     (g 1 + 1, g 2 ++ "hello")
+     •               ┬── ┬─ 
+     •               │   ╰╸ expected argument 1 to have type String
+     •               ├╸ but it has type Int
+     •               ╰╸ expected String but found Int
+     •
+     │ Note: The function 'String.(++)' has type: String -> String -> String
+─────╯

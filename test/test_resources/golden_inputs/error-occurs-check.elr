@@ -1,0 +1,7 @@
+import Prelude
+import Elara.Prim
+import String
+
+let f x = x x
+
+let main = println (f 5)

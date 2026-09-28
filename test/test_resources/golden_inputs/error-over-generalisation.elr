@@ -1,0 +1,9 @@
+import Prelude
+import Elara.Prim
+import String
+
+let f x =
+    let y = x
+    (y + 1, y ++ "hello")
+
+let main = println (f 5)

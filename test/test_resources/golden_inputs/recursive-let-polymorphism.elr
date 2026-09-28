@@ -1,0 +1,10 @@
+import Prelude
+import Elara.Prim
+import String
+
+let main =
+    let rec_id a = if False then rec_id a else a
+    let p = rec_id 1
+    let q = rec_id "hi"
+    println (toString p) *>
+    println q

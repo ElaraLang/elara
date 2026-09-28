@@ -1,0 +1,11 @@
+import Prelude
+import Elara.Prim
+import String
+
+let f x =
+    let wrapped = (x, x)
+    let y = match wrapped with
+        (a, b) -> a
+    (y + 1, y ++ "hello")
+
+let main = println (f 5)

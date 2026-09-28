@@ -1,0 +1,8 @@
+import Prelude
+import Elara.Prim
+import String
+
+let f n = if n < 1 then (0, "") else g n
+let g y = if y < 0 then f y else (y + 1, y ++ "hello")
+
+let main = println (f 5)
