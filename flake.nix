@@ -269,9 +269,6 @@
                         "-fdefer-typed-holes"
                         "-fno-show-valid-hole-fits"
                         "-fplugin=Effectful.Plugin"
-                        "-fwrite-ide-info"
-                        "-hiedir=.hie"
-                        "-O0"
                         "-threaded"
                         "-rtsopts"
                       ];

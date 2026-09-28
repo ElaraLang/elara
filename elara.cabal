@@ -187,7 +187,7 @@ library
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -threaded -rtsopts
   build-tool-depends:
       alex:alex
   build-depends:
@@ -257,7 +257,7 @@ executable elara
       DeriveFunctor
       TypeApplications
       PartialTypeSignatures
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson >=2.2.3.0 && <2.4
     , algebraic-graphs >=0.0.1 && <0.8
@@ -351,7 +351,7 @@ test-suite elara-test
       TypeApplications
       PartialTypeSignatures
       QuasiQuotes
-  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -fwrite-ide-info -hiedir=.hie -O0 -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit >=1.6.0.0 && <1.7
     , QuickCheck >=2.14.3 && <2.16

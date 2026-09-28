@@ -20,3 +20,5 @@ package diagnose
 
 package elara
     haddock-options: --source-module="https://github.com/ElaraLang/elara/tree/main/%F" --source-entity="https://github.com/ElaraLang/elara/tree/main/%F#L%L"
+    optimization: False
+    ghc-options: -fdefer-typed-holes -fwrite-ide-info -hiedir=.hie
