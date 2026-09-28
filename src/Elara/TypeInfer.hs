@@ -91,11 +91,11 @@ instance RunPhase Typed where
         r <- runInferEffects $ evalState initialInferState (inferModule shunted)
         pure (fst r)
 
-    getDeclarationByName = genericGetDeclarationByName @Typed getModuleByName
-    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Typed getDeclarationByName
-    getConstructorDeclaration = genericGetConstructorDeclaration @Typed getModuleByName
-    getDeclarationAnnotations = genericGetDeclarationAnnotations @Typed getRequiredDeclarationByName
-    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Typed getDeclarationAnnotations getConstructorDeclaration
+    getDeclarationByName = genericGetDeclarationByName @Typed (Rock.fetch . Elara.Query.ModuleByName @Typed)
+    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Typed (Rock.fetch . Elara.Query.DeclarationByName @Typed)
+    getConstructorDeclaration = genericGetConstructorDeclaration @Typed (Rock.fetch . Elara.Query.ModuleByName @Typed)
+    getDeclarationAnnotations = genericGetDeclarationAnnotations @Typed (Rock.fetch . Elara.Query.RequiredDeclarationByName @Typed)
+    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Typed (Rock.fetch . Elara.Query.DeclarationAnnotations @Typed) (Rock.fetch . Elara.Query.ConstructorDeclaration @Typed) stripTagAndLocation
 
 -- | Run the 'TypeOf' query to get the type of a term or data constructor
 runTypeOfQuery ::

@@ -100,11 +100,11 @@ instance RunPhase Shunted where
         traverse_ reportElaraWarning warnings
         shuntWith opLookupQueries renamed
 
-    getDeclarationByName = genericGetDeclarationByName @Shunted getModuleByName
-    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Shunted getDeclarationByName
-    getConstructorDeclaration = genericGetConstructorDeclaration @Shunted getModuleByName
-    getDeclarationAnnotations = genericGetDeclarationAnnotations @Shunted getRequiredDeclarationByName
-    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Shunted getDeclarationAnnotations getConstructorDeclaration
+    getDeclarationByName = genericGetDeclarationByName @Shunted (Rock.fetch . Elara.Query.ModuleByName @Shunted)
+    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Shunted (Rock.fetch . Elara.Query.DeclarationByName @Shunted)
+    getConstructorDeclaration = genericGetConstructorDeclaration @Shunted (Rock.fetch . Elara.Query.ModuleByName @Shunted)
+    getDeclarationAnnotations = genericGetDeclarationAnnotations @Shunted (Rock.fetch . Elara.Query.RequiredDeclarationByName @Shunted)
+    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Shunted (Rock.fetch . Elara.Query.DeclarationAnnotations @Shunted) (Rock.fetch . Elara.Query.ConstructorDeclaration @Shunted) stripTagAndLocation
 
 {- | A function that can lookup operator info.
 This module only instantiates this function with a value that looks up operator info from the AST, but

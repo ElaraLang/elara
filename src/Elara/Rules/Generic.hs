@@ -43,15 +43,14 @@ hasConstructor ::
     ( ElaraPhase ast
     , ConstructorBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     ) =>
-    TaggedLocate TypeNode SourceRegion (Qualified TypeName) ->
+    Qualified TypeName ->
     New.Declaration SourceRegion ast ->
     Bool
-hasConstructor qnLoc (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
-    let qn = qnLoc ^. unlocated
-     in case body' of
-            New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ ->
-                any (\(cnLoc, _) -> (cnLoc ^. unlocated) == qn) ctors
-            _ -> False
+hasConstructor qn (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
+    case body' of
+        New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ ->
+            any (\(cnLoc, _) -> (cnLoc ^. unlocated) == qn) ctors
+        _ -> False
 
 -- | Generic implementation for fetching a declaration by name
 genericGetDeclarationByName ::
@@ -81,12 +80,11 @@ genericGetConstructorDeclaration ::
     ) =>
     -- | injected fetcher
     (ModuleName -> Eff es (NewModule.Module SourceRegion ast)) ->
-    ConstructorOccurrence ast SourceRegion ->
+    Qualified TypeName ->
     Eff es (New.Declaration SourceRegion ast)
-genericGetConstructorDeclaration fetchMod locatedQn = do
-    let Qualified typeName modName = locatedQn ^. unlocated
+genericGetConstructorDeclaration fetchMod constructorName@(Qualified typeName modName) = do
     NewModule.Module _ m' <- fetchMod modName
-    let matchingBodies = filter (hasConstructor locatedQn) m'.moduleDeclarations
+    let matchingBodies = filter (hasConstructor constructorName) m'.moduleDeclarations
     case matchingBodies of
         [decl] -> pure decl
         [] -> throwIO $ RequiredDeclNotFound (toName <$> Qualified typeName modName)
@@ -133,13 +131,14 @@ genericGetDeclarationAnnotationsOfType ::
     -- | injected fetchAnns
     (Qualified Name -> Eff es [New.Annotation SourceRegion ast]) ->
     -- | injected fetchCtor
-    (ConstructorOccurrence ast SourceRegion -> Eff es (New.Declaration SourceRegion ast)) ->
+    (Qualified TypeName -> Eff es (New.Declaration SourceRegion ast)) ->
+    (TypeOccurrence ast SourceRegion -> Qualified TypeName) ->
     (Qualified Name, Qualified TypeName) ->
     Eff es [New.Annotation SourceRegion ast]
-genericGetDeclarationAnnotationsOfType fetchAnns fetchCtor (Qualified name modName, annName) = do
+genericGetDeclarationAnnotationsOfType fetchAnns fetchCtor extractTN (Qualified name modName, annName) = do
     annotations <- fetchAnns (Qualified name modName)
     fmap catMaybes $ for annotations $ \(New.Annotation annotName _args) -> do
-        annotDecl <- fetchCtor annotName
+        annotDecl <- fetchCtor (extractTN annotName)
         let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) = annotDecl
         case body' of
             New.TypeDeclarationBody tName _ _ _ _ _ | tName ^. unlocated == annName -> pure (Just (New.Annotation annotName _args))

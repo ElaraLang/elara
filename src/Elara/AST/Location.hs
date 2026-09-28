@@ -98,6 +98,7 @@ instance Widen ExprNode DeclNode where widen (ExprLoc l) = DeclLoc l
 instance Widen VarNode TypeNode where widen (VarLoc l) = TypeLoc l
 
 instance Widen TypeNode DeclNode where widen (TypeLoc l) = DeclLoc l
+
 instance Widen PatternNode ExprNode where widen (PatLoc l) = ExprLoc l
 
 class LocSemigroup a b loc where
@@ -189,3 +190,6 @@ retag (TaggedLocate l a) = TaggedLocate (wrap @newTag (unwrapLoc l)) a
 
 stripTag :: forall n loc a. UnwrapNodeLoc n loc SourceRegion => TaggedLocate n loc a -> Located a
 stripTag (TaggedLocate l a) = Located (unwrapLoc l) a
+
+stripTagAndLocation :: forall n loc a. UnwrapNodeLoc n loc SourceRegion => TaggedLocate n loc a -> a
+stripTagAndLocation = view unlocated . stripTag

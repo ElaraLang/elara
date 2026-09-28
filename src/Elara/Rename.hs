@@ -86,11 +86,11 @@ instance RunPhase Renamed where
         when (actualName /= mn) $ throwError $ ModuleNameMismatch (Located (GeneratedRegion "Renaming Entry Point") mn) (actualName `withLocationOf` stripTag m'.moduleName)
         Local.evalState primitiveRenameState $ rename m
 
-    getDeclarationByName = genericGetDeclarationByName @Renamed getModuleByName
-    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Renamed getDeclarationByName
-    getConstructorDeclaration = genericGetConstructorDeclaration @Renamed getModuleByName
-    getDeclarationAnnotations = genericGetDeclarationAnnotations @Renamed getRequiredDeclarationByName
-    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Renamed getDeclarationAnnotations getConstructorDeclaration
+    getDeclarationByName = genericGetDeclarationByName @Renamed (Rock.fetch . Elara.Query.ModuleByName @Renamed)
+    getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Renamed (Rock.fetch . Elara.Query.DeclarationByName @Renamed)
+    getConstructorDeclaration = genericGetConstructorDeclaration @Renamed (Rock.fetch . Elara.Query.ModuleByName @Renamed)
+    getDeclarationAnnotations = genericGetDeclarationAnnotations @Renamed (Rock.fetch . Elara.Query.RequiredDeclarationByName @Renamed)
+    getDeclarationAnnotationsOfType = genericGetDeclarationAnnotationsOfType @Renamed (Rock.fetch . Elara.Query.DeclarationAnnotations @Renamed) (Rock.fetch . Elara.Query.ConstructorDeclaration @Renamed) stripTagAndLocation
 
 qualifyIn :: Rename r => ModuleName -> MaybeQualified name -> Eff r (Qualified name)
 qualifyIn mn (MaybeQualified n (Just m)) = do
