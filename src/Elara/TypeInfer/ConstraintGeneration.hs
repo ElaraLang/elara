@@ -123,24 +123,6 @@ mkTyAppArg loc (SkolemVar tv) =
     let typeLoc = wrap @TypeNode loc
      in New.Type typeLoc TypeKind (New.TVar (TaggedLocate typeLoc tv))
 
--- | Check if an expression references a given variable name (for recursion detection)
-isRecursiveIn :: Unique VarName -> ShuntedExpr -> Bool
-isRecursiveIn vn = go
-  where
-    go (New.Expr _ _ e') = case e' of
-        New.EVar _ (TaggedLocate _ (Local (Located _ n))) -> n == vn
-        New.EVar _ _ -> False
-        New.ELam _ _ body -> go body
-        New.EApp _ e1 e2 -> go e1 || go e2
-        New.ELetIn _ _ e1 e2 -> go e1 || go e2
-        New.ELet _ _ e1 -> go e1
-        New.EIf c t f -> go c || go t || go f
-        New.EMatch e cases -> go e || any (\(_, rhs) -> go rhs) cases
-        New.EBlock exprs -> any go exprs
-        New.ETyApp e _ -> go e
-        New.EAnn e _ -> go e
-        _ -> False
-
 -- | Get the location from a Shunted expression
 exprLocation :: ShuntedExpr -> NodeLoc ExprNode SourceRegion
 exprLocation (New.Expr loc _ _) = loc
@@ -269,24 +251,13 @@ generateConstraints' expr' =
 
                     -- TODO: we need to check if e1 is closed here before generalising _everything_
 
-                    let isRecursive = isRecursiveIn varName varExpr
-
-                    logDebug ("isRecursive?: " <> pretty isRecursive)
-                    (maybeGeneralised, finalTypedVarExpr) <-
-                        if not isRecursive
-                            then do
-                                (generalised, genSubst) <- generalise solvedVarType
-                                logDebug (pretty varType <> " -> generalised: " <> pretty generalised)
-                                let finalSubst = rhsSubst <> genSubst
-                                let substitutedExpr = getExpr (substituteAll finalSubst (SubstitutableExpr typedVarExpr))
-                                pure (Polytype generalised, substitutedExpr)
-                            else do
-                                -- even if recursive, apply local solver's substitution
-                                let substitutedExpr = getExpr (substituteAll rhsSubst (SubstitutableExpr typedVarExpr))
-                                pure (Lifted solvedVarType, substitutedExpr)
+                    (generalised, genSubst) <- generalise solvedVarType
+                    logDebug (pretty varType <> " -> generalised: " <> pretty generalised)
+                    let finalSubst = rhsSubst <> genSubst
+                    let finalTypedVarExpr = getExpr (substituteAll finalSubst (SubstitutableExpr typedVarExpr))
 
                     (typedBody, bodyType) <-
-                        withLocalType varName maybeGeneralised $
+                        withLocalType varName (Polytype generalised) $
                             generateConstraints body
 
                     pure (New.ELetIn NoExtension (TaggedLocate loc varName) finalTypedVarExpr typedBody, bodyType)
