@@ -19,6 +19,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Correct output selection for static zlib/bzip2/xz/zstd, scope elfutils to x86_64 - ([375fdef](https://github.com/ElaraLang/elara/commit/375fdef59813f902135f8a73275ee1bf7cf9fd76)) 
 - *(nix)* Pass absolute .a paths to linker, avoid -l/-L ordering issue - ([8f07f77](https://github.com/ElaraLang/elara/commit/8f07f779e0bc46ec998d646c67d3c4377bfcec4a)) 
 - *(nix)* Drop lifted-async 0.11.0 pin, conflicts with hedgehog-1.5's <0.11 bound - ([1edee01](https://github.com/ElaraLang/elara/commit/1edee0114eb8022b2f3f43d21f15ac8132396f42)) 
+- *(type-infer)* Stop local lets over-generalising over variables - ([5b21fb2](https://github.com/ElaraLang/elara/commit/5b21fb200ec395a12757e3d20a09bd7f90cf0e87)) 
+- *(type-infer)* Generalise recursive local lets for consistency - ([4fa0367](https://github.com/ElaraLang/elara/commit/4fa03672ab7e215499975ca95336392a7f332e85)) 
 
 ### 🚜 Refactor
 
@@ -27,6 +29,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### 🎨 Styling
 
 - Nix fmt - ([0668a4e](https://github.com/ElaraLang/elara/commit/0668a4ec22b8fb4b426bb2ab576780e0f905386b)) 
+
+### 🧪 Testing
+
+- *(type-infer)* Add tests for generalisation behaviour - ([7726cd7](https://github.com/ElaraLang/elara/commit/7726cd729f971fc3ec88328f469ad48f8dfdab04)) 
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -38,6 +44,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### Build
 
 - *(nix)* Revert to ghc912, drop 9.14 tooling patches - ([e7fbafc](https://github.com/ElaraLang/elara/commit/e7fbafc14fcfe766fdd52b35e414db07eaf1c2df)) 
+- *(nix)* Update `flake.lock` - ([022b598](https://github.com/ElaraLang/elara/commit/022b59825f2286f4dfc6526ea2f6a57132192ee9)) 
 
 ## [dev-build](https://github.com/ElaraLang/elara/compare/v0.1.0..dev-build) - 2026-08-13
 
