@@ -1,0 +1,7 @@
+[error E1001]: Unknown name: ThisDoesntExist
+     ╭──▶ test/test_resources/golden_inputs/error-annotation-unknown-name.elr@1:2-1:17
+     │
+   1 │ #ThisDoesntExist
+     •  ┬──────────────
+     •  ╰╸ referenced here
+─────╯

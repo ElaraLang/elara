@@ -116,6 +116,9 @@ spec = describe "Golden tests" $ do
             it "Type alias that refers to itself" $
                 runGoldenError defaultSettings "error-rename-recursive-alias"
 
+            it "Annotation that doesn't exist" $
+                runGoldenError defaultSettings "error-annotation-unknown-name"
+
     describe "Type inference characterisation" $ do
         describe "Generalises where it should" $ do
             forM_ backends $ \backend -> describe ("On backend " <> show backend) $ do
