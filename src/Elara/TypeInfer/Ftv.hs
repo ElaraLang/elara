@@ -2,7 +2,7 @@ module Elara.TypeInfer.Ftv where
 
 import Data.Set (difference, member)
 
-import Elara.TypeInfer.Environment (TypeEnvironment (..))
+import Elara.TypeInfer.Environment (LocalTypeEnvironment (..), TypeEnvironment (..))
 import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Type (..), TypeVariable (..))
 import Elara.TypeInfer.Unique (UniqueTyVar)
 
@@ -26,6 +26,9 @@ instance Ftv (Polytype loc) where
 
 instance Ftv (TypeEnvironment loc) where
     ftv (TypeEnvironment env) = foldMap ftv env
+
+instance Ftv (LocalTypeEnvironment loc) where
+    ftv (LocalTypeEnvironment env) = foldMap ftv env
 
 occurs :: Ftv a => TypeVariable -> a -> Bool
 occurs tv a = tv `member` ftv a

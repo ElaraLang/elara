@@ -67,7 +67,11 @@ newtype LocalTypeEnvironment loc
     = LocalTypeEnvironment
         (Map (Unique VarName) (Type loc))
     deriving (Show)
-    deriving newtype (Pretty)
+    deriving newtype (Eq, Pretty)
+
+instance Eq loc => Substitutable LocalTypeEnvironment loc where
+    substitute tv t (LocalTypeEnvironment env) = LocalTypeEnvironment (fmap (substitute tv t) env)
+    substituteAll s (LocalTypeEnvironment env) = LocalTypeEnvironment (fmap (substituteAll s) env)
 
 emptyLocalTypeEnvironment :: LocalTypeEnvironment loc
 emptyLocalTypeEnvironment = LocalTypeEnvironment Map.empty

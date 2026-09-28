@@ -265,6 +265,8 @@ generateConstraints' expr' =
                     -- apply subst before generalising
                     let solvedVarType = substituteAll rhsSubst varType
 
+                    modify @(LocalTypeEnvironment _) (substituteAll rhsSubst)
+
                     -- TODO: we need to check if e1 is closed here before generalising _everything_
 
                     let isRecursive = isRecursiveIn varName varExpr
