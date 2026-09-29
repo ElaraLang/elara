@@ -116,6 +116,8 @@
               in
               {
                 compiler = "ghc912";
+                build-tools.hpack.package = config.pkgs.hpack;
+                build-tools.cabal.package = config.pkgs.cabal-install;
                 systems = import inputs.systems;
                 compat.enable = false;
                 envs.dev.ghcid.enable = false;
