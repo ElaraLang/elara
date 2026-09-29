@@ -281,6 +281,7 @@
 
                       dependencies = [
                         "witch"
+                        "th-abstraction"
                       ];
 
                       component = {

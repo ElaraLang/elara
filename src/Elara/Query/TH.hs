@@ -1,223 +1,155 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Use id" #-}
+-- | Derives the tagging, comparison, hashing and key-checking boilerplate for 'Elara.Query.Query'
+module Elara.Query.TH (makeTag, deriveSameCtor, deriveHashableInstance, deriveKeyChecks) where
 
-{- | Horrible TH code to generate the ginormous functions required for tagging, hashing and comparing Queries.
-A lot of this code is AI generated so don't ask me how it works :')
--}
-module Elara.Query.TH (makeTag, deriveSameCtor, deriveHashableInstance) where
+import Data.Data (eqT, typeRep, (:~:) (Refl))
+import Data.GADT.Compare (GOrdering (..))
+import Language.Haskell.TH
+import Language.Haskell.TH.Datatype (applySubstitution, freeVariables, tvName)
 
-import Data.Data
-import Data.GADT.Compare
-import Language.Haskell.TH as TH
+import Data.Map qualified as Map
 
-toNames :: Con -> [(Name, Int)]
-toNames = \case
-    NormalC n _ -> [(n, 0 :: Int)]
-    RecC n fs -> [(n, length fs)]
-    InfixC _ n _ -> [(n, 2)]
-    ForallC _ _ c -> toNames c
-    GadtC ns fs _ -> [(n, length fs) | n <- ns]
-    RecGadtC ns fs _ -> [(n, length fs) | n <- ns]
+import Elara.Query.Generics (checkKey)
 
--- Generate: tagQuery :: forall es a. Query es a -> Int
+-- | A query constructor, normalised from whichever 'Con' shape 'reify' gave us
+data QueryCon = QueryCon
+    { conName :: Name
+    , conFields :: [Type]
+    , conTypeArgs :: [Name]
+    -- ^ Existential variables with a 'Typeable' constraint, bound by type application in patterns
+    , conEqualities :: Map Name Type
+    -- ^ Equality constraints like @loc ~ SourceRegion@, used to make field types concrete
+    }
+
+queryCons :: Name -> Q [QueryCon]
+queryCons ty =
+    reify ty >>= \case
+        TyConI (DataD _ _ _ _ cons _) -> traverse (queryCon [] []) cons
+        info -> fail ("Expected a data type, got " <> show info)
+
+queryCon :: [Name] -> Cxt -> Con -> Q QueryCon
+queryCon vars cxt = \case
+    ForallC vars' cxt' con -> queryCon (vars <> map tvName vars') (cxt <> cxt') con
+    GadtC [n] fields _ -> pure (mk n (map snd fields))
+    RecGadtC [n] fields _ -> pure (mk n (map (\(_, _, t) -> t) fields))
+    NormalC n fields -> pure (mk n (map snd fields))
+    RecC n fields -> pure (mk n (map (\(_, _, t) -> t) fields))
+    InfixC (_, l) n (_, r) -> pure (mk n [l, r])
+    con -> fail ("Unsupported constructor: " <> show con)
+  where
+    mk n fields =
+        QueryCon
+            { conName = n
+            , conFields = fields
+            , conTypeArgs = filter (\v -> any (isTypeable v) cxt) vars
+            , conEqualities = Map.fromList (mapMaybe equality cxt)
+            }
+
+    isTypeable v = \case
+        AppT (ConT c) (VarT v') -> c == ''Typeable && v' == v
+        _ -> False
+
+    equality = \case
+        AppT (AppT EqualityT (VarT v)) t -> Just (v, t)
+        AppT (AppT (ConT eq) (VarT v)) t | nameBase eq == "~" -> Just (v, t)
+        _ -> Nothing
+
+conPat :: QueryCon -> [Name] -> [Name] -> Pat
+conPat con tys xs = ConP (conName con) (map VarT tys) (map VarP xs)
+
+newNames :: String -> [a] -> Q [Name]
+newNames prefix = traverse (const (newName prefix))
+
+-- | Generates @tagQuery :: forall es a. Query es a -> Int@, numbering constructors in declaration order
 makeTag :: Name -> Q [Dec]
 makeTag ty = do
-    TyConI (DataD _ _ _ _ cons _) <- reify ty
-    let tagName = mkName ("tag" ++ nameBase ty)
+    cons <- queryCons ty
+    let name = mkName ("tag" <> nameBase ty)
+        clause i con = Clause [ConP (conName con) [] (WildP <$ conFields con)] (NormalB (LitE (IntegerL i))) []
+    sig <- sigD name [t|forall es a. $(conT ty) es a -> Int|]
+    pure [sig, FunD name (zipWith clause [0 ..] cons)]
 
-    let allConNames = concatMap getNames cons
-
-    clauses <- for (zip allConNames [0 ..]) $ \(name, index) ->
-        -- replicate (getArity name cons) WildP handles the fields of the constructor
-        pure $
-            Clause
-                [ConP name [] (replicate (getArity name cons) WildP)]
-                (NormalB (LitE (IntegerL index)))
-                []
-
-    -- Generate the type signature forall es a. Query es a -> Int
-    let queryType = AppT (AppT (ConT ty) WildCardT) WildCardT
-    let sig = SigD tagName (AppT (AppT ArrowT queryType) (ConT ''Int))
-
-    pure [sig, FunD tagName clauses]
-  where
-    getNames (NormalC n _) = [n]
-    getNames (RecC n _) = [n]
-    getNames (InfixC _ n _) = [n]
-    getNames (ForallC _ _ c) = getNames c
-    getNames (GadtC ns _ _) = ns
-    getNames (RecGadtC ns _ _) = ns
-
-    -- We need to know how many fields to ignore in the pattern match
-    getArity target cons = fromMaybe 0 $ listToMaybe [length f | c <- cons, (n, _, f) <- [extractConDetails' c], n == target]
-
-extractConDetails' :: Con -> (Name, Cxt, [Type])
-extractConDetails' = \case
-    NormalC n fields -> (n, [], map snd fields)
-    RecC n fields -> (n, [], map (\(_, _, t) -> t) fields)
-    InfixC (_, t1) n (_, t2) -> (n, [], [t1, t2])
-    ForallC _ cxt con' -> let (n, _, f) = extractConDetails' con' in (n, cxt, f)
-    GadtC [n] fields _ -> (n, [], map snd fields)
-    RecGadtC [n] fields _ -> (n, [], map (\(_, _, t) -> t) fields)
-    _ -> error "Multi-name GADTC not supported in this helper"
-
--- | Generates 'sameCtor :: forall es a b. Query es a -> Query es b -> GOrdering a b'
+-- | Generates @sameCtor :: Query es a -> Query es b -> GOrdering a b@ for two queries with the same constructor
 deriveSameCtor :: Name -> Q [Dec]
 deriveSameCtor ty = do
-    -- 1. Generate the Type Signature
-    -- sameCtor :: forall es a b. Query es a -> Query es b -> GOrdering a b
-    sig <- sigD (mkName "sameCtor") [t|HasCallStack => forall es a b. $(conT ty) es a -> $(conT ty) es b -> GOrdering a b|]
-
-    -- 2. Generate the Function Clauses
-    TyConI (DataD _ _ _ _ cons _) <- reify ty
-    clauses <- mapM genClause cons
-
+    cons <- queryCons ty
+    let name = mkName "sameCtor"
+    sig <- sigD name [t|forall es a b. HasCallStack => $(conT ty) es a -> $(conT ty) es b -> GOrdering a b|]
+    clauses <- traverse sameCtorClause cons
     q1 <- newName "q1"
     q2 <- newName "q2"
-    errExp <-
-        [|
-            error
-                ( "sameCtor called with mismatched constructors: "
-                    <> show $(varE q1)
-                    <> " and "
-                    <> show $(varE q2)
-                )
-            |]
+    mismatch <- [|error ("sameCtor called with mismatched constructors: " <> show $(varE q1) <> " and " <> show $(varE q2))|]
+    pure [sig, FunD name (clauses <> [Clause [VarP q1, VarP q2] (NormalB mismatch) []])]
 
-    let fallbackClause = Clause [VarP q1, VarP q2] (NormalB errExp) []
+sameCtorClause :: QueryCon -> Q Clause
+sameCtorClause con = do
+    ls <- newNames "l" (conFields con)
+    rs <- newNames "r" (conFields con)
+    tls <- newNames "tL" (conTypeArgs con)
+    trs <- newNames "tR" (conTypeArgs con)
+    body <- compareTypes tls trs (compareFields ls rs [|GEQ|])
+    pure (Clause [conPat con tls ls, conPat con trs rs] (NormalB body) [])
 
-    -- 3. Return both
-    pure [sig, FunD (mkName "sameCtor") (clauses <> [fallbackClause])]
-
-deriveHashableInstance :: Name -> Q [Dec]
-deriveHashableInstance ty = do
-    -- 1. Setup Instance Head: instance Hashable (Query es a)
-    let className = mkName "Hashable"
-    esVar <- newName "es"
-    aVar <- newName "a"
-    -- Type: Hashable (Query es a)
-    let instanceType = AppT (ConT className) (AppT (AppT (ConT ty) (VarT esVar)) (VarT aVar))
-
-    -- 2. Define hashWithSalt
-    saltName <- newName "salt"
-    qName <- newName "q"
-
-    TyConI (DataD _ _ _ _ cons _) <- reify ty
-
-    -- Generate a match for every constructor
-    matches <- zipWithM (genHashMatch saltName) [0 ..] cons
-
-    let funDec =
-            FunD
-                (mkName "hashWithSalt")
-                [Clause [VarP saltName, VarP qName] (NormalB (CaseE (VarE qName) matches)) []]
-
-    pure [InstanceD Nothing [] instanceType [funDec]]
-
-genHashMatch :: Name -> Int -> Con -> Q Match
-genHashMatch saltName index con = do
-    (conName, _, fieldTypes) <- extractConDetails con
-
-    -- Generate vars for fields (x1, x2...)
-    fieldNames <- replicateM (length fieldTypes) (newName "x")
-
-    -- Generate vars for Existential Type Applications (t1, t2...)
-    typeVars <- getExistentialTypeVars con
-    typeVarNames <- replicateM (length typeVars) (newName "t")
-
-    -- Pattern: Con @t1 @t2 x1 x2
-    let pat = ConP conName (map VarT typeVarNames) (map VarP fieldNames)
-
-    -- RHS Construction: Chain hashWithSalt calls
-    -- 1. Start with: salt `hashWithSalt` index
-    let startHash = [|hashWithSalt $(varE saltName) ($(litE (IntegerL (toInteger index))) :: Int)|]
-
-    -- 2. Chain fields: ... `hashWithSalt` x1 `hashWithSalt` x2
-    let hashField acc name = [|hashWithSalt $acc $(varE name)|]
-    let withFields = foldl' hashField startHash fieldNames
-
-    -- 3. Chain TypeReps: ... `hashWithSalt` (typeRep (Proxy @t1))
-    let hashType acc tName =
-            [|hashWithSalt $acc (typeRep (Proxy :: Proxy $(varT tName)))|]
-
-    let finalBody = foldl' hashType withFields typeVarNames
-    body <- finalBody
-
-    pure $ Match pat (NormalB body) []
-
-genClause :: Con -> Q Clause
-genClause con = do
-    (conName, _cxt, fields) <- extractConDetails con
-
-    let nFields = length fields
-    lNames <- replicateM nFields (newName "l")
-    rNames <- replicateM nFields (newName "r")
-
-    typeVars <- getExistentialTypeVars con
-    lTypeNames <- replicateM (length typeVars) (newName "tL")
-    rTypeNames <- replicateM (length typeVars) (newName "tR")
-
-    -- Pattern: Con @tL1 @tL2 l1 l2
-    let lPat = ConP conName (VarT <$> lTypeNames) (VarP <$> lNames)
-    let rPat = ConP conName (VarT <$> rTypeNames) (VarP <$> rNames)
-
-    -- Logic: Check Types FIRST, then Check Values
-    -- If types match (eqT returns Just Refl), we enter 'valueCheck'.
-    -- If types differ, we return GLT/GGT based on typeRep comparison.
-    let valueCheck = nestComparison lNames rNames [|GEQ|]
-    body <- nestTypeComparison lTypeNames rTypeNames valueCheck
-
-    pure $ Clause [lPat, rPat] (NormalB body) []
-
--- | Helper to extract constructor details
-extractConDetails :: Con -> Q (Name, Cxt, [Type])
-extractConDetails = \case
-    NormalC n fields -> pure (n, [], map snd fields)
-    RecC n fields -> pure (n, [], map (\(_, _, t) -> t) fields)
-    InfixC (_, t1) n (_, t2) -> pure (n, [], [t1, t2])
-    ForallC _ cxt con' -> do
-        (n, _, fields) <- extractConDetails con'
-        pure (n, cxt, fields)
-    GadtC [n] fields _ -> pure (n, [], map snd fields)
-    RecGadtC [n] fields _ -> pure (n, [], map (\(_, _, t) -> t) fields)
-    c -> fail $ "Unsupported constructor type: " ++ show c
-
--- | Find existential type variables that have a Typeable constraint
-getExistentialTypeVars :: Con -> Q [Name]
-getExistentialTypeVars (ForallC vars cxt _) = do
-    pure [n | KindedTV n _ _ <- vars, isTypeableConstraint n cxt]
-  where
-    isTypeableConstraint n = any (isTypeable n)
-    isTypeable n = \case
-        AppT (ConT t) (VarT v) | t == ''Typeable && v == n -> True
-        _ -> False
-getExistentialTypeVars _ = pure []
-
--- | Chains value comparisons
-nestComparison :: [Name] -> [Name] -> Q Exp -> Q Exp
-nestComparison [] [] final = final
-nestComparison (l : ls) (r : rs) final =
+compareFields :: [Name] -> [Name] -> Q Exp -> Q Exp
+compareFields (l : ls) (r : rs) equal =
     [|
         case compare $(varE l) $(varE r) of
             LT -> GLT
             GT -> GGT
-            EQ -> $(nestComparison ls rs final)
+            EQ -> $(compareFields ls rs equal)
         |]
-nestComparison _ _ _ = fail "Mismatched field counts"
+compareFields _ _ equal = equal
 
--- | Chains type comparisons
-nestTypeComparison :: [Name] -> [Name] -> Q Exp -> Q Exp
-nestTypeComparison [] [] success = success
-nestTypeComparison (l : ls) (r : rs) success =
+-- | Compares type arguments first, so that 'Refl' brings the field types into agreement before 'compareFields'
+compareTypes :: [Name] -> [Name] -> Q Exp -> Q Exp
+compareTypes (l : ls) (r : rs) equal =
     [|
         case eqT @($(varT l)) @($(varT r)) of
-            Just Refl -> $(nestTypeComparison ls rs success)
-            Nothing ->
-                case compare (typeRep (Proxy :: Proxy $(varT l))) (typeRep (Proxy :: Proxy $(varT r))) of
-                    LT -> GLT
-                    GT -> GGT
-                    EQ -> GLT
+            Just Refl -> $(compareTypes ls rs equal)
+            Nothing
+                | typeRep (Proxy @($(varT l))) < typeRep (Proxy @($(varT r))) -> GLT
+                | otherwise -> GGT
         |]
-nestTypeComparison _ _ _ = fail "Mismatched type variable counts"
+compareTypes _ _ equal = equal
+
+-- | Generates @instance Hashable (Query es a)@, hashing the constructor tag, then fields, then type arguments
+deriveHashableInstance :: Name -> Q [Dec]
+deriveHashableInstance ty = do
+    cons <- queryCons ty
+    salt <- newName "salt"
+    q <- newName "q"
+    es <- newName "es"
+    a <- newName "a"
+    matches <- zipWithM (hashMatch salt) [0 ..] cons
+    let method = FunD 'hashWithSalt [Clause [VarP salt, VarP q] (NormalB (CaseE (VarE q) matches)) []]
+    pure [InstanceD Nothing [] (ConT ''Hashable `AppT` (ConT ty `AppT` VarT es `AppT` VarT a)) [method]]
+
+hashMatch :: Name -> Integer -> QueryCon -> Q Match
+hashMatch salt i con = do
+    xs <- newNames "x" (conFields con)
+    tys <- newNames "t" (conTypeArgs con)
+    let tagged = [|hashWithSalt $(varE salt) ($(litE (integerL i)) :: Int)|]
+        withFields = foldl' (\acc x -> [|hashWithSalt $acc $(varE x)|]) tagged xs
+        withTypes = foldl' (\acc t -> [|hashWithSalt $acc (typeRep (Proxy @($(varT t))))|]) withFields tys
+    body <- withTypes
+    pure (Match (conPat con tys xs) (NormalB body) [])
+
+{- | Generates one @_ = checkKey \@"Con" \@n \@FieldType@ binding per constructor field,
+so a location-bearing query key fails to compile with an error naming the query and field
+-}
+deriveKeyChecks :: Name -> Q [Dec]
+deriveKeyChecks ty = do
+    cons <- queryCons ty
+    concat <$> traverse keyChecks cons
+
+keyChecks :: QueryCon -> Q [Dec]
+keyChecks con = zipWithM check [1 ..] (conFields con)
+  where
+    check :: Integer -> Type -> Q Dec
+    check i field = do
+        let field' = applySubstitution (conEqualities con) field
+        unless (null (freeVariables field')) $
+            fail (nameBase (conName con) <> " field " <> show i <> " has a type that can't be made concrete: " <> pprint field')
+        body <- [|checkKey @($(litT (strTyLit (nameBase (conName con))))) @($(litT (numTyLit i))) @($(pure field'))|]
+        pure (ValD WildP (NormalB body) [])

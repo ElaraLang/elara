@@ -216,3 +216,4 @@ instance GCompare (Query es) where
             EQ -> sameCtor a b
 
 $(deriveHashableInstance ''Query)
+$(deriveKeyChecks ''Query)
