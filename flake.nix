@@ -80,13 +80,8 @@
                   }:
                   {
                     h2jvm = notest (source.root h2jvm);
-                    unix = enable "os-string";
-                    directory = enable "os-string";
                     diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
 
-                    relude = notest; # doctest fails for some reason
-
-                    optics-core = notest; # test fails on ghc 9.12
                     optics = notest; # test fails on ghc 9.12
 
                     # quite a few things are outdated in nixpkgs' pin
@@ -103,15 +98,8 @@
 
                     dependent-hashmap = source.root inputs.dependent-hashmap;
 
-                    effectful = jailbreak (hackage "2.6.1.0" "sha256-krNjGxqdbmFpt1g3anTd5ajGtYnyvGaG+AiDLfJN8No=");
-                    effectful-core = jailbreak;
-                    effectful-plugin = jailbreak;
                     co-log-effectful = jailbreak (unbreak);
 
-                    boring = jailbreak;
-                    some = jailbreak;
-                    hie-compat = jailbreak;
-                    ghcide = jailbreak;
                   };
               in
               {
