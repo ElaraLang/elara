@@ -169,6 +169,7 @@ library
       Elara.TypeInfer.Unique
       Elara.Utils
       Elara.Width
+      GenericUtils
       Prelude
       Print
       Rock
