@@ -24,7 +24,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ### 🚜 Refactor
 
+- *(ast)* More stable query keys, avoid redundant recomputation by memoising where possible - ([791d8f1](https://github.com/ElaraLang/elara/commit/791d8f18ae26eef7aa16e19abea4acb2dce1c9ea)) 
 - *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
+- *(query)* Forbid location information in query keys, refactor - ([c94f03e](https://github.com/ElaraLang/elara/commit/c94f03e49e9e2bce38cd2b79ccab71192d7f50c9)) 
+- Slim the Prelude a little - ([c0dfd29](https://github.com/ElaraLang/elara/commit/c0dfd2947f3a217e55dcdfb626b97ec8ea0d1c02)) 
 
 ### 🎨 Styling
 
@@ -33,6 +36,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### 🧪 Testing
 
 - *(type-infer)* Add tests for generalisation behaviour - ([7726cd7](https://github.com/ElaraLang/elara/commit/7726cd729f971fc3ec88328f469ad48f8dfdab04)) 
+- Add golden test checking for an annotation that doesn't exist - ([1235058](https://github.com/ElaraLang/elara/commit/123505850fddf29d4f345162aeacb5deef6b62f7)) 
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -45,6 +49,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(nix)* Revert to ghc912, drop 9.14 tooling patches - ([e7fbafc](https://github.com/ElaraLang/elara/commit/e7fbafc14fcfe766fdd52b35e414db07eaf1c2df)) 
 - *(nix)* Update `flake.lock` - ([022b598](https://github.com/ElaraLang/elara/commit/022b59825f2286f4dfc6526ea2f6a57132192ee9)) 
+- *(nix)* Potentially speedup hpack evaluation a little - ([ed1513d](https://github.com/ElaraLang/elara/commit/ed1513db6008e14943a0068209997a3dd438c90f)) 
+- :hammer: Tidy up `justfile` - ([d5eb322](https://github.com/ElaraLang/elara/commit/d5eb3221dee9007b53033763e5dd01f979dc07ea)) 
+- Make cabal vs nix builds more consistent - ([04e4c32](https://github.com/ElaraLang/elara/commit/04e4c32a2648642f740a5d944e3f1e0ab7826ea7)) 
+- Make justfile auto-compile stdlib before - ([cc4caf1](https://github.com/ElaraLang/elara/commit/cc4caf15594ccfa31491464dda4002da1cfbc33c)) 
 
 ## [dev-build](https://github.com/ElaraLang/elara/compare/v0.1.0..dev-build) - 2026-08-13
 
