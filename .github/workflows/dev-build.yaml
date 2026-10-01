@@ -47,7 +47,7 @@ jobs:
           path: artifacts
           merge-multiple: true
       - name: Publish rolling dev-build release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: dev-build
           name: "Dev build (rolling)"
