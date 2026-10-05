@@ -31,7 +31,7 @@ import Elara.AST.Name (ModuleName, Name, Qualified, TypeName, VarName)
 import Elara.AST.Phase (ElaraPhase (..))
 import Elara.AST.Phases.Typed (Typed, TypedExpr)
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.VarRef (IgnoreLocVarRef)
+import Elara.AST.VarRef (IgnoreLocVarRef, UnlocatedVarRef)
 import Elara.Core (CoreBind, DataCon, TyCon)
 import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)
@@ -50,7 +50,7 @@ import Elara.ReadFile (FileContents, ModulePathError, ReadFileError)
 import Elara.SCC.Type (ReachableSubgraph, SCCKey)
 import Elara.Settings (CompilerSettings)
 import Elara.Shunt.Error (ShuntError, ShuntWarning)
-import Elara.Shunt.Operator (OpInfo, OpTable)
+import Elara.Shunt.Operator (DeclaredFixity, OpInfo, OpTable)
 import Elara.TypeInfer.Environment (TypeEnvKey)
 import Elara.TypeInfer.Type (Polytype)
 import Elara.TypeInfer.Unique
@@ -159,7 +159,7 @@ data Query (es :: [Effect]) a where
         (Qualified Name, Qualified TypeName) ->
         Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QAnnType))) [New.Annotation SourceRegion ast]
     --    \* Shunting Queries
-    GetOpInfo :: IgnoreLocVarRef Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) (Maybe OpInfo)
+    GetOpInfo :: Qualified Name -> Query (WithRock (ConsQueryEffects '[Writer (Set ShuntWarning), Error ShuntError])) DeclaredFixity
     GetOpTableIn :: ModuleName -> Query (WithRock (ConsQueryEffects '[])) OpTable
     -- \* Pre-Inference Queries
     -- These are related to preparing SCCs etc for type inference

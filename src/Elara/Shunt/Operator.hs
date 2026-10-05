@@ -1,4 +1,13 @@
-module Elara.Shunt.Operator (OpTable, Associativity (..), Precedence, mkPrecedence, OpInfo (..), prettyOp, prettyOpTable) where
+module Elara.Shunt.Operator (
+    OpTable,
+    DeclaredFixity (..),
+    Associativity (..),
+    Precedence,
+    mkPrecedence,
+    OpInfo (..),
+    prettyOp,
+    prettyOpTable,
+) where
 
 import Data.Map qualified as Map
 
@@ -10,6 +19,11 @@ import Elara.Data.Pretty
 import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Types qualified as New
 import Elara.Data.Pretty.Styles qualified as Style
+
+data DeclaredFixity = DeclaredFixity
+    { declaredPrecedence :: !(Maybe Precedence)
+    , declaredAssociativity :: !(Maybe Associativity)
+    }
 
 type OpTable = Map (IgnoreLocVarRef Name) OpInfo
 

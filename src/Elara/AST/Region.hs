@@ -188,6 +188,9 @@ class LocatedElement w where
 instance LocatedElement Located where
     unlocated = lensVL $ \f (Located region x) -> fmap (Located region) (f x)
 
+instance LocatedElement IgnoreLocation where
+    unlocated = lensVL $ \f (IgnoreLocation (Located region x)) -> IgnoreLocation . Located region <$> f x
+
 -- | Attach the location of the second argument to the first argument
 withLocationOf :: HasSourceRegion b => a -> b -> Located a
 withLocationOf a b = Located (b ^. sourceRegion) a

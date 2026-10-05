@@ -120,22 +120,23 @@ opLookupQueries ::
     , QueryEffects es
     ) =>
     OpLookup es
-opLookupQueries name = Rock.fetch (Elara.Query.GetOpInfo name)
+opLookupQueries (Local i) = Eff.throwError (LocalOperatorInfoNotSupported (i ^. _Unwrapped))
+opLookupQueries (Global (IgnoreLocation located)) = do
+    DeclaredFixity p a <- Rock.fetch (GetOpInfo (located ^. unlocated))
+    whenNothing_ p $ Eff.tell (one @(Set _) (UnknownPrecedence located))
+    pure $ Just (OpInfo (fromMaybe defaultPrecedence p) (fromMaybe defaultAssociativity a))
 
 -- | Run the @'Elara.Query.GetOpInfo'@ query to get operator info for a given operator
 runGetOpInfoQuery ::
-    IgnoreLocVarRef Name ->
+    Qualified Name ->
     Eff
         ( ConsQueryEffects
-            '[ Eff.Writer (Set ShuntWarning)
-             , Eff.Error ShuntError
+            '[ Eff.Error ShuntError
              , Rock Elara.Query.Query
-             , Eff.Error ElaraError
-             , Eff.Writer [ElaraWarning]
              ]
         )
-        (Maybe OpInfo)
-runGetOpInfoQuery (Global (IgnoreLocation locatedName@(Located _ declName))) = do
+        DeclaredFixity
+runGetOpInfoQuery declName = do
     (annotations, warnings) <-
         Eff.runWriter @[ElaraWarning] $
             runErrorAsElaraError @RenameError $
@@ -152,9 +153,6 @@ runGetOpInfoQuery (Global (IgnoreLocation locatedName@(Located _ declName))) = d
                 _invalid -> pure Nothing
         _invalid -> pure Nothing
 
-    whenNothing_ fixity $
-        Eff.tell (one @(Set _) (UnknownPrecedence locatedName))
-
     assoc <- case assocAnns of
         [] -> pure Nothing
         [Annotation lAssoc _] | lAssoc ^. unlocated == leftAssociativeAnnotationName -> pure $ Just LeftAssociative
@@ -162,12 +160,7 @@ runGetOpInfoQuery (Global (IgnoreLocation locatedName@(Located _ declName))) = d
         [Annotation nAssoc _] | nAssoc ^. unlocated == nonAssociativeAnnotationName -> pure $ Just NonAssociative
         _invalid -> pure Nothing
 
-    pure $ case (fixity, assoc) of
-        (Just f, Just a) -> Just (OpInfo f a)
-        (Nothing, Just a) -> Just (OpInfo defaultPrecedence a)
-        (Just f, Nothing) -> Just (OpInfo f defaultAssociativity)
-        (Nothing, Nothing) -> Just (OpInfo defaultPrecedence defaultAssociativity)
-runGetOpInfoQuery (Local i) = Eff.throwError $ LocalOperatorInfoNotSupported (i ^. _Unwrapped)
+    pure $ DeclaredFixity fixity assoc
 
 -- | Run the @'Elara.Query.GetOpTableIn'@ query to get the operator table for a module
 runGetOpTableInQuery :: ModuleName -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) OpTable

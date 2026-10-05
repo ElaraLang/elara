@@ -9,7 +9,7 @@ import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
 
 import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
-import Elara.AST.Region (IgnoreLocation (..), Located (..))
+import Elara.AST.Region (IgnoreLocation (..), Located (..), LocatedElement (unlocated))
 import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Data.Unique
 
@@ -63,6 +63,10 @@ varRefVal' = traversalVL $ \f ->
 ignoreLocation :: VarRef n -> IgnoreLocVarRef n
 ignoreLocation (Global n) = Global (IgnoreLocation n)
 ignoreLocation (Local n) = Local (IgnoreLocation n)
+
+unlocateIgnore :: IgnoreLocVarRef n -> UnlocatedVarRef n
+unlocateIgnore (Global n) = Global (view unlocated n)
+unlocateIgnore (Local n) = Local (view unlocated n)
 
 withName :: ToName n => VarRef n -> VarRef Name
 withName (Global n) = Global (toName <<$>> n)
