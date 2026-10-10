@@ -21,6 +21,8 @@ jobs:
         with:
           name: elara
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: Bump dev env
+        run: nix run .#env.dev.bump -- --build-timeout=3600
       - id: bounds
         name: Bump upper bounds
         run: nix run .#bump -- --output=ga-pr --build-timeout=3600
