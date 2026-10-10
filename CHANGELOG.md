@@ -50,6 +50,9 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Bump dev env alongside latest - ([24dcd41](https://github.com/ElaraLang/elara/commit/24dcd411b0e587cef5f66499b47448db5a894530)) 
 - Add my attic server - ([e4eaf8d](https://github.com/ElaraLang/elara/commit/e4eaf8d401a2f4675a680ad41a6d2f65c4cf3a54)) 
 - Fix weird cachix bug - ([de1427e](https://github.com/ElaraLang/elara/commit/de1427e533a28ed5e4419a6682da6b0647fe932a)) 
+- Reduce the amount of times that bump and lower run - ([9dbeb1f](https://github.com/ElaraLang/elara/commit/9dbeb1f93c325b45f5737901fbe9f2a8ecf3e395)) 
+- `accept-flake-config` where possible - ([c9fa443](https://github.com/ElaraLang/elara/commit/c9fa44343034befbe372b9c8335cee76f7eaf7fb)) 
+- Regenerate cabal file on push - ([9c96198](https://github.com/ElaraLang/elara/commit/9c96198a934624e13fcc118f69f5d78b1eac4a7a)) 
 
 ### Build
 
