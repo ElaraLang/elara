@@ -80,39 +80,23 @@
             hixFlake = hix.lib.flake (
               { config, ... }:
               let
-                depOverrides =
+                sharedOverrides =
                   {
                     source,
-                    hackage,
                     enable,
                     notest,
-                    force,
                     unbreak,
                     jailbreak,
+                    nodoc,
                     ...
                   }:
                   {
-                    h2jvm = notest (source.root h2jvm);
-                    diagnose = enable "megaparsec-compat" (source.root inputs.diagnose);
-
-                    optics = notest; # test fails on ghc 9.12
-
-                    # quite a few things are outdated in nixpkgs' pin
-                    generic-optics = notest (hackage "2.3.0.0" "sha256-3xDJDQAlIYg+Xn2j8qgTyrVSe1/C+Ad1HHVImHPTM50=");
-                    generic-lens-core = hackage "2.3.0.0" "sha256-Abntgf3UMhQed5gOc6sDoVilMc0FRRCh8VJCeoQfNRY=";
-                    autodocodec-schema = hackage "0.2.0.2" "sha256-hnpqfkthYWmFP3GSk5jAuxTVv/nf46M8wfvoX+S6MUs=";
-                    autodocodec-nix = hackage "0.1.0.2" "sha256-c1aQ8JNZGqFx+YiIogB7bXTqWkXFfrGCfIJhWlOCEXY=";
-                    autodocodec-yaml = hackage "0.4.0.3" "sha256-uMiorgI9FRt2YxgUIB4R+tpMkFyauinCl2xydyPwoB8=";
-
-                    aeson = hackage "2.3.1.0" "sha256-vWVNPb/kzXR92XmS8/TwfXWfhhhASjx6nRhcWj1aMmg=";
-                    autodocodec = hackage "0.6.0.0" "sha256-sE9+yKdJXIUAdJP/J1yrYS3d5fj7ESMYQAFLu8liXe8=";
-                    opt-env-conf = hackage "0.15.0.2" "sha256-uWUSQxspveZMrv2DaBnoXvFtBphvpzQ5p0eyNxHPOKA=";
-                    sydtest = hackage "0.23.0.0" "sha256-bfpNiMF62Vj4pK2AKJ/yOquDP/bpI8Pjn/mSQVHJQXk=";
-
-                    dependent-hashmap = source.root inputs.dependent-hashmap;
-
-                    co-log-effectful = jailbreak (unbreak);
-
+                    h2jvm = nodoc (notest (source.root h2jvm));
+                    diagnose = nodoc (enable "megaparsec-compat" (source.root inputs.diagnose));
+                    dependent-hashmap = nodoc (source.root inputs.dependent-hashmap);
+                    co-log-effectful = nodoc (jailbreak unbreak);
+                    optics = nodoc notest; # test fails on ghc 9.12
+                    generic-optics = nodoc notest; # inspection tests fail on ghc 9.12
                   };
               in
               {
@@ -121,6 +105,11 @@
                 build-tools.cabal.package = config.pkgs.cabal-install;
                 systems = import inputs.systems;
                 compat.enable = false;
+                envs.dev = {
+                  managed = true;
+                  managedBound = "upper";
+                  overrides = sharedOverrides;
+                };
                 envs.dev.ghcid.enable = false;
                 envs.dev.hls.enable = true;
 
@@ -131,8 +120,8 @@
                   lower.compiler = "ghc912";
 
                   envs = {
-                    solverOverrides = depOverrides;
-                    verbatim.overrides = depOverrides;
+                    solverOverrides = sharedOverrides;
+                    verbatim.overrides = sharedOverrides;
                   };
                 };
                 outputs.devShells = {
@@ -157,7 +146,7 @@
                   };
                 };
 
-                overrides = depOverrides;
+                overrides = sharedOverrides;
                 packages = {
                   elara = {
                     buildInputs = pkgs: [
