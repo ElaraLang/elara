@@ -27,6 +27,7 @@ jobs:
       - uses: cachix/cachix-action@v17
         with:
           name: elara
+          installCommand: nix profile add github:NixOS/nixpkgs/nixpkgs-unstable#cachix
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix flake check
   devshell-macos:
@@ -49,6 +50,7 @@ jobs:
       - uses: cachix/cachix-action@v17
         with:
           name: elara
+          installCommand: nix profile add github:NixOS/nixpkgs/nixpkgs-unstable#cachix
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix develop --profile dev-profile -c true
       - run: cachix push elara dev-profile

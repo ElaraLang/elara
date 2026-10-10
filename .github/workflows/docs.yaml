@@ -25,6 +25,7 @@ jobs:
       - uses: cachix/cachix-action@v17
         with:
           name: elara
+          installCommand: nix profile add github:NixOS/nixpkgs/nixpkgs-unstable#cachix
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix develop --command bash -c "cabal update && cabal haddock-project --hackage"
       - name: Deploy to GitHub Pages
