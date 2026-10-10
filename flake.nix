@@ -32,8 +32,14 @@
   };
 
   nixConfig = {
-    extra-substituters = [ "https://elara.cachix.org" ];
-    extra-trusted-public-keys = [ "elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI=" ];
+    extra-substituters = [
+      "https://elara.cachix.org"
+      "https://cache.bristermitten.me/elara"
+    ];
+    extra-trusted-public-keys = [
+      "elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI="
+      "elara:6GWLPsvcEXZFVCx4J8I8sB4jjppOB2/ISjt5oGXXkLo="
+    ];
   };
 
   outputs =
@@ -105,13 +111,8 @@
                 build-tools.cabal.package = config.pkgs.cabal-install;
                 systems = import inputs.systems;
                 compat.enable = false;
-                envs.dev = {
-                  managed = true;
-                  managedBound = "upper";
-                  overrides = sharedOverrides;
-                };
-                envs.dev.ghcid.enable = false;
-                envs.dev.hls.enable = true;
+                envs.latest.ghcid.enable = false;
+                envs.latest.hls.enable = true;
 
                 managed = {
                   enable = true;
@@ -128,7 +129,7 @@
                   # extending the default devshell to add the pre-commit hooks and some other nice things
                   default = config.pkgs.mkShell {
                     inputsFrom = [
-                      config.outputs.devShells.dev # the devshell that hix provides
+                      config.outputs.devShells.latest # the managed latest env doubles as the devshell
                       self.devShells.${config.system}.pre-commit # the pre-commit devshell
                     ];
                     buildInputs = with config.pkgs; [
