@@ -349,19 +349,6 @@ apply f' a' = case f' of
                     other -> prettyToUnannotatedText other
             printText asString
             pure (Ctor unitCtor [])
-    VPrimOp Prim.PrimGetArgs -> do
-        nilCon <-
-            Rock.fetch (Elara.Query.GetDataCon Prim.nilCtorName)
-                ?:! throwError_ (MissingPrimType Prim.nilCtorName)
-        consCon <-
-            Rock.fetch (Elara.Query.GetDataCon Prim.consCtorName)
-                ?:! throwError_ (MissingPrimType Prim.consCtorName)
-
-        pure $ IOAction $ do
-            args <- getArgs
-            let toValueList [] = Ctor nilCon []
-                toValueList (x : xs) = Ctor consCon [String (toText x), toValueList xs]
-            pure $ toValueList args
     VPrimOp Prim.PrimReadFile -> do
         case a' of
             String s -> pure $ IOAction $ do
