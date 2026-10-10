@@ -27,6 +27,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(ast)* More stable query keys, avoid redundant recomputation by memoising where possible - ([791d8f1](https://github.com/ElaraLang/elara/commit/791d8f18ae26eef7aa16e19abea4acb2dce1c9ea)) 
 - *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
 - *(query)* Forbid location information in query keys, refactor - ([c94f03e](https://github.com/ElaraLang/elara/commit/c94f03e49e9e2bce38cd2b79ccab71192d7f50c9)) 
+- *(shunt)* Key GetOpInfo on unlocated names - ([d07e2e7](https://github.com/ElaraLang/elara/commit/d07e2e7515a024c522c07d85ad5d95341cfff2e4)) 
 - Slim the Prelude a little - ([c0dfd29](https://github.com/ElaraLang/elara/commit/c0dfd2947f3a217e55dcdfb626b97ec8ea0d1c02)) 
 
 ### 🎨 Styling
@@ -50,6 +51,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Revert to ghc912, drop 9.14 tooling patches - ([e7fbafc](https://github.com/ElaraLang/elara/commit/e7fbafc14fcfe766fdd52b35e414db07eaf1c2df)) 
 - *(nix)* Update `flake.lock` - ([022b598](https://github.com/ElaraLang/elara/commit/022b59825f2286f4dfc6526ea2f6a57132192ee9)) 
 - *(nix)* Potentially speedup hpack evaluation a little - ([ed1513d](https://github.com/ElaraLang/elara/commit/ed1513db6008e14943a0068209997a3dd438c90f)) 
+- *(nix)* Remove some now-redundant overrides - ([abda776](https://github.com/ElaraLang/elara/commit/abda7761053399978ee73bde95211ff052eeb171)) 
 - :hammer: Tidy up `justfile` - ([d5eb322](https://github.com/ElaraLang/elara/commit/d5eb3221dee9007b53033763e5dd01f979dc07ea)) 
 - Make cabal vs nix builds more consistent - ([04e4c32](https://github.com/ElaraLang/elara/commit/04e4c32a2648642f740a5d944e3f1e0ab7826ea7)) 
 - Make justfile auto-compile stdlib before - ([cc4caf1](https://github.com/ElaraLang/elara/commit/cc4caf15594ccfa31491464dda4002da1cfbc33c)) 
