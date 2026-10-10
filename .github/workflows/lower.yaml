@@ -1,10 +1,15 @@
 name: Maintain lower bounds
 on:
   workflow_dispatch:
-  pull_request:
   push:
     branches:
       - master
+    paths:
+      - elara.cabal
+      - flake.nix
+concurrency:
+  group: lower
+  cancel-in-progress: true
 permissions:
   contents: write
   pull-requests: write
@@ -19,6 +24,7 @@ jobs:
           extra-conf: |
             trusted-public-keys = elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
             substituters = https://elara.cachix.org https://cache.nixos.org/
+            accept-flake-config = true
       - uses: ryanccn/attic-action@v0
         with:
           endpoint: https://cache.bristermitten.me/
@@ -36,7 +42,7 @@ jobs:
         if: steps.bounds.outputs.commit-message
         uses: peter-evans/create-pull-request@v8
         with:
-          branch: ${{ steps.bounds.outputs.branch }}
+          branch: hix-managed/lower
           commit-message: ${{ steps.bounds.outputs.commit-message }}
           title: ${{ steps.bounds.outputs.title }}
           body: ${{ steps.bounds.outputs.body }}
