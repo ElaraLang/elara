@@ -17,6 +17,11 @@ jobs:
           extra-conf: |
             trusted-public-keys = elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
             substituters = https://elara.cachix.org https://cache.nixos.org/
+      - uses: ryanccn/attic-action@v0
+        with:
+          endpoint: https://cache.bristermitten.me/
+          cache: elara
+          token: ${{ secrets.ATTIC_TOKEN }}
       - uses: cachix/cachix-action@v17
         with:
           name: elara
