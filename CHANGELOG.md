@@ -45,6 +45,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(dev-build)* Try hix's static musl build instead of nix bundle - ([6f8278c](https://github.com/ElaraLang/elara/commit/6f8278c77f19d7384c3e146450cf80d3a4aeb4fd)) 
 - *(dev-build)* Static-link elara against glibc instead of musl cross-compile - ([1a01695](https://github.com/ElaraLang/elara/commit/1a0169527426e47d71c3dca9837666a350037200)) 
 - Scope renovate to github-actions only - ([a04dfe1](https://github.com/ElaraLang/elara/commit/a04dfe1cdc6b173024609aac531fa4cdccfe6ca1)) 
+- Drop magic-nix-cache - ([ef37697](https://github.com/ElaraLang/elara/commit/ef376978fca9f24bfa721545b86865a4180d12ba)) 
+- Add macos devshell cache job - ([b7780a8](https://github.com/ElaraLang/elara/commit/b7780a880bfabab226f659be0db34c955603d3b3)) 
+- Bump dev env alongside latest - ([24dcd41](https://github.com/ElaraLang/elara/commit/24dcd411b0e587cef5f66499b47448db5a894530)) 
+- Add my attic server - ([e4eaf8d](https://github.com/ElaraLang/elara/commit/e4eaf8d401a2f4675a680ad41a6d2f65c4cf3a54)) 
 
 ### Build
 
@@ -52,6 +56,11 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Update `flake.lock` - ([022b598](https://github.com/ElaraLang/elara/commit/022b59825f2286f4dfc6526ea2f6a57132192ee9)) 
 - *(nix)* Potentially speedup hpack evaluation a little - ([ed1513d](https://github.com/ElaraLang/elara/commit/ed1513db6008e14943a0068209997a3dd438c90f)) 
 - *(nix)* Remove some now-redundant overrides - ([abda776](https://github.com/ElaraLang/elara/commit/abda7761053399978ee73bde95211ff052eeb171)) 
+- *(nix)* Follow nixpkgs in git-hooks and treefmt - ([c76c68e](https://github.com/ElaraLang/elara/commit/c76c68ec102f89c1c2ff206381125f3fbd19ec01)) 
+- *(nix)* Add elara cachix to nixConfig - ([41e041c](https://github.com/ElaraLang/elara/commit/41e041cd6985aa9d824fc384dd7afb121ef79977)) 
+- *(nix)* Refresh bounds and exclude managed.nix from treefmt - ([e8d34f2](https://github.com/ElaraLang/elara/commit/e8d34f2d59a97f29b65eeb39cf464863bc57b2e8)) 
+- *(nix)* Make dev a managed env - ([d3a7b5a](https://github.com/ElaraLang/elara/commit/d3a7b5ad33c28b947f9a4d6280a937712ffacb6e)) 
+- *(nix)* Use latest env as dev env - ([1c645ef](https://github.com/ElaraLang/elara/commit/1c645ef4be0d18e9270bf74c1fd071e28fe80063)) 
 - :hammer: Tidy up `justfile` - ([d5eb322](https://github.com/ElaraLang/elara/commit/d5eb3221dee9007b53033763e5dd01f979dc07ea)) 
 - Make cabal vs nix builds more consistent - ([04e4c32](https://github.com/ElaraLang/elara/commit/04e4c32a2648642f740a5d944e3f1e0ab7826ea7)) 
 - Make justfile auto-compile stdlib before - ([cc4caf1](https://github.com/ElaraLang/elara/commit/cc4caf15594ccfa31491464dda4002da1cfbc33c)) 
