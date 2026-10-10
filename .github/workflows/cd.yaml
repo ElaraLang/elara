@@ -28,3 +28,26 @@ jobs:
           git add CHANGELOG.md
           git commit -m "Update changelog"
           git push https://${{ secrets.GITHUB_TOKEN }}@github.com/"${GITHUB_REPOSITORY}".git master
+  cabal:
+    name: Regenerate cabal file
+    needs: changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@main
+        name: Install Nix
+        with:
+          extra-conf: |
+            accept-flake-config = true
+      - name: Generate cabal file
+        run: nix run .#gen-cabal-quiet
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git diff --quiet elara.cabal && exit 0
+          git add elara.cabal
+          git commit -m "Update cabal file"
+          git pull --rebase
+          git push
