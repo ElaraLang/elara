@@ -22,7 +22,7 @@
         upper = "0.6";
       };
       autodocodec = {
-        lower = "0.2.3.0";
+        lower = "0.4.0.0";
         upper = "0.7";
       };
       base = {
@@ -138,7 +138,7 @@
         upper = "0.6";
       };
       opt-env-conf = {
-        lower = "0.0.0.0";
+        lower = "0.5.0.0";
         upper = "0.16";
       };
       optics = {
@@ -166,7 +166,7 @@
         upper = "1.7";
       };
       relude = {
-        lower = "1.2.2.2";
+        lower = "1.2.2.0";
         upper = "1.3";
       };
       safe-exceptions = {
@@ -182,7 +182,7 @@
         upper = "0.4";
       };
       sydtest = {
-        lower = "0.12.0.0";
+        lower = "0.18.0.0";
         upper = "0.29";
       };
       sydtest-hedgehog = {
@@ -198,8 +198,12 @@
         upper = "0.4";
       };
       text-metrics = {
-        lower = "0.3.3";
+        lower = "0.3.2";
         upper = "0.4";
+      };
+      th-abstraction = {
+        lower = "0.7.2.0";
+        upper = null;
       };
       time = {
         lower = "1.14";
@@ -276,7 +280,7 @@
       aeson = "2.2.3.0";
       algebraic-graphs = "0.0.1";
       array = "0.5.8.0";
-      autodocodec = "0.2.3.0";
+      autodocodec = "0.4.0.0";
       base = "4.21.1.0";
       binary = "0.8.9.3";
       bytestring = "0.12.2.0";
@@ -304,33 +308,34 @@
       megaparsec = "9.5.0";
       mtl = "2.3.1";
       neat-interpolation = "0.5.1.4";
-      opt-env-conf = "0.0.0.0";
+      opt-env-conf = "0.5.0.0";
       optics = "0.4.2.1";
       parser-combinators = "1.0.0";
       pretty-simple = "3.2.1.0";
       prettyprinter = "1.7.1";
       prettyprinter-ansi-terminal = "1.1.2";
       process = "1.6.26.1";
-      relude = "1.2.2.2";
+      relude = "1.2.2.0";
       safe-exceptions = "0.1.7.4";
       some = "1.0.6";
       stringsearch = "0.3.6.6";
-      sydtest = "0.12.0.0";
+      sydtest = "0.18.0.0";
       sydtest-hedgehog = "0.4.0.0";
       template-haskell = "2.23.0.0";
       terminal-size = "0.3.0";
-      text-metrics = "0.3.3";
+      text-metrics = "0.3.2";
+      th-abstraction = "0.7.2.0";
       time = "1.14";
       utf8-string = "0.3.7";
       witch = "1.3.1.0";
     };
   };
   initial = {
-    latest = { };
+    latest = {};
     lower = {
       HUnit = "1.6.0.0";
       QuickCheck = "2.15.0.1";
-      aeson = "2.3.0.0";
+      aeson = "2.2.3.0";
       algebraic-graphs = "0.7";
       array = "0.5.8.0";
       autodocodec = "0.6.0.0";
@@ -366,14 +371,15 @@
       prettyprinter = "1.7.1";
       prettyprinter-ansi-terminal = "1.1.2";
       process = "1.6.26.1";
-      relude = "1.2.2.2";
+      relude = "1.2.2.0";
       safe-exceptions = "0.1.7.4";
       some = "1.0.6";
       stringsearch = "0.3.6.6";
-      sydtest = "0.23.0.0";
+      sydtest = "0.28.0.0";
       sydtest-hedgehog = "0.4.0.0";
       terminal-size = "0.3.0";
-      text-metrics = "0.3.3";
+      text-metrics = "0.3.2";
+      th-abstraction = "0.7.2.0";
       time = "1.14";
       utf8-string = "1.0.1.1";
       witch = "1.3.1.0";
@@ -528,11 +534,6 @@
       };
     };
     lower = {
-      Diff = {
-        version = "1.0.2";
-        hash = "0s0bxg8qygbkjg6jf6hi689s616qfq0kg1mraar2229zvx54673x";
-        repo = "hackage.haskell.org";
-      };
       HUnit = {
         version = "1.6.0.0";
         hash = "011qaixcy05w0jazw5x4qir16j6rvdax6ayf0fjmhf9hlbii1pk8";
@@ -553,24 +554,35 @@
         hash = "0p4palm7ddbra9f1sga68h26q7gwj2vgxnyw6frisjdkz2hj166w";
         repo = "hackage.haskell.org";
       };
+      attoparsec = {
+        version = "0.14.4";
+        hash = "0y9dph5axyvr1bfcvmz6qh50bjcp50m2ljra14960anc6g74a3c8";
+        repo = "hackage.haskell.org";
+        revision = true;
+      };
       autodocodec = {
-        version = "0.2.3.0";
-        hash = "1mvsv7kn9p80b7d511wh1w9nc7dvlb7s28gcgk3bdqxw9qrh5irv";
+        version = "0.4.0.0";
+        hash = "1b062lxzj2wnrrrxqrjwf1yvy02gkcd97dsfam1fwzgll36rnb8x";
+        repo = "hackage.haskell.org";
+      };
+      autodocodec-nix = {
+        version = "0.1.0.0";
+        hash = "18prm5vvg8l80vd6arpb0qpg7kv9d8yaw5rnlpcbqq7bmgyl1r1c";
         repo = "hackage.haskell.org";
       };
       autodocodec-schema = {
-        version = "0.1.0.4";
-        hash = "0i8yac5viiddn6hq5pvj11nf8z1p18lvl07rfhp2msc0a1ykr2ck";
+        version = "0.2.0.1";
+        hash = "1gg6cm9ly10f2gpgsvaxb4clkg5wl97xrglpypwfa83cfc65ac9p";
         repo = "hackage.haskell.org";
       };
       autodocodec-yaml = {
-        version = "0.3.0.0";
-        hash = "02sd2c1jjlf30kx611bnc3jahs856w0nsszk4c7xh9xlinbnmyfs";
+        version = "0.4.0.1";
+        hash = "168dmndbkxdj16gkqkbmpgg18ajm544pm851r4ym1zz6xvi17p1g";
         repo = "hackage.haskell.org";
       };
       cabal-doctest = {
-        version = "1.0.12";
-        hash = "094mvqgh9bhx5v9xanzkhcm8pcxzmkaa68lr3bqpjzkdxydx81nk";
+        version = "1.0.13";
+        hash = "104s66508f64swd7gqzncw1w56anfghj7vqj09g1isxrs8ca53fd";
         repo = "hackage.haskell.org";
       };
       concurrent-output = {
@@ -596,21 +608,6 @@
       diagnose = {
         version = "1.8.2";
         hash = "0g97ys6d5yr30y3jagkq7r0w93sh27kf2ghflsyich88b5i1n79m";
-        repo = "hackage.haskell.org";
-      };
-      envparse = {
-        version = "0.6.0";
-        hash = "0z55z3vyz64akc4y0fz02kb440yg5w8qhbq59b6zqr62vkisc8i2";
-        repo = "hackage.haskell.org";
-      };
-      generic-lens-core = {
-        version = "2.2.1.0";
-        hash = "0innx8ndljssasw9f1fnhwhgjv3smn57kir895d7fbj4r0k8w11s";
-        repo = "hackage.haskell.org";
-      };
-      generic-optics = {
-        version = "2.2.1.0";
-        hash = "08p14izcf954rbwhr43qkbxdcfcc84b910788iyrwh7fwznffasz";
         repo = "hackage.haskell.org";
       };
       generically = {
@@ -670,13 +667,8 @@
         repo = "hackage.haskell.org";
       };
       opt-env-conf = {
-        version = "0.0.0.0";
-        hash = "1h4b51nkba936xiayn85aa162bmzkiccj19vkv22kgsr0l3s13l6";
-        repo = "hackage.haskell.org";
-      };
-      optparse-applicative = {
-        version = "0.19.0.0";
-        hash = "0cs8fqipakad38lvm75nz98hmvf881mgjhnc7icblxfzh92ay6kn";
+        version = "0.5.0.0";
+        hash = "1cgwysccsl0i6w0qqpkah1avfn5spbdkayglfy9jgl0q0vqcih2a";
         repo = "hackage.haskell.org";
       };
       parser-combinators = {
@@ -709,9 +701,14 @@
         hash = "1flw5h455z6vr0ghv1i4z1rc033jp1hcv4ci1jnqryd6pyh95ny3";
         repo = "hackage.haskell.org";
       };
+      relude = {
+        version = "1.2.2.0";
+        hash = "0gmcdwci7r0cb2zjry9ycq0kn7x8bfq40ngjd6xdc0pbh7cz6v8i";
+        repo = "hackage.haskell.org";
+      };
       sydtest = {
-        version = "0.12.0.0";
-        hash = "1in0xi9cajzwxfv703rz8b5ramliqpmyfwrci5c05h7y17adw2wy";
+        version = "0.18.0.0";
+        hash = "0ag5lzk128vqbwbhwxpgcdrhi0jlkx07cbfd9ysl4mj59717n6ik";
         repo = "hackage.haskell.org";
       };
       sydtest-hedgehog = {
@@ -722,6 +719,11 @@
       terminal-size = {
         version = "0.3.0";
         hash = "0rc3z6nf8189zk014nna568sg2hpxmyqlv6ha1y0fhpw9m8872bk";
+        repo = "hackage.haskell.org";
+      };
+      text-metrics = {
+        version = "0.3.2";
+        hash = "039sll1ndgx9zkkydyrzx610rrnbszs4cqqxxyn3fp3jr8cfycyf";
         repo = "hackage.haskell.org";
       };
       time-compat = {
@@ -740,6 +742,12 @@
         hash = "0wirg6wjzpc37073dia3c82i2svihn2bbh31kxwqxjl6zqw5a1ia";
         repo = "hackage.haskell.org";
       };
+      vector = {
+        version = "0.13.2.0";
+        hash = "0mgc7ikhdgqwsj5skdxsf6v3a1iqkiiysqj94qnbg40ff8nbai4x";
+        repo = "hackage.haskell.org";
+        revision = true;
+      };
       witch = {
         version = "1.3.1.0";
         hash = "1n848h6dsyflpn7hn72pjnz3j06fg7i6gay1w6namjy597miyg1l";
@@ -754,9 +762,9 @@
     };
   };
   solver = {
-    latest = { };
-    lower = { };
+    latest = {};
+    lower = {};
   };
-  packages = { };
+  packages = {};
   resolving = false;
 }
