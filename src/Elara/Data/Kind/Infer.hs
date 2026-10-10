@@ -50,7 +50,7 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error
-import Elara.Logging (debugWith, logDebug)
+import Elara.Logging (logDebug, logDebugWith)
 import Elara.Prim (primKindCheckContext)
 import Elara.Query.Effects (QueryEffects)
 
@@ -203,7 +203,7 @@ elaborate ::
     [TypeVariable NewS.Shunted SourceRegion] ->
     NewS.ShuntedTypeDeclaration ->
     Eff r (KindVar, NewM.MidKindedTypeDeclaration)
-elaborate tName tvs t = debugWith ("elaborate: " <> pretty tName) $ do
+elaborate tName tvs t = logDebugWith ("elaborate: " <> pretty tName) $ do
     varKinds <- for tvs $ \tv -> do
         kindVar <- makeUniqueId
         declareTypeVar (tv ^. unlocated) kindVar

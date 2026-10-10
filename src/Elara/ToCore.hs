@@ -10,7 +10,6 @@ import Data.Graph (SCC (..), flattenSCC, stronglyConnComp)
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
-import Error.Diagnose (Report (..))
 
 import Data.Map qualified as M
 
@@ -30,7 +29,6 @@ import Elara.Data.Pretty (Pretty (..), vcat, (<+>))
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error (ElaraDiagnostic (..), ElaraError (..), ElaraMarker (..), ElaraMarkerType (..), ElaraNote (..), runErrorAsElaraError)
-import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging
 import Elara.Prim (KnownType (..), OpaquePrim (..), WiredInPrim (..), lookupByQualifiedTypeName, mkPrimQual)
 import Elara.Prim.Core
@@ -38,7 +36,6 @@ import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
 import Elara.TypeInfer ()
 import Elara.TypeInfer.Unique (UniqueTyVar)
 import Elara.Utils (uncurry3)
-import TODO (todo)
 
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Types qualified as New
@@ -222,14 +219,14 @@ runGetCoreModuleQuery mn = do
 sccToCore :: ToCoreC r => SCC (Qualified VarName, TypedExpr) -> Eff r (CoreDeclaration CoreBind)
 sccToCore scc = case scc of
     AcyclicSCC (name, expr) -> do
-        debugWith ("sccToCore: AcyclicSCC " <> pretty name) $ do
+        logDebugWith ("sccToCore: AcyclicSCC " <> pretty name) $ do
             expr' <- toCore expr
             let New.Expr _ meta _ = expr
             ty <- typeToCore meta
             let var = Core.Id (Global (nameText <$> name)) ty Nothing
             pure $ CoreValue $ NonRecursive (var, expr')
     CyclicSCC binds -> do
-        debugWith ("sccToCore: CyclicSCC " <> pretty (fmap fst binds)) $ do
+        logDebugWith ("sccToCore: CyclicSCC " <> pretty (fmap fst binds)) $ do
             binds' <- for binds $ \(name, expr) -> do
                 expr' <- toCore expr
                 let New.Expr _ meta _ = expr
@@ -298,7 +295,7 @@ moduleToCore m'@(NewModule.Module _ m) = logDebugWith ("Converting module: " <> 
                                     ctorArgs'
                                 )
                                 tvs
-                    debug $ "Ctor: " <+> pretty ctorName <+> " with type: " <+> pretty ctorType
+                    logDebug $ "Ctor: " <+> pretty ctorName <+> " with type: " <+> pretty ctorType
                     pure (nameText <$> ctorName, ctorType, tyCon)
                 let ctors'' = fmap (uncurry3 DataCon) ctors'
                 traverse_ registerCtor ctors''
@@ -365,7 +362,7 @@ typeToCore (Type.TypeConstructor _ qn ts) = do
     ts' <- traverse typeToCore ts
     case lookupByQualifiedTypeName qn of
         Just kt -> pure $ foldl' Core.AppTy (Core.ConTy (knownTypeToCon kt)) ts'
-        Nothing -> debugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
+        Nothing -> logDebugWith ("Type constructor: " <+> pretty qn <+> " with args: " <+> pretty ts) $ do
             tyCon <- lookupTyCon name
             pure $ foldl' Core.AppTy (Core.ConTy tyCon) ts'
 
@@ -471,9 +468,9 @@ toCore le@(New.Expr _ t e) = do
             let ref = Local (nameText <$> (vn ^. unlocated))
             let New.Expr _ e1Meta _ = e1
             t' <- typeToCore e1Meta
-            debug $ "Let-binding" <+> pretty vn <+> ":" <+> pretty e1Meta <+> "=" <+> pretty e1'
+            logDebug $ "Let-binding" <+> pretty vn <+> ":" <+> pretty e1Meta <+> "=" <+> pretty e1'
             let bindingIsRecursive = isRecursive (vn ^. unlocated) e1
-            debug $ "Recursive?" <+> pretty bindingIsRecursive
+            logDebug $ "Recursive?" <+> pretty bindingIsRecursive
             pure $
                 Core.Let
                     ( if bindingIsRecursive
