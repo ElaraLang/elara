@@ -224,7 +224,7 @@ fakeOperatorTable =
         , mkFakeVarP "==" (OpInfo (mkPrecedence 4) NonAssociative)
         ]
   where
-    mkFakeVarP name info = (ignoreLocation $ withName $ mkFakeOp name, info)
+    mkFakeVarP name info = (NameOp <$> qualifiedTest name, info)
 
 -- | Fake type environment for testing type inference
 fakeTypeEnvironment :: TypeEnvironment SourceRegion
@@ -262,7 +262,10 @@ parseExprWith parser fp source tokens = do
 
 -- | Create an OpLookup from the fake operator table
 fakeOpLookup :: OpLookup es
-fakeOpLookup name = pure $ Map.lookup name fakeOperatorTable
+fakeOpLookup name =
+    pure $ case Map.lookup name fakeOperatorTable of
+        Just i -> DeclaredFixity (Just i.precedence) (Just i.associativity)
+        Nothing -> DeclaredFixity Nothing Nothing
 
 mkFakeVar :: OpName -> VarRef VarName
 mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))

@@ -14,7 +14,7 @@ instance IsString Name where
         "" -> error "Empty string is not a valid name"
         c : _ | isUpper c -> NameType (fromString s)
         c : _ | isLower c -> NameValue (fromString s)
-        _ -> error "Invalid name"
+        n -> error ("Invalid name: " <> toText n)
 
 instance IsString s => IsString (MaybeQualified s) where
     fromString s = MaybeQualified (fromString s) Nothing

@@ -25,7 +25,7 @@ data DeclaredFixity = DeclaredFixity
     , declaredAssociativity :: !(Maybe Associativity)
     }
 
-type OpTable = Map (IgnoreLocVarRef Name) OpInfo
+type OpTable = Map (Qualified Name) OpInfo
 
 newtype Precedence = Precedence Int
     deriving (Eq, Ord, Show)
@@ -63,6 +63,6 @@ prettyOp (New.InfixedOp _ vn) = Style.operator $ "`" <> pretty vn <> "`"
 prettyOpTable :: OpTable -> Doc AnsiStyle
 prettyOpTable table = brackets (vsep (map prettyOpInfo (Map.toList table)))
   where
-    prettyOpInfo :: (IgnoreLocVarRef Name, OpInfo) -> Doc AnsiStyle
+    prettyOpInfo :: (Qualified Name, OpInfo) -> Doc AnsiStyle
     prettyOpInfo (opName, info) =
         pretty info <+> pretty opName

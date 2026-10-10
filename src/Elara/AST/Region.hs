@@ -11,7 +11,6 @@ import GHC.Exts (the)
 import Optics (FoldableWithIndex, FunctorWithIndex, TraversableWithIndex, maximumOf, minimumOf)
 import Relude.Unsafe (fromJust)
 import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
-import Text.Show (Show (show))
 
 import Error.Diagnose.Position qualified as Diag
 
@@ -171,14 +170,6 @@ type family Unlocate g where
     Unlocate (Located a) = a
     Unlocate a = a
 
--- | Newtype wrapper for 'Located' that ignores the location information for its instances
-newtype IgnoreLocation a = IgnoreLocation (Located a)
-    deriving (Foldable, Functor, Generic, Traversable)
-
-instance (Eq (IgnoreLocation a), Hashable a) => Hashable (IgnoreLocation a)
-
-makePrisms ''IgnoreLocation
-
 generatedSourceRegionFrom :: Located a -> SourceRegion
 generatedSourceRegionFrom = generatedSourceRegion . view (sourceRegion % path)
 
@@ -187,9 +178,6 @@ class LocatedElement w where
 
 instance LocatedElement Located where
     unlocated = lensVL $ \f (Located region x) -> fmap (Located region) (f x)
-
-instance LocatedElement IgnoreLocation where
-    unlocated = lensVL $ \f (IgnoreLocation (Located region x)) -> IgnoreLocation . Located region <$> f x
 
 -- | Attach the location of the second argument to the first argument
 withLocationOf :: HasSourceRegion b => a -> b -> Located a
@@ -217,18 +205,6 @@ instance Applicative Located where
 
 instance Pretty a => Pretty (Located a) where
     pretty (Located _ x) = pretty x
-
-instance Pretty a => Pretty (IgnoreLocation a) where
-    pretty (IgnoreLocation x) = pretty x
-
-instance Eq a => Eq (IgnoreLocation a) where
-    IgnoreLocation (Located _ a) == IgnoreLocation (Located _ b) = a == b
-
-instance Ord a => Ord (IgnoreLocation a) where
-    IgnoreLocation (Located _ a) `compare` IgnoreLocation (Located _ b) = a `compare` b
-
-instance Show a => Show (IgnoreLocation a) where
-    show (IgnoreLocation (Located _ a)) = Text.Show.show a
 
 instance Pretty SourceRegion where
     pretty (GeneratedRegion fp) = "<generated:" <> pretty fp <> ">"

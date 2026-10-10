@@ -28,7 +28,6 @@ module Elara.Shunt (
 )
 where
 
-import Data.Generics.Wrapped
 import Effectful (Eff, (:>))
 
 import Effectful.Error.Static qualified as Eff
@@ -42,7 +41,7 @@ import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Renamed
 import Elara.AST.Phases.Shunted
-import Elara.AST.Region (IgnoreLocation (..), Located (..), SourceRegion (..), enclosingRegion, unlocated)
+import Elara.AST.Region (Located (..), SourceRegion (..), enclosingRegion, unlocated)
 import Elara.AST.Types
 import Elara.AST.VarRef
 import Elara.ConstExpr
@@ -109,7 +108,7 @@ instance RunPhase Shunted where
 This module only instantiates this function with a value that looks up operator info from the AST, but
 other implementations are possible, e.g. a hardcoded table, which may be useful for primitives or testing.
 -}
-type OpLookup es = IgnoreLocVarRef Name -> Eff es (Maybe OpInfo)
+type OpLookup es = Qualified Name -> Eff es DeclaredFixity
 
 -- | An 'OpLookup' that uses the 'Elara.Query.GetOpInfo' query to get operator info, i.e. derives it from the AST annotations.
 opLookupQueries ::
@@ -119,11 +118,7 @@ opLookupQueries ::
     , QueryEffects es
     ) =>
     OpLookup es
-opLookupQueries (Local i) = Eff.throwError (LocalOperatorInfoNotSupported (i ^. _Unwrapped))
-opLookupQueries (Global (IgnoreLocation located)) = do
-    DeclaredFixity p a <- Rock.fetch (GetOpInfo (located ^. unlocated))
-    whenNothing_ p $ Eff.tell (one @(Set _) (UnknownPrecedence located))
-    pure $ Just (OpInfo (fromMaybe defaultPrecedence p) (fromMaybe defaultAssociativity a))
+opLookupQueries = Rock.fetch . GetOpInfo
 
 -- | Run the @'Elara.Query.GetOpInfo'@ query to get operator info for a given operator
 runGetOpInfoQuery ::
@@ -234,11 +229,6 @@ fixExpr e = do
     fixed <- fixOperators e
     shuntExpr fixed
 
--- | Convert an operator to its qualified 'Name' for lookup
-opNameOf (SymOp _ (TaggedLocate _ opRef)) =
-    ignoreLocation (withName opRef)
-opNameOf (InfixedOp _ vn) = ignoreLocation vn
-
 {- | Fix the operators in an expression to the correct precedence.
 For example given @((+) = 1l) and ((*) = 2r)@,
 @1 + 2 * 3 * 4 + 5 + 6@ should be parsed as @(((1 + (2 * 3)) * 4) + 5) + 6@.
@@ -277,14 +267,16 @@ fixOperators = reassoc
         assocRight = pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression o1 e1 r)))
     reassoc' _ operator l r = pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r)))
 
-    getInfoOrWarn :: BinaryOperator SourceRegion Renamed -> Eff r OpInfo
-    getInfoOrWarn operator = do
-        info <- ?lookup (opNameOf operator)
-        case info of
-            Just info' -> pure info'
-            Nothing -> do
-                -- use default precedence 9 left associative
-                pure (OpInfo (mkPrecedence 9) LeftAssociative)
+    getInfoOrWarn operator = case operatorRef operator of
+        Local u -> Eff.throwError (LocalOperatorInfoNotSupported u)
+        Global q -> do
+            DeclaredFixity p a <- ?lookup (q ^. unlocated)
+            whenNothing_ p $ Eff.tell (one @(Set _) (UnknownPrecedence q))
+            pure (OpInfo (fromMaybe defaultPrecedence p) (fromMaybe defaultAssociativity a))
+
+operatorRef :: BinaryOperator SourceRegion Renamed -> VarRef Name
+operatorRef (SymOp _ (TaggedLocate _ opRef)) = withName opRef
+operatorRef (InfixedOp _ vn) = vn
 
 {- | Shunt a renamed expression into a shunted expression.
 This doesn't actually do much other than traverse the AST and convert types.

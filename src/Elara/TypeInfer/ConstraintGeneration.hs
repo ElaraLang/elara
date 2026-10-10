@@ -32,7 +32,6 @@ import Elara.Data.AtLeast2List (AtLeast2List (..))
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Kind.Infer (KindInferError, inferTypeKind)
 import Elara.Data.Pretty
-import Elara.Data.Unique (Unique)
 import Elara.Logging (StructuredDebug, debugWithResult, logDebug, logDebugWith)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Query.Effects (QueryEffects)

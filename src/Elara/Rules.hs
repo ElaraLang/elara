@@ -9,11 +9,10 @@ import Effectful.Error.Static (runError, throwError, throwError_)
 import System.FilePath (takeDirectory, (</>))
 
 import Data.Text qualified as Text
-import Effectful.State.Static.Local qualified as Local
 
 import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (..), unlocated)
+import Elara.AST.Region (unlocated)
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
@@ -23,10 +22,8 @@ import Elara.ModuleIndex (ModuleEntry (..), buildModuleIndex)
 import Elara.Parse (getParsedFileQuery, getParsedModuleQuery)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
 import Elara.Parse.Stream (TokenStream)
-import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
 import Elara.ReadFile (ModulePathError (..), getInputFiles, runGetFileContentsQuery)
-import Elara.Rename
 import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery)
 import Elara.Settings (CompilerSettings (..), mainFile)
 import Elara.Shunt (runGetOpInfoQuery, runGetOpTableInQuery)

@@ -9,24 +9,20 @@ import Data.Aeson (ToJSON (..))
 import Data.Data (Data)
 
 import Elara.AST.Name (HasName (name), Name, Qualified, ToName (toName))
-import Elara.AST.Region (IgnoreLocation (..), Located (..), LocatedElement (unlocated))
+import Elara.AST.Region (Located (..))
 import Elara.Data.Pretty (Pretty (pretty))
 import Elara.Data.Unique
 
-type data VarRefKind = LocatedVarRefKind | UnlocatedVarRefKind | IgnoreLocVarRefKind
+type data VarRefKind = LocatedVarRefKind | UnlocatedVarRefKind
 
 type family VarRefImpl (c :: VarRefKind) a where
     VarRefImpl LocatedVarRefKind a = Located a
-    VarRefImpl IgnoreLocVarRefKind a = IgnoreLocation a
     VarRefImpl UnlocatedVarRefKind a = a
 
 class MapVarRefImpl (c :: VarRefKind) where
     mapVarRefImpl :: (a -> b) -> VarRefImpl c a -> VarRefImpl c b
 
 instance MapVarRefImpl LocatedVarRefKind where
-    mapVarRefImpl = fmap
-
-instance MapVarRefImpl IgnoreLocVarRefKind where
     mapVarRefImpl = fmap
 
 instance MapVarRefImpl UnlocatedVarRefKind where
@@ -44,8 +40,6 @@ instance MapVarRefImpl c => Functor (VarRef' c) where
 
 type VarRef n = VarRef' LocatedVarRefKind n
 
-type IgnoreLocVarRef n = VarRef' IgnoreLocVarRefKind n
-
 type UnlocatedVarRef n = VarRef' UnlocatedVarRefKind n
 
 deriving instance (Typeable n, Data n) => Data (UnlocatedVarRef n)
@@ -60,21 +54,9 @@ varRefVal' = traversalVL $ \f ->
         (Global n) -> let n' = traverse (traverse f) n in Global <$> n'
         (Local n) -> let n' = traverse (traverse f) n in Local <$> n'
 
-ignoreLocation :: VarRef n -> IgnoreLocVarRef n
-ignoreLocation (Global n) = Global (IgnoreLocation n)
-ignoreLocation (Local n) = Local (IgnoreLocation n)
-
-unlocateIgnore :: IgnoreLocVarRef n -> UnlocatedVarRef n
-unlocateIgnore (Global n) = Global (view unlocated n)
-unlocateIgnore (Local n) = Local (view unlocated n)
-
 withName :: ToName n => VarRef n -> VarRef Name
 withName (Global n) = Global (toName <<$>> n)
 withName (Local n) = Local (toName <<$>> n)
-
-withName' :: ToName n => VarRef n -> IgnoreLocVarRef Name
-withName' (Global n) = Global (toName <<$>> IgnoreLocation n)
-withName' (Local n) = Local (toName <<$>> IgnoreLocation n)
 
 instance (Pretty n, Pretty (VarRefImpl c (Qualified n)), Pretty (VarRefImpl c (Unique n))) => Pretty (VarRef' c n) where
     pretty (Global n) = pretty n
