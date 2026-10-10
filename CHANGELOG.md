@@ -49,6 +49,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add macos devshell cache job - ([b7780a8](https://github.com/ElaraLang/elara/commit/b7780a880bfabab226f659be0db34c955603d3b3)) 
 - Bump dev env alongside latest - ([24dcd41](https://github.com/ElaraLang/elara/commit/24dcd411b0e587cef5f66499b47448db5a894530)) 
 - Add my attic server - ([e4eaf8d](https://github.com/ElaraLang/elara/commit/e4eaf8d401a2f4675a680ad41a6d2f65c4cf3a54)) 
+- Fix weird cachix bug - ([de1427e](https://github.com/ElaraLang/elara/commit/de1427e533a28ed5e4419a6682da6b0647fe932a)) 
 
 ### Build
 
