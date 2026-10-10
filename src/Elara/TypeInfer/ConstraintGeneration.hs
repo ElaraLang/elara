@@ -103,7 +103,7 @@ lookupType ::
     , Rock.Rock Elara.Query.Query :> r
     , State (TypeEnvironment loc) :> r
     ) =>
-    TypeEnvKey loc ->
+    TypeEnvKey ->
     Eff r (Type loc)
 lookupType key = do
     -- try the local environment first to avoid unnecessary queries / infinite loops

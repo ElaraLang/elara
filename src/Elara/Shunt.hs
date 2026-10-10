@@ -31,7 +31,6 @@ where
 import Data.Generics.Wrapped
 import Effectful (Eff, (:>))
 
-import Data.Set qualified as Set
 import Effectful.Error.Static qualified as Eff
 import Effectful.Writer.Static.Local qualified as Eff
 

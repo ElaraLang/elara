@@ -27,12 +27,11 @@ module Elara (
 where
 
 import Data.Generics.Product (field')
-import Effectful (Eff, IOE, Subset, inject, (:>))
+import Effectful (Eff, IOE, Subset, (:>))
 import Effectful.Colog
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Writer.Static.Local (Writer)
-import Error.Diagnose (Report (..))
 import H2JVM
 import Prettyprinter.Render.Text
 import System.Directory (createDirectoryIfMissing)
@@ -45,8 +44,7 @@ import Data.Set qualified as Set
 
 import Elara.AST.Instances ()
 import Elara.AST.Location (stripTag)
-import Elara.AST.Name (ModuleName, NameLike, nameText)
-import Elara.AST.Phase
+import Elara.AST.Name (ModuleName, nameText)
 import Elara.AST.Phases.Renamed (Renamed)
 import Elara.AST.Phases.Typed (Typed)
 import Elara.AST.Region
@@ -56,7 +54,6 @@ import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
-import Elara.Error.Diagnose
 import Elara.JVM.Error (JVMLoweringError)
 import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, structuredDebugToLogWith)

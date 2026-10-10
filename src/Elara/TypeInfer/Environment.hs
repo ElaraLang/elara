@@ -17,7 +17,7 @@ import Elara.TypeInfer.Type
 -- | A type environment Γ, which maps type variables and data constructors to types
 newtype TypeEnvironment loc
     = TypeEnvironment
-        (Map (TypeEnvKey loc) (Type loc))
+        (Map TypeEnvKey (Type loc))
     deriving (Show)
 
 instance Pretty loc => Pretty (TypeEnvironment loc) where
@@ -27,26 +27,26 @@ emptyTypeEnvironment :: TypeEnvironment loc
 emptyTypeEnvironment = TypeEnvironment Map.empty
 
 -- | A key in the type environment
-data TypeEnvKey loc
+data TypeEnvKey
     = -- | A data constructor K
       DataConKey DataCon
     | -- | A term variable x
       TermVarKey (Qualified VarName)
     deriving (Eq, Generic, Ord, Show)
 
-instance Hashable (TypeEnvKey loc)
+instance Hashable TypeEnvKey
 
-instance Pretty (TypeEnvKey loc) where
+instance Pretty TypeEnvKey where
     pretty (DataConKey con) = pretty con
     pretty (TermVarKey name) = pretty name
 
-addType :: TypeEnvKey loc -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
+addType :: TypeEnvKey -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
 addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
 
-addType' :: State (TypeEnvironment loc) :> r => TypeEnvKey loc -> Type loc -> Eff r ()
+addType' :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Type loc -> Eff r ()
 addType' key ty = modify (addType key ty)
 
-lookupTypeMaybe :: State (TypeEnvironment loc) :> r => TypeEnvKey loc -> Eff r (Maybe (Type loc))
+lookupTypeMaybe :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Eff r (Maybe (Type loc))
 lookupTypeMaybe key = do
     TypeEnvironment env <- get
     pure (Map.lookup key env)
@@ -56,7 +56,7 @@ lookupType ::
     , State (TypeEnvironment loc) :> r
     , Show loc
     ) =>
-    TypeEnvKey loc -> Eff r (Type loc)
+    TypeEnvKey -> Eff r (Type loc)
 lookupType key = do
     env'@(TypeEnvironment env) <- get
     case Map.lookup key env of
@@ -99,7 +99,7 @@ lookupLocalVar name = get >>= lookupLocalVarType name
 
 -- | An error that can occur during type inference
 data InferError loc
-    = UnboundTermVar (TypeEnvKey loc) (TypeEnvironment loc)
+    = UnboundTermVar TypeEnvKey (TypeEnvironment loc)
     | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
     deriving (Generic, Show)
 

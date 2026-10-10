@@ -169,7 +169,7 @@ data Query (es :: [Effect]) a where
     SCCKeyOf :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) SCCKey
     -- \* Type and Kind Inference Queries
     TypeCheckedExpr :: Qualified VarName -> Query (WithRock (ConsQueryEffects '[])) TypedExpr
-    TypeOf :: loc ~ SourceRegion => TypeEnvKey loc -> Query (WithRock (ConsQueryEffects '[])) (Infer.Type loc)
+    TypeOf :: TypeEnvKey -> Query (WithRock (ConsQueryEffects '[])) (Infer.Type SourceRegion)
     InferSCC :: SCCKey -> Query (WithRock (ConsQueryEffects '[])) (Map (Qualified VarName) (Polytype SourceRegion))
     KindOf :: Qualified TypeName -> Query (WithRock (ConsQueryEffects '[])) (Maybe KindVar)
     -- | Get Information about a type alias

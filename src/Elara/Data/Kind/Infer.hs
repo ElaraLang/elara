@@ -44,13 +44,12 @@ import Data.Set qualified as Set
 import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Phase
-import Elara.AST.Region (Located, SourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
 import Elara.Data.Unique.Effect
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Logging (debugWith, logDebug)
 import Elara.Prim (primKindCheckContext)
 import Elara.Query.Effects (QueryEffects)

@@ -6,7 +6,6 @@ import Effectful.Reader.Static
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
 
-import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Logging
 import Elara.Query.Effects

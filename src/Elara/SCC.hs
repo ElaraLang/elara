@@ -7,7 +7,6 @@ import Data.Graph (SCC (..), stronglyConnComp)
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Writer.Static.Local (Writer, runWriter)
-import Optics (view)
 
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
@@ -17,7 +16,7 @@ import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Shunted (Shunted)
-import Elara.AST.Region (Located (..), unlocated)
+import Elara.AST.Region (Located (..))
 import Elara.AST.VarRef
 import Elara.Error (ElaraError, ElaraWarning, reportElaraWarning, runErrorAsElaraError)
 import Elara.Query.Effects (ConsQueryEffects)

@@ -11,7 +11,7 @@ Note that until the monad operations are implemented, we can't fully remove bloc
 -}
 module Elara.Rename (renameExpr, InnerRename) where
 
-import Data.Foldable1 (Foldable1 (fold1), foldl1', foldr1)
+import Data.Foldable1 (foldr1)
 import Data.Generics.Product hiding (list)
 import Effectful (Eff, (:>))
 import Effectful.Error.Static (throwError)

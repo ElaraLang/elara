@@ -101,7 +101,7 @@ instance RunPhase Typed where
 runTypeOfQuery ::
     forall loc.
     loc ~ SourceRegion =>
-    TypeEnvKey loc ->
+    TypeEnvKey ->
     Eff
         ( ConsQueryEffects
             '[Rock.Rock Elara.Query.Query, Error ElaraError, Writer [ElaraWarning]]
