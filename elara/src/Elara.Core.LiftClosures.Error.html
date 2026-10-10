@@ -22,7 +22,7 @@
 </span><span id="line-22"></span><span>      </span><span id="ExpectedCExpr"><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ExpectedCExpr"><span class="hs-identifier hs-var">ExpectedCExpr</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-23"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Expected a function type, but got something else</span></span><span>
 </span><span id="line-24"></span><span>      </span><span id="ExpectedFunctionType"><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ExpectedFunctionType"><span class="hs-identifier hs-var">ExpectedFunctionType</span></a></span></span><span> </span><span class="annot"><a href="Elara.Core.html#Var"><span class="hs-identifier hs-type">Core.Var</span></a></span><span> </span><span class="annot"><a href="Elara.Core.html#Type"><span class="hs-identifier hs-type">Core.Type</span></a></span><span>
-</span><span id="line-25"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680186891"><span id="local-6989586621680186911"><span id="local-6989586621680186915"><span class="annot"><span class="annottext">Int -&gt; ClosureLiftError -&gt; ShowS
+</span><span id="line-25"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680186480"><span id="local-6989586621680186500"><span id="local-6989586621680186504"><span class="annot"><span class="annottext">Int -&gt; ClosureLiftError -&gt; ShowS
 [ClosureLiftError] -&gt; ShowS
 ClosureLiftError -&gt; String
 (Int -&gt; ClosureLiftError -&gt; ShowS)
@@ -39,72 +39,72 @@ $cshowList :: [ClosureLiftError] -&gt; ShowS
 showList :: [ClosureLiftError] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Typeable</span></span><span class="hs-special">)</span><span>
 </span><span id="line-26"></span><span>
-</span><span id="line-27"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680186925"><span id="local-6989586621680186929"><span id="local-6989586621680186932"><span id="local-6989586621680186935"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ClosureLiftError"><span class="hs-identifier hs-type">ClosureLiftError</span></a></span></span></span></span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680186514"><span id="local-6989586621680186518"><span id="local-6989586621680186521"><span id="local-6989586621680186524"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ClosureLiftError"><span class="hs-identifier hs-type">ClosureLiftError</span></a></span></span></span></span></span><span>
 </span><span id="line-28"></span><span>
 </span><span id="line-29"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ClosureLiftError"><span class="hs-identifier hs-type">ClosureLiftError</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-30"></span><span>    </span><span id="local-6989586621680186943"><span class="annot"><span class="annottext">pretty :: ClosureLiftError -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680186943"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ClosureLiftError -&gt; Doc AnsiStyle
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621680186532"><span class="annot"><span class="annottext">pretty :: ClosureLiftError -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680186532"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ClosureLiftError -&gt; Doc AnsiStyle
 forall e. ElaraDiagnostic e =&gt; e -&gt; Doc AnsiStyle
 </span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span>
 </span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680186949"><span id="local-6989586621680186952"><span id="local-6989586621680186955"><span id="local-6989586621680186959"><span id="local-6989586621680186962"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ClosureLiftError"><span class="hs-identifier hs-type">ClosureLiftError</span></a></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-33"></span><span>    </span><span id="local-6989586621680186987"><span class="annot"><span class="annottext">diagnosticMessage :: ClosureLiftError -&gt; Doc AnsiStyle
+</span><span id="line-32"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680186538"><span id="local-6989586621680186541"><span id="local-6989586621680186544"><span id="local-6989586621680186548"><span id="local-6989586621680186551"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ClosureLiftError"><span class="hs-identifier hs-type">ClosureLiftError</span></a></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-33"></span><span>    </span><span id="local-6989586621680186576"><span class="annot"><span class="annottext">diagnosticMessage :: ClosureLiftError -&gt; Doc AnsiStyle
 </span><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMessage</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-34"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#TyVarInTermPosition"><span class="hs-identifier hs-type">TyVarInTermPosition</span></a></span><span> </span><span id="local-6989586621680186988"><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680186988"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-34"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#TyVarInTermPosition"><span class="hs-identifier hs-type">TyVarInTermPosition</span></a></span><span> </span><span id="local-6989586621680186577"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680186577"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-35"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Type variable where term variable expected:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680186988"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-36"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#VariableNotFound"><span class="hs-identifier hs-type">VariableNotFound</span></a></span><span> </span><span id="local-6989586621680186990"><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680186990"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680186577"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-36"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#VariableNotFound"><span class="hs-identifier hs-type">VariableNotFound</span></a></span><span> </span><span id="local-6989586621680186579"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680186579"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-37"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Variable not found:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680186990"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-38"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#CannotDetermineType"><span class="hs-identifier hs-type">CannotDetermineType</span></a></span><span> </span><span id="local-6989586621680186991"><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680186991"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680186579"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-38"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#CannotDetermineType"><span class="hs-identifier hs-type">CannotDetermineType</span></a></span><span> </span><span id="local-6989586621680186580"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680186580"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-39"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Cannot determine type of:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680186991"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-40"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#CannotDetermineLiftedName"><span class="hs-identifier hs-type">CannotDetermineLiftedName</span></a></span><span> </span><span id="local-6989586621680186992"><span class="annot"><span class="annottext">Unique Text
-</span><a href="#local-6989586621680186992"><span class="hs-identifier hs-var">u</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680186580"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-40"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#CannotDetermineLiftedName"><span class="hs-identifier hs-type">CannotDetermineLiftedName</span></a></span><span> </span><span id="local-6989586621680186581"><span class="annot"><span class="annottext">Unique Text
+</span><a href="#local-6989586621680186581"><span class="hs-identifier hs-var">u</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-41"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Cannot determine lifted name for unique:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Unique Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Unique Text
-</span><a href="#local-6989586621680186992"><span class="hs-identifier hs-var">u</span></a></span><span>
-</span><span id="line-42"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ExpectedCExpr"><span class="hs-identifier hs-type">ExpectedCExpr</span></a></span><span> </span><span id="local-6989586621680186993"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680186993"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680186581"><span class="hs-identifier hs-var">u</span></a></span><span>
+</span><span id="line-42"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ExpectedCExpr"><span class="hs-identifier hs-type">ExpectedCExpr</span></a></span><span> </span><span id="local-6989586621680186582"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621680186582"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-43"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Expected Core expression in context:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621680186993"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-44"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ExpectedFunctionType"><span class="hs-identifier hs-type">ExpectedFunctionType</span></a></span><span> </span><span id="local-6989586621680186994"><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680186994"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621680186995"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680186995"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621680186582"><span class="hs-identifier hs-var">ctx</span></a></span><span>
+</span><span id="line-44"></span><span>        </span><span class="annot"><a href="Elara.Core.LiftClosures.Error.html#ExpectedFunctionType"><span class="hs-identifier hs-type">ExpectedFunctionType</span></a></span><span> </span><span id="local-6989586621680186583"><span class="annot"><span class="annottext">Var
+</span><a href="#local-6989586621680186583"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621680186584"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680186584"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-45"></span><span>            </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;Expected function type for variable&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Var -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Var
-</span><a href="#local-6989586621680186994"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680186583"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 </span><span class="hs-string">&quot;, but got:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
@@ -112,5 +112,5 @@ forall ann. Doc ann -&gt; Doc ann -&gt; Doc ann
 </span><span class="hs-operator hs-var">&lt;+&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Doc AnsiStyle
 forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
 </span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621680186995"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680186584"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-46"></span></pre></body></html>
