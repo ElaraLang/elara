@@ -1,14 +1,11 @@
 module Elara.Shunt.Error where
 
-import Error.Diagnose hiding (Hint, Note)
-
 import Elara.AST.Instances ()
 import Elara.AST.Name
-import Elara.AST.Region (HasSourceRegion (sourceRegion), Located, SourceRegion, sourceRegionToDiagnosePosition)
+import Elara.AST.Region (HasSourceRegion (sourceRegion), Located, SourceRegion)
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Shunt.Operator
 
 import Elara.AST.Phases.Renamed qualified as NewR

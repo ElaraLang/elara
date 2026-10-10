@@ -8,7 +8,6 @@
 
 -- | Errors, Warnings, and Diagnostics
 module Elara.Error (
-    -- * New Error System
     ElaraDiagnostic (..),
     ElaraError (..),
     ElaraWarning (..),
@@ -20,6 +19,7 @@ module Elara.Error (
     reportElaraWarning,
     runErrorAsElaraError,
     runWriterAsElaraWarning,
+    throwElaraError,
     module Elara.Error.Codes,
 )
 where
@@ -145,3 +145,6 @@ runWriterAsElaraWarning m = do
     Eff.tell (ElaraWarning <$> toList specificWarnings)
 
     pure result
+
+throwElaraError :: (Exception e, ElaraDiagnostic e, Eff.Error ElaraError :> es) => e -> Eff es a
+throwElaraError = Eff.throwError . ElaraError

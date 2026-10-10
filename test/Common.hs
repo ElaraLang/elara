@@ -11,8 +11,7 @@ module Common (
 )
 where
 
-import Control.Exception.Safe (MonadCatch)
-import Effectful (Eff, IOE, runEff, runPureEff)
+import Effectful (Eff, IOE, runEff)
 import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')
 import Hedgehog.Internal.Property (MonadTest, failWith)
 import Test.HUnit (assertFailure)

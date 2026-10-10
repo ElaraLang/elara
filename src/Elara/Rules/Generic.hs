@@ -12,13 +12,13 @@ module Elara.Rules.Generic (
 where
 
 import Effectful
-import Effectful.Exception
+import Effectful.Error.Static
 
 import Elara.AST.Location (TaggedLocate, TypeNode, VarNode)
 import Elara.AST.Name
 import Elara.AST.Phase (ElaraPhase (..))
 import Elara.AST.Region (SourceRegion, unlocated)
-import Elara.Data.Pretty
+import Elara.Error
 import Elara.Error.Internal
 
 import Elara.AST.Module qualified as NewModule
@@ -56,6 +56,7 @@ hasConstructor qn (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ 
 genericGetDeclarationByName ::
     forall ast es.
     ( ElaraPhase ast
+    , Error ElaraError :> es
     , TopValueBinder ast SourceRegion ~ TaggedLocate VarNode SourceRegion (Qualified VarName)
     , TopTypeBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     ) =>
@@ -69,12 +70,13 @@ genericGetDeclarationByName fetchMod (Qualified name modName) = do
     case matchingBodies of
         [] -> pure Nothing
         [decl] -> pure (Just decl)
-        _ -> throwIO $ DuplicateDeclAfterDesugar modName name
+        _ -> throwElaraError $ DuplicateDeclAfterDesugar modName name
 
 -- | Generic implementation for fetching a constructor declaration
 genericGetConstructorDeclaration ::
     forall ast es.
     ( ElaraPhase ast
+    , Error ElaraError :> es
     , ConstructorBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     , ConstructorOccurrence ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     ) =>
@@ -87,13 +89,13 @@ genericGetConstructorDeclaration fetchMod constructorName@(Qualified typeName mo
     let matchingBodies = filter (hasConstructor constructorName) m'.moduleDeclarations
     case matchingBodies of
         [decl] -> pure decl
-        [] -> throwIO $ RequiredDeclNotFound (toName <$> Qualified typeName modName)
-        _ -> throwIO $ DuplicateDeclAfterDesugar modName (toName typeName)
+        [] -> throwElaraError $ RequiredDeclNotFound (toName <$> Qualified typeName modName)
+        _ -> throwElaraError $ DuplicateDeclAfterDesugar modName (toName typeName)
 
 -- | Generic implementation for fetching a required declaration
 genericGetRequiredDeclarationByName ::
     forall ast es.
-    ElaraPhase ast =>
+    (ElaraPhase ast, Error ElaraError :> es) =>
     -- | injected fetcher
     (Qualified Name -> Eff es (Maybe (New.Declaration SourceRegion ast))) ->
     Qualified Name ->
@@ -102,7 +104,7 @@ genericGetRequiredDeclarationByName fetchDecl name = do
     mDecl <- fetchDecl name
     case mDecl of
         Just decl -> pure decl
-        Nothing -> throwIO $ RequiredDeclNotFound name
+        Nothing -> throwElaraError $ RequiredDeclNotFound name
 
 -- | Generic implementation for fetching annotations on a declaration
 genericGetDeclarationAnnotations ::

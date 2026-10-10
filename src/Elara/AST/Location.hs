@@ -9,8 +9,6 @@
 
 module Elara.AST.Location where
 
-import GHC.TypeError
-
 import Elara.AST.Region
 import Elara.Data.Pretty
 

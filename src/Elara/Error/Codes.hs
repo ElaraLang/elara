@@ -16,6 +16,7 @@ The first digit signals the stage in which the error was thrown:
 - @2@: Operator Shunting Stage
 - @3@: Typechecking Stage
 - @4@: Code Generation Stage
+- @5@: General errors not related to any specific stage. Often internal.
 
 The remaining digits are arbitrary and should be incremented for each new error or warning.
   They should be unique overall, but don't have to be unique within a stage or category. For example @E1001@, @E0001@, and @W1001@ can all exist at once.
@@ -103,7 +104,10 @@ nativeDefUnsupported :: ErrorCode
 nativeDefUnsupported = "E10016"
 
 unknownCurrentModule :: ErrorCode
-unknownCurrentModule = "[Internal] E10017"
+unknownCurrentModule = "[Internal] E10017" -- todo: why is this internal but not an InternalError?
+
+duplicateDeclAfterDesugar :: ErrorCode
+duplicateDeclAfterDesugar = "E10018"
 
 samePrecedence :: ErrorCode
 samePrecedence = "E2001"
@@ -177,3 +181,9 @@ invokeStaticLocal = "E4001"
 
 localVariableNotFound :: ErrorCode
 localVariableNotFound = "E4002"
+
+requiredDeclNotFound :: ErrorCode
+requiredDeclNotFound = "E5001"
+
+invalidAnnotationArrangement :: ErrorCode
+invalidAnnotationArrangement = "E5002"

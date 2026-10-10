@@ -2,7 +2,6 @@ module Elara.Rename.Error where
 
 import Data.Generics.Product
 import Data.Text.Metrics (levenshtein)
-import Error.Diagnose hiding (Hint, Note)
 
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
@@ -14,7 +13,6 @@ import Elara.AST.Region
 import Elara.AST.VarRef
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Rename.Imports (isImportedBy)
 
 import Elara.AST.Module qualified as NewModule
