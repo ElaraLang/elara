@@ -1,7 +1,10 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Rock.Memo (memoise, memoiseWithCycleDetection, withoutMemoisation, memoiseExplicit, tracingRules) where
+module Rock.Memo (
+    memoiseWithCycleDetection,
+    tracingRules,
+) where
 
 import Control.Concurrent (ThreadId, myThreadId)
 import Data.Dependent.HashMap (DHashMap)
@@ -11,7 +14,6 @@ import Data.List (isSuffixOf)
 import Data.List.NonEmpty ((<|))
 import Data.Some
 import Data.Typeable
-import Effectful (IOE, raise, (:>))
 import Effectful.Internal.Monad (unEff, unsafeEff, unsafeEff_)
 import Text.Show (Show (..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -24,7 +26,6 @@ import Data.List qualified as List
 import Data.Set qualified as Set
 
 import Elara.Data.Pretty
-import Elara.Logging (StructuredDebug)
 import Rock
 import Prelude
 
@@ -33,116 +34,6 @@ Not sure if this is actually necessary, but there aren't really any benefits to 
 -}
 forceDHashMap :: DHashMap k v -> IO (DHashMap k v)
 forceDHashMap m = evaluateWHNF (DHashMap.size m `seq` m)
-
-{- | The result of a memoised query. Exceptions are caught on the computing thread
-and stored here, then rethrown on waiting threads. This ensures each thread encounters
-the exception in its own context, preventing thread-bound effect issues.
--}
-data QueryResult a = Succeeded !a | Failed !E.SomeException
-
--- | A variable holding the result of a memoised query, allowing waiting threads to block until the result is available
-newtype ResultVar a = ResultVar (MVar.MVar (QueryResult a))
-
--- * Implicit memoisation
-
-memoise ::
-    forall f.
-    ( forall es. GEq (f es)
-    , forall es a. Hashable (f es a)
-    , HasCallStack
-    ) =>
-    MVar.MVar (DHashMap (HideEffects f) ResultVar) ->
-    Rules f ->
-    Rules f
-memoise startedVar rules = rules'
-  where
-    rules' (key :: f es a) = do
-        let !hk = HideEffects key
-        maybeValueVar <- unsafeEff_ (DHashMap.lookup hk <$> readMVar startedVar)
-        case maybeValueVar of
-            Just (ResultVar valueVar) -> do
-                res <- unsafeEff_ (readMVar valueVar)
-                case res of
-                    Succeeded v -> pure v
-                    Failed ex -> unsafeEff_ (E.throwIO ex)
-            Nothing -> do
-                valueVar <- unsafeEff_ newEmptyMVar
-                let resVar = ResultVar valueVar
-                unsafeEff $ \env -> E.mask $ \restore -> do
-                    action <- MVar.modifyMVar startedVar $ \started ->
-                        case DHashMap.lookup hk started of
-                            Just valueVar' ->
-                                pure (started, Right valueVar')
-                            Nothing -> do
-                                started' <- forceDHashMap $ DHashMap.insert hk resVar started
-                                pure (started', Left ())
-                    case action of
-                        Right (ResultVar valueVar') -> do
-                            res <- restore (readMVar valueVar')
-                            case res of
-                                Succeeded v -> pure v
-                                Failed ex -> E.throwIO ex
-                        Left () -> do
-                            result <- E.try $ restore $ unEff (rules key) env
-                            case result of
-                                Right value -> do
-                                    putMVar valueVar (Succeeded value)
-                                    pure value
-                                Left (ex :: E.SomeException) -> do
-                                    putMVar valueVar (Failed ex)
-                                    E.throwIO ex
-
--- * Explicit memoisation
-
-data MemoQuery f es a where
-    MemoQuery :: StructuredDebug :> es => f es a -> MemoQuery f (IOE : es) a
-
-withoutMemoisation :: Rules f -> Rules (MemoQuery f)
-withoutMemoisation r (MemoQuery key) = raise $ r key
-
-memoiseExplicit ::
-    forall f.
-    (forall es. GEq (f es), forall es a. Hashable (f es a)) =>
-    MVar.MVar (DHashMap (HideEffects f) ResultVar) ->
-    Rules f ->
-    Rules (MemoQuery f)
-memoiseExplicit startedVar rules = rules'
-  where
-    rules' (MemoQuery (key :: f es a)) = do
-        let !hk = HideEffects key
-        maybeValueVar <- unsafeEff_ (DHashMap.lookup hk <$> readMVar startedVar)
-        case maybeValueVar of
-            Just (ResultVar valueVar) -> do
-                res <- unsafeEff_ (readMVar valueVar)
-                case res of
-                    Succeeded v -> pure v
-                    Failed ex -> unsafeEff_ (E.throwIO ex)
-            Nothing -> do
-                valueVar <- unsafeEff_ newEmptyMVar
-                let resVar = ResultVar valueVar
-                unsafeEff $ \env -> E.mask $ \restore -> do
-                    action <- MVar.modifyMVar startedVar $ \started ->
-                        case DHashMap.lookup hk started of
-                            Just valueVar' ->
-                                pure (started, Right valueVar')
-                            Nothing -> do
-                                started' <- forceDHashMap $ DHashMap.insert hk resVar started
-                                pure (started', Left ())
-                    case action of
-                        Right (ResultVar valueVar') -> do
-                            res <- restore (readMVar valueVar')
-                            case res of
-                                Succeeded v -> pure v
-                                Failed ex -> E.throwIO ex
-                        Left () -> do
-                            result <- E.try $ restore $ unEff (raise $ rules key) env
-                            case result of
-                                Right value -> do
-                                    putMVar valueVar (Succeeded value)
-                                    pure value
-                                Left (ex :: E.SomeException) -> do
-                                    putMVar valueVar (Failed ex)
-                                    E.throwIO ex
 
 -- | exception type for reporting cyclic dependencies
 newtype Cyclic f

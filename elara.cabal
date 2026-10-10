@@ -55,7 +55,6 @@ library
       Elara.AST.Phases.Typed
       Elara.AST.Pretty
       Elara.AST.Region
-      Elara.AST.Traversal
       Elara.AST.Types
       Elara.AST.VarRef
       Elara.ConstExpr

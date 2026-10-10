@@ -12,7 +12,7 @@ import Data.GADT.Show (GShow (gshowsPrec))
 import Data.Kind (Type)
 import Data.Some
 import Data.Typeable
-import Effectful (Dispatch (Static), DispatchOf, Eff, Effect, IOE, Subset, inject, (:>))
+import Effectful (Dispatch (Static), DispatchOf, Eff, Effect, Subset, inject, (:>))
 import Effectful.Dispatch.Static (SideEffects (NoSideEffects), StaticRep, evalStaticRep, getStaticRep)
 import GHC.Show (Show (..), showChar, showParen, showString)
 import Unsafe.Coerce (unsafeCoerce)
@@ -35,24 +35,6 @@ fetch :: (Subset xs es, Rock f :> es, HasCallStack, StructuredDebug :> xs) => f 
 fetch key = do
     Rock f <- getStaticRep
     inject (f key)
-
--- * Running tasks
-
--- data TimeoutQuery f es a where
---     TimeoutQuery :: f es a -> TimeoutQuery f (Timeout : es) (Maybe a)
-
--- timeoutRules :: Rules f -> Rules (TimeoutQuery f)
--- timeoutRules r (TimeoutQuery k) = do
---     let a = r k
---     timeout 1000000 (inject a)
-
--------------------------------------------------------------------------------
-
--- * Task combinators
-
---
-data IOQuery f es a where
-    IOQuery :: f es a -> IOQuery f (IOE : es) a
 
 -- * Utils
 
