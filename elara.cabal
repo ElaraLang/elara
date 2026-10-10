@@ -213,7 +213,6 @@ library
     , h2jvm >=0.1.0.0 && <0.2
     , hashable >=1.5.1.0 && <1.6
     , kind-generics-th >=0.2.3.3 && <0.3
-    , lens >=5.3.6 && <5.4
     , lifted-base >=0.2.3.2 && <0.3
     , matrix >=0.3.6.2 && <0.4
     , megaparsec >=9.5.0 && <9.8
@@ -284,7 +283,6 @@ executable elara
     , h2jvm >=0.1.0.0 && <0.2
     , hashable >=1.5.1.0 && <1.6
     , kind-generics-th >=0.2.3.3 && <0.3
-    , lens >=5.3.6 && <5.4
     , lifted-base >=0.2.3.2 && <0.3
     , matrix >=0.3.6.2 && <0.4
     , megaparsec >=9.5.0 && <9.8
@@ -354,9 +352,7 @@ test-suite elara-test
       QuasiQuotes
   ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fdefer-typed-holes -fno-show-valid-hole-fits -fplugin=Effectful.Plugin -threaded -rtsopts -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      HUnit >=1.6.0.0 && <1.7
-    , QuickCheck >=2.14.3 && <2.16
-    , aeson >=2.2.3.0 && <2.4
+      aeson >=2.2.3.0 && <2.4
     , algebraic-graphs >=0.0.1 && <0.8
     , array >=0.5.8.0 && <0.6
     , base >=4.21.1.0 && <4.22
@@ -379,9 +375,7 @@ test-suite elara-test
     , h2jvm >=0.1.0.0 && <0.2
     , hashable >=1.5.1.0 && <1.6
     , hedgehog ==1.5.*
-    , hspec-megaparsec >=2.2.1 && <2.3
     , kind-generics-th >=0.2.3.3 && <0.3
-    , lens >=5.3.6 && <5.4
     , lifted-base >=0.2.3.2 && <0.3
     , matrix >=0.3.6.2 && <0.4
     , megaparsec >=9.5.0 && <9.8

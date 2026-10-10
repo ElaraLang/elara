@@ -14,8 +14,7 @@ where
 import Effectful (Eff, IOE, runEff)
 import Error.Diagnose (Diagnostic, TabSize (..), WithUnicode (..), hasReports, prettyDiagnostic')
 import Hedgehog.Internal.Property (MonadTest, failWith)
-import Test.HUnit (assertFailure)
-import Test.Syd (Expectation, shouldBe)
+import Test.Syd (Expectation, expectationFailure, shouldBe)
 
 import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
@@ -36,9 +35,9 @@ diagShouldSucceed (d, x) = withFrozenCallStack $ do
 -- | Assert that a diagnostic indicates failure.
 diagShouldFail :: MonadIO m => (Diagnostic (Doc AnsiStyle), Maybe b) -> m ()
 diagShouldFail (d, x) = liftIO $ do
-    unless (hasReports d) $ assertFailure "Expected diagnostic to fail, but succeeded."
+    unless (hasReports d) $ expectationFailure "Expected diagnostic to fail, but succeeded."
     case x of
-        Just _ -> assertFailure "Expected diagnostic to fail, but succeeded."
+        Just _ -> expectationFailure "Expected diagnostic to fail, but succeeded."
         Nothing -> pass
 
 -- | Evaluate a computation that may return a reportable error, failing the test with a pretty-printed

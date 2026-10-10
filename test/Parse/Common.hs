@@ -9,7 +9,6 @@ module Parse.Common (
     shouldParsePattern,
     shouldParseExpr,
     shouldFailToParse,
-    shouldParseProp,
     trippingParse,
 )
 where
@@ -18,7 +17,6 @@ import Effectful (runPureEff)
 import Effectful.Error.Static (runError)
 import Hedgehog (MonadTest, diff, evalEither, footnoteShow, tripping)
 import Hedgehog.Internal.Property (failWith)
-import Test.QuickCheck (Property, counterexample, ioProperty, property)
 import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof, errorBundlePretty, runParserT)
 
 import Elara.AST.Phases.Frontend (Frontend)
@@ -96,13 +94,6 @@ shouldFailToParse source = withFrozenCallStack $ do
     case parsed of
         Left _ -> pass
         Right ast -> failWith Nothing ("Expected to fail to parse, but parsed " <> toString (showPretty ast))
-
-shouldParseProp :: (VisualStream s, TraversableStream s, ShowErrorComponent e, Eq a, Show a) => Either (WParseErrorBundle s e) a -> a -> Property
-result `shouldParseProp` a = ioProperty $
-    case result of
-        Left err -> do
-            pure $ counterexample (errorBundlePretty (unWParseErrorBundle err)) False
-        Right ast -> if ast == a then pure $ property True else pure $ counterexample (show ast) False
 
 trippingParse ::
     (MonadTest m, Show b, HasCallStack, Eq a, Show a) =>

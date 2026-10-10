@@ -232,7 +232,6 @@
                         "h2jvm"
                         "hashable"
                         "kind-generics-th"
-                        "lens"
                         "lifted-base"
                         "matrix"
                         "megaparsec"
@@ -295,15 +294,11 @@
                         "QuasiQuotes"
                       ];
                       dependencies = [
-                        "HUnit"
-                        "QuickCheck"
                         "hedgehog"
                         "sydtest"
                         "sydtest-hedgehog"
                         "template-haskell"
                         "neat-interpolation"
-                        "hspec-megaparsec"
-
                       ];
                       source-dirs = "test";
                     };
