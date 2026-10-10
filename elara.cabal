@@ -133,7 +133,6 @@ library
       Elara.Prim.Core
       Elara.Prim.Rename
       Elara.Query
-      Elara.Query.Common
       Elara.Query.Effects
       Elara.Query.Errors
       Elara.Query.Generics
