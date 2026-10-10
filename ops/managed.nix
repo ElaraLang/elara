@@ -182,7 +182,7 @@
         upper = "0.4";
       };
       sydtest = {
-        lower = "0.12.0.0";
+        lower = "0.13.0.1";
         upper = "0.29";
       };
       sydtest-hedgehog = {
@@ -200,6 +200,10 @@
       text-metrics = {
         lower = "0.3.3";
         upper = "0.4";
+      };
+      th-abstraction = {
+        lower = "0.7.2.0";
+        upper = null;
       };
       time = {
         lower = "1.14";
@@ -315,18 +319,19 @@
       safe-exceptions = "0.1.7.4";
       some = "1.0.6";
       stringsearch = "0.3.6.6";
-      sydtest = "0.12.0.0";
+      sydtest = "0.13.0.1";
       sydtest-hedgehog = "0.4.0.0";
       template-haskell = "2.23.0.0";
       terminal-size = "0.3.0";
       text-metrics = "0.3.3";
+      th-abstraction = "0.7.2.0";
       time = "1.14";
       utf8-string = "0.3.7";
       witch = "1.3.1.0";
     };
   };
   initial = {
-    latest = { };
+    latest = {};
     lower = {
       HUnit = "1.6.0.0";
       QuickCheck = "2.15.0.1";
@@ -374,6 +379,7 @@
       sydtest-hedgehog = "0.4.0.0";
       terminal-size = "0.3.0";
       text-metrics = "0.3.3";
+      th-abstraction = "0.7.2.0";
       time = "1.14";
       utf8-string = "1.0.1.1";
       witch = "1.3.1.0";
@@ -528,11 +534,6 @@
       };
     };
     lower = {
-      Diff = {
-        version = "1.0.2";
-        hash = "0s0bxg8qygbkjg6jf6hi689s616qfq0kg1mraar2229zvx54673x";
-        repo = "hackage.haskell.org";
-      };
       HUnit = {
         version = "1.6.0.0";
         hash = "011qaixcy05w0jazw5x4qir16j6rvdax6ayf0fjmhf9hlbii1pk8";
@@ -569,8 +570,8 @@
         repo = "hackage.haskell.org";
       };
       cabal-doctest = {
-        version = "1.0.12";
-        hash = "094mvqgh9bhx5v9xanzkhcm8pcxzmkaa68lr3bqpjzkdxydx81nk";
+        version = "1.0.13";
+        hash = "104s66508f64swd7gqzncw1w56anfghj7vqj09g1isxrs8ca53fd";
         repo = "hackage.haskell.org";
       };
       concurrent-output = {
@@ -710,8 +711,8 @@
         repo = "hackage.haskell.org";
       };
       sydtest = {
-        version = "0.12.0.0";
-        hash = "1in0xi9cajzwxfv703rz8b5ramliqpmyfwrci5c05h7y17adw2wy";
+        version = "0.13.0.1";
+        hash = "0qzyw62i6kw4q4hw6gybjhri60rhl3zi49zh8xrzgffra0psl6ip";
         repo = "hackage.haskell.org";
       };
       sydtest-hedgehog = {
@@ -754,9 +755,9 @@
     };
   };
   solver = {
-    latest = { };
-    lower = { };
+    latest = {};
+    lower = {};
   };
-  packages = { };
+  packages = {};
   resolving = false;
 }
