@@ -24,3 +24,22 @@ jobs:
           name: elara
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix flake check
+  devshell-macos:
+    runs-on: macos-latest
+    env:
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@main
+        name: Install Nix
+        with:
+          extra-conf: |
+            trusted-public-keys = elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://elara.cachix.org https://cache.nixos.org/
+      - uses: cachix/cachix-action@v17
+        with:
+          name: elara
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - run: nix develop --profile dev-profile -c true
+      - run: cachix push elara dev-profile
+        if: ${{ env.CACHIX_AUTH_TOKEN != '' }}
