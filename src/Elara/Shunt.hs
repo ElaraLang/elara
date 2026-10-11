@@ -41,7 +41,7 @@ import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Renamed
 import Elara.AST.Phases.Shunted
-import Elara.AST.Region (Located (..), SourceRegion (..), enclosingRegion, unlocated)
+import Elara.AST.Region (HasSourceRegion (sourceRegion), Located (..), SourceRegion (..), enclosingRegion, unlocated)
 import Elara.AST.Types
 import Elara.AST.VarRef
 import Elara.ConstExpr
@@ -243,7 +243,7 @@ fixOperators = reassoc
     reassoc (Expr loc meta (EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r)))) = do
         l' <- fixOperators l
         r' <- fixOperators r
-        e' <- reassoc' (unwrapLoc loc) operator l' r'
+        e' <- reassoc' (view sourceRegion loc) operator l' r'
         pure (Expr loc meta e')
     reassoc e = pure e
 
@@ -261,7 +261,7 @@ fixOperators = reassoc
       where
         assocLeft = do
             reassociated' <- reassoc' sr o1 e1 e2
-            let reassociated = Expr (wrap @ExprNode sr) Nothing reassociated'
+            let reassociated = Expr (wrap ExprNode sr) Nothing reassociated'
             pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression o2 reassociated e3)))
 
         assocRight = pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression o1 e1 r)))
@@ -288,7 +288,7 @@ shuntExpr ::
     RenamedExpr ->
     Eff r ShuntedExpr
 shuntExpr (Expr loc meta e') = do
-    (shunted, meta') <- shuntExpr' (unwrapLoc loc) e'
+    (shunted, meta') <- shuntExpr' (view sourceRegion loc) e'
     pure $ Expr loc (phaseCoerce <$> meta <|> meta') shunted
   where
     shuntExpr' :: SourceRegion -> RenamedExpr' -> Eff r (ShuntedExpr', Maybe ShuntedType)
@@ -338,9 +338,9 @@ shuntExpr (Expr loc meta e') = do
         l' <- fixExpr l
         r' <- fixExpr r
         let (opExpr', opLoc) = operatorToExpr operator
-        let opVar = Expr (wrap @ExprNode opLoc) Nothing opExpr'
-        let callLoc = enclosingRegion opLoc (unwrapLoc (exprLoc l'))
-        let leftCall = Expr (wrap @ExprNode callLoc) Nothing (EApp NoExtension opVar l')
+        let opVar = Expr (wrap ExprNode opLoc) Nothing opExpr'
+        let callLoc = enclosingRegion opLoc (view sourceRegion (exprLoc l'))
+        let leftCall = Expr (wrap ExprNode callLoc) Nothing (EApp NoExtension opVar l')
         pure (EApp NoExtension leftCall r', Nothing)
     shuntExpr' _ (EExtension (RenamedInParens (InParensExpression e))) = do
         -- Remove parens and just return the inner expression
@@ -353,19 +353,19 @@ operatorToExpr (SymOp opLoc (TaggedLocate _ opRef)) =
     let varRef = case opRef of
             Global (Located l (Qualified n m)) -> Global (Located l (Qualified (OperatorVarName n) m))
             Local (Located l (Unique n i)) -> Local (Located l (Unique (OperatorVarName n) i))
-     in (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) varRef), opLoc)
+     in (EVar NoExtension (TaggedLocate (wrap VarNode opLoc) varRef), opLoc)
 operatorToExpr (InfixedOp opLoc inName) =
     case inName of
         Global (Located l (Qualified (NameValue n) m)) ->
-            (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Global (Located l (Qualified (NormalVarName n) m)))), opLoc)
+            (EVar NoExtension (TaggedLocate (wrap VarNode opLoc) (Global (Located l (Qualified (NormalVarName n) m)))), opLoc)
         Global (Located l (Qualified (NameOp n) m)) ->
-            (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Global (Located l (Qualified (OperatorVarName n) m)))), opLoc)
+            (EVar NoExtension (TaggedLocate (wrap VarNode opLoc) (Global (Located l (Qualified (OperatorVarName n) m)))), opLoc)
         Global (Located _ (Qualified (NameType n) m)) ->
-            (ECon NoExtension (TaggedLocate (wrap @TypeNode opLoc) (Qualified n m)), opLoc)
+            (ECon NoExtension (TaggedLocate (wrap TypeNode opLoc) (Qualified n m)), opLoc)
         Local (Located l (Unique (NameValue n) i)) ->
-            (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Local (Located l (Unique (NormalVarName n) i)))), opLoc)
+            (EVar NoExtension (TaggedLocate (wrap VarNode opLoc) (Local (Located l (Unique (NormalVarName n) i)))), opLoc)
         Local (Located l (Unique (NameOp n) i)) ->
-            (EVar NoExtension (TaggedLocate (wrap @VarNode opLoc) (Local (Located l (Unique (OperatorVarName n) i)))), opLoc)
+            (EVar NoExtension (TaggedLocate (wrap VarNode opLoc) (Local (Located l (Unique (OperatorVarName n) i)))), opLoc)
         Local (Located _ (Unique (NameType _) _)) -> error "Shouldn't have local con names"
 
 -- | Get the location of an expression

@@ -24,22 +24,22 @@ where
 import Relude.Extra (bimapF)
 
 import Elara.AST.Extensions
-import Elara.AST.Location (NodeLoc (..))
+import Elara.AST.Location
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion, unlocated)
 import Elara.AST.Types
 
 mkExpr :: Expr' () Frontend -> Expr () Frontend
-mkExpr = Expr (ExprLoc ()) ()
+mkExpr = Expr (wrap ExprNode ()) ()
 
 mkPat :: Pattern' () Frontend -> Pattern () Frontend
-mkPat = Pattern (PatLoc ()) Nothing
+mkPat = Pattern (wrap PatternNode ()) Nothing
 
 mkType :: Type' () Frontend -> Type () Frontend
-mkType = Type (TypeLoc ()) ()
+mkType = Type (wrap TypeNode ()) ()
 
 stripExpr :: Expr SourceRegion Frontend -> Expr () Frontend
-stripExpr (Expr _ meta e') = Expr (ExprLoc ()) meta (stripExpr' e')
+stripExpr (Expr _ meta e') = Expr (wrap ExprNode ()) meta (stripExpr' e')
 
 stripExpr' :: Expr' SourceRegion Frontend -> Expr' () Frontend
 stripExpr' = \case
@@ -73,7 +73,7 @@ stripExprExt = \case
     FrontendTuple (TupleExpression es) -> FrontendTuple (TupleExpression (fmap stripExpr es))
 
 stripPattern :: Pattern SourceRegion Frontend -> Pattern () Frontend
-stripPattern (Pattern _ meta p') = Pattern (PatLoc ()) (fmap stripType meta) (stripPattern' p')
+stripPattern (Pattern _ meta p') = Pattern (wrap PatternNode ()) (fmap stripType meta) (stripPattern' p')
 
 stripPattern' :: Pattern' SourceRegion Frontend -> Pattern' () Frontend
 stripPattern' = \case
@@ -94,7 +94,7 @@ stripPatternExt = \case
     ConsPattern l r -> ConsPattern (stripPattern l) (stripPattern r)
 
 stripType :: Type SourceRegion Frontend -> Type () Frontend
-stripType (Type _ meta t') = Type (TypeLoc ()) meta (stripType' t')
+stripType (Type _ meta t') = Type (wrap TypeNode ()) meta (stripType' t')
 
 stripType' :: Type' SourceRegion Frontend -> Type' () Frontend
 stripType' = \case

@@ -118,7 +118,7 @@ substituteAllLambdaBinder s (TypedLambdaParam v meta) = TypedLambdaParam v (subs
 substituteAstType :: UniqueTyVar -> Monotype SourceRegion -> TypedType -> TypedType
 substituteAstType tv t (Type loc kind t') = case t' of
     TVar (TaggedLocate _ tv')
-        | tv == tv' -> monotypeToAstType (unwrapLoc loc) kind t
+        | tv == tv' -> monotypeToAstType (view sourceRegion loc) kind t
     _ -> Type loc kind (substituteAstType' tv t t')
 
 substituteAstType' :: UniqueTyVar -> Monotype SourceRegion -> TypedType' -> TypedType'
@@ -140,18 +140,18 @@ substituteAllAstType (Substitution s) ty = foldl' (\acc (tv, t) -> substituteAst
 monotypeToAstType :: SourceRegion -> ElaraKind -> Monotype SourceRegion -> TypedType
 monotypeToAstType loc kind = \case
     TypeVar _ tv args ->
-        let typeLoc = wrap @TypeNode loc
+        let typeLoc = wrap TypeNode loc
             base = Type typeLoc kind (TVar (TaggedLocate typeLoc (typeVarToUniqueTyVar tv)))
          in foldl' (\acc arg -> Type typeLoc kind (TApp acc (monotypeToAstType loc kind arg))) base args
     Function _ a b ->
-        let typeLoc = wrap @TypeNode loc
+        let typeLoc = wrap TypeNode loc
          in Type typeLoc kind (TFun (monotypeToAstType loc kind a) (monotypeToAstType loc kind b))
     TypeConstructor _ qn args -> case args of
         [] ->
-            let typeLoc = wrap @TypeNode loc
+            let typeLoc = wrap TypeNode loc
              in Type typeLoc kind (TUserDefined (TaggedLocate typeLoc qn))
         _ ->
-            let typeLoc = wrap @TypeNode loc
+            let typeLoc = wrap TypeNode loc
              in foldl' (\acc arg -> Type typeLoc kind (TApp acc (monotypeToAstType loc kind arg))) (Type typeLoc kind (TUserDefined (TaggedLocate typeLoc qn))) args
 
 typeVarToUniqueTyVar :: TypeVariable -> UniqueTyVar

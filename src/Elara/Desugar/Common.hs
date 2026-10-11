@@ -69,5 +69,5 @@ getPartialName (AllDecl n _ _ _ _) = fmap toName n
 getPartialName (Immediate (Declaration _ (Declaration' _ (DeclarationBody _ body)))) =
     case body of
         ValueDeclaration n _ _ _ _ _ -> fmap toName n
-        TypeDeclarationBody n _ _ _ _ _ -> NameType <$> retag @VarNode n
+        TypeDeclarationBody n _ _ _ _ _ -> NameType <$> retag VarNode n
         DeclBodyExtension ext -> absurd ext

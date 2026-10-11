@@ -100,10 +100,10 @@ qualifyIn mn (MaybeQualified n Nothing) = pure $ Qualified n mn
 
 qualifyTypeName :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => TaggedLocate TypeNode SourceRegion (MaybeQualified TypeName) -> Eff r (TaggedLocate TypeNode SourceRegion (Qualified TypeName))
 qualifyTypeName locName = do
-    let sr = unwrapLoc (getLocation locName)
+    let sr = view sourceRegion locName
     case locName ^. unlocated of
         MaybeQualified n (Just m) -> do
-            let moduleName = TaggedLocate (wrap @ModuleNode sr) m
+            let moduleName = TaggedLocate (wrap ModuleNode sr) m
             ensureExistsAndExposed moduleName (Located sr (NameType n))
             pure $ Qualified n m <$ locName
         MaybeQualified n Nothing -> do
@@ -130,12 +130,12 @@ lookupGenericName ::
     TaggedLocate node SourceRegion (MaybeQualified name) ->
     Eff r (TaggedLocate node SourceRegion (VarRef name))
 lookupGenericName _ _ (TaggedLocate loc (MaybeQualified n (Just m))) = do
-    let sr = unwrapLoc loc
-    let moduleName = TaggedLocate (wrap @ModuleNode sr) m
+    let sr = view sourceRegion loc
+    let moduleName = TaggedLocate (wrap ModuleNode sr) m
     ensureExistsAndExposed moduleName (Located sr (toName n))
     pure $ TaggedLocate loc $ Global (Located sr (Qualified n m))
 lookupGenericName lens ambiguousError (TaggedLocate loc (MaybeQualified n Nothing)) = do
-    let sr = unwrapLoc loc
+    let sr = view sourceRegion loc
     names' <- use' lens
     m <- Eff.ask
     case m of
@@ -205,13 +205,13 @@ rename m@(NewModule.Module loc m') = do
     renameExposition :: Rename r => ModuleName -> NewModule.Exposition SourceRegion NewD.Desugared -> Eff r (NewModule.Exposition SourceRegion NewR.Renamed)
     renameExposition mn (NewModule.ExposedValue vn) = do
         let loc = getLocation vn
-        let sr = unwrapLoc loc
+        let sr = view sourceRegion loc
         qn <- qualifyIn mn (vn ^. unlocated)
         let varRef = Global (Located sr qn)
         pure $ NewModule.ExposedValue (TaggedLocate loc varRef)
     renameExposition mn (NewModule.ExposedOp opn) = do
         let loc = getLocation opn
-        let sr = unwrapLoc loc
+        let sr = view sourceRegion loc
         qn <- qualifyIn mn (opn ^. unlocated)
         let varRef = Global (Located sr qn)
         pure $ NewModule.ExposedOp (TaggedLocate loc varRef)
@@ -322,8 +322,8 @@ addDeclarationToContext ::
 addDeclarationToContext decl@(New.Declaration _dloc (New.Declaration' declMN body)) = do
     let New.DeclarationBody _ body' = body
     let nameLoc :: SourceRegion = case body' of
-            New.ValueDeclaration n _ _ _ _ _ -> unwrapLoc (getLocation n)
-            New.TypeDeclarationBody n _ _ _ _ _ -> unwrapLoc (getLocation n)
+            New.ValueDeclaration n _ _ _ _ _ -> view sourceRegion n
+            New.TypeDeclarationBody n _ _ _ _ _ -> view sourceRegion n
             New.DeclBodyExtension v -> absurd v
 
     -- create a global var ref for a given name
@@ -484,7 +484,7 @@ renameType antv (New.TFun t1 t2) = New.TFun <$> renameSimpleTypeWith antv t1 <*>
 renameType _ New.TUnit = do
     -- turn it into Elara.Prim.()
     let unitTypeName = knownQualified (knownTypeInfo (KnownWiredIn WiredInUnit))
-    let unitLoc = wrap @TypeNode (generatedSourceRegion Nothing)
+    let unitLoc = wrap TypeNode (generatedSourceRegion Nothing)
     pure $ New.TUserDefined (TaggedLocate unitLoc unitTypeName)
 renameType antv (New.TApp t1 t2) = New.TApp <$> renameSimpleTypeWith antv t1 <*> renameSimpleTypeWith antv t2
 renameType _ (New.TUserDefined ln) = New.TUserDefined <$> qualifyTypeName ln
@@ -578,18 +578,18 @@ renameExpr (New.Expr loc () e') = do
         e' <- renameExpr e
         pure (New.EExtension (RenamedInParens (InParensExpression e')), Nothing)
     renameExprExtension (DesugaredList (ListExpression [])) = do
-        let typeLoc = wrap @TypeNode (unwrapLoc loc)
+        let typeLoc = wrap TypeNode (view sourceRegion loc)
         pure (New.ECon NoExtension (TaggedLocate typeLoc Prim.nilCtorName), Nothing)
     renameExprExtension (DesugaredList (ListExpression (x : xs))) = do
         xs' <- traverse renameExpr (x :| xs)
         let lastCons :: NewR.RenamedExpr =
-                let typeLoc = wrap @TypeNode (unwrapLoc loc)
+                let typeLoc = wrap TypeNode (view sourceRegion loc)
                  in New.Expr (exprLoc (last xs')) Nothing (New.ECon NoExtension (TaggedLocate typeLoc Prim.nilCtorName))
         let cons :: NewR.RenamedExpr -> NewR.RenamedExpr -> NewR.RenamedExpr
             cons x' y =
                 let xLoc = exprLoc x'
                     yLoc = exprLoc y
-                    typeLoc = wrap @TypeNode (unwrapLoc loc)
+                    typeLoc = wrap TypeNode (view sourceRegion loc)
                     consE = New.Expr loc Nothing (New.ECon NoExtension (TaggedLocate typeLoc Prim.consCtorName))
                     appConsX = New.Expr xLoc Nothing (New.EApp NoExtension consE x')
                  in New.Expr yLoc Nothing (New.EApp NoExtension appConsX y)
@@ -602,7 +602,7 @@ renameExpr (New.Expr loc () e') = do
     renameExprExtension (DesugaredTuple (TupleExpression (AtLeast2List fst' snd' []))) = do
         fst'' <- renameExpr fst'
         snd'' <- renameExpr snd'
-        let typeLoc = wrap @TypeNode (unwrapLoc loc)
+        let typeLoc = wrap TypeNode (view sourceRegion loc)
         let base =
                 New.Expr
                     loc
@@ -622,7 +622,7 @@ renameExpr (New.Expr loc () e') = do
         let tupleName :: Qualified TypeName = Prim.tupleNCtorName (length tupleElems)
 
         elems' <- traverse renameExpr tupleElems
-        let typeLoc = wrap @TypeNode (unwrapLoc loc)
+        let typeLoc = wrap TypeNode (view sourceRegion loc)
         let headCtorExpr :: New.Expr SourceRegion Renamed =
                 New.Expr loc Nothing (New.ECon NoExtension (TaggedLocate typeLoc tupleName))
 
@@ -647,9 +647,9 @@ renameBinaryOperator (New.InfixedOp opLoc (TaggedLocate l o)) = do
             vn <- lookupVarName (TaggedLocate l (MaybeQualified (OperatorVarName n) q))
             pure $ withName (vn ^. unlocated)
         MaybeQualified (NameType n) q -> do
-            let typeLoc = wrap @TypeNode (unwrapLoc l)
+            let typeLoc = wrap TypeNode (view sourceRegion l)
             tn <- lookupTypeName (TaggedLocate typeLoc (MaybeQualified n q))
-            let sr = unwrapLoc l
+            let sr = view sourceRegion l
             let qualifiedName = NameType <$> (tn ^. unlocated)
             pure $ Global (Located sr qualifiedName)
     pure $ New.InfixedOp opLoc op'
@@ -679,16 +679,16 @@ renamePattern (New.Pattern loc meta p') = do
 
     renamePatternExtension :: NodeLoc PatternNode SourceRegion -> ListTuplePatternExtension SourceRegion NewD.Desugared -> Eff r NewR.RenamedPattern'
     renamePatternExtension ploc (ListPattern []) = do
-        let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+        let typeLoc = wrap TypeNode (view sourceRegion ploc)
         pure $ New.PCon (TaggedLocate typeLoc Prim.nilCtorName) []
     renamePatternExtension ploc (ListPattern (x : xs)) = do
         xs' <- traverse renamePattern (x :| xs)
         let lastCons :: NewR.RenamedPattern =
-                let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+                let typeLoc = wrap TypeNode (view sourceRegion ploc)
                  in New.Pattern (exprLocP (last xs')) Nothing (New.PCon (TaggedLocate typeLoc Prim.nilCtorName) [])
         let cons :: NewR.RenamedPattern -> NewR.RenamedPattern -> NewR.RenamedPattern
             cons x' y =
-                let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+                let typeLoc = wrap TypeNode (view sourceRegion ploc)
                  in New.Pattern (exprLocP x') Nothing (New.PCon (TaggedLocate typeLoc Prim.consCtorName) [x', y])
         let createConses :: [NewR.RenamedPattern] -> NewR.RenamedPattern
             createConses [] = lastCons
@@ -699,12 +699,12 @@ renamePattern (New.Pattern loc meta p') = do
     renamePatternExtension ploc (ConsPattern p1 p2) = do
         p1' <- renamePattern p1
         p2' <- renamePattern p2
-        let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+        let typeLoc = tag TypeNode ploc
         pure $ New.PCon (TaggedLocate typeLoc Prim.consCtorName) [p1', p2']
     renamePatternExtension ploc (TuplePattern (p1 :| [p2])) = do
         p1' <- renamePattern p1
         p2' <- renamePattern p2
-        let typeLoc = wrap @TypeNode (unwrapLoc ploc)
+        let typeLoc = tag TypeNode ploc
         pure $ New.PCon (TaggedLocate typeLoc Prim.tuple2CtorName) [p1', p2']
     renamePatternExtension _ (TuplePattern _) = error "renamePattern': TuplePattern more than length 2"
 
@@ -754,9 +754,9 @@ patternToMatch pat body = do
     let vn = patternToVarName pat
     let patLocation = exprLocP pat
     let bodyLocation = exprLoc body
-    let varLoc = wrap @VarNode (unwrapLoc patLocation)
+    let varLoc = tag VarNode patLocation
     uniqueVn <- uniquify (TaggedLocate varLoc vn)
-    let varRef = TaggedLocate (getLocation uniqueVn) (Local (stripTag uniqueVn))
+    let varRef = Local (stripTag uniqueVn) <$ uniqueVn
     pat' <- renamePattern pat
     body' <- renameExpr body
     let match =

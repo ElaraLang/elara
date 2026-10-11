@@ -4,7 +4,7 @@ import Control.Monad.Combinators.Expr (Operator (InfixL, InfixR), makeExprParser
 import Text.Megaparsec (MonadParsec (try), choice, customFailure, (<?>))
 
 import Elara.AST.Extensions (TupleTypeExtension (..))
-import Elara.AST.Location (AstNode (TypeNode, VarNode), NodeLoc (TypeLoc), TaggedLocate, tag, tagLocated)
+import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName)
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (Located (..), SourceRegion, enclosingRegion)
@@ -37,7 +37,7 @@ typeNotApplication =
         ]
 
 locatedType :: Parser FrontendType' -> Parser FrontendType
-locatedType p = (\(Located sr node) -> Type (TypeLoc sr) () node) <$> located p
+locatedType p = (\(Located sr node) -> Type (wrap TypeNode sr) () node) <$> located p
 
 constructorApplication :: Parser (FrontendType -> FrontendType -> FrontendType)
 constructorApplication = liftedBinaryType pass (const TApp)

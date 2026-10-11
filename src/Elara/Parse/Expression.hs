@@ -49,7 +49,7 @@ exprRegion (Expr loc _ _) = loc
 locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
 locatedExpr p = do
     Located loc node <- located p
-    pure $ Expr (ExprLoc loc) () node
+    pure $ Expr (wrap ExprNode loc) () node
 
 {- | The main recursive expression parser.
 Adds function application, cons, and binary operators on top of the basic 'term's.
@@ -167,7 +167,7 @@ parensOrTuple grammar = do
                 ]
     Located loc res <- located $ do
         token_ TokenLeftParen *> parensBody
-    pure $ Expr (ExprLoc loc) () res
+    pure $ Expr (wrap ExprNode loc) () res
   where
     typeAnnotation first = do
         token_ TokenColon

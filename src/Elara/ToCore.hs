@@ -18,7 +18,7 @@ import Elara.AST.Name (ModuleName, Name (..), NameLike (..), Qualified (..), Typ
 import Elara.AST.Phase (LocateNode, NoExtension (..))
 import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
 import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr', TypedPattern)
-import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
+import Elara.AST.Region (HasSourceRegion (sourceRegion), Located (Located), SourceRegion, unlocated)
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
@@ -75,7 +75,7 @@ instance ElaraDiagnostic ToCoreError where
     diagnosticCode (UnsolvedTypeSnuckIn _) = Just Codes.unsolvedTypeSnuckIn
     diagnosticCode (UnknownVariable _) = Just Codes.unknownVariable
 
-    diagnosticMarkers (LetInTopLevel (New.Expr loc _ _)) = [ElaraMarker (unwrapLoc loc) PrimaryMarker "Let-binding here"]
+    diagnosticMarkers (LetInTopLevel (New.Expr loc _ _)) = [ElaraMarker (view sourceRegion loc) PrimaryMarker "Let-binding here"]
     diagnosticMarkers (UnknownConstructor (Located loc _) _) = [ElaraMarker loc PrimaryMarker "Unknown constructor"]
     diagnosticMarkers (UnknownVariable (Located loc _)) = [ElaraMarker loc PrimaryMarker "Unknown variable"]
     diagnosticMarkers (UnsolvedTypeSnuckIn (Type.Lifted uv)) = [ElaraMarker (Type.monotypeLoc uv) PrimaryMarker "Unsolved type"]

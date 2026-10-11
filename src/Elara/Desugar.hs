@@ -147,7 +147,7 @@ genPartials = traverse_ genPartial
 
         declBodyName :: New.DeclarationBody' SourceRegion Frontend.Frontend -> TaggedLocate VarNode SourceRegion Name
         declBodyName (New.ValueDeclaration n _ _ _ _ _) = fmap toName n
-        declBodyName (New.TypeDeclarationBody n _ _ _ _ _) = NameType <$> retag @VarNode n
+        declBodyName (New.TypeDeclarationBody n _ _ _ _ _) = NameType <$> retag VarNode n
         declBodyName (New.DeclBodyExtension (Frontend.FrontendValueTypeDef n _ _)) = fmap toName n
 
 completePartials :: TaggedLocate ModuleNode SourceRegion ModuleName -> Desugar [New.Declaration SourceRegion Desugared]

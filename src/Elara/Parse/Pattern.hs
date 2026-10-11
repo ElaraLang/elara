@@ -54,7 +54,7 @@ cons = do
          in Pattern region Nothing (PExtension (ConsPattern l r))
 
 locatedPattern :: Parser FrontendPattern' -> Parser FrontendPattern
-locatedPattern p = (\(Located sr node) -> Pattern (PatLoc sr) Nothing node) <$> located p
+locatedPattern p = (\(Located sr node) -> Pattern (wrap PatternNode sr) Nothing node) <$> located p
 
 varPattern :: Parser FrontendPattern
 varPattern = locatedPattern (PVar . tagLocated @VarNode . fmap NormalVarName <$> located varId)
@@ -87,7 +87,7 @@ parensOrTuplePattern = do
                 pure $ Right (inner <| rest)
     case res of
         Left p -> pure p
-        Right elements -> pure $ Pattern (PatLoc loc) Nothing (PExtension (TuplePattern elements))
+        Right elements -> pure $ Pattern (wrap PatternNode loc) Nothing (PExtension (TuplePattern elements))
 
 unaryConstructorPattern :: Parser FrontendPattern
 unaryConstructorPattern = locatedPattern $ do

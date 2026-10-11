@@ -7,7 +7,23 @@
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Elara.AST.Location where
+module Elara.AST.Location (
+    AstNode (..),
+    wrap,
+    NodeLoc,
+    Join,
+    Widen,
+    TaggedLocate (..),
+    stripTag,
+    stripTagAndLocation,
+    tagLocated,
+    retag,
+    tag,
+    widen,
+    (<.>),
+    getLocation,
+    spanAs,
+) where
 
 import Elara.AST.Region
 import Elara.Data.Pretty
@@ -30,34 +46,17 @@ type data AstNode
     | -- | a location of a variable
       VarNode
 
-data family NodeLoc (n :: AstNode) loc
+newtype NodeLoc (n :: AstNode) loc = NodeLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
 
-newtype instance NodeLoc ModuleNode loc = ModuleLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
+nodeLoc :: Lens' (TaggedLocate n loc a) (NodeLoc n loc)
+nodeLoc = lens (\(TaggedLocate l _) -> l) (\(TaggedLocate _ a) l -> TaggedLocate l a)
 
-newtype instance NodeLoc DeclNode loc = DeclLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
+-- | Wrap turns any located element into a 'NodeLoc' for a given 'ASTNode'.
+wrap :: forall n -> loc -> NodeLoc n loc
+wrap n = NodeLoc @n
 
-newtype instance NodeLoc ExprNode loc = ExprLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
-
-newtype instance NodeLoc VarNode loc = VarLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
-
-newtype instance NodeLoc TypeNode loc = TypeLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
-
-newtype instance NodeLoc PatternNode loc = PatLoc loc deriving (Eq, IsRegion, Ord, Pretty, Semigroup, Show)
-
-class UnwrapNodeLoc (n :: AstNode) loc a where
-    unwrapLoc :: NodeLoc n loc -> a
-
-instance UnwrapNodeLoc ModuleNode loc loc where unwrapLoc (ModuleLoc l) = l
-
-instance UnwrapNodeLoc DeclNode loc loc where unwrapLoc (DeclLoc l) = l
-
-instance UnwrapNodeLoc ExprNode loc loc where unwrapLoc (ExprLoc l) = l
-
-instance UnwrapNodeLoc VarNode loc loc where unwrapLoc (VarLoc l) = l
-
-instance UnwrapNodeLoc TypeNode loc loc where unwrapLoc (TypeLoc l) = l
-
-instance UnwrapNodeLoc PatternNode loc loc where unwrapLoc (PatLoc l) = l
+instance HasSourceRegion (NodeLoc n SourceRegion) where
+    sourceRegion = lens (\(NodeLoc l) -> l) (\_ newLoc -> NodeLoc newLoc)
 
 {- | the "join" of two nodes, i.e. the smallest node that subsumes both of them.
 note that this is not the same as a "container" relationship. for example, an 'ExprNode' can contain a 'PatternNode', since a pattern can appear inside an expression,
@@ -84,20 +83,21 @@ type Subsumes narrower wider = (Join narrower wider ~ wider)
 -- | Widen a node to a wider node at the data level
 class Subsumes a b => Widen (a :: AstNode) (b :: AstNode) where
     widen :: NodeLoc a loc -> NodeLoc b loc
+    widen (NodeLoc l) = NodeLoc l
 
 instance Widen n n where widen = identity
 
-instance Widen PatternNode DeclNode where widen (PatLoc l) = DeclLoc l
+instance Widen PatternNode DeclNode
 
-instance Widen VarNode DeclNode where widen (VarLoc l) = DeclLoc l
+instance Widen VarNode DeclNode
 
-instance Widen ExprNode DeclNode where widen (ExprLoc l) = DeclLoc l
+instance Widen ExprNode DeclNode
 
-instance Widen VarNode TypeNode where widen (VarLoc l) = TypeLoc l
+instance Widen VarNode TypeNode
 
-instance Widen TypeNode DeclNode where widen (TypeLoc l) = DeclLoc l
+instance Widen TypeNode DeclNode
 
-instance Widen PatternNode ExprNode where widen (PatLoc l) = ExprLoc l
+instance Widen PatternNode ExprNode
 
 class LocSemigroup a b loc where
     (<.>) :: NodeLoc a loc -> NodeLoc b loc -> NodeLoc (Join a b) loc
@@ -122,39 +122,17 @@ class HasLocation a loc | a -> loc where
 
 instance HasLocation (Located n) SourceRegion where getLocation (Located sr _) = sr
 
-instance HasLocation (NodeLoc ModuleNode loc) loc where getLocation (ModuleLoc l) = l
-
-instance HasLocation (NodeLoc DeclNode loc) loc where getLocation (DeclLoc l) = l
-
-instance HasLocation (NodeLoc ExprNode loc) loc where getLocation (ExprLoc l) = l
-
-instance HasLocation (NodeLoc PatternNode loc) loc where getLocation (PatLoc l) = l
-
-instance HasLocation (NodeLoc VarNode loc) loc where getLocation (VarLoc l) = l
-
-instance HasLocation (NodeLoc TypeNode loc) loc where getLocation (TypeLoc l) = l
-
--- | class for wrapping a raw location in a node-specific location wrapper
-class WrapNode (n :: AstNode) where
-    wrap :: loc -> NodeLoc n loc
-
-instance WrapNode ModuleNode where wrap = ModuleLoc
-
-instance WrapNode DeclNode where wrap = DeclLoc
-
-instance WrapNode ExprNode where wrap = ExprLoc
-
-instance WrapNode PatternNode where wrap = PatLoc
-
-instance WrapNode VarNode where wrap = VarLoc
-
-instance WrapNode TypeNode where wrap = TypeLoc
+instance HasLocation (NodeLoc ast loc) loc where getLocation (NodeLoc l) = l
 
 -- | a version of 'Located' that is tagged with the specific node type it is located for
 data TaggedLocate (n :: AstNode) loc a = TaggedLocate !(NodeLoc n loc) a
     deriving (Functor, Generic)
 
+instance HasSourceRegion (TaggedLocate n SourceRegion a) where
+    sourceRegion = nodeLoc % sourceRegion
+
 instance Pretty a => Pretty (TaggedLocate n loc a) where
+    pretty :: Pretty a => TaggedLocate n loc a -> Doc AnsiStyle
     pretty (TaggedLocate _ a) = pretty a
 
 instance HasLocation (TaggedLocate n loc a) (NodeLoc n loc) where
@@ -170,24 +148,24 @@ instance LocatedElement (TaggedLocate n loc) where
     unlocated = lensVL $ \f (TaggedLocate l x) -> fmap (TaggedLocate l) (f x)
 
 -- | Tag a value that 'HasLocation' with a specific located node type
-tag :: forall (n :: AstNode) -> forall a loc. (HasLocation a loc, WrapNode n) => a -> NodeLoc n loc
-tag n x = wrap @n (getLocation x)
+tag :: forall (n :: AstNode) -> forall a loc. HasLocation a loc => a -> NodeLoc n loc
+tag n x = NodeLoc @n (getLocation x)
 
 -- | Convert a generic 'Located' value into a tagged 'TaggedLocate'
-tagLocated :: forall n a. WrapNode n => Located a -> TaggedLocate n SourceRegion a
-tagLocated (Located region val) = TaggedLocate (wrap @n region) val
+tagLocated :: forall n a. Located a -> TaggedLocate n SourceRegion a
+tagLocated (Located region val) = TaggedLocate (NodeLoc region) val
 
-spanAs :: forall n a loc. (HasLocation a loc, WrapNode n, Monoid loc) => [a] -> NodeLoc n loc
-spanAs xs = wrap @n (mconcat (map getLocation xs))
+spanAs :: forall n a loc. (HasLocation a loc, Monoid loc) => [a] -> NodeLoc n loc
+spanAs xs = NodeLoc @n (mconcat (map getLocation xs))
 
 retag ::
-    forall newTag oldTag loc a.
-    (UnwrapNodeLoc oldTag loc loc, WrapNode newTag) =>
+    forall oldTag loc a.
+    forall newTag ->
     TaggedLocate oldTag loc a -> TaggedLocate newTag loc a
-retag (TaggedLocate l a) = TaggedLocate (wrap @newTag (unwrapLoc l)) a
+retag new (TaggedLocate (NodeLoc l) a) = TaggedLocate @new (NodeLoc l) a
 
-stripTag :: forall n loc a. UnwrapNodeLoc n loc SourceRegion => TaggedLocate n loc a -> Located a
-stripTag (TaggedLocate l a) = Located (unwrapLoc l) a
+stripTag :: forall n a. TaggedLocate n SourceRegion a -> Located a
+stripTag (TaggedLocate (NodeLoc l) a) = Located l a
 
-stripTagAndLocation :: forall n loc a. UnwrapNodeLoc n loc SourceRegion => TaggedLocate n loc a -> a
+stripTagAndLocation :: forall n a. TaggedLocate n SourceRegion a -> a
 stripTagAndLocation = view unlocated . stripTag

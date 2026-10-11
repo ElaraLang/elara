@@ -45,16 +45,16 @@ instance ElaraDiagnostic DesugarError where
 
     diagnosticMarkers (DefWithoutLet ty) =
         let New.Type sr _ _ = ty
-         in [ElaraMarker (unwrapLoc sr) PrimaryMarker "Def without let here"]
+         in [ElaraMarker (view sourceRegion sr) PrimaryMarker "Def without let here"]
     diagnosticMarkers (DuplicateDeclaration a b) =
-        [ ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion b) PrimaryMarker "Name is used here"
-        , ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion a) PrimaryMarker "And also here"
+        [ ElaraMarker (view sourceRegion $ partialDeclarationSourceRegion b) PrimaryMarker "Name is used here"
+        , ElaraMarker (view sourceRegion $ partialDeclarationSourceRegion a) PrimaryMarker "And also here"
         ]
-    diagnosticMarkers (PartialNamesNotEqual a _) = [ElaraMarker (unwrapLoc $ partialDeclarationSourceRegion a) PrimaryMarker "Partial names not equal"]
+    diagnosticMarkers (PartialNamesNotEqual a _) = [ElaraMarker (view sourceRegion $ partialDeclarationSourceRegion a) PrimaryMarker "Partial names not equal"]
     diagnosticMarkers (InfixWithoutDeclaration n _ _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "Operator fixity declaration without corresponding body"]
     diagnosticMarkers (TuplePatternTooShort p) =
         let New.Pattern sr _ _ = p
-         in [ElaraMarker (unwrapLoc sr) PrimaryMarker "This tuple pattern is too short"]
+         in [ElaraMarker (sr ^. sourceRegion) PrimaryMarker "This tuple pattern is too short"]
 
     diagnosticNotes (DefWithoutLet _) =
         [ Elara.Error.Note "A 'def' must always be followed by a let binding"

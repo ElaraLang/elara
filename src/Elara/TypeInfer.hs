@@ -30,7 +30,7 @@ import Elara.AST.PhaseCoerce (PhaseCoerce (..))
 import Elara.AST.Phases.Kinded (KindedType)
 import Elara.AST.Phases.Shunted (Shunted)
 import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr)
-import Elara.AST.Region (SourceRegion, unlocated)
+import Elara.AST.Region (HasSourceRegion (sourceRegion), SourceRegion, unlocated)
 import Elara.Data.Kind (KindVar)
 import Elara.Data.Kind.Infer (KindInferError, inferKind, inferTypeKind, initialInferState, lookupKindVarMaybe)
 import Elara.Data.Pretty
@@ -198,7 +198,7 @@ seedConstructorsFor moduleName = logDebugWith ("seedConstructorsFor: " <> pretty
                 pass -- we don't need to do anything with an alias i think
             New.ADT ctors -> do
                 let tyVars' = fmap createTypeVar typeVars
-                let nameLoc = unwrapLoc (getLocation name)
+                let nameLoc = view sourceRegion name
                 let typeConstructorType =
                         TypeConstructor
                             nameLoc

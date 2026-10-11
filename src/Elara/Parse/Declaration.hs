@@ -28,7 +28,7 @@ typeRegion :: Type SourceRegion p -> NodeLoc TypeNode SourceRegion
 typeRegion (Type loc _ _) = loc
 
 locatedDecl :: Parser (Declaration' SourceRegion Frontend) -> Parser FrontendDeclaration
-locatedDecl p = (\(Located sr inner) -> Declaration (DeclLoc sr) inner) <$> located p
+locatedDecl p = (\(Located sr inner) -> Declaration (wrap DeclNode sr) inner) <$> located p
 
 declaration :: Located ModuleName -> Parser FrontendDeclaration
 declaration n = do

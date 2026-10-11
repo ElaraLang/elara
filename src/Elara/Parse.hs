@@ -7,7 +7,7 @@ import Text.Megaparsec (MonadParsec (eof), runParserT)
 import Effectful.Error.Static qualified as Eff
 import Text.Megaparsec qualified as MP
 
-import Elara.AST.Location (HasLocation (getLocation), UnwrapNodeLoc (unwrapLoc), stripTag)
+import Elara.AST.Location
 import Elara.AST.Module (Module (..), Module' (..))
 import Elara.AST.Name (ModuleName (..))
 import Elara.AST.Phases.Frontend (Frontend)
@@ -64,7 +64,7 @@ getParsedModuleQuery mn = do
     let nameLoc = moduleName modInner
     let declaredName = nameLoc ^. unlocated
     -- Check if the module declaration is implicit (generated) or explicit (from source)
-    let isImplicit = case unwrapLoc (getLocation nameLoc) of
+    let isImplicit = case view sourceRegion nameLoc of
             GeneratedRegion _ -> True
             RealSourceRegion _ -> False
     -- If explicit declaration exists and doesn't match, throw an error

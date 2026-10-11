@@ -65,7 +65,7 @@ located p = do
     pure $ Located tokensRegion val
 
 -- | A parser that records the location information of the tokens it consumes, and wraps it in a 'TaggedLocate'
-taggedLocated :: forall n -> WrapNode n => Parser a -> Parser (TaggedLocate n SourceRegion a)
+taggedLocated :: forall n -> Parser a -> Parser (TaggedLocate n SourceRegion a)
 taggedLocated n = fmapLocated (tagLocated @n)
 
 fmapLocated :: (Located a -> b) -> Parser a -> Parser b

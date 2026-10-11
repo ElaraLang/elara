@@ -115,9 +115,9 @@ instance ElaraDiagnostic RenameError where
             ]
     diagnosticMarkers (NonExistentModuleDeclaration _ n) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
     diagnosticMarkers (UnknownName n _ _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
-    diagnosticMarkers (BlockEndsWithLet (New.Expr (ExprLoc loc) _ _) decl) =
-        ElaraMarker loc PrimaryMarker "this let has no body"
-            : maybe [] (\(New.DeclarationBody dloc _) -> [ElaraMarker (unwrapLoc dloc) SecondaryMarker "inside this declaration"]) decl
+    diagnosticMarkers (BlockEndsWithLet (New.Expr loc _ _) decl) =
+        ElaraMarker (view sourceRegion loc) PrimaryMarker "this let has no body"
+            : maybe [] (\(New.DeclarationBody dloc _) -> [ElaraMarker (view sourceRegion dloc) SecondaryMarker "inside this declaration"]) decl
     diagnosticMarkers (AmbiguousVarName n _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
     diagnosticMarkers (AmbiguousTypeName n _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
     diagnosticMarkers (RecursiveTypeAlias n usePoint) =

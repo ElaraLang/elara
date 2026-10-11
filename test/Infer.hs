@@ -18,7 +18,7 @@ import Hedgehog.Range qualified as Range
 
 import Boilerplate (fakeTypeEnvironment, runQueryEffects)
 import Common (evalReportableM)
-import Elara.AST.Location (NodeLoc (..))
+import Elara.AST.Location
 import Elara.AST.Name (Qualified, TypeName)
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.Region (SourceRegion)
@@ -158,7 +158,7 @@ mkStringExpr s = mkExpr' (New.EString s)
 
 -- | Helper to create a 'ShuntedExpr' from a 'ShuntedExpr''
 mkExpr' :: ShuntedExpr' -> ShuntedExpr
-mkExpr' = New.Expr (ExprLoc testRegion) Nothing
+mkExpr' = New.Expr (wrap ExprNode testRegion) Nothing
 
 -- | Helper to create a 'ShuntedExpr' from a constructor taking one argument
 mkExpr :: (a -> ShuntedExpr') -> a -> ShuntedExpr
