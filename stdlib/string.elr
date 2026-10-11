@@ -1,6 +1,8 @@
 module String
 import Elara.Prim
 
+#Fixity 5
+#RightAssociative
 def (++) : String -> String -> String
 let (++) s1 s2 = 
     match (s1, s2) with
