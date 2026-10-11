@@ -25,6 +25,8 @@ jobs:
           name: elara
           installCommand: nix profile add github:NixOS/nixpkgs/nixpkgs-unstable#cachix
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          # migrating to attic
+          skipPush: true
       - id: bounds
         name: Optimize lower bounds
         run: nix run .#lower -- optimize --output=ga-pr --build-timeout=3600
