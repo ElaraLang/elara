@@ -2,7 +2,7 @@ name: "CD"
 on:
   push:
     branches:
-      - "master"
+      - "main"
 jobs:
   changelog:
     name: Generate changelog
@@ -27,7 +27,7 @@ jobs:
           set +e
           git add CHANGELOG.md
           git commit -m "Update changelog"
-          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/"${GITHUB_REPOSITORY}".git master
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/"${GITHUB_REPOSITORY}".git main
   cabal:
     name: Regenerate cabal file
     needs: changelog

@@ -2,7 +2,7 @@ name: "Dev build"
 on:
   push:
     branches:
-      - "master"
+      - "main"
 jobs:
   build:
     strategy:
@@ -56,8 +56,8 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: dev-build
-          name: "Dev build (rolling)"
+          name: "Dev build"
           prerelease: true
           body: |
-            Automatically rebuilt from the latest `master` commit (${{ github.sha }}).
+            Automatically rebuilt from the latest `main` commit (${{ github.sha }}).
           files: artifacts/*
