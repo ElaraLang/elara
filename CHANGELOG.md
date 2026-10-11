@@ -21,14 +21,26 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Drop lifted-async 0.11.0 pin, conflicts with hedgehog-1.5's <0.11 bound - ([1edee01](https://github.com/ElaraLang/elara/commit/1edee0114eb8022b2f3f43d21f15ac8132396f42)) 
 - *(type-infer)* Stop local lets over-generalising over variables - ([5b21fb2](https://github.com/ElaraLang/elara/commit/5b21fb200ec395a12757e3d20a09bd7f90cf0e87)) 
 - *(type-infer)* Generalise recursive local lets for consistency - ([4fa0367](https://github.com/ElaraLang/elara/commit/4fa03672ab7e215499975ca95336392a7f332e85)) 
+- *(type-infer)* Report the right argument position and function type in type mismatches - ([ef659c9](https://github.com/ElaraLang/elara/commit/ef659c92cff777bb395b50503c313da6dd13879c)) 
 
 ### 🚜 Refactor
 
 - *(ast)* More stable query keys, avoid redundant recomputation by memoising where possible - ([791d8f1](https://github.com/ElaraLang/elara/commit/791d8f18ae26eef7aa16e19abea4acb2dce1c9ea)) 
+- *(ast)* Make `NodeLoc` a phantom newtype - ([e31c2ea](https://github.com/ElaraLang/elara/commit/e31c2eafe425c70c5835f3bd37e1653a85b74f04)) 
+- *(interpreter)* :coffin: Remove likely dead `getArgs` impl - ([b0cdfcd](https://github.com/ElaraLang/elara/commit/b0cdfcdd9369d7b10b773e51e0841fafec9747c5)) 
 - *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
 - *(query)* Forbid location information in query keys, refactor - ([c94f03e](https://github.com/ElaraLang/elara/commit/c94f03e49e9e2bce38cd2b79ccab71192d7f50c9)) 
 - *(shunt)* Key GetOpInfo on unlocated names - ([d07e2e7](https://github.com/ElaraLang/elara/commit/d07e2e7515a024c522c07d85ad5d95341cfff2e4)) 
 - Slim the Prelude a little - ([c0dfd29](https://github.com/ElaraLang/elara/commit/c0dfd2947f3a217e55dcdfb626b97ec8ea0d1c02)) 
+- Remove phantom type parameter from `TypeOf` query - ([16a598c](https://github.com/ElaraLang/elara/commit/16a598c186d33e1c7a2def573a34dd2516fcedd9)) 
+- Remove `IgnoreLocated` (evil code smell) - ([27e2cc3](https://github.com/ElaraLang/elara/commit/27e2cc333e1ab5c92cfa3d1f89372de58c856cb3)) 
+- Make `InternalError` a normal `ElaraError` - ([fd796b8](https://github.com/ElaraLang/elara/commit/fd796b829582daf1612f428658a57a901fde81d9)) 
+- Finally remove deprecated logging code usage - ([60f90de](https://github.com/ElaraLang/elara/commit/60f90ded599b38f79b85895fc04e65cdc037ebf2)) 
+- Throw missing-constructor error at the use site - ([f327cdb](https://github.com/ElaraLang/elara/commit/f327cdbe9a19abf61c4a57b674a9873653e56f93)) 
+
+### 📚 Documentation
+
+- Update readme and add CONTRIBUTING.md - ([ee78d0e](https://github.com/ElaraLang/elara/commit/ee78d0e61639690ffc34a0fcafdea4079b4c61e7)) 
 
 ### 🎨 Styling
 
@@ -38,6 +50,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(type-infer)* Add tests for generalisation behaviour - ([7726cd7](https://github.com/ElaraLang/elara/commit/7726cd729f971fc3ec88328f469ad48f8dfdab04)) 
 - Add golden test checking for an annotation that doesn't exist - ([1235058](https://github.com/ElaraLang/elara/commit/123505850fddf29d4f345162aeacb5deef6b62f7)) 
+- Better error on javac failure - ([e1dea19](https://github.com/ElaraLang/elara/commit/e1dea19fe9c6b0294a67a85b702b9e1c441b65fa)) 
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -50,6 +63,14 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Bump dev env alongside latest - ([24dcd41](https://github.com/ElaraLang/elara/commit/24dcd411b0e587cef5f66499b47448db5a894530)) 
 - Add my attic server - ([e4eaf8d](https://github.com/ElaraLang/elara/commit/e4eaf8d401a2f4675a680ad41a6d2f65c4cf3a54)) 
 - Fix weird cachix bug - ([de1427e](https://github.com/ElaraLang/elara/commit/de1427e533a28ed5e4419a6682da6b0647fe932a)) 
+- Reduce the amount of times that bump and lower run - ([9dbeb1f](https://github.com/ElaraLang/elara/commit/9dbeb1f93c325b45f5737901fbe9f2a8ecf3e395)) 
+- `accept-flake-config` where possible - ([c9fa443](https://github.com/ElaraLang/elara/commit/c9fa44343034befbe372b9c8335cee76f7eaf7fb)) 
+- Regenerate cabal file on push - ([9c96198](https://github.com/ElaraLang/elara/commit/9c96198a934624e13fcc118f69f5d78b1eac4a7a)) 
+- Remove dead code - ([1fd1408](https://github.com/ElaraLang/elara/commit/1fd14082c85870285ff6deded064917109736128)) 
+- Remove unused query file - ([bc966f2](https://github.com/ElaraLang/elara/commit/bc966f22181a5dc128813881e3afa84dec6c64c8)) 
+- Speed up CI where possible - ([623cab3](https://github.com/ElaraLang/elara/commit/623cab373fe42f59dbdd5cfc50ba487806975204)) 
+- Remove old run / release scripts - ([0f63432](https://github.com/ElaraLang/elara/commit/0f634329de50872bcad559cd610cbddd43b0df9a)) 
+- Replace `master` with `main` everywhere - ([c605962](https://github.com/ElaraLang/elara/commit/c605962386db64db6c6d724c91f27d854cd0bef5)) 
 
 ### Build
 
@@ -65,6 +86,12 @@ As such, breaking changes may occur between minor versions until a stable releas
 - :hammer: Tidy up `justfile` - ([d5eb322](https://github.com/ElaraLang/elara/commit/d5eb3221dee9007b53033763e5dd01f979dc07ea)) 
 - Make cabal vs nix builds more consistent - ([04e4c32](https://github.com/ElaraLang/elara/commit/04e4c32a2648642f740a5d944e3f1e0ab7826ea7)) 
 - Make justfile auto-compile stdlib before - ([cc4caf1](https://github.com/ElaraLang/elara/commit/cc4caf15594ccfa31491464dda4002da1cfbc33c)) 
+- Remove some unused/barely used dependencies - ([72922ff](https://github.com/ElaraLang/elara/commit/72922ff8e41eb3395e32300ab8f5e3dba85d8751)) 
+- Disable profiling where not needed - ([6d44c79](https://github.com/ElaraLang/elara/commit/6d44c798e3ad990dc8f0498870e8fe7fdfb706c0)) 
+- Only defer typed holes in dev builds - ([2681aff](https://github.com/ElaraLang/elara/commit/2681aff8c7deb2596b8d8f9e64e3beaf4da556d5)) 
+- Add just-lsp - ([6b3e320](https://github.com/ElaraLang/elara/commit/6b3e3209a2efb418de25e5a436e91c5a9a0f0038)) 
+- Improve Justfile - ([d6af6e4](https://github.com/ElaraLang/elara/commit/d6af6e465fff1b660225e0fcf6926f75de885409)) 
+- Use main instead of master for readthedocs - ([e5da9bc](https://github.com/ElaraLang/elara/commit/e5da9bc8fdea19b19b9947e9461a5e84de7cbe61)) 
 
 ## [dev-build](https://github.com/ElaraLang/elara/compare/v0.1.0..dev-build) - 2026-08-13
 
