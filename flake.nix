@@ -262,7 +262,6 @@
                         "-Wno-partial-type-signatures"
                         "-Widentities"
                         "-optP-Wno-nonportable-include-path"
-                        "-fdefer-typed-holes"
                         "-fno-show-valid-hole-fits"
                         "-fplugin=Effectful.Plugin"
                         "-threaded"
