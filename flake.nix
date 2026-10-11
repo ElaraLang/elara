@@ -353,6 +353,8 @@
                         (forceStatic rawPkgs.numactl)
                       ]
                     )
+                    # gold can't link the TLS relocations in glibc 2.44's static libc.a
+                    ++ rawPkgs.lib.optionals rawPkgs.stdenv.hostPlatform.isLinux [ "--ghc-option=-optl-fuse-ld=bfd" ]
                     # x86_64's GHC RTS links libdw for backtraces; aarch64's doesn't
                     ++ rawPkgs.lib.optionals (system == "x86_64-linux") (
                       let
