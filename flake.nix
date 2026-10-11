@@ -138,6 +138,7 @@
                     ];
                     buildInputs = with config.pkgs; [
                       just
+                      just-lsp
                       convco
                       git-cliff
                       nixfmt
