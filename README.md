@@ -80,7 +80,7 @@ curl -fsSL https://github.com/ElaraLang/elara/releases/download/dev-build/elara-
 chmod +x elara
 ```
 
-or build from source with [Nix](https://nixos.org/): `nix develop`, then `just build`.
+or build from source with [Nix](https://nixos.org/): `nix develop`, then `just run hello.elr` builds and runs it in one command.
 You'll also need a [JDK](https://whichjdk.com/) if using the JVM backend.
 
 For detailed build instructions see the [documentation](https://elara.readthedocs.io/en/latest/compiler/internals/setup.html)
