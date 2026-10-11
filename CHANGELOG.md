@@ -19,6 +19,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Correct output selection for static zlib/bzip2/xz/zstd, scope elfutils to x86_64 - ([375fdef](https://github.com/ElaraLang/elara/commit/375fdef59813f902135f8a73275ee1bf7cf9fd76)) 
 - *(nix)* Pass absolute .a paths to linker, avoid -l/-L ordering issue - ([8f07f77](https://github.com/ElaraLang/elara/commit/8f07f779e0bc46ec998d646c67d3c4377bfcec4a)) 
 - *(nix)* Drop lifted-async 0.11.0 pin, conflicts with hedgehog-1.5's <0.11 bound - ([1edee01](https://github.com/ElaraLang/elara/commit/1edee0114eb8022b2f3f43d21f15ac8132396f42)) 
+- *(nix)* Static linking failing - ([d1a536f](https://github.com/ElaraLang/elara/commit/d1a536f1bf16b7c6580c22921cf4fd0ffe96397f)) 
 - *(type-infer)* Stop local lets over-generalising over variables - ([5b21fb2](https://github.com/ElaraLang/elara/commit/5b21fb200ec395a12757e3d20a09bd7f90cf0e87)) 
 - *(type-infer)* Generalise recursive local lets for consistency - ([4fa0367](https://github.com/ElaraLang/elara/commit/4fa03672ab7e215499975ca95336392a7f332e85)) 
 - *(type-infer)* Report the right argument position and function type in type mismatches - ([ef659c9](https://github.com/ElaraLang/elara/commit/ef659c92cff777bb395b50503c313da6dd13879c)) 
@@ -43,6 +44,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Update readme and add CONTRIBUTING.md - ([ee78d0e](https://github.com/ElaraLang/elara/commit/ee78d0e61639690ffc34a0fcafdea4079b4c61e7)) 
 - Fix typo in readme - ([60cf6e5](https://github.com/ElaraLang/elara/commit/60cf6e55842615ab401280c47b5c498331c54093)) 
 - Clarify readme instructions - ([c17a0a4](https://github.com/ElaraLang/elara/commit/c17a0a45d93f1e109ece3c983d31b260cced106b)) 
+- Perhaps fix readthedocs build - ([71b4631](https://github.com/ElaraLang/elara/commit/71b4631182af3fdde0ae262e6105b000c3f46a4d)) 
 
 ### 🎨 Styling
 
@@ -95,6 +97,10 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Improve Justfile - ([d6af6e4](https://github.com/ElaraLang/elara/commit/d6af6e465fff1b660225e0fcf6926f75de885409)) 
 - Use main instead of master for readthedocs - ([e5da9bc](https://github.com/ElaraLang/elara/commit/e5da9bc8fdea19b19b9947e9461a5e84de7cbe61)) 
 - Make `just run` take the file positionally - ([28edeec](https://github.com/ElaraLang/elara/commit/28edeec166bda7eae1b5996f15fe01c18749838d)) 
+
+### Stdlib
+
+- Add fixity and rightassociative to ++ - ([c0112c3](https://github.com/ElaraLang/elara/commit/c0112c3355b9ea5a6ac62fa938f4f6c8c0497090)) 
 
 ## [dev-build](https://github.com/ElaraLang/elara/compare/v0.1.0..dev-build) - 2026-08-13
 
