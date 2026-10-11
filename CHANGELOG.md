@@ -42,6 +42,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - Update readme and add CONTRIBUTING.md - ([ee78d0e](https://github.com/ElaraLang/elara/commit/ee78d0e61639690ffc34a0fcafdea4079b4c61e7)) 
 - Fix typo in readme - ([60cf6e5](https://github.com/ElaraLang/elara/commit/60cf6e55842615ab401280c47b5c498331c54093)) 
+- Clarify readme instructions - ([c17a0a4](https://github.com/ElaraLang/elara/commit/c17a0a45d93f1e109ece3c983d31b260cced106b)) 
 
 ### 🎨 Styling
 
@@ -93,6 +94,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add just-lsp - ([6b3e320](https://github.com/ElaraLang/elara/commit/6b3e3209a2efb418de25e5a436e91c5a9a0f0038)) 
 - Improve Justfile - ([d6af6e4](https://github.com/ElaraLang/elara/commit/d6af6e465fff1b660225e0fcf6926f75de885409)) 
 - Use main instead of master for readthedocs - ([e5da9bc](https://github.com/ElaraLang/elara/commit/e5da9bc8fdea19b19b9947e9461a5e84de7cbe61)) 
+- Make `just run` take the file positionally - ([28edeec](https://github.com/ElaraLang/elara/commit/28edeec166bda7eae1b5996f15fe01c18749838d)) 
 
 ## [dev-build](https://github.com/ElaraLang/elara/compare/v0.1.0..dev-build) - 2026-08-13
 
