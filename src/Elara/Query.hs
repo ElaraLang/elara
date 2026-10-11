@@ -91,7 +91,7 @@ class (Typeable ast, ElaraPhase ast) => RunPhase ast where
     getConstructorDeclaration ::
         HasCallStack =>
         Qualified TypeName ->
-        Eff (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QCtor))) (New.Declaration SourceRegion ast)
+        Eff (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QCtor))) (Maybe (New.Declaration SourceRegion ast))
 
     getDeclarationAnnotations ::
         HasCallStack =>
@@ -148,7 +148,7 @@ data Query (es :: [Effect]) a where
     ConstructorDeclaration ::
         (RunPhase ast, Typeable ast) =>
         Qualified TypeName ->
-        Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QCtor))) (New.Declaration SourceRegion ast)
+        Query (WithRock (ConsQueryEffects (ASTQueryEffects ast 'QCtor))) (Maybe (New.Declaration SourceRegion ast))
     DeclarationAnnotations ::
         (RunPhase ast, Typeable ast) =>
         Qualified Name ->

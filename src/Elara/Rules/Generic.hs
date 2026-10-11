@@ -15,14 +15,13 @@ import Effectful
 import Effectful.Error.Static
 
 import Elara.AST.Location (TaggedLocate, TypeNode, VarNode)
+import Elara.AST.Module
 import Elara.AST.Name
 import Elara.AST.Phase (ElaraPhase (..))
-import Elara.AST.Region (SourceRegion, unlocated)
+import Elara.AST.Region (HasSourceRegion (sourceRegion), SourceRegion, unlocated, withLocationOf)
+import Elara.AST.Types
 import Elara.Error
 import Elara.Error.Internal
-
-import Elara.AST.Module qualified as NewModule
-import Elara.AST.Types qualified as New
 
 -- | Get the name from a declaration
 declarationName ::
@@ -30,13 +29,13 @@ declarationName ::
     , TopValueBinder p loc ~ TaggedLocate VarNode loc (Qualified VarName)
     , TopTypeBinder p loc ~ TaggedLocate TypeNode loc (Qualified TypeName)
     ) =>
-    New.Declaration loc p -> Name
-declarationName (New.Declaration _ (New.Declaration' _ body)) =
-    let New.DeclarationBody _ body' = body
+    Declaration loc p -> Name
+declarationName (Declaration _ (Declaration' _ body)) =
+    let DeclarationBody _ body' = body
      in case body' of
-            New.ValueDeclaration n _ _ _ _ _ -> toName (n ^. unlocated)
-            New.TypeDeclarationBody n _ _ _ _ _ -> toName (n ^. unlocated)
-            New.DeclBodyExtension _ -> error "declarationName: unexpected extension"
+            ValueDeclaration n _ _ _ _ _ -> toName (n ^. unlocated)
+            TypeDeclarationBody n _ _ _ _ _ -> toName (n ^. unlocated)
+            DeclBodyExtension _ -> error "declarationName: unexpected extension"
 
 -- | Check if a declaration contains a type declaration with the given constructor name
 hasConstructor ::
@@ -44,11 +43,11 @@ hasConstructor ::
     , ConstructorBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     ) =>
     Qualified TypeName ->
-    New.Declaration SourceRegion ast ->
+    Declaration SourceRegion ast ->
     Bool
-hasConstructor qn (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
+hasConstructor qn (Declaration _ (Declaration' _ (DeclarationBody _ body'))) =
     case body' of
-        New.TypeDeclarationBody _ _ (New.ADT ctors) _ _ _ ->
+        TypeDeclarationBody _ _ (ADT ctors) _ _ _ ->
             any (\(cnLoc, _) -> (cnLoc ^. unlocated) == qn) ctors
         _ -> False
 
@@ -61,11 +60,11 @@ genericGetDeclarationByName ::
     , TopTypeBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     ) =>
     -- | injected fetcher
-    (ModuleName -> Eff es (NewModule.Module SourceRegion ast)) ->
+    (ModuleName -> Eff es (Module SourceRegion ast)) ->
     Qualified Name ->
-    Eff es (Maybe (New.Declaration SourceRegion ast))
+    Eff es (Maybe (Declaration SourceRegion ast))
 genericGetDeclarationByName fetchMod (Qualified name modName) = do
-    NewModule.Module _ m' <- fetchMod modName
+    Module _ m' <- fetchMod modName
     let matchingBodies = filter (\d -> declarationName d == name) m'.moduleDeclarations
     case matchingBodies of
         [] -> pure Nothing
@@ -81,15 +80,15 @@ genericGetConstructorDeclaration ::
     , ConstructorOccurrence ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
     ) =>
     -- | injected fetcher
-    (ModuleName -> Eff es (NewModule.Module SourceRegion ast)) ->
+    (ModuleName -> Eff es (Module SourceRegion ast)) ->
     Qualified TypeName ->
-    Eff es (New.Declaration SourceRegion ast)
+    Eff es (Maybe (Declaration SourceRegion ast))
 genericGetConstructorDeclaration fetchMod constructorName@(Qualified typeName modName) = do
-    NewModule.Module _ m' <- fetchMod modName
+    Module _ m' <- fetchMod modName
     let matchingBodies = filter (hasConstructor constructorName) m'.moduleDeclarations
     case matchingBodies of
-        [decl] -> pure decl
-        [] -> throwElaraError $ RequiredDeclNotFound (toName <$> Qualified typeName modName)
+        [decl] -> pure $ Just decl
+        [] -> pure Nothing
         _ -> throwElaraError $ DuplicateDeclAfterDesugar modName (toName typeName)
 
 -- | Generic implementation for fetching a required declaration
@@ -97,9 +96,9 @@ genericGetRequiredDeclarationByName ::
     forall ast es.
     (ElaraPhase ast, Error ElaraError :> es) =>
     -- | injected fetcher
-    (Qualified Name -> Eff es (Maybe (New.Declaration SourceRegion ast))) ->
+    (Qualified Name -> Eff es (Maybe (Declaration SourceRegion ast))) ->
     Qualified Name ->
-    Eff es (New.Declaration SourceRegion ast)
+    Eff es (Declaration SourceRegion ast)
 genericGetRequiredDeclarationByName fetchDecl name = do
     mDecl <- fetchDecl name
     case mDecl of
@@ -113,35 +112,47 @@ genericGetDeclarationAnnotations ::
     , DeclBodyExtension ast SourceRegion ~ Void
     ) =>
     -- | injected fetcher
-    (Qualified Name -> Eff es (New.Declaration SourceRegion ast)) ->
+    (Qualified Name -> Eff es (Declaration SourceRegion ast)) ->
     Qualified Name ->
-    Eff es [New.Annotation SourceRegion ast]
+    Eff es [Annotation SourceRegion ast]
 genericGetDeclarationAnnotations fetchReqDecl qn = do
-    New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) <- fetchReqDecl qn
+    Declaration _ (Declaration' _ (DeclarationBody _ body')) <- fetchReqDecl qn
     case body' of
-        New.ValueDeclaration _ _ _ _ _ anns -> pure anns
-        New.TypeDeclarationBody _ _ _ _ _ anns -> pure anns
-        New.DeclBodyExtension v -> absurd v
+        ValueDeclaration _ _ _ _ _ anns -> pure anns
+        TypeDeclarationBody _ _ _ _ _ anns -> pure anns
+        DeclBodyExtension v -> absurd v
 
 -- | Generic implementation for fetching annotations of a specific type on a declaration
 genericGetDeclarationAnnotationsOfType ::
     forall ast es.
     ( ElaraPhase ast
     , TypeOccurrence ast SourceRegion ~ ConstructorOccurrence ast SourceRegion
+    , HasSourceRegion (ConstructorOccurrence ast SourceRegion)
     , TopTypeBinder ast SourceRegion ~ TaggedLocate TypeNode SourceRegion (Qualified TypeName)
+    , Error ElaraError :> es
     ) =>
     -- | injected fetchAnns
-    (Qualified Name -> Eff es [New.Annotation SourceRegion ast]) ->
+    (Qualified Name -> Eff es [Annotation SourceRegion ast]) ->
     -- | injected fetchCtor
-    (Qualified TypeName -> Eff es (New.Declaration SourceRegion ast)) ->
+    (Qualified TypeName -> Eff es (Maybe (Declaration SourceRegion ast))) ->
     (TypeOccurrence ast SourceRegion -> Qualified TypeName) ->
     (Qualified Name, Qualified TypeName) ->
-    Eff es [New.Annotation SourceRegion ast]
+    Eff es [Annotation SourceRegion ast]
 genericGetDeclarationAnnotationsOfType fetchAnns fetchCtor extractTN (Qualified name modName, annName) = do
     annotations <- fetchAnns (Qualified name modName)
-    fmap catMaybes $ for annotations $ \(New.Annotation annotName _args) -> do
-        annotDecl <- fetchCtor (extractTN annotName)
-        let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body')) = annotDecl
+    fmap catMaybes $ for annotations $ \(Annotation annotName _args) -> do
+        annotDecl <- requireConstructor (annotName ^. sourceRegion) fetchCtor (extractTN annotName)
+
+        let Declaration _ (Declaration' _ (DeclarationBody _ body')) = annotDecl
         case body' of
-            New.TypeDeclarationBody tName _ _ _ _ _ | tName ^. unlocated == annName -> pure (Just (New.Annotation annotName _args))
+            TypeDeclarationBody tName _ _ _ _ _ | tName ^. unlocated == annName -> pure (Just (Annotation annotName _args))
             _ -> pure Nothing
+
+requireConstructor ::
+    Error ElaraError :> es =>
+    SourceRegion -> (Qualified TypeName -> Eff es (Maybe (Declaration SourceRegion ast))) -> Qualified TypeName -> Eff es (Declaration SourceRegion ast)
+requireConstructor loc lookup name = do
+    maybe <- lookup name
+    case maybe of
+        Just con -> pure con
+        Nothing -> throwElaraError $ RequiredConstructorNotFound (name `withLocationOf` loc)
