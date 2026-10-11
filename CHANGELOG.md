@@ -41,6 +41,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### 📚 Documentation
 
 - Update readme and add CONTRIBUTING.md - ([ee78d0e](https://github.com/ElaraLang/elara/commit/ee78d0e61639690ffc34a0fcafdea4079b4c61e7)) 
+- Fix typo in readme - ([60cf6e5](https://github.com/ElaraLang/elara/commit/60cf6e55842615ab401280c47b5c498331c54093)) 
 
 ### 🎨 Styling
 
