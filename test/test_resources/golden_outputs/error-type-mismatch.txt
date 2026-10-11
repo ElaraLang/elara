@@ -3,9 +3,9 @@
      │
    4 │ let main = println (1 + "hello")
      •                     ┬── ┬───── 
-     •                     ╰────╸ expected argument 1 to have type Int
+     •                     ╰────╸ expected argument 2 to have type Int
      •                         ├╸ but it has type String
      •                         ╰╸ expected Int but found String
      •
-     │ Note: The function 'Elara.Prim.(+)' has type: Int -> Int
+     │ Note: The function 'Elara.Prim.(+)' has type: Int -> Int -> Int
 ─────╯

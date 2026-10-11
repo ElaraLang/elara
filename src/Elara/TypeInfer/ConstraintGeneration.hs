@@ -87,6 +87,14 @@ extractFunctionName (New.Expr _ _ expr') = case expr' of
     New.EApp NoExtension fn _ -> extractFunctionName fn
     _ -> Nothing
 
+{- | The type of the function at the head of an application spine, and the 1-based position of the next argument.
+For @(+) 1@ this is the type of @(+)@ and @2@.
+-}
+applicationHead :: TypedExpr -> (Monotype SourceRegion, Int)
+applicationHead (New.Expr _ ty body) = case body of
+    New.EApp NoExtension fn _ -> second (+ 1) (applicationHead fn)
+    _ -> (ty, 1)
+
 generateConstraints :: ConstraintGenEffects r loc => ShuntedExpr -> Eff r (TypedExpr, Monotype loc)
 generateConstraints expr'@(New.Expr loc _ _) = do
     (typedExpr', monotype) <- generateConstraints' expr'
@@ -211,7 +219,8 @@ generateConstraints' expr' =
 
                     -- Unify expected argument type with actual argument type
                     let fnName = extractFunctionName e1
-                    let argCtx = Just $ CheckingFunctionArgument 1 fnName t1 t2 appLoc
+                    let (headType, argPos) = applicationHead e1'
+                    let argCtx = Just $ CheckingFunctionArgument argPos fnName headType t2 appLoc
                     tell (equalityWithContext appLoc (TypeVar e2Loc argTyVar []) t2 e1Loc e2Loc argCtx)
 
                     pure (New.EApp NoExtension e1' e2', TypeVar appLoc resTyVar [])
