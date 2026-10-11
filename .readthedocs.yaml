@@ -8,5 +8,5 @@ build:
       - curl -fsSL https://d2lang.com/install.sh | sh -s --
     build:
       html:
-        - cargo install mdbook mdbook-d2
+        - cargo install mdbook mdbook-d2 mdbook-variables
         - PATH="$(asdf where rust)/bin:$HOME/.local/bin:$PATH" mdbook build docs --dest-dir $READTHEDOCS_OUTPUT/html
