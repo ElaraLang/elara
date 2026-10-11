@@ -4,13 +4,17 @@ Unlike the stage-based errors, these errors indicate that something has gone wro
 </span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Error.Internal.html"><span class="hs-identifier">Elara.Error.Internal</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-5"></span><span>
 </span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Name.html"><span class="hs-identifier">Elara.AST.Name</span></a></span><span>
-</span><span id="line-7"></span><span>
-</span><span id="line-8"></span><span class="hs-keyword">data</span><span> </span><span id="InternalError"><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-var">InternalError</span></a></span></span><span>
-</span><span id="line-9"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="RequiredDeclNotFound"><span class="annot"><a href="Elara.Error.Internal.html#RequiredDeclNotFound"><span class="hs-identifier hs-var">RequiredDeclNotFound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-10"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DuplicateDeclAfterDesugar"><span class="annot"><a href="Elara.Error.Internal.html#DuplicateDeclAfterDesugar"><span class="hs-identifier hs-var">DuplicateDeclAfterDesugar</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span>
-</span><span id="line-11"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | When we parse an annotation at compile time but its arrangement is invalid</span></span><span>
-</span><span id="line-12"></span><span>      </span><span id="InvalidAnnotationArrangement"><span class="annot"><a href="Elara.Error.Internal.html#InvalidAnnotationArrangement"><span class="hs-identifier hs-var">InvalidAnnotationArrangement</span></a></span></span><span>
-</span><span id="line-13"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680171046"><span id="local-6989586621680171057"><span class="annot"><span class="annottext">InternalError -&gt; InternalError -&gt; Bool
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.AST.Region.html"><span class="hs-identifier">Elara.AST.Region</span></a></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">data</span><span> </span><span id="InternalError"><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-var">InternalError</span></a></span></span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="RequiredDeclNotFound"><span class="annot"><a href="Elara.Error.Internal.html#RequiredDeclNotFound"><span class="hs-identifier hs-var">RequiredDeclNotFound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="RequiredConstructorNotFound"><span class="annot"><a href="Elara.Error.Internal.html#RequiredConstructorNotFound"><span class="hs-identifier hs-var">RequiredConstructorNotFound</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Region.html#Located"><span class="hs-identifier hs-type">Located</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DuplicateDeclAfterDesugar"><span class="annot"><a href="Elara.Error.Internal.html#DuplicateDeclAfterDesugar"><span class="hs-identifier hs-var">DuplicateDeclAfterDesugar</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | When we parse an annotation at compile time but its arrangement is invalid</span></span><span>
+</span><span id="line-16"></span><span>      </span><span id="InvalidAnnotationArrangement"><span class="annot"><a href="Elara.Error.Internal.html#InvalidAnnotationArrangement"><span class="hs-identifier hs-var">InvalidAnnotationArrangement</span></a></span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680148616"><span id="local-6989586621680148630"><span class="annot"><span class="annottext">InternalError -&gt; InternalError -&gt; Bool
 (InternalError -&gt; InternalError -&gt; Bool)
 -&gt; (InternalError -&gt; InternalError -&gt; Bool) -&gt; Eq InternalError
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -18,7 +22,18 @@ $c== :: InternalError -&gt; InternalError -&gt; Bool
 == :: InternalError -&gt; InternalError -&gt; Bool
 $c/= :: InternalError -&gt; InternalError -&gt; Bool
 /= :: InternalError -&gt; InternalError -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680171063"><span id="local-6989586621680171074"><span id="local-6989586621680171078"><span class="annot"><span class="annottext">Int -&gt; InternalError -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148638"><span id="local-6989586621680148640"><span class="annot"><span class="annottext">(forall x. InternalError -&gt; Rep InternalError x)
+-&gt; (forall x. Rep InternalError x -&gt; InternalError)
+-&gt; Generic InternalError
+forall x. Rep InternalError x -&gt; InternalError
+forall x. InternalError -&gt; Rep InternalError x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. InternalError -&gt; Rep InternalError x
+from :: forall x. InternalError -&gt; Rep InternalError x
+$cto :: forall x. Rep InternalError x -&gt; InternalError
+to :: forall x. Rep InternalError x -&gt; InternalError
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680148646"><span id="local-6989586621680148661"><span id="local-6989586621680148665"><span class="annot"><span class="annottext">Int -&gt; InternalError -&gt; ShowS
 [InternalError] -&gt; ShowS
 InternalError -&gt; String
 (Int -&gt; InternalError -&gt; ShowS)
@@ -34,6 +49,25 @@ show :: InternalError -&gt; String
 $cshowList :: [InternalError] -&gt; ShowS
 showList :: [InternalError] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-14"></span><span>
-</span><span id="line-15"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680171088"><span id="local-6989586621680171092"><span id="local-6989586621680171095"><span id="local-6989586621680171098"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span><span>
-</span><span id="line-16"></span></pre></body></html>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680148673"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680148743"><span id="local-6989586621680148747"><span id="local-6989586621680148750"><span id="local-6989586621680148753"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680148759"><span id="local-6989586621680148763"><span id="local-6989586621680148767"><span id="local-6989586621680148771"><span id="local-6989586621680148774"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>    </span><span id="local-6989586621680148777"><span class="annot"><span class="annottext">diagnosticCode :: InternalError -&gt; Maybe ErrorCode
+</span><a href="#local-6989586621680148777"><span class="hs-identifier hs-var hs-var hs-var">diagnosticCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.Internal.html#RequiredDeclNotFound"><span class="hs-identifier hs-type">RequiredDeclNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode -&gt; Maybe ErrorCode
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ErrorCode
+</span><a href="Elara.Error.Codes.html#requiredDeclNotFound"><span class="hs-identifier hs-var">requiredDeclNotFound</span></a></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var">diagnosticCode</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.Internal.html#DuplicateDeclAfterDesugar"><span class="hs-identifier hs-type">DuplicateDeclAfterDesugar</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode -&gt; Maybe ErrorCode
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ErrorCode
+</span><a href="Elara.Error.Codes.html#duplicateDeclAfterDesugar"><span class="hs-identifier hs-var">duplicateDeclAfterDesugar</span></a></span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var">diagnosticCode</span></a></span><span> </span><span class="annot"><span class="annottext">InternalError
+</span><a href="Elara.Error.Internal.html#InvalidAnnotationArrangement"><span class="hs-identifier hs-var">InvalidAnnotationArrangement</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode -&gt; Maybe ErrorCode
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ErrorCode
+</span><a href="Elara.Error.Codes.html#invalidAnnotationArrangement"><span class="hs-identifier hs-var">invalidAnnotationArrangement</span></a></span><span>
+</span><span id="line-27"></span></pre></body></html>
