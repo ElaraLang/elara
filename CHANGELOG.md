@@ -45,6 +45,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Fix typo in readme - ([60cf6e5](https://github.com/ElaraLang/elara/commit/60cf6e55842615ab401280c47b5c498331c54093)) 
 - Clarify readme instructions - ([c17a0a4](https://github.com/ElaraLang/elara/commit/c17a0a45d93f1e109ece3c983d31b260cced106b)) 
 - Perhaps fix readthedocs build - ([71b4631](https://github.com/ElaraLang/elara/commit/71b4631182af3fdde0ae262e6105b000c3f46a4d)) 
+- Fix readthedocs again - ([d6664f3](https://github.com/ElaraLang/elara/commit/d6664f3625cd1f10e0704c2eef1ca8edecb963a0)) 
 
 ### 🎨 Styling
 
