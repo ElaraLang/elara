@@ -36,9 +36,8 @@ repl:
 test *args: stdlib
     cabal test {{ ghc_flags }} elara-test --test-options='{{ args }}'
 
-# Run the project's source.elr file
-[arg('file', long='file')]
+# Run an Elara file, e.g. `just run examples/json_parser.elr --target jvm`
 [arg('target', long='target', pattern='interp|jvm')]
-run file='source.elr' target='interp':
+run file target='interp':
     {{ if target == 'jvm' { 'just stdlib' } else { '' } }} # only build java stdlib if required
     cabal run {{ ghc_flags }} elara -- run {{ file }} --target {{ target }}
