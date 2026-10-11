@@ -8,7 +8,8 @@ import Effectful.Colog (runLogAction)
 import Effectful.State.Static.Local (execState, modify)
 import Error.Diagnose (TabSize (..), WithUnicode (..), prettyDiagnostic')
 import Prettyprinter (defaultLayoutOptions, layoutSmart)
-import System.Process (readProcess)
+import System.Exit (ExitCode (..))
+import System.Process (readProcessWithExitCode)
 import Test.Syd (GoldenTest, Spec, describe, expectationFailure, goldenStringFile, it)
 
 import Prettyprinter.Render.Text qualified as Text
@@ -191,9 +192,10 @@ runJVMCapture compilerSettings = do
                         Elara.compile compilerSettings (Elara.CompileAndEmit Elara.JVM)
 
     let classPath = compilerSettings.outputDir <> ":jvm-stdlib"
-    rawOutput <- readProcess "java" ["-cp", classPath, "Main"] ""
-
-    pure (toString $ stripEnd $ fromString rawOutput)
+    (code, out, err) <- readProcessWithExitCode "java" ["-cp", classPath, "Main"] ""
+    case code of
+        ExitSuccess -> pure (toString $ stripEnd $ fromString out)
+        ExitFailure n -> expectationFailure $ "java exited with " <> show n <> "\n--- stderr ---\n" <> err <> "\n--- stdout ---\n" <> out
 
 -- | Run a golden test that expects compiler failure, comparing the diagnostic output
 runGoldenError :: CompilerSettings -> FilePath -> GoldenTest String
