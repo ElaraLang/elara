@@ -113,6 +113,10 @@
                 compat.enable = false;
                 envs.latest.ghcid.enable = false;
                 envs.latest.hls.enable = true;
+                # we don't need this and it slows down CI for very little benefit
+                envs.dev.libraryProfiling = false;
+                envs.latest.libraryProfiling = false;
+                envs.lower.libraryProfiling = false;
 
                 managed = {
                   enable = true;
