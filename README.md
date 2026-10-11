@@ -93,7 +93,7 @@ import Prelude
 import Elara.Prim
 
 def main : IO ()
-let main = print "Hello, World!"
+let main = println "Hello, World!"
 ```
 
 **3. Run it**
