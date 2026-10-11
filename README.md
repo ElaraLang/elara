@@ -1,58 +1,31 @@
-# Elara Programming Language
+<h1 align="center">Elara</h1>
+<p align="center">
+A Haskell-like purely functional language for the JVM
+</p>
 
-![CI](https://github.com/ElaraLang/elara/actions/workflows/ci.yaml/badge.svg)
+<p align="center">
+  <a href="https://github.com/ElaraLang/elara/actions/workflows/ci.yaml"><img alt="CI" src="https://github.com/ElaraLang/elara/actions/workflows/ci.yaml/badge.svg?branch=main"></a>
+  <a href="https://elara.readthedocs.io/en/latest/"><img alt="Docs" src="https://readthedocs.org/projects/elara/badge/?version=latest"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/ElaraLang/elara"></a>
+  <a href="https://discord.gg/xu5gSTV"><img alt="Discord" src="https://img.shields.io/discord/735559528283766796?logo=discord&label=chat"></a>
+</p>
 
-Elara is a purely functional programming language targeting the JVM. It features a Haskell & F# inspired syntax, a complete Hindley-Milner type system and pure functions in the type system (i.e. an IO monad).
+<p align="center">
+  <a href="https://elara.readthedocs.io/en/latest/">Documentation</a> ·
+  <a href="https://elaralang.github.io/elara/">Compiler API reference</a> ·
+  <a href="examples/">Examples</a> ·
+  <a href="https://discord.gg/xu5gSTV">Discord</a>
+</p>
 
-**Please note that Elara is currently a work in progress and is not yet ready for production use.**
+> [!WARNING]
+> Elara is currently a work in progress, expect a lot of breaking changes and unfinished features!
 
-## Examples
-
-### Hello World
-
-```fs
-def main : IO ()
-let main = print "Hello, World!"
-```
-
-### Factorial
-
-```fs
-def factorial : Int -> Int
-let factorial n = if n == 0 then 1 else n * factorial (n - 1)
-```
-
-### Lists
+## A Brief Example
 
 ```fs
-def sum : [Int] -> Int
-let sum ls =
-    match ls with
-        [] -> 0
-        x::xs -> x + sum xs
+import Elara.Prim
 
-def main : IO ()
-let main = print (sum [1, 2, 3])
--- Prints 6
-```
 
-### Higher-Order Functions
-
-```fs
-def map : (a -> b) -> [a] -> [b]
-let map f ls =
-    match ls with
-        [] -> []
-        x::xs -> f x :: map f xs
-
-def main : IO ()
-let main = print (map (\x -> x * 2) [1, 2, 3])
--- Prints [2, 4, 6]
-```
-
-### Data Types
-
-```fs
 type Option a = None | Some a
 
 def map : (a -> b) -> Option a -> Option b
@@ -62,34 +35,84 @@ let map f opt =
         Some x -> Some (f x)
 
 def main : IO ()
-let main = print (map (\x -> x * 2) (Some 3))
--- Prints Some 6
+let main = println (map (\x -> x * 2) (Some 3))
+
+-- Prints: Some 6
 ```
 
-## Getting Involved
+## Why Elara?
 
-If you're interested in Elara or contributing to its development, join our [Discord server](https://discord.gg/xu5gSTV) for frequent updates and discussions.
+Elara was made to try and achieve two things. If you like the sound of these, Elara could be for you:
 
-## Building & Running
+- **A Haskell-like language on the JVM platform** _with high quality interoperability_ (todo)
+- **A modern Elm and Rust-like developer experience**
 
-Elara is extremely buggy and temperamental at the moment, but it _should_ function!
+In general, Elara also has some pretty cool features:
 
+- **Haskell- and F#-style, on the JVM.** Algebraic data types, pattern matching and inferred Hindley-Milner polymorphism, compiled to JVM bytecode.
+- **High Quality Rust- and Elm-Style Error Messages**:
+    <p align="center"><img alt="Elara type error: Int is not compatible with String, with the offending expression underlined" src="docs/assets/type-error.svg" width="720"></p>
+- **Modern Compiler Architecture**: A query-based compiler with constraint-based Hindley-Milner inference.
 
-### Running Prerequisites
+<details>
+  <summary> Comparison with other languages</summary>
 
-1. To run Elara you need a JRE. Anything above Java 8 should work
-2. Before running, and if you change the files, make sure to rebuild the Java standard library:
+|                          | **Elara**  | Haskell | [Frege](https://github.com/Frege/frege) | [Eta](https://github.com/typelead/eta) |  Scala 3  |   Elm   | Gleam |
+| ------------------------ | :--------: | :-----: | :-------------------------------------: | :------------------------------------: | :-------: | :-----: | :---: |
+| Runs on the JVM          |     ✅     |   ❌    |                   ✅                    |                   ✅                   |    ✅     |   ❌    |  ❌   |
+| Effects tracked in types |     ✅     |   ✅    |                   ✅                    |                   ✅                   |    ❌     |   ✅    |  ❌   |
+| Full type inference      |     ✅     |   ✅    |                   ✅                    |                   ✅                   | ⚠️ partly |   ✅    |  ✅   |
+| Type classes / traits    | ⚠️ planned |   ✅    |                   ✅                    |                   ✅                   |    ✅     |   ❌    |  ❌   |
+| Actively maintained      |     ✅     |   ✅    |                ⚠️ quiet                 |                   ❌                   |    ✅     | ⚠️ slow |  ✅   |
+| Production-ready         |     ❌     |   ✅    |                   ⚠️                    |                   ⚠️                   |    ✅     |   ✅    |  ✅   |
+
+<sub>✅ yes · ⚠️ partly · ❌ no</sub>
+
+</details>
+
+## Quick Start
+
+**1. Get Elara**
 
 ```sh
-cd jvm-stdlib
-javac Elara/Error.java Elara/Func.java Elara/Func2.java Elara/IO.java Elara/Int.java Elara/Prelude.java Elara/Func0.java
-cd ../
+# prebuilt statically-linked binary for x86-64 Linux, see the Releases page for others
+curl -fsSL https://github.com/ElaraLang/elara/releases/download/dev-build/elara-x86_64-linux -o elara
+chmod +x elara
 ```
 
+or build from source with [Nix](https://nixos.org/): `nix develop`, then `just build`.
+You'll also need a [JDK](https://whichjdk.com/) if using the JVM backend.
 
-## Code Structure
+For detailed build instructions see the [documentation](https://elara.readthedocs.io/en/latest/compiler/internals/setup.html)
 
-Currently the structure of an Elara program is very rigid: the `source.elr` file in the root directory _must_ contain a `Main` module with a `main` function of type `IO ()`, and all other code must be part of the standard library, in the `stdlib` directory.
+**2. Write a program**
+
+```fs
+-- hello.elr
+import Prelude
+import Elara.Prim
+
+def main : IO ()
+let main = print "Hello, World!"
+```
+
+**3. Run it**
+
+```sh
+./elara run hello.elr                 # run in the interpreter
+./elara run hello.elr --target jvm    # compile to JVM bytecode and run on the JVM
+```
+
+More runnable programs are in [`examples/`](examples/), demonstrating features like pattern matching, higher-order functions, polymorphism, a [JSON parser](examples/json_parser.elr), and more.
+
+
+## Status
+
+Elara is still in early stages. So far, we have a full working pipeline (parse → rename → typecheck → Core → JVM / Interpreter), a small standard library, and a golden-tested set of examples and error messages. See the [changelog](CHANGELOG.md) for what's changed recently.
+
+## Contributing
+
+Contributions are always very welcome! Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [development setup](https://elara.readthedocs.io/en/latest/compiler/internals/setup.html), then look for issues labelled [`good first issue`](https://github.com/ElaraLang/elara/labels/good%20first%20issue). If you have questions, ask on [Discord](https://discord.gg/xu5gSTV).
 
 ## Library Acknowledgments
 
@@ -98,21 +121,3 @@ Elara owes its existence to numerous open-source projects, particularly to [Grac
 ## License
 
 Elara is released under the [MIT License](LICENSE).
-
-## Technical Details
-
-### How the compiler works
-
-The Elara compiler is fairly simple, composed of multiple passes on the source code. These are as follows:
-
-1. **Lexing:** The source code is converted into a list of tokens, layout rules are converted into braces and semicolons, and comments are removed.
-2. **Parsing:** The list of tokens is converted into the Frontend abstract syntax tree (AST). The Frontend AST almost directly mirrors the syntax of the language with very few transformations applied. The Parser checks for any syntax errors and reports them.
-3. **Desugaring:** The Frontend AST is converted into the Desugared AST. The Desugared AST is a bit misleading in that it is actually fairly conservative in its desugaring. The main differences are that multi-argument lambdas are converted into nested single-argument lambdas, let bindings have their parameters removed and are converted into lambdas, and declarations with identical names (i.e. `def` and `let`s) are converted into a single declaration.
-4. **Renaming:** Conversion to Renamed AST with name resolution and unique-ification. Every name is either resolved to a fully qualified name, or local variables are generated a unique name to avoid collisions.
-5. **Shunting:** Conversion to Shunted AST with operator precedence and associativity applied. A simple reassociation of the AST to match the precedence and associativity of operators. The notion of a "binary operator" is removed as they are all turned into prefix function calls.
-6. **Type Checking:** The Shunted AST is converted into the Typed AST by inferring and checking the types of every expression.
-7. **ToCore:** The Typed AST is converted into the Core AST. The Core AST is a very simple AST that is essentially a typed lambda calculus, very similar to GHC's Core language. Very extensive desugaring is done here, converting the entire language to the 8 constructors of the Core AST.
-8. **CoreToCore:** Repeated transformations of the Core AST, mainly performing optimisations.
-9. **Emitting:** The Core AST is converted into JVM bytecode and written to a class file.
-
----

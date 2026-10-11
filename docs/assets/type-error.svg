@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="804" height="260" viewBox="0 0 804 260" role="img" aria-label="Elara type error diagnostic">
+<rect width="804" height="260" rx="8" fill="#0d1117"/>
+<g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" xml:space="preserve">
+<text x="20.0" y="34" fill="#ff7b72" font-weight="bold" xml:space="preserve" style="white-space:pre">[error E3011]</text>
+<text x="129.2" y="34" fill="#c9d1d9" xml:space="preserve" style="white-space:pre">: Type mismatch in call to &#x27;</text>
+<text x="364.4" y="34" fill="#a5d6ff" xml:space="preserve" style="white-space:pre">Elara.Prim</text>
+<text x="448.4" y="34" fill="#c9d1d9" xml:space="preserve" style="white-space:pre">.(</text>
+<text x="465.2" y="34" fill="#7ee787" font-weight="bold" xml:space="preserve" style="white-space:pre">+</text>
+<text x="473.6" y="34" fill="#c9d1d9" xml:space="preserve" style="white-space:pre">)&#x27;: </text>
+<text x="507.2" y="34" fill="#f2cc60" xml:space="preserve" style="white-space:pre">Int</text>
+<text x="532.4" y="34" fill="#c9d1d9" xml:space="preserve" style="white-space:pre"> is not compatible with </text>
+<text x="734.0" y="34" fill="#f2cc60" xml:space="preserve" style="white-space:pre">String</text>
+<text x="62.0" y="54" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">╭──▶</text>
+<text x="104.0" y="54" fill="#7ee787" font-weight="bold" xml:space="preserve" style="white-space:pre">main.elr@4:25-4:31</text>
+<text x="62.0" y="74" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">│</text>
+<text x="20.0" y="94" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">   4 │</text>
+<text x="78.8" y="94" fill="#f0f6fc" xml:space="preserve" style="white-space:pre">let main = println (</text>
+<text x="246.8" y="94" fill="#79c0ff" font-weight="bold" xml:space="preserve" style="white-space:pre">1 +</text>
+<text x="280.4" y="94" fill="#79c0ff" font-weight="bold" xml:space="preserve" style="white-space:pre">&quot;hello</text>
+<text x="330.8" y="94" fill="#f0f6fc" xml:space="preserve" style="white-space:pre">&quot;)</text>
+<text x="62.0" y="114" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">•</text>
+<text x="246.8" y="114" fill="#79c0ff" xml:space="preserve" style="white-space:pre">┬──</text>
+<text x="280.4" y="114" fill="#79c0ff" xml:space="preserve" style="white-space:pre">┬─────</text>
+<text x="62.0" y="134" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">•</text>
+<text x="246.8" y="134" fill="#79c0ff" xml:space="preserve" style="white-space:pre">╰────╸</text>
+<text x="305.6" y="134" fill="#79c0ff" xml:space="preserve" style="white-space:pre">expected argument 2 to have type </text>
+<text x="582.8" y="134" fill="#f2cc60" xml:space="preserve" style="white-space:pre">Int</text>
+<text x="62.0" y="154" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">•</text>
+<text x="280.4" y="154" fill="#79c0ff" xml:space="preserve" style="white-space:pre">├╸</text>
+<text x="305.6" y="154" fill="#79c0ff" xml:space="preserve" style="white-space:pre">but it has type </text>
+<text x="440.0" y="154" fill="#f2cc60" xml:space="preserve" style="white-space:pre">String</text>
+<text x="62.0" y="174" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">•</text>
+<text x="280.4" y="174" fill="#ff7b72" xml:space="preserve" style="white-space:pre">╰╸</text>
+<text x="305.6" y="174" fill="#ff7b72" xml:space="preserve" style="white-space:pre">expected </text>
+<text x="381.2" y="174" fill="#f2cc60" xml:space="preserve" style="white-space:pre">Int</text>
+<text x="406.4" y="174" fill="#ff7b72" xml:space="preserve" style="white-space:pre"> but found </text>
+<text x="498.8" y="174" fill="#f2cc60" xml:space="preserve" style="white-space:pre">String</text>
+<text x="62.0" y="194" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">•</text>
+<text x="62.0" y="214" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">│</text>
+<text x="78.8" y="214" fill="#b6e3ff" xml:space="preserve" style="white-space:pre">Note: The function &#x27;</text>
+<text x="246.8" y="214" fill="#a5d6ff" xml:space="preserve" style="white-space:pre">Elara.Prim</text>
+<text x="330.8" y="214" fill="#b6e3ff" xml:space="preserve" style="white-space:pre">.(</text>
+<text x="347.6" y="214" fill="#7ee787" font-weight="bold" xml:space="preserve" style="white-space:pre">+</text>
+<text x="356.0" y="214" fill="#b6e3ff" xml:space="preserve" style="white-space:pre">)&#x27; has type: </text>
+<text x="465.2" y="214" fill="#f2cc60" xml:space="preserve" style="white-space:pre">Int</text>
+<text x="498.8" y="214" fill="#7ee787" font-weight="bold" xml:space="preserve" style="white-space:pre">-&gt;</text>
+<text x="524.0" y="214" fill="#f2cc60" xml:space="preserve" style="white-space:pre">Int</text>
+<text x="557.6" y="214" fill="#7ee787" font-weight="bold" xml:space="preserve" style="white-space:pre">-&gt;</text>
+<text x="582.8" y="214" fill="#f2cc60" xml:space="preserve" style="white-space:pre">Int</text>
+<text x="20.0" y="234" fill="#8b949e" font-weight="bold" xml:space="preserve" style="white-space:pre">─────╯</text>
+</g></svg>
