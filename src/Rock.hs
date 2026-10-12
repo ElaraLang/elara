@@ -1,7 +1,8 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 -- Modified version of the Rock (https://hackage.haskell.org/package/rock) library
 -- with effectful support added
--- Credit to https://gist.github.com/expipiplus1/cfd5c4fb4a5a40338ccf8642fb3d0f1e for the changes!
+-- Credit to https://gist.github.com/expipiplus1/cfd5c4fb4a5a40338ccf8642fb3d0f1e for the initial changes,
+-- further modifications Copyright (c) Alexander Wood, MIT.
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
