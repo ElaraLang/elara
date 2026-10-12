@@ -5,18 +5,17 @@ This stage performs optimisations and transformations on the Core AST
 -}
 module Elara.CoreToCore where
 
-import Effectful (Eff)
+import Effectful (Eff, (:>))
 
 import Elara.AST.Name
 import Elara.AST.VarRef
 import Elara.Core (CoreBind, CoreExpr, Expr (..), Literal (..), Var (..))
 import Elara.Core.Generic (Bind (..), mapBind, traverseBind)
-import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreDeclaration (..), CoreModule (..))
 import Elara.Core.ToANF
 import Elara.Core.TypeCheck (TypeCheckError, typeCheckCoreModule)
 import Elara.Error (runErrorAsElaraError)
-import Elara.Query.Effects (ConsQueryEffects)
+import Elara.Query.Effects (QueryEffects)
 
 import Elara.Core qualified as Core
 import Elara.Core.ANF qualified as ANF
@@ -83,23 +82,24 @@ coreToCore (CoreModule name decls) = CoreModule name (fmap f decls)
     f (CoreValue v) = CoreValue (mapBind identity fullCoreToCoreExpr v)
     f other = other
 
-runGetOptimisedCoreModuleQuery :: ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)
+runGetOptimisedCoreModuleQuery :: (QueryEffects es, Rock.Rock Elara.Query.Query :> es) => ModuleName -> Eff es (CoreModule CoreBind)
 runGetOptimisedCoreModuleQuery mn = do
     coreModule <- Rock.fetch (Elara.Query.GetCoreModule mn)
     pure $ coreToCore coreModule
 
 runGetANFCoreModuleQuery ::
+    (QueryEffects es, Rock.Rock Elara.Query.Query :> es) =>
     ModuleName ->
     Eff
-        (ConsQueryEffects '[Rock.Rock Elara.Query.Query])
+        es
         (CoreModule (ANF.TopLevelBind Core.Var))
 runGetANFCoreModuleQuery mn = do
     coreModule <- Rock.fetch (Elara.Query.GetOptimisedCoreModule mn)
     moduleToANF coreModule
 
-runGetFinalisedCoreModuleQuery :: HasCallStack => ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (CoreModule CoreBind)
+runGetFinalisedCoreModuleQuery :: (QueryEffects es, Rock.Rock Elara.Query.Query :> es) => HasCallStack => ModuleName -> Eff es (CoreModule CoreBind)
 runGetFinalisedCoreModuleQuery mn = do
-    coreModule <- runErrorAsElaraError @ClosureLiftError $ Rock.fetch (Elara.Query.GetClosureLiftedModule mn)
+    coreModule <- Rock.fetch (Elara.Query.GetClosureLiftedModule mn)
     runErrorAsElaraError @TypeCheckError $ typeCheckCoreModule coreModule
     pure (unANF coreModule)
 

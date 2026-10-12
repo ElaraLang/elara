@@ -1,7 +1,7 @@
 module Elara.ReadFile (FileContents (FileContents, fileContents), ReadFileError, ModulePathError (..), runGetFileContentsQuery, getInputFiles, findElaraFiles) where
 
 import Effectful (Eff, (:>))
-import Effectful.Error.Static (Error, throwError)
+import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, createDirectoryIfMissing, listDirectory)
 import System.FilePath (takeExtension, (</>))
 
@@ -55,7 +55,7 @@ instance Pretty ReadFileError where
 instance Pretty ModulePathError where
     pretty = diagnosticMessage
 
-getInputFiles :: CompilerSettings -> Eff '[FileSystem] (HashSet FilePath)
+getInputFiles :: FileSystem :> es => CompilerSettings -> Eff es (HashSet FilePath)
 getInputFiles settings = do
     createDirectoryIfMissing True "stdlib"
     stdlib <- fmap ("stdlib/" <>) <$> listDirectory "stdlib"
@@ -86,13 +86,13 @@ findElaraFiles' root = do
 
 runGetFileContentsQuery ::
     ( FileSystem :> es
-    , Error ReadFileError :> es
+    , Error ElaraError :> es
     , HasCallStack
     ) =>
     FilePath -> Eff es FileContents
 runGetFileContentsQuery fp = do
     unlessM (Eff.doesFileExist fp) $
-        throwError $
+        throwElaraError $
             FileNotFound fp
     contents <- Eff.readFile fp
     let contentsText = decodeUtf8 contents

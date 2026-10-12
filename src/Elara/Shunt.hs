@@ -46,12 +46,11 @@ import Elara.AST.Types
 import Elara.AST.VarRef
 import Elara.ConstExpr
 import Elara.Data.Unique (Unique (Unique))
-import Elara.Error (ElaraError, ElaraWarning, reportElaraWarning, runErrorAsElaraError)
+import Elara.Error (reportElaraWarning, runErrorAsElaraError)
 import Elara.Prim (associativityAnnotationName, fixityAnnotationName, leftAssociativeAnnotationName, nonAssociativeAnnotationName, rightAssociativeAnnotationName)
 import Elara.Query (Query (..), RunPhase (..))
 import Elara.Query.Effects
 import Elara.Rename ()
-import Elara.Rename.Error (RenameError)
 import Elara.Rules.Generic
 import Elara.Shunt.Error
 import Elara.Shunt.Operator
@@ -91,12 +90,11 @@ defaultAssociativity :: Associativity
 defaultAssociativity = LeftAssociative
 
 instance RunPhase Shunted where
-    type ASTQueryEffects Shunted q = '[Eff.Writer (Set ShuntWarning), Eff.Error ShuntError, Eff.Error ElaraError, Eff.Writer [ElaraWarning]]
-
-    getModuleByName mn = do
-        (renamed, warnings) <- Eff.runWriter @[ElaraWarning] $ runErrorAsElaraError @RenameError $ Rock.fetch $ Elara.Query.ModuleByName @Renamed mn
+    getModuleByName mn = runErrorAsElaraError @ShuntError $ do
+        renamed <- Rock.fetch $ Elara.Query.ModuleByName @Renamed mn
+        (shunted, warnings) <- Eff.runWriter @(Set ShuntWarning) $ shuntWith opLookupQueries renamed
         traverse_ reportElaraWarning warnings
-        shuntWith opLookupQueries renamed
+        pure shunted
 
     getDeclarationByName = genericGetDeclarationByName @Shunted (Rock.fetch . Elara.Query.ModuleByName @Shunted)
     getRequiredDeclarationByName = genericGetRequiredDeclarationByName @Shunted (Rock.fetch . Elara.Query.DeclarationByName @Shunted)
@@ -111,32 +109,18 @@ other implementations are possible, e.g. a hardcoded table, which may be useful 
 type OpLookup es = Qualified Name -> Eff es DeclaredFixity
 
 -- | An 'OpLookup' that uses the 'Elara.Query.GetOpInfo' query to get operator info, i.e. derives it from the AST annotations.
-opLookupQueries ::
-    ( Eff.Error ShuntError :> es
-    , Rock Query :> es
-    , Eff.Writer (Set ShuntWarning) :> es
-    , QueryEffects es
-    ) =>
-    OpLookup es
+opLookupQueries :: (Rock Query :> es, QueryEffects es) => OpLookup es
 opLookupQueries = Rock.fetch . GetOpInfo
 
 -- | Run the @'Elara.Query.GetOpInfo'@ query to get operator info for a given operator
 runGetOpInfoQuery ::
+    (QueryEffects es, Rock Elara.Query.Query :> es) =>
     Qualified Name ->
     Eff
-        ( ConsQueryEffects
-            '[ Eff.Error ShuntError
-             , Rock Elara.Query.Query
-             ]
-        )
+        es
         DeclaredFixity
 runGetOpInfoQuery declName = do
-    (annotations, warnings) <-
-        Eff.runWriter @[ElaraWarning] $
-            runErrorAsElaraError @RenameError $
-                Rock.fetch $
-                    Elara.Query.DeclarationAnnotations @Renamed declName
-    traverse_ reportElaraWarning warnings
+    annotations <- Rock.fetch $ Elara.Query.DeclarationAnnotations @Renamed declName
     let fixityAnns = filter (\(Annotation annotName _args) -> annotName ^. unlocated == fixityAnnotationName) annotations
     let assocAnns = filter (\(Annotation annotName _args) -> annotName ^. unlocated == associativityAnnotationName) annotations
     fixity <- case fixityAnns of
@@ -157,7 +141,7 @@ runGetOpInfoQuery declName = do
     pure $ DeclaredFixity fixity assoc
 
 -- | Run the @'Elara.Query.GetOpTableIn'@ query to get the operator table for a module
-runGetOpTableInQuery :: ModuleName -> Eff (ConsQueryEffects '[Rock Elara.Query.Query]) OpTable
+runGetOpTableInQuery :: (QueryEffects es, Rock Elara.Query.Query :> es) => ModuleName -> Eff es OpTable
 runGetOpTableInQuery _moduleName = pure mempty
 
 -- | Effects needed for the shunt pipeline

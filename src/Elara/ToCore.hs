@@ -32,7 +32,7 @@ import Elara.Error (ElaraDiagnostic (..), ElaraError (..), ElaraMarker (..), Ela
 import Elara.Logging
 import Elara.Prim (KnownType (..), OpaquePrim (..), WiredInPrim (..), lookupByQualifiedTypeName, mkPrimQual)
 import Elara.Prim.Core
-import Elara.Query.Effects (ConsQueryEffects, QueryEffects)
+import Elara.Query.Effects (QueryEffects)
 import Elara.TypeInfer ()
 import Elara.TypeInfer.Unique (UniqueTyVar)
 import Elara.Utils (uncurry3)
@@ -154,7 +154,8 @@ lookupTyCon qn = debugWithResult ("lookupTyCon: " <> pretty qn) $ do
             Rock.fetch (Elara.Query.GetTyCon qn) ?:! throwError (UnknownTypeConstructor qn table)
 
 runGetDataConQuery ::
-    Qualified TypeName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (Maybe DataCon)
+    (QueryEffects es, Rock.Rock Elara.Query.Query :> es) =>
+    Qualified TypeName -> Eff es (Maybe DataCon)
 runGetDataConQuery qn = logDebugWith ("runGetDataConQuery: " <> pretty qn) $ do
     coreModule <- Rock.fetch (Elara.Query.GetCoreModule (qualifier qn))
     let decls = coreModule ^.. field' @"declarations" % each % _As @"CoreType" % field @"typeBody" % _As @"CoreDataDecl" % _2 % each
@@ -162,7 +163,8 @@ runGetDataConQuery qn = logDebugWith ("runGetDataConQuery: " <> pretty qn) $ do
     pure matchingDataCon
 
 runGetTyConQuery ::
-    Qualified Text -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError]) (Maybe TyCon)
+    (QueryEffects es, Rock.Rock Elara.Query.Query :> es) =>
+    Qualified Text -> Eff es (Maybe TyCon)
 runGetTyConQuery qn = case lookupByQualifiedTypeName (TypeName <$> qn) of
     Just kt -> pure $ Just (knownTypeToCon kt)
     Nothing -> logDebugWith ("runGetTyConQuery: " <> pretty qn) $ do
@@ -209,7 +211,8 @@ type InnerToCoreC r =
     )
 
 runGetCoreModuleQuery ::
-    ModuleName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError]) (CoreModule CoreBind)
+    (QueryEffects es, Rock.Rock Elara.Query.Query :> es) =>
+    ModuleName -> Eff es (CoreModule CoreBind)
 runGetCoreModuleQuery mn = do
     typedModule <- Rock.fetch (Elara.Query.ModuleByName @Typed mn)
     runErrorAsElaraError @ToCoreError $

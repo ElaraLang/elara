@@ -352,9 +352,7 @@ apply f' a' = case f' of
     VPrimOp Prim.PrimReadFile -> do
         case a' of
             String s -> pure $ IOAction $ do
-                contents <-
-                    runErrorAsElaraError @ReadFileError $
-                        Rock.fetch (Elara.Query.GetFileContents (toString s))
+                contents <- Rock.fetch (Elara.Query.GetFileContents (toString s))
                 pure $ String contents.fileContents
             _ -> throwError_ TypeMismatch{expected = "String", actual = a'}
     VPrimOp Prim.PrimIntNegate -> do

@@ -8,7 +8,7 @@ module Elara.ModuleIndex (
 )
 where
 
-import Effectful (Eff)
+import Effectful (Eff, (:>))
 import Effectful.FileSystem (FileSystem)
 import System.FilePath (takeBaseName, takeDirectory, takeFileName, (</>))
 
@@ -69,7 +69,7 @@ normalizeModuleName :: ModuleName -> ModuleName
 normalizeModuleName (ModuleName parts) = ModuleName (fmap Text.toLower parts)
 
 -- | Build the module index by scanning all source directories
-buildModuleIndex :: CompilerSettings -> Eff '[FileSystem] ModuleIndex
+buildModuleIndex :: FileSystem :> es => CompilerSettings -> Eff es ModuleIndex
 buildModuleIndex settings = do
     let mainFileDir = case settings.mainFile of
             Just _fp -> [] -- TODO: if we have a

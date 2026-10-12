@@ -25,6 +25,7 @@ import Effectful.State.Static.Local qualified as Local
 
 import Effectful.State.Extra
 import Elara.AST.Extensions
+import Elara.AST.Instances ()
 import Elara.AST.Location
 import Elara.AST.Name (DeclName (..), LowerAlphaName (..), MaybeQualified (MaybeQualified), ModuleName (..), Name (..), Qualified (Qualified), ToName (toName), TypeName (..), VarName (..))
 import Elara.AST.Phase (NoExtension (..))
@@ -36,14 +37,12 @@ import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
 import Elara.Data.Pretty
 import Elara.Data.Unique
 import Elara.Data.Unique.Effect
-import Elara.Desugar.Error (DesugarError)
 import Elara.Error (runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, logDebug)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Prim.Rename (primitiveRenameState)
 import Elara.Query
 import Elara.Query.Effects
-import Elara.Query.Errors ()
 import Elara.Rename.Error
 import Elara.Rename.Imports (expositionToLocatedName, isExposition, isImportedBy)
 import Elara.Rename.State
@@ -79,8 +78,8 @@ type InnerRename r =
     )
 
 instance RunPhase Renamed where
-    getModuleByName mn = do
-        m <- runErrorAsElaraError @DesugarError $ Rock.fetch $ Elara.Query.DesugaredModule mn
+    getModuleByName mn = runErrorAsElaraError @RenameError $ do
+        m <- Rock.fetch $ Elara.Query.DesugaredModule mn
         let NewModule.Module _ m' = m
         let actualName = m'.moduleName ^. unlocated
         when (actualName /= mn) $ throwError $ ModuleNameMismatch (Located (GeneratedRegion "Renaming Entry Point") mn) (actualName `withLocationOf` stripTag m'.moduleName)
@@ -247,9 +246,7 @@ getModuleFromName ::
         ModuleName ->
     Eff r (NewModule.Module SourceRegion NewD.Desugared)
 getModuleFromName mn = do
-    m <-
-        runErrorAsElaraError @DesugarError $
-            Rock.fetch (Elara.Query.DesugaredModule (mn ^. unlocated))
+    m <- Rock.fetch (Elara.Query.DesugaredModule (mn ^. unlocated))
     let NewModule.Module _ m' = m
     let actualName = m'.moduleName ^. unlocated
     when (actualName /= mn ^. unlocated) $

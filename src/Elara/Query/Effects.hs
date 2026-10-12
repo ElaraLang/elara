@@ -14,34 +14,22 @@ import Elara.Data.Unique.Effect
 import Elara.Error
 import Elara.Logging
 
-type MinimumQueryEffects = ConsMinimumQueryEffects '[]
-
-{- | The bare minimum effects that need to be present for any query,
-even a "pure" one
--}
-type ConsMinimumQueryEffects :: [Effect] -> [Effect]
-type ConsMinimumQueryEffects es =
-    StructuredDebug ': es
-
-type HasMinimumQueryEffects es =
-    (StructuredDebug :> es)
-
-type StandardQueryEffects = ConsQueryEffects '[]
-
--- | Standard effects that almost every query will use
-type ConsQueryEffects :: [Effect] -> [Effect]
-type ConsQueryEffects es =
-    FileSystem
-        ': Error ElaraError
-        ': Writer [ElaraWarning]
-        ': UniqueGen
-        ': ConsMinimumQueryEffects es
-
+-- | The effects every query runs with
 type QueryEffects :: [Effect] -> Constraint
 type QueryEffects es =
     ( FileSystem :> es
     , Error ElaraError :> es
     , Writer [ElaraWarning] :> es
     , UniqueGen :> es
-    , HasMinimumQueryEffects es
+    , StructuredDebug :> es
     )
+
+-- | 'QueryEffects' as a concrete effect list, consed onto @es@
+type ConsQueryEffects :: [Effect] -> [Effect]
+type ConsQueryEffects es =
+    FileSystem
+        ': Error ElaraError
+        ': Writer [ElaraWarning]
+        ': UniqueGen
+        ': StructuredDebug
+        ': es

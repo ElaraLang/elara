@@ -65,9 +65,9 @@ readTokensWith ::
 readTokensWith (FileContents fp s) = do
     evalState (initialLexState fp s) (inject readTokens)
 
-getLexedFile :: FilePath -> Eff (ConsQueryEffects '[Error LexerError, Rock.Rock Query]) [Lexeme]
-getLexedFile fp = do
-    fileContents <- runErrorAsElaraError $ Rock.fetch (GetFileContents fp)
+getLexedFile :: (QueryEffects es, Rock.Rock Query :> es) => FilePath -> Eff es [Lexeme]
+getLexedFile fp = runErrorAsElaraError @LexerError $ do
+    fileContents <- Rock.fetch (GetFileContents fp)
     readTokensWith fileContents
 
 lexer :: (Lexeme -> LexMonad a) -> LexMonad a

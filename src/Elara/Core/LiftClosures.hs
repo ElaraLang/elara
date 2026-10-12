@@ -25,8 +25,9 @@ import Elara.Core.ToANF (fromANF)
 import Elara.Data.Pretty
 import Elara.Data.Unique (uniqueToText, uniqueVal)
 import Elara.Data.Unique.Effect (UniqueGen, makeUnique)
+import Elara.Error (runErrorAsElaraError)
 import Elara.Logging (StructuredDebug, traceFn)
-import Elara.Query.Effects (ConsQueryEffects)
+import Elara.Query.Effects (QueryEffects)
 import Prelude hiding (Alt)
 
 import Elara.Core qualified as Core
@@ -94,12 +95,13 @@ runLiftClosures (CoreModule m decls) = do
     pure $ CoreModule m (closures' <> decls')
 
 runGetClosureLiftedModuleQuery ::
+    (QueryEffects es, Rock.Rock Elara.Query.Query :> es) =>
     HasCallStack =>
     ModuleName ->
     Eff
-        (ConsQueryEffects '[Rock.Rock Elara.Query.Query, UniqueGen, StructuredDebug, Error ClosureLiftError])
+        es
         (CoreModule (G.Bind Core.Var ANF.Expr))
-runGetClosureLiftedModuleQuery mn = do
+runGetClosureLiftedModuleQuery mn = runErrorAsElaraError @ClosureLiftError $ do
     coreModule <- Rock.fetch (Elara.Query.GetANFCoreModule mn)
     runLiftClosures coreModule
 

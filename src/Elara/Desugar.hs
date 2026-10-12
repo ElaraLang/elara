@@ -2,7 +2,7 @@
 
 module Elara.Desugar where
 
-import Effectful (Eff, inject)
+import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static (throwError)
 
 import Data.Map qualified as M
@@ -22,8 +22,7 @@ import Elara.Desugar.Common
 import Elara.Desugar.Error
 import Elara.Error (runErrorAsElaraError)
 import Elara.Logging
-import Elara.Parse.Error (WParseErrorBundle)
-import Elara.Query.Effects (ConsQueryEffects)
+import Elara.Query.Effects (QueryEffects)
 import Prelude hiding (Op)
 
 import Elara.AST.Module qualified as NewModule
@@ -54,12 +53,13 @@ newtype DesugarState = DesugarState
 makeLenses ''DesugarState
 
 getDesugaredModule ::
+    (QueryEffects es, Rock.Rock Elara.Query.Query :> es) =>
     ModuleName ->
     Eff
-        (ConsQueryEffects '[Eff.Error DesugarError, Rock.Rock Elara.Query.Query])
+        es
         (NewModule.Module SourceRegion Desugared)
-getDesugaredModule mn = do
-    parsed <- runErrorAsElaraError @(WParseErrorBundle _ _) $ Rock.fetch $ Elara.Query.ParsedModule mn
+getDesugaredModule mn = runErrorAsElaraError @DesugarError $ do
+    parsed <- Rock.fetch $ Elara.Query.ParsedModule mn
     inject $ Eff.evalState (DesugarState mempty) $ desugar parsed
 
 desugar ::

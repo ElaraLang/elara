@@ -27,7 +27,7 @@ module Elara (
 where
 
 import Data.Generics.Product (field')
-import Effectful (Eff, IOE, Subset, (:>))
+import Effectful (Eff, IOE, (:>))
 import Effectful.Colog
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
@@ -48,22 +48,13 @@ import Elara.AST.Name (ModuleName, nameText)
 import Elara.AST.Phases.Renamed (Renamed)
 import Elara.AST.Phases.Typed (Typed)
 import Elara.AST.Region
-import Elara.Core.LiftClosures.Error (ClosureLiftError)
 import Elara.Core.Module (CoreModule)
 import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
-import Elara.Desugar.Error (DesugarError)
 import Elara.Error
-import Elara.JVM.Error (JVMLoweringError)
-import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, structuredDebugToLogWith)
-import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
-import Elara.Parse.Stream
-import Elara.Query.Effects
-import Elara.ReadFile (ModulePathError)
-import Elara.Rename.Error (RenameError)
+import Elara.Query.Effects (QueryEffects)
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
-import Elara.Shunt.Error (ShuntError, ShuntWarning)
 import Print
 import Prelude hiding (reader)
 
@@ -89,15 +80,6 @@ data CompileAction
     | -- | Compile and execute the emitted code.
       CompileAndRun !Backend
     deriving (Eq, Show)
-
--- | Orphan instance, TODO: sort this out by improving h2jvm
-instance Pretty CodeConverterError where
-    pretty = viaShow
-
-instance Exception CodeConverterError
-
-instance ElaraDiagnostic CodeConverterError where
-    diagnosticMessage = pretty
 
 -- | Result of compilation, containing information useful to consumers.
 data CompileResult = CompileResult
@@ -169,17 +151,16 @@ withCompilerEnv settings action = do
         runFileSystem $
             uniqueGenToGlobalIO $
                 (if shouldEnableLogging then structuredDebugToLogWith logConfig else ignoreStructuredDebug) $
-                    runErrorAsElaraError @ModulePathError $
-                        Rock.runRock
-                            ( if shouldTraceQueries
-                                then
-                                    Rock.Memo.tracingRules
-                                        currentQueryVar
-                                        edgesVar
-                                        (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings))
-                                else Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings)
-                            )
-                            action
+                    Rock.runRock
+                        ( if shouldTraceQueries
+                            then
+                                Rock.Memo.tracingRules
+                                    currentQueryVar
+                                    edgesVar
+                                    (Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings))
+                            else Rock.Memo.memoiseWithCycleDetection startedVar depsVar (Elara.Rules.rules settings)
+                        )
+                        action
     when shouldTraceQueries $ do
         edges <- liftIO $ readIORef edgesVar
         liftIO $ createDirectoryIfMissing True settings.outputDir
@@ -204,10 +185,7 @@ resolveModules ::
 resolveModules = do
     files <- toList <$> Rock.fetch Elara.Query.InputFiles
     for files $ \file -> do
-        (New.Module _ m) <-
-            runErrorAsElaraError @(WParseErrorBundle TokenStream ElaraParseError) $
-                Rock.fetch $
-                    Elara.Query.ParsedFile file
+        (New.Module _ m) <- Rock.fetch $ Elara.Query.ParsedFile file
         pure (m.moduleName ^. unlocated, file)
 
 -- | Dump whichever stages are enabled in 'CompilerSettings'.
@@ -234,17 +212,16 @@ dumpStages settings resolved = do
 
     when (DumpLexed `Set.member` dumpTargets) $ do
         lexed <- for files $ \file -> do
-            fmap (file,) $ runErrorAsElaraError @LexerError $ Rock.fetch $ Elara.Query.LexedFile file
+            fmap (file,) $ Rock.fetch $ Elara.Query.LexedFile file
         dumpGraph outDir lexed (toText . takeBaseName . fst) ".lexed.elr"
         logDebug "Dumped lexed files"
 
     let dumpGraphInfo' ::
-            forall error module' xs localEs.
-            (ElaraDiagnostic error, Exception error, QueryEffects localEs, IOE :> localEs, Rock.Rock Elara.Query.Query :> localEs, Subset xs (Error error : localEs), Error ElaraError :> localEs, Pretty module', StructuredDebug :> xs) =>
-            (module' -> Text) -> (ModuleName -> Elara.Query.Query xs module') -> DumpTarget -> Text -> Text -> Eff localEs ()
-        dumpGraphInfo' nameFunc query target name suffix =
-            runErrorAsElaraError @error $
-                dumpGraphInfo outDir nameFunc query (target `Set.member` dumpTargets) moduleNames name suffix
+            forall module'.
+            Pretty module' =>
+            (module' -> Text) -> (ModuleName -> Elara.Query.Query module') -> DumpTarget -> Text -> Text -> Eff es ()
+        dumpGraphInfo' nameFunc query target =
+            dumpGraphInfo outDir nameFunc query (target `Set.member` dumpTargets) moduleNames
 
         coreNameFunc :: CoreModule bind -> Text
         coreNameFunc m = m ^. field' @"name" % to nameText
@@ -252,26 +229,23 @@ dumpStages settings resolved = do
         newModuleNameFunc :: New.Module SourceRegion p -> Text
         newModuleNameFunc (New.Module _ m) = nameText $ stripTag (New.moduleName m)
 
-    dumpGraphInfo' @(WParseErrorBundle _ _) newModuleNameFunc Elara.Query.ParsedModule DumpParsed "parsed" ".parsed.elr"
-    dumpGraphInfo' @DesugarError newModuleNameFunc Elara.Query.DesugaredModule DumpDesugared "desugared" ".desugared.elr"
-    dumpGraphInfo' @RenameError newModuleNameFunc (Elara.Query.ModuleByName @Renamed) DumpRenamed "renamed" ".renamed.elr"
-    runWriterAsElaraWarning @ShuntWarning
-        (dumpGraphInfo' @ShuntError newModuleNameFunc (Elara.Query.ModuleByName @NewS.Shunted) DumpShunted "shunted" ".shunted.elr")
-    dumpGraphInfo' @ShuntError newModuleNameFunc (Elara.Query.ModuleByName @Typed) DumpTyped "typed" ".typed.elr"
-    dumpGraphInfo' @ShuntError coreNameFunc Elara.Query.GetCoreModule DumpCore "core" ".core.elr"
-    dumpGraphInfo' @ShuntError coreNameFunc Elara.Query.GetANFCoreModule DumpCore "core.anf" ".core.anf.elr"
-    dumpGraphInfo' @ClosureLiftError coreNameFunc Elara.Query.GetClosureLiftedModule DumpCore "core.closure_lifted" ".core.closure_lifted.elr"
-    dumpGraphInfo outDir coreNameFunc Elara.Query.GetFinalisedCoreModule (DumpCore `Set.member` dumpTargets) moduleNames "core.final" ".core.final.elr"
+    dumpGraphInfo' newModuleNameFunc Elara.Query.ParsedModule DumpParsed "parsed" ".parsed.elr"
+    dumpGraphInfo' newModuleNameFunc Elara.Query.DesugaredModule DumpDesugared "desugared" ".desugared.elr"
+    dumpGraphInfo' newModuleNameFunc (Elara.Query.ModuleByName @Renamed) DumpRenamed "renamed" ".renamed.elr"
+    dumpGraphInfo' newModuleNameFunc (Elara.Query.ModuleByName @NewS.Shunted) DumpShunted "shunted" ".shunted.elr"
+    dumpGraphInfo' newModuleNameFunc (Elara.Query.ModuleByName @Typed) DumpTyped "typed" ".typed.elr"
+    dumpGraphInfo' coreNameFunc Elara.Query.GetCoreModule DumpCore "core" ".core.elr"
+    dumpGraphInfo' coreNameFunc Elara.Query.GetANFCoreModule DumpCore "core.anf" ".core.anf.elr"
+    dumpGraphInfo' coreNameFunc Elara.Query.GetClosureLiftedModule DumpCore "core.closure_lifted" ".core.closure_lifted.elr"
+    dumpGraphInfo' coreNameFunc Elara.Query.GetFinalisedCoreModule DumpCore "core.final" ".core.final.elr"
 
     when (DumpIR `Set.member` dumpTargets) $ do
-        irModules <- for moduleNames $ \m ->
-            runErrorAsElaraError @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMIRModule m
+        irModules <- for moduleNames $ \m -> Rock.fetch $ Elara.Query.GetJVMIRModule m
         dumpGraph outDir irModules (\x -> prettyToUnannotatedText x.moduleName) ".jvm.ir.elr"
         logDebug "Dumped JVM IR modules"
 
     when (DumpJVM `Set.member` dumpTargets) $ do
-        classFiles <- for moduleNames $ \m ->
-            runErrorAsElaraError @JVMLoweringError $ Rock.fetch $ Elara.Query.GetJVMClassFiles m
+        classFiles <- for moduleNames $ \m -> Rock.fetch $ Elara.Query.GetJVMClassFiles m
         dumpGraph outDir (concat classFiles) (\(cf :: ClassFile) -> prettyToUnannotatedText cf.name) ".classfile.txt"
   where
     CompilerSettings{dumpTargets} = settings
@@ -294,10 +268,7 @@ emitJVM ::
     Eff es [FilePath]
 emitJVM settings moduleNames = do
     fmap concat $ for moduleNames $ \modName -> do
-        classBytes <-
-            runErrorAsElaraError @JVMLoweringError $
-                runErrorAsElaraError @CodeConverterError $
-                    Rock.fetch (Elara.Query.GetJVMClassBytes modName)
+        classBytes <- Rock.fetch (Elara.Query.GetJVMClassBytes modName)
         for classBytes $ \(fp, bytes) -> do
             let fullPath = settings.outputDir <> "/" <> fp
             liftIO $ createAndWriteFile fullPath bytes
@@ -346,20 +317,18 @@ dumpGraph outDir graph nameFunc suffix = do
 This essentially takes a list of module names, queries them all, then dumps all the results.
 -}
 dumpGraphInfo ::
-    ( Subset xs es
+    ( QueryEffects es
     , Rock.Rock Elara.Query.Query :> es
     , HasCallStack
-    , StructuredDebug :> es
     , IOE :> es
     , Pretty module'
-    , StructuredDebug :> xs
     ) =>
     -- | Output directory
     FilePath ->
     -- | Function to determine the name of each dumped item (e.g. module name for modules)
     (module' -> Text) ->
     -- | Function to query for each item to dump
-    (ModuleName -> Elara.Query.Query xs module') ->
+    (ModuleName -> Elara.Query.Query module') ->
     -- | Whether to dump. If this is 'False', this function does nothing.
     Bool ->
     -- | List of all module names to dump

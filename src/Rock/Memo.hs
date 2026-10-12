@@ -14,7 +14,7 @@ import Control.Concurrent (ThreadId, myThreadId)
 import Data.Dependent.HashMap (DHashMap)
 import Data.GADT.Compare (GEq)
 import Data.Hashable
-import Data.List (isSuffixOf)
+import Data.Kind (Type)
 import Data.List.NonEmpty ((<|))
 import Data.Some
 import Data.Typeable
@@ -40,14 +40,14 @@ forceDHashMap :: DHashMap k v -> IO (DHashMap k v)
 forceDHashMap m = evaluateWHNF (DHashMap.size m `seq` m)
 
 -- | exception type for reporting cyclic dependencies
-newtype Cyclic f
+newtype Cyclic (f :: Type -> Type)
     = -- | the chain of dependencies leading to the cycle
       Cyclic
-        (NonEmpty (Some (HideEffects f)))
+        (NonEmpty (Some f))
 
-instance (Typeable f, forall es a. Show (f es a), forall es. GEq (f es)) => Exception (Cyclic f)
+instance (Typeable f, forall a. Show (f a), GEq f) => Exception (Cyclic f)
 
-instance (forall es a. Show (f es a), forall es. GEq (f es)) => Show (Cyclic f) where
+instance (forall a. Show (f a), GEq f) => Show (Cyclic f) where
     show (Cyclic chain) =
         let traceList = toList chain
             lastItem = last chain
@@ -65,25 +65,17 @@ instance (forall es a. Show (f es a), forall es. GEq (f es)) => Show (Cyclic f) 
                             <> "The Cycle:\n"
                             <> toString (unlines (zipWith formatCycleItem (True : repeat False) (cyclePart <> [lastItem])))
       where
-        showInner :: (forall es a. Show (f es a)) => Some (HideEffects f) -> String
-        showInner (Some (HideEffects k)) = Prelude.show k
+        showInner :: (forall a. Show (f a)) => Some f -> String
+        showInner (Some k) = Prelude.show k
 
-        cleanStr :: String -> String
-        cleanStr raw =
-            toString
-                ( if "HideEffects (" `isPrefixOf` raw && ")" `isSuffixOf` raw
-                    then take (length raw - 14) (drop 13 raw)
-                    else raw
-                )
-
-        formatItem :: Text -> Some (HideEffects f) -> Text
+        formatItem :: Text -> Some f -> Text
         formatItem prefix item =
-            prefix <> toText (cleanStr (showInner item))
+            prefix <> toText (showInner item)
 
-        formatCycleItem :: Bool -> Some (HideEffects f) -> Text
+        formatCycleItem :: Bool -> Some f -> Text
         formatCycleItem isFirst item =
             let prefix = if isFirst then "  ┌> " else "  │  "
-             in prefix <> toText (cleanStr (showInner item))
+             in prefix <> toText (showInner item)
 
 data CycleQueryOutcome a
     = CycleSucceeded !a
@@ -96,20 +88,19 @@ data MemoEntry a
 memoiseWithCycleDetection ::
     forall f.
     ( Typeable f
-    , forall es a. (Show (f es a))
-    , forall es. GEq (f es)
-    , forall es a. Hashable (f es a)
-    , forall es a. Show (f es a)
+    , forall a. Show (f a)
+    , GEq f
+    , forall a. Hashable (f a)
     , HasCallStack
     ) =>
-    MVar.MVar (DHashMap (HideEffects f) MemoEntry) ->
+    MVar.MVar (DHashMap f MemoEntry) ->
     IORef (HashMap ThreadId ThreadId) ->
     Rules f ->
     Rules f
 memoiseWithCycleDetection startedVar depsVar rules = withFrozenCallStack rules'
   where
     rules' key = do
-        let !hk = HideEffects key
+        let !hk = key
         maybeEntry <- DHashMap.lookup hk <$> unsafeEff_ (readMVar startedVar)
         case maybeEntry of
             Nothing -> do
@@ -169,9 +160,9 @@ memoiseWithCycleDetection startedVar depsVar rules = withFrozenCallStack rules'
                                                 let targetKey = findKeyByEntry entry started
                                                 case targetKey of
                                                     Just k ->
-                                                        E.throwIO $ Cyclic (Some (HideEffects key) :| [k])
+                                                        E.throwIO $ Cyclic (Some key :| [k])
                                                     Nothing ->
-                                                        E.throwIO $ Cyclic (Some (HideEffects key) :| [])
+                                                        E.throwIO $ Cyclic (Some key :| [])
                                             )
                                         else
                                             ( deps'
@@ -192,7 +183,7 @@ memoiseWithCycleDetection startedVar depsVar rules = withFrozenCallStack rules'
             CycleFailed ex ->
                 E.throwIO ex
 
-    findKeyByEntry :: MemoEntry a -> DHashMap (HideEffects f) MemoEntry -> Maybe (Some (HideEffects f))
+    findKeyByEntry :: MemoEntry a -> DHashMap f MemoEntry -> Maybe (Some f)
     findKeyByEntry targetEntry =
         DHashMap.foldrWithKey
             ( \k v acc ->
@@ -225,7 +216,7 @@ This allows us to reconstruct the call graph of queries after execution, for deb
 -}
 tracingRules ::
     forall f.
-    (forall es a. Show (f es a)) =>
+    (forall a. Show (f a)) =>
     -- | Thread-local map of which query is currently being evaluated on each thread
     IORef (HashMap.HashMap ThreadId String) ->
     -- | Accumulated dependency edges

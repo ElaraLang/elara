@@ -5,12 +5,9 @@ module Elara.SCC where
 
 import Data.Graph (SCC (..), stronglyConnComp)
 import Effectful
-import Effectful.Error.Static (Error)
-import Effectful.Writer.Static.Local (Writer, runWriter)
 
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
-import Data.Set qualified as Set
 
 import Elara.AST.Location
 import Elara.AST.Name
@@ -18,11 +15,9 @@ import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Shunted (Shunted)
 import Elara.AST.Region (Located (..))
 import Elara.AST.VarRef
-import Elara.Error (ElaraError, ElaraWarning, reportElaraWarning, runErrorAsElaraError)
-import Elara.Query.Effects (ConsQueryEffects)
+import Elara.Query.Effects (QueryEffects)
 import Elara.SCC.Type
 import Elara.Shunt ()
-import Elara.Shunt.Error (ShuntError, ShuntWarning)
 
 import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.AST.Types qualified as New
@@ -30,13 +25,13 @@ import Elara.Query qualified
 import Rock qualified
 
 runFreeVarsQuery ::
+    (QueryEffects es, Rock.Rock Elara.Query.Query :> es) =>
     Qualified VarName ->
     Eff
-        (ConsQueryEffects '[Rock.Rock Elara.Query.Query, Error ElaraError, Writer [ElaraWarning]])
+        es
         (HashSet (Qualified VarName))
 runFreeVarsQuery name = do
-    (declaration, warnings) <- runWriter @(Set ShuntWarning) $ runErrorAsElaraError @ShuntError $ Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> name))
-    traverse_ reportElaraWarning (Set.toList warnings)
+    declaration <- Rock.fetch (Elara.Query.RequiredDeclarationByName @Shunted (toName <$> name))
 
     let New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body)) = declaration
 
@@ -48,7 +43,7 @@ runFreeVarsQuery name = do
 
     pure x
 
-runReachableSubgraphQuery :: Qualified VarName -> Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) ReachableSubgraph
+runReachableSubgraphQuery :: forall es. (QueryEffects es, Rock.Rock Elara.Query.Query :> es) => Qualified VarName -> Eff es ReachableSubgraph
 runReachableSubgraphQuery name = do
     let moduleOf = qualifier
     let rootMod = moduleOf name
@@ -57,7 +52,7 @@ runReachableSubgraphQuery name = do
             HS.HashSet (Qualified VarName) -> -- discovered (seen) nodes
             HM.HashMap (Qualified VarName) (HS.HashSet (Qualified VarName)) ->
             [Qualified VarName] -> -- worklist
-            Eff (ConsQueryEffects '[Rock.Rock Elara.Query.Query]) (HS.HashSet (Qualified VarName), HM.HashMap (Qualified VarName) (HS.HashSet (Qualified VarName)))
+            Eff es (HS.HashSet (Qualified VarName), HM.HashMap (Qualified VarName) (HS.HashSet (Qualified VarName)))
         go seen edges [] = pure (seen, edges)
         go seen edges (b : bs) = do
             depsAll <- Rock.fetch (Elara.Query.FreeVarsOf b)

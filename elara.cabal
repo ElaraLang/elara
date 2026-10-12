@@ -134,7 +134,6 @@ library
       Elara.Prim.Rename
       Elara.Query
       Elara.Query.Effects
-      Elara.Query.Errors
       Elara.Query.Generics
       Elara.Query.TH
       Elara.ReadFile

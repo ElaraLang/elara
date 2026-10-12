@@ -61,21 +61,21 @@ conPat con tys xs = ConP (conName con) (map VarT tys) (map VarP xs)
 newNames :: String -> [a] -> Q [Name]
 newNames prefix = traverse (const (newName prefix))
 
--- | Generates @tagQuery :: forall es a. Query es a -> Int@, numbering constructors in declaration order
+-- | Generates @tagQuery :: forall a. Query a -> Int@, numbering constructors in declaration order
 makeTag :: Name -> Q [Dec]
 makeTag ty = do
     cons <- queryCons ty
     let name = mkName ("tag" <> nameBase ty)
         clause i con = Clause [ConP (conName con) [] (WildP <$ conFields con)] (NormalB (LitE (IntegerL i))) []
-    sig <- sigD name [t|forall es a. $(conT ty) es a -> Int|]
+    sig <- sigD name [t|forall a. $(conT ty) a -> Int|]
     pure [sig, FunD name (zipWith clause [0 ..] cons)]
 
--- | Generates @sameCtor :: Query es a -> Query es b -> GOrdering a b@ for two queries with the same constructor
+-- | Generates @sameCtor :: Query a -> Query b -> GOrdering a b@ for two queries with the same constructor
 deriveSameCtor :: Name -> Q [Dec]
 deriveSameCtor ty = do
     cons <- queryCons ty
     let name = mkName "sameCtor"
-    sig <- sigD name [t|forall es a b. HasCallStack => $(conT ty) es a -> $(conT ty) es b -> GOrdering a b|]
+    sig <- sigD name [t|forall a b. HasCallStack => $(conT ty) a -> $(conT ty) b -> GOrdering a b|]
     clauses <- traverse sameCtorClause cons
     q1 <- newName "q1"
     q2 <- newName "q2"
@@ -113,17 +113,16 @@ compareTypes (l : ls) (r : rs) equal =
         |]
 compareTypes _ _ equal = equal
 
--- | Generates @instance Hashable (Query es a)@, hashing the constructor tag, then fields, then type arguments
+-- | Generates @instance Hashable (Query a)@, hashing the constructor tag, then fields, then type arguments
 deriveHashableInstance :: Name -> Q [Dec]
 deriveHashableInstance ty = do
     cons <- queryCons ty
     salt <- newName "salt"
     q <- newName "q"
-    es <- newName "es"
     a <- newName "a"
     matches <- zipWithM (hashMatch salt) [0 ..] cons
     let method = FunD 'hashWithSalt [Clause [VarP salt, VarP q] (NormalB (CaseE (VarE q) matches)) []]
-    pure [InstanceD Nothing [] (ConT ''Hashable `AppT` (ConT ty `AppT` VarT es `AppT` VarT a)) [method]]
+    pure [InstanceD Nothing [] (ConT ''Hashable `AppT` (ConT ty `AppT` VarT a)) [method]]
 
 hashMatch :: Name -> Integer -> QueryCon -> Q Match
 hashMatch salt i con = do

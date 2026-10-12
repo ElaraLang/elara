@@ -41,6 +41,7 @@ import Optics (set, traverseOf_)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 
+import Elara.AST.Instances ()
 import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Phase

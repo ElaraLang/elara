@@ -4,8 +4,6 @@
 
 module Elara.Rules where
 
-import Effectful
-import Effectful.Error.Static (runError, throwError, throwError_)
 import System.FilePath (takeDirectory, (</>))
 
 import Data.Text qualified as Text
@@ -16,12 +14,10 @@ import Elara.AST.Region (unlocated)
 import Elara.Core.LiftClosures (runGetClosureLiftedModuleQuery)
 import Elara.CoreToCore (runGetANFCoreModuleQuery, runGetFinalisedCoreModuleQuery, runGetOptimisedCoreModuleQuery)
 import Elara.Desugar (getDesugaredModule)
-import Elara.Error (ElaraError (..))
+import Elara.Error (throwElaraError)
 import Elara.Lexer.Reader (getLexedFile)
 import Elara.ModuleIndex (ModuleEntry (..), buildModuleIndex)
 import Elara.Parse (getParsedFileQuery, getParsedModuleQuery)
-import Elara.Parse.Error (ElaraParseError, WParseErrorBundle)
-import Elara.Parse.Stream (TokenStream)
 import Elara.Query
 import Elara.ReadFile (ModulePathError (..), getInputFiles, runGetFileContentsQuery)
 import Elara.SCC (buildSCCs, runFreeVarsQuery, runReachableSubgraphQuery)
@@ -37,26 +33,18 @@ import Rock qualified
 rules :: HasCallStack => CompilerSettings -> Rock.Rules Query
 rules compilerSettings key = case key of
     GetCompilerSettings -> pure compilerSettings
-    InputFiles -> inject (getInputFiles compilerSettings)
-    ModuleIndex -> inject (buildModuleIndex compilerSettings)
+    InputFiles -> getInputFiles compilerSettings
+    ModuleIndex -> buildModuleIndex compilerSettings
     GetFileContents fp -> runGetFileContentsQuery fp
-    LexedFile fp -> inject $ getLexedFile fp
-    ParsedFile fp -> inject $ getParsedFileQuery fp
+    LexedFile fp -> getLexedFile fp
+    ParsedFile fp -> getParsedFileQuery fp
     ModulePath mn -> do
         -- Check main file first (parses main file to check declared name)
         let checkMain = case compilerSettings.mainFile of
                 Nothing -> pure Nothing
                 Just mainPath -> do
-                    parsedOrError <-
-                        runError @(WParseErrorBundle TokenStream ElaraParseError) $
-                            Rock.fetch (Elara.Query.ParsedFile mainPath)
-                    case parsedOrError of
-                        Left (cs, err) -> do
-                            withFrozenCallStack $ throwError_ (ElaraError err)
-                        Right (Module _ m) ->
-                            if moduleName m ^. unlocated == mn
-                                then pure (Just mainPath)
-                                else pure Nothing
+                    Module _ m <- Rock.fetch (Elara.Query.ParsedFile mainPath)
+                    pure (if moduleName m ^. unlocated == mn then Just mainPath else Nothing)
 
         maybeMain <- checkMain
         case maybeMain of
@@ -65,10 +53,10 @@ rules compilerSettings key = case key of
                 -- Use the module index for lookup
                 idx <- Rock.fetch Elara.Query.ModuleIndex
                 case ModuleIndex.lookupModule mn idx of
-                    Nothing -> throwError $ ModuleNotFound mn (generateSearchPaths mn)
-                    Just [] -> throwError $ ModuleNotFound mn []
+                    Nothing -> throwElaraError $ ModuleNotFound mn (generateSearchPaths mn)
+                    Just [] -> throwElaraError $ ModuleNotFound mn []
                     Just [single] -> pure single.entryPath
-                    Just multiple -> throwError $ MultipleModulePaths mn (map (.entryPath) multiple)
+                    Just multiple -> throwElaraError $ MultipleModulePaths mn (map (.entryPath) multiple)
       where
         -- Generate search paths for error messages
         generateSearchPaths :: ModuleName -> [FilePath]
@@ -86,36 +74,36 @@ rules compilerSettings key = case key of
                     , toString flat <> ".elr"
                     ]
              in ordNub [root </> path | root <- roots, path <- paths]
-    ParsedModule mn -> inject $ getParsedModuleQuery mn
-    DesugaredModule mn -> inject $ getDesugaredModule mn
+    ParsedModule mn -> getParsedModuleQuery mn
+    DesugaredModule mn -> getDesugaredModule mn
     ModuleByName @ast mn -> getModuleByName @ast mn
     DeclarationByName @ast name -> getDeclarationByName @ast name
     RequiredDeclarationByName @ast name -> getRequiredDeclarationByName @ast name
     ConstructorDeclaration @ast conRef -> getConstructorDeclaration @ast conRef
     DeclarationAnnotations @ast name -> getDeclarationAnnotations @ast name
     DeclarationAnnotationsOfType @ast (name, annotationName) -> getDeclarationAnnotationsOfType @ast (name, annotationName)
-    GetOpInfo opName -> inject $ runGetOpInfoQuery opName
-    GetOpTableIn mn -> inject $ runGetOpTableInQuery mn
-    FreeVarsOf name -> inject $ runFreeVarsQuery name
-    ReachableSubgraphOf name -> inject $ runReachableSubgraphQuery name
+    GetOpInfo opName -> runGetOpInfoQuery opName
+    GetOpTableIn mn -> runGetOpTableInQuery mn
+    FreeVarsOf name -> runFreeVarsQuery name
+    ReachableSubgraphOf name -> runReachableSubgraphQuery name
     GetSCCsOf name -> do
-        subgraph <- inject $ runReachableSubgraphQuery name
+        subgraph <- runReachableSubgraphQuery name
         pure $ buildSCCs subgraph
     SCCKeyOf _ -> error "SCCKeyOf not implemented"
-    TypeCheckedExpr exprId -> inject $ runTypeCheckedExprQuery exprId
-    TypeCheckedDeclaration name -> inject $ runTypeCheckedDeclarationQuery name
-    InferSCC sccKey -> inject $ runInferSCCQuery sccKey
-    TypeOf key -> inject $ runTypeOfQuery key
-    KindOf qtn -> inject $ runKindOfQuery qtn
-    GetTypeAlias qtn -> inject $ runGetTypeAliasQuery qtn
-    GetCoreModule mn -> inject $ runGetCoreModuleQuery mn
-    GetTyCon qn -> inject $ runGetTyConQuery qn
-    GetDataCon qn -> inject $ runGetDataConQuery qn
-    GetOptimisedCoreModule mn -> inject $ runGetOptimisedCoreModuleQuery mn
-    GetANFCoreModule mn -> inject $ runGetANFCoreModuleQuery mn
-    GetClosureLiftedModule mn -> inject $ runGetClosureLiftedModuleQuery mn
-    GetFinalisedCoreModule mn -> inject $ runGetFinalisedCoreModuleQuery mn
+    TypeCheckedExpr exprId -> runTypeCheckedExprQuery exprId
+    TypeCheckedDeclaration name -> runTypeCheckedDeclarationQuery name
+    InferSCC sccKey -> runInferSCCQuery sccKey
+    TypeOf key -> runTypeOfQuery key
+    KindOf qtn -> runKindOfQuery qtn
+    GetTypeAlias qtn -> runGetTypeAliasQuery qtn
+    GetCoreModule mn -> runGetCoreModuleQuery mn
+    GetTyCon qn -> runGetTyConQuery qn
+    GetDataCon qn -> runGetDataConQuery qn
+    GetOptimisedCoreModule mn -> runGetOptimisedCoreModuleQuery mn
+    GetANFCoreModule mn -> runGetANFCoreModuleQuery mn
+    GetClosureLiftedModule mn -> runGetClosureLiftedModuleQuery mn
+    GetFinalisedCoreModule mn -> runGetFinalisedCoreModuleQuery mn
     -- JVM Backend Queries
-    GetJVMIRModule mn -> inject $ Elara.JVM.Query.runGetJVMIRModuleQuery mn
-    GetJVMClassFiles mn -> inject $ Elara.JVM.Query.runGetJVMClassFilesQuery mn
-    GetJVMClassBytes mn -> inject $ Elara.JVM.Query.runGetJVMClassBytesQuery mn
+    GetJVMIRModule mn -> Elara.JVM.Query.runGetJVMIRModuleQuery mn
+    GetJVMClassFiles mn -> Elara.JVM.Query.runGetJVMClassFilesQuery mn
+    GetJVMClassBytes mn -> Elara.JVM.Query.runGetJVMClassBytesQuery mn
