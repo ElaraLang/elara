@@ -1,0 +1,10 @@
+roots = [
+  "^Main.main$",
+  "^Paths_elara\\.",
+  # alex-generated lexer internals
+  "^Elara\\.Lexer\\.Lexer\\.alex_",
+  # optics prisms
+  "\\._[A-Z]",
+]
+type-class-roots = true
+unused-types = false

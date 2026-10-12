@@ -1,0 +1,80 @@
+name: "Weeder"
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+concurrency:
+  group: "weeder"
+  cancel-in-progress: true
+permissions:
+  contents: read
+  issues: write
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: wimpysworld/nothing-but-nix@main
+      - uses: DeterminateSystems/nix-installer-action@main
+        name: Install Nix
+        with:
+          extra-conf: |
+            trusted-public-keys = elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://elara.cachix.org https://cache.nixos.org/
+            accept-flake-config = true
+      - uses: ryanccn/attic-action@v0
+        with:
+          endpoint: https://cache.bristermitten.me/
+          cache: elara
+          token: ${{ secrets.ATTIC_TOKEN }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: elara
+          installCommand: nix profile add github:NixOS/nixpkgs/nixpkgs-unstable#cachix
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: Build weeder report
+        run: nix build .#weeder-report --print-build-logs --out-link weeder-report
+      - name: Update tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # weeder lines look like: <pkg>-<version>-<hash>: src/Foo.hs:12:1: name
+          grep -E '^[^ ]+: [^ ]+:[0-9]+:[0-9]+: ' weeder-report | sed -E 's/^[^ ]+: //' | sort > weeds.txt || true
+          count=$(wc -l < weeds.txt | tr -d ' ')
+          sha=$(git rev-parse --short HEAD)
+
+          {
+            echo "Unused code found by [weeder](https://github.com/ndmitchell/weeder) on \`${sha}\`: **${count}** weeds."
+            echo
+            echo "Updated weekly by [the weeder workflow](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/weeder.yaml)."
+            echo "False positives (generated code, Template Haskell) should be added to \`roots\` in \`weeder.toml\`."
+            echo
+            echo '```'
+            cat weeds.txt
+            echo '```'
+          } > body.md
+
+          # issue bodies are capped at 65536 chars, the full report is in the job summary
+          if [ "$(wc -c < body.md)" -gt 60000 ]; then
+            {
+              head -c 59000 body.md | sed '$d'
+              echo '```'
+              echo
+              echo "_Truncated, see the job summary of the latest run for the full report._"
+            } > body.trunc.md
+            mv body.trunc.md body.md
+          fi
+          cp body.md "$GITHUB_STEP_SUMMARY"
+
+          gh label create weeder --description "Unused code report" --color ededed 2>/dev/null || true
+          issue=$(gh issue list --label weeder --state open --json number --jq '.[0].number // empty')
+
+          if [ -z "$issue" ]; then
+            if [ "$count" -gt 0 ]; then
+              gh issue create --title "Unused code report" --label weeder --body-file body.md
+            fi
+          elif [ "$count" -eq 0 ]; then
+            gh issue close "$issue" --comment "No unused code left. Closing."
+          else
+            gh issue edit "$issue" --body-file body.md
+          fi
