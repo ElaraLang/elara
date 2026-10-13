@@ -30,7 +30,9 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(ast)* Make `NodeLoc` a phantom newtype - ([e31c2ea](https://github.com/ElaraLang/elara/commit/e31c2eafe425c70c5835f3bd37e1653a85b74f04)) 
 - *(interpreter)* :coffin: Remove likely dead `getArgs` impl - ([b0cdfcd](https://github.com/ElaraLang/elara/commit/b0cdfcdd9369d7b10b773e51e0841fafec9747c5)) 
 - *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
+- *(nix)* Split nix config into multiple files - ([42b072a](https://github.com/ElaraLang/elara/commit/42b072aea19fb8314824a20a4e5f8e458e94a122)) 
 - *(query)* Forbid location information in query keys, refactor - ([c94f03e](https://github.com/ElaraLang/elara/commit/c94f03e49e9e2bce38cd2b79ccab71192d7f50c9)) 
+- *(rock)* Simplify query structure by making all queries use the same effect stack - ([e0bf267](https://github.com/ElaraLang/elara/commit/e0bf2673e63d8a731e408f8ca0d7ae3dd16cb64a)) 
 - *(shunt)* Key GetOpInfo on unlocated names - ([d07e2e7](https://github.com/ElaraLang/elara/commit/d07e2e7515a024c522c07d85ad5d95341cfff2e4)) 
 - Slim the Prelude a little - ([c0dfd29](https://github.com/ElaraLang/elara/commit/c0dfd2947f3a217e55dcdfb626b97ec8ea0d1c02)) 
 - Remove phantom type parameter from `TypeOf` query - ([16a598c](https://github.com/ElaraLang/elara/commit/16a598c186d33e1c7a2def573a34dd2516fcedd9)) 
@@ -46,6 +48,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Clarify readme instructions - ([c17a0a4](https://github.com/ElaraLang/elara/commit/c17a0a45d93f1e109ece3c983d31b260cced106b)) 
 - Perhaps fix readthedocs build - ([71b4631](https://github.com/ElaraLang/elara/commit/71b4631182af3fdde0ae262e6105b000c3f46a4d)) 
 - Fix readthedocs again - ([d6664f3](https://github.com/ElaraLang/elara/commit/d6664f3625cd1f10e0704c2eef1ca8edecb963a0)) 
+- Better clarify Rock copyright - ([40b6036](https://github.com/ElaraLang/elara/commit/40b60367323e2ee86028c18233f78755b1fd770d)) 
 
 ### 🎨 Styling
 
@@ -88,6 +91,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Refresh bounds and exclude managed.nix from treefmt - ([e8d34f2](https://github.com/ElaraLang/elara/commit/e8d34f2d59a97f29b65eeb39cf464863bc57b2e8)) 
 - *(nix)* Make dev a managed env - ([d3a7b5a](https://github.com/ElaraLang/elara/commit/d3a7b5ad33c28b947f9a4d6280a937712ffacb6e)) 
 - *(nix)* Use latest env as dev env - ([1c645ef](https://github.com/ElaraLang/elara/commit/1c645ef4be0d18e9270bf74c1fd071e28fe80063)) 
+- *(nix)* "fix" static build - ([5939b8e](https://github.com/ElaraLang/elara/commit/5939b8ec43dce91a54cc313522423451d010eb35)) 
 - :hammer: Tidy up `justfile` - ([d5eb322](https://github.com/ElaraLang/elara/commit/d5eb3221dee9007b53033763e5dd01f979dc07ea)) 
 - Make cabal vs nix builds more consistent - ([04e4c32](https://github.com/ElaraLang/elara/commit/04e4c32a2648642f740a5d944e3f1e0ab7826ea7)) 
 - Make justfile auto-compile stdlib before - ([cc4caf1](https://github.com/ElaraLang/elara/commit/cc4caf15594ccfa31491464dda4002da1cfbc33c)) 
@@ -98,6 +102,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Improve Justfile - ([d6af6e4](https://github.com/ElaraLang/elara/commit/d6af6e465fff1b660225e0fcf6926f75de885409)) 
 - Use main instead of master for readthedocs - ([e5da9bc](https://github.com/ElaraLang/elara/commit/e5da9bc8fdea19b19b9947e9461a5e84de7cbe61)) 
 - Make `just run` take the file positionally - ([28edeec](https://github.com/ElaraLang/elara/commit/28edeec166bda7eae1b5996f15fe01c18749838d)) 
+- Add weeder - ([b4004a8](https://github.com/ElaraLang/elara/commit/b4004a87128cd76c6ad72b36d229cbe346b68ac3)) 
 
 ### Stdlib
 
