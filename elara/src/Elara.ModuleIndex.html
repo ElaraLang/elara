@@ -8,7 +8,7 @@
 </span><span id="line-8"></span><span class="hs-special">)</span><span>
 </span><span id="line-9"></span><span class="hs-keyword">where</span><span>
 </span><span id="line-10"></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Eff</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Eff</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(:&gt;)</span></span><span class="hs-special">)</span><span>
 </span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.FileSystem</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">FileSystem</span></span><span class="hs-special">)</span><span>
 </span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.FilePath</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">takeBaseName</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">takeDirectory</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">takeFileName</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(&lt;/&gt;)</span></span><span class="hs-special">)</span><span>
 </span><span id="line-14"></span><span>
@@ -28,7 +28,7 @@
 </span><span id="line-28"></span><span>      </span><span id="RustStyle"><span class="annot"><a href="Elara.ModuleIndex.html#RustStyle"><span class="hs-identifier hs-var">RustStyle</span></a></span></span><span>
 </span><span id="line-29"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Flat: A.B.C.elr &#8594; A.B.C</span></span><span>
 </span><span id="line-30"></span><span>      </span><span id="FlatStyle"><span class="annot"><a href="Elara.ModuleIndex.html#FlatStyle"><span class="hs-identifier hs-var">FlatStyle</span></a></span></span><span>
-</span><span id="line-31"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680144547"><span id="local-6989586621680144552"><span class="annot"><span class="annottext">ModuleStyle -&gt; ModuleStyle -&gt; Bool
+</span><span id="line-31"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068037"><span id="local-6989586621680068042"><span class="annot"><span class="annottext">ModuleStyle -&gt; ModuleStyle -&gt; Bool
 (ModuleStyle -&gt; ModuleStyle -&gt; Bool)
 -&gt; (ModuleStyle -&gt; ModuleStyle -&gt; Bool) -&gt; Eq ModuleStyle
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -36,7 +36,7 @@ $c== :: ModuleStyle -&gt; ModuleStyle -&gt; Bool
 == :: ModuleStyle -&gt; ModuleStyle -&gt; Bool
 $c/= :: ModuleStyle -&gt; ModuleStyle -&gt; Bool
 /= :: ModuleStyle -&gt; ModuleStyle -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144557"><span id="local-6989586621680144559"><span class="annot"><span class="annottext">(forall x. ModuleStyle -&gt; Rep ModuleStyle x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068047"><span id="local-6989586621680068049"><span class="annot"><span class="annottext">(forall x. ModuleStyle -&gt; Rep ModuleStyle x)
 -&gt; (forall x. Rep ModuleStyle x -&gt; ModuleStyle)
 -&gt; Generic ModuleStyle
 forall x. Rep ModuleStyle x -&gt; ModuleStyle
@@ -47,7 +47,7 @@ $cfrom :: forall x. ModuleStyle -&gt; Rep ModuleStyle x
 from :: forall x. ModuleStyle -&gt; Rep ModuleStyle x
 $cto :: forall x. Rep ModuleStyle x -&gt; ModuleStyle
 to :: forall x. Rep ModuleStyle x -&gt; ModuleStyle
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144567"><span id="local-6989586621680144571"><span id="local-6989586621680144575"><span id="local-6989586621680144579"><span id="local-6989586621680144582"><span id="local-6989586621680144585"><span id="local-6989586621680144588"><span class="annot"><span class="annottext">Eq ModuleStyle
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068057"><span id="local-6989586621680068061"><span id="local-6989586621680068065"><span id="local-6989586621680068069"><span id="local-6989586621680068072"><span id="local-6989586621680068075"><span id="local-6989586621680068078"><span class="annot"><span class="annottext">Eq ModuleStyle
 Eq ModuleStyle =&gt;
 (ModuleStyle -&gt; ModuleStyle -&gt; Ordering)
 -&gt; (ModuleStyle -&gt; ModuleStyle -&gt; Bool)
@@ -84,7 +84,7 @@ $cmax :: ModuleStyle -&gt; ModuleStyle -&gt; ModuleStyle
 max :: ModuleStyle -&gt; ModuleStyle -&gt; ModuleStyle
 $cmin :: ModuleStyle -&gt; ModuleStyle -&gt; ModuleStyle
 min :: ModuleStyle -&gt; ModuleStyle -&gt; ModuleStyle
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144596"><span id="local-6989586621680144598"><span id="local-6989586621680144602"><span class="annot"><span class="annottext">Int -&gt; ModuleStyle -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068086"><span id="local-6989586621680068088"><span id="local-6989586621680068092"><span class="annot"><span class="annottext">Int -&gt; ModuleStyle -&gt; ShowS
 [ModuleStyle] -&gt; ShowS
 ModuleStyle -&gt; FilePath
 (Int -&gt; ModuleStyle -&gt; ShowS)
@@ -101,7 +101,7 @@ $cshowList :: [ModuleStyle] -&gt; ShowS
 showList :: [ModuleStyle] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-32"></span><span>
-</span><span id="line-33"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680144607"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleStyle"><span class="hs-identifier hs-type">ModuleStyle</span></a></span></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068097"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleStyle"><span class="hs-identifier hs-type">ModuleStyle</span></a></span></span><span>
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span class="annot"><span class="hs-comment">-- | An entry in the module index</span></span><span>
 </span><span id="line-36"></span><span class="hs-keyword">data</span><span> </span><span id="ModuleEntry"><span class="annot"><a href="Elara.ModuleIndex.html#ModuleEntry"><span class="hs-identifier hs-var">ModuleEntry</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ModuleEntry"><span class="annot"><a href="Elara.ModuleIndex.html#ModuleEntry"><span class="hs-identifier hs-var">ModuleEntry</span></a></span></span><span>
@@ -110,7 +110,7 @@ showList :: [ModuleStyle] -&gt; ShowS
 </span><span id="line-38"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="entryStyle"><span class="annot"><span class="annottext">ModuleEntry -&gt; ModuleStyle
 </span><a href="Elara.ModuleIndex.html#entryStyle"><span class="hs-identifier hs-var hs-var">entryStyle</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleStyle"><span class="hs-identifier hs-type">ModuleStyle</span></a></span><span>
 </span><span id="line-39"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-40"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680144639"><span id="local-6989586621680144643"><span class="annot"><span class="annottext">ModuleEntry -&gt; ModuleEntry -&gt; Bool
+</span><span id="line-40"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068129"><span id="local-6989586621680068133"><span class="annot"><span class="annottext">ModuleEntry -&gt; ModuleEntry -&gt; Bool
 (ModuleEntry -&gt; ModuleEntry -&gt; Bool)
 -&gt; (ModuleEntry -&gt; ModuleEntry -&gt; Bool) -&gt; Eq ModuleEntry
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -118,7 +118,7 @@ $c== :: ModuleEntry -&gt; ModuleEntry -&gt; Bool
 == :: ModuleEntry -&gt; ModuleEntry -&gt; Bool
 $c/= :: ModuleEntry -&gt; ModuleEntry -&gt; Bool
 /= :: ModuleEntry -&gt; ModuleEntry -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144647"><span id="local-6989586621680144649"><span class="annot"><span class="annottext">(forall x. ModuleEntry -&gt; Rep ModuleEntry x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068137"><span id="local-6989586621680068139"><span class="annot"><span class="annottext">(forall x. ModuleEntry -&gt; Rep ModuleEntry x)
 -&gt; (forall x. Rep ModuleEntry x -&gt; ModuleEntry)
 -&gt; Generic ModuleEntry
 forall x. Rep ModuleEntry x -&gt; ModuleEntry
@@ -129,7 +129,7 @@ $cfrom :: forall x. ModuleEntry -&gt; Rep ModuleEntry x
 from :: forall x. ModuleEntry -&gt; Rep ModuleEntry x
 $cto :: forall x. Rep ModuleEntry x -&gt; ModuleEntry
 to :: forall x. Rep ModuleEntry x -&gt; ModuleEntry
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144654"><span id="local-6989586621680144658"><span id="local-6989586621680144662"><span id="local-6989586621680144666"><span id="local-6989586621680144669"><span id="local-6989586621680144672"><span id="local-6989586621680144675"><span class="annot"><span class="annottext">Eq ModuleEntry
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068144"><span id="local-6989586621680068148"><span id="local-6989586621680068152"><span id="local-6989586621680068156"><span id="local-6989586621680068159"><span id="local-6989586621680068162"><span id="local-6989586621680068165"><span class="annot"><span class="annottext">Eq ModuleEntry
 Eq ModuleEntry =&gt;
 (ModuleEntry -&gt; ModuleEntry -&gt; Ordering)
 -&gt; (ModuleEntry -&gt; ModuleEntry -&gt; Bool)
@@ -166,7 +166,7 @@ $cmax :: ModuleEntry -&gt; ModuleEntry -&gt; ModuleEntry
 max :: ModuleEntry -&gt; ModuleEntry -&gt; ModuleEntry
 $cmin :: ModuleEntry -&gt; ModuleEntry -&gt; ModuleEntry
 min :: ModuleEntry -&gt; ModuleEntry -&gt; ModuleEntry
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144678"><span id="local-6989586621680144686"><span id="local-6989586621680144690"><span class="annot"><span class="annottext">Int -&gt; ModuleEntry -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068168"><span id="local-6989586621680068176"><span id="local-6989586621680068180"><span class="annot"><span class="annottext">Int -&gt; ModuleEntry -&gt; ShowS
 [ModuleEntry] -&gt; ShowS
 ModuleEntry -&gt; FilePath
 (Int -&gt; ModuleEntry -&gt; ShowS)
@@ -183,7 +183,7 @@ $cshowList :: [ModuleEntry] -&gt; ShowS
 showList :: [ModuleEntry] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-41"></span><span>
-</span><span id="line-42"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680144694"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleEntry"><span class="hs-identifier hs-type">ModuleEntry</span></a></span></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068184"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleEntry"><span class="hs-identifier hs-type">ModuleEntry</span></a></span></span><span>
 </span><span id="line-43"></span><span>
 </span><span id="line-44"></span><span class="annot"><span class="hs-comment">{- | Bidirectional mapping between module names and file paths.
 Note: 'moduleToFiles' uses lowercase module names as keys
@@ -197,7 +197,7 @@ for case-insensitive lookup compatibility with case-insensitive filesystems
 </span><a href="Elara.ModuleIndex.html#fileToModule"><span class="hs-identifier hs-var hs-var">fileToModule</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-52"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Map from file path to inferred module name (original case)</span></span><span>
 </span><span id="line-53"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-54"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680144738"><span id="local-6989586621680144745"><span class="annot"><span class="annottext">ModuleIndex -&gt; ModuleIndex -&gt; Bool
+</span><span id="line-54"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068228"><span id="local-6989586621680068235"><span class="annot"><span class="annottext">ModuleIndex -&gt; ModuleIndex -&gt; Bool
 (ModuleIndex -&gt; ModuleIndex -&gt; Bool)
 -&gt; (ModuleIndex -&gt; ModuleIndex -&gt; Bool) -&gt; Eq ModuleIndex
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -205,7 +205,7 @@ $c== :: ModuleIndex -&gt; ModuleIndex -&gt; Bool
 == :: ModuleIndex -&gt; ModuleIndex -&gt; Bool
 $c/= :: ModuleIndex -&gt; ModuleIndex -&gt; Bool
 /= :: ModuleIndex -&gt; ModuleIndex -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144751"><span id="local-6989586621680144753"><span class="annot"><span class="annottext">(forall x. ModuleIndex -&gt; Rep ModuleIndex x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068241"><span id="local-6989586621680068243"><span class="annot"><span class="annottext">(forall x. ModuleIndex -&gt; Rep ModuleIndex x)
 -&gt; (forall x. Rep ModuleIndex x -&gt; ModuleIndex)
 -&gt; Generic ModuleIndex
 forall x. Rep ModuleIndex x -&gt; ModuleIndex
@@ -216,7 +216,7 @@ $cfrom :: forall x. ModuleIndex -&gt; Rep ModuleIndex x
 from :: forall x. ModuleIndex -&gt; Rep ModuleIndex x
 $cto :: forall x. Rep ModuleIndex x -&gt; ModuleIndex
 to :: forall x. Rep ModuleIndex x -&gt; ModuleIndex
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144756"><span id="local-6989586621680144765"><span id="local-6989586621680144769"><span class="annot"><span class="annottext">Int -&gt; ModuleIndex -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068246"><span id="local-6989586621680068255"><span id="local-6989586621680068259"><span class="annot"><span class="annottext">Int -&gt; ModuleIndex -&gt; ShowS
 [ModuleIndex] -&gt; ShowS
 ModuleIndex -&gt; FilePath
 (Int -&gt; ModuleIndex -&gt; ShowS)
@@ -233,15 +233,15 @@ $cshowList :: [ModuleIndex] -&gt; ShowS
 showList :: [ModuleIndex] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-55"></span><span>
-</span><span id="line-56"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680144775"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068265"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span></span><span>
 </span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680144813"><span id="local-6989586621680144817"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-59"></span><span>    </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span> </span><span id="local-6989586621680144825"><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
-</span><a href="#local-6989586621680144825"><span class="hs-identifier hs-var">m1</span></a></span></span><span> </span><span id="local-6989586621680144826"><span class="annot"><span class="annottext">Map FilePath ModuleName
-</span><a href="#local-6989586621680144826"><span class="hs-identifier hs-var">f1</span></a></span></span><span> </span><span id="local-6989586621680144827"><span class="annot"><span class="annottext">&lt;&gt; :: ModuleIndex -&gt; ModuleIndex -&gt; ModuleIndex
-</span><span class="hs-operator hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span> </span><span id="local-6989586621680144828"><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
-</span><a href="#local-6989586621680144828"><span class="hs-identifier hs-var">m2</span></a></span></span><span> </span><span id="local-6989586621680144829"><span class="annot"><span class="annottext">Map FilePath ModuleName
-</span><a href="#local-6989586621680144829"><span class="hs-identifier hs-var">f2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-58"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068303"><span id="local-6989586621680068307"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span> </span><span id="local-6989586621680068315"><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
+</span><a href="#local-6989586621680068315"><span class="hs-identifier hs-var">m1</span></a></span></span><span> </span><span id="local-6989586621680068316"><span class="annot"><span class="annottext">Map FilePath ModuleName
+</span><a href="#local-6989586621680068316"><span class="hs-identifier hs-var">f1</span></a></span></span><span> </span><span id="local-6989586621680068317"><span class="annot"><span class="annottext">&lt;&gt; :: ModuleIndex -&gt; ModuleIndex -&gt; ModuleIndex
+</span><span class="hs-operator hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span> </span><span id="local-6989586621680068318"><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
+</span><a href="#local-6989586621680068318"><span class="hs-identifier hs-var">m2</span></a></span></span><span> </span><span id="local-6989586621680068319"><span class="annot"><span class="annottext">Map FilePath ModuleName
+</span><a href="#local-6989586621680068319"><span class="hs-identifier hs-var">f2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-60"></span><span>        </span><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
 -&gt; Map FilePath ModuleName -&gt; ModuleIndex
 </span><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-var">ModuleIndex</span></a></span><span>
@@ -253,17 +253,17 @@ forall k a. Ord k =&gt; (a -&gt; a -&gt; a) -&gt; Map k a -&gt; Map k a -&gt; Ma
 </span><span class="hs-identifier hs-var">Map.unionWith</span></span><span> </span><span class="annot"><span class="annottext">[ModuleEntry] -&gt; [ModuleEntry] -&gt; [ModuleEntry]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">(&lt;&gt;)</span></span><span> </span><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
-</span><a href="#local-6989586621680144825"><span class="hs-identifier hs-var">m1</span></a></span><span> </span><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
-</span><a href="#local-6989586621680144828"><span class="hs-identifier hs-var">m2</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680068315"><span class="hs-identifier hs-var">m1</span></a></span><span> </span><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
+</span><a href="#local-6989586621680068318"><span class="hs-identifier hs-var">m2</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-62"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map FilePath ModuleName
 -&gt; Map FilePath ModuleName -&gt; Map FilePath ModuleName
 forall k a. Ord k =&gt; Map k a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.union</span></span><span> </span><span class="annot"><span class="annottext">Map FilePath ModuleName
-</span><a href="#local-6989586621680144826"><span class="hs-identifier hs-var">f1</span></a></span><span> </span><span class="annot"><span class="annottext">Map FilePath ModuleName
-</span><a href="#local-6989586621680144829"><span class="hs-identifier hs-var">f2</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680068316"><span class="hs-identifier hs-var">f1</span></a></span><span> </span><span class="annot"><span class="annottext">Map FilePath ModuleName
+</span><a href="#local-6989586621680068319"><span class="hs-identifier hs-var">f2</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-63"></span><span>
-</span><span id="line-64"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680144836"><span id="local-6989586621680144839"><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-65"></span><span>    </span><span id="local-6989586621680144842"><span class="annot"><span class="annottext">mempty :: ModuleIndex
+</span><span id="line-64"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068326"><span id="local-6989586621680068329"><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-65"></span><span>    </span><span id="local-6989586621680068332"><span class="annot"><span class="annottext">mempty :: ModuleIndex
 </span><span class="hs-identifier hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
 -&gt; Map FilePath ModuleName -&gt; ModuleIndex
 </span><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-var">ModuleIndex</span></a></span><span> </span><span class="annot"><span class="annottext">Map ModuleName [ModuleEntry]
@@ -275,29 +275,31 @@ forall k a. Map k a
 </span><span id="line-67"></span><span class="annot"><span class="hs-comment">-- | Normalize a module name to lowercase for case-insensitive comparison</span></span><span>
 </span><span id="line-68"></span><span class="annot"><a href="Elara.ModuleIndex.html#normalizeModuleName"><span class="hs-identifier hs-type">normalizeModuleName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span>
 </span><span id="line-69"></span><span id="normalizeModuleName"><span class="annot"><span class="annottext">normalizeModuleName :: ModuleName -&gt; ModuleName
-</span><a href="Elara.ModuleIndex.html#normalizeModuleName"><span class="hs-identifier hs-var hs-var">normalizeModuleName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span id="local-6989586621680144846"><span class="annot"><span class="annottext">NonEmpty Text
-</span><a href="#local-6989586621680144846"><span class="hs-identifier hs-var">parts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Text -&gt; ModuleName
+</span><a href="Elara.ModuleIndex.html#normalizeModuleName"><span class="hs-identifier hs-var hs-var">normalizeModuleName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span id="local-6989586621680068336"><span class="annot"><span class="annottext">NonEmpty Text
+</span><a href="#local-6989586621680068336"><span class="hs-identifier hs-var">parts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Text -&gt; ModuleName
 </span><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-var">ModuleName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Text -&gt; Text) -&gt; NonEmpty Text -&gt; NonEmpty Text
 forall a b. (a -&gt; b) -&gt; NonEmpty a -&gt; NonEmpty b
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text
 </span><span class="hs-identifier hs-var">Text.toLower</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Text
-</span><a href="#local-6989586621680144846"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680068336"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-70"></span><span>
 </span><span id="line-71"></span><span class="annot"><span class="hs-comment">-- | Build the module index by scanning all source directories</span></span><span>
-</span><span id="line-72"></span><span class="annot"><a href="Elara.ModuleIndex.html#buildModuleIndex"><span class="hs-identifier hs-type">buildModuleIndex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Settings.html#CompilerSettings"><span class="hs-identifier hs-type">CompilerSettings</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span>
-</span><span id="line-73"></span><span id="buildModuleIndex"><span class="annot"><span class="annottext">buildModuleIndex :: CompilerSettings -&gt; Eff '[FileSystem] ModuleIndex
-</span><a href="Elara.ModuleIndex.html#buildModuleIndex"><span class="hs-identifier hs-var hs-var">buildModuleIndex</span></a></span></span><span> </span><span id="local-6989586621680144848"><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680144848"><span class="hs-identifier hs-var">settings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-74"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144849"><span class="annot"><span class="annottext">mainFileDir :: [FilePath]
-</span><a href="#local-6989586621680144849"><span class="hs-identifier hs-var hs-var hs-var">mainFileDir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680144848"><span class="hs-identifier hs-var">settings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mainFile</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-75"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680144850"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144850"><span class="hs-identifier hs-var">_fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-comment">-- TODO: if we have a</span><span>
+</span><span id="line-72"></span><span id="local-6989586621680067926"><span class="annot"><a href="Elara.ModuleIndex.html#buildModuleIndex"><span class="hs-identifier hs-type">buildModuleIndex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680067926"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Elara.Settings.html#CompilerSettings"><span class="hs-identifier hs-type">CompilerSettings</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680067926"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span></span><span>
+</span><span id="line-73"></span><span id="buildModuleIndex"><span class="annot"><span class="annottext">buildModuleIndex :: forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+CompilerSettings -&gt; Eff es ModuleIndex
+</span><a href="Elara.ModuleIndex.html#buildModuleIndex"><span class="hs-identifier hs-var hs-var">buildModuleIndex</span></a></span></span><span> </span><span id="local-6989586621680068352"><span class="annot"><span class="annottext">CompilerSettings
+</span><a href="#local-6989586621680068352"><span class="hs-identifier hs-var">settings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068353"><span class="annot"><span class="annottext">mainFileDir :: [FilePath]
+</span><a href="#local-6989586621680068353"><span class="hs-identifier hs-var hs-var hs-var">mainFileDir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CompilerSettings
+</span><a href="#local-6989586621680068352"><span class="hs-identifier hs-var">settings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mainFile</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-75"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680068354"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068354"><span class="hs-identifier hs-var">_fp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-comment">-- TODO: if we have a</span><span>
 </span><span id="line-76"></span><span>            </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-77"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144851"><span class="annot"><span class="annottext">roots :: [FilePath]
-</span><a href="#local-6989586621680144851"><span class="hs-identifier hs-var hs-var hs-var">roots</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068355"><span class="annot"><span class="annottext">roots :: [FilePath]
+</span><a href="#local-6989586621680068355"><span class="hs-identifier hs-var hs-var hs-var">roots</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-78"></span><span>            </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath]
 forall a. Ord a =&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">ordNub</span></span><span> </span><span class="annot"><span class="annottext">([FilePath] -&gt; [FilePath]) -&gt; [FilePath] -&gt; [FilePath]
@@ -308,68 +310,68 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span id="line-80"></span><span>                    </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath] -&gt; [FilePath]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">CompilerSettings
-</span><a href="#local-6989586621680144848"><span class="hs-identifier hs-var">settings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">sourceDirs</span><span>
+</span><a href="#local-6989586621680068352"><span class="hs-identifier hs-var">settings</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">sourceDirs</span><span>
 </span><span id="line-81"></span><span>                    </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath] -&gt; [FilePath]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680144849"><span class="hs-identifier hs-var">mainFileDir</span></a></span><span>
+</span><a href="#local-6989586621680068353"><span class="hs-identifier hs-var">mainFileDir</span></a></span><span>
 </span><span id="line-82"></span><span>
-</span><span id="line-83"></span><span>    </span><span id="local-6989586621680144853"><span class="annot"><a href="#local-6989586621680144853"><span class="hs-identifier hs-var">allFiles</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; Eff '[FileSystem] [FilePath]
-forall (es :: [(* -&gt; *) -&gt; * -&gt; *]).
+</span><span id="line-83"></span><span>    </span><span id="local-6989586621680068357"><span class="annot"><a href="#local-6989586621680068357"><span class="hs-identifier hs-var">allFiles</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; Eff es [FilePath]
+forall (es :: [Effect]).
 (FileSystem :&gt; es) =&gt;
 [FilePath] -&gt; Eff es [FilePath]
 </span><a href="Elara.ReadFile.html#findElaraFiles"><span class="hs-identifier hs-var">findElaraFiles</span></a></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680144851"><span class="hs-identifier hs-var">roots</span></a></span><span>
-</span><span id="line-84"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">foldMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.ModuleIndex.html#indexFile"><span class="hs-identifier hs-type">indexFile</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144851"><span class="hs-identifier hs-type">roots</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680144853"><span class="hs-identifier hs-type">allFiles</span></a></span><span>
+</span><a href="#local-6989586621680068355"><span class="hs-identifier hs-var">roots</span></a></span><span>
+</span><span id="line-84"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">foldMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.ModuleIndex.html#indexFile"><span class="hs-identifier hs-type">indexFile</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068355"><span class="hs-identifier hs-type">roots</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680068357"><span class="hs-identifier hs-type">allFiles</span></a></span><span>
 </span><span id="line-85"></span><span>
 </span><span id="line-86"></span><span class="annot"><span class="hs-comment">-- | Index a single file, inferring its module name from the path</span></span><span>
 </span><span id="line-87"></span><span class="annot"><a href="Elara.ModuleIndex.html#indexFile"><span class="hs-identifier hs-type">indexFile</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span>
 </span><span id="line-88"></span><span id="indexFile"><span class="annot"><span class="annottext">indexFile :: [FilePath] -&gt; FilePath -&gt; ModuleIndex
-</span><a href="Elara.ModuleIndex.html#indexFile"><span class="hs-identifier hs-var hs-var">indexFile</span></a></span></span><span> </span><span id="local-6989586621680144856"><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680144856"><span class="hs-identifier hs-var">roots</span></a></span></span><span> </span><span id="local-6989586621680144857"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144857"><span class="hs-identifier hs-var">filePath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; FilePath -&gt; Maybe (ModuleName, ModuleStyle)
+</span><a href="Elara.ModuleIndex.html#indexFile"><span class="hs-identifier hs-var hs-var">indexFile</span></a></span></span><span> </span><span id="local-6989586621680068360"><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680068360"><span class="hs-identifier hs-var">roots</span></a></span></span><span> </span><span id="local-6989586621680068361"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068361"><span class="hs-identifier hs-var">filePath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; FilePath -&gt; Maybe (ModuleName, ModuleStyle)
 </span><a href="Elara.ModuleIndex.html#inferModuleName"><span class="hs-identifier hs-var">inferModuleName</span></a></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680144856"><span class="hs-identifier hs-var">roots</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144857"><span class="hs-identifier hs-var">filePath</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680068360"><span class="hs-identifier hs-var">roots</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068361"><span class="hs-identifier hs-var">filePath</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-89"></span><span>    </span><span class="annot"><span class="annottext">Maybe (ModuleName, ModuleStyle)
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ModuleIndex
 forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span>
-</span><span id="line-90"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680144859"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680144859"><span class="hs-identifier hs-var">moduleName</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144860"><span class="annot"><span class="annottext">ModuleStyle
-</span><a href="#local-6989586621680144860"><span class="hs-identifier hs-var">style</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-91"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144861"><span class="annot"><span class="annottext">entry :: ModuleEntry
-</span><a href="#local-6989586621680144861"><span class="hs-identifier hs-var hs-var">entry</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleEntry"><span class="hs-identifier hs-type">ModuleEntry</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">entryPath :: FilePath
+</span><span id="line-90"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068363"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680068363"><span class="hs-identifier hs-var">moduleName</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068364"><span class="annot"><span class="annottext">ModuleStyle
+</span><a href="#local-6989586621680068364"><span class="hs-identifier hs-var">style</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-91"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068365"><span class="annot"><span class="annottext">entry :: ModuleEntry
+</span><a href="#local-6989586621680068365"><span class="hs-identifier hs-var hs-var">entry</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleEntry"><span class="hs-identifier hs-type">ModuleEntry</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">entryPath :: FilePath
 </span><a href="Elara.ModuleIndex.html#entryPath"><span class="hs-identifier hs-var">entryPath</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144857"><span class="hs-identifier hs-var">filePath</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">entryStyle :: ModuleStyle
+</span><a href="#local-6989586621680068361"><span class="hs-identifier hs-var">filePath</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">entryStyle :: ModuleStyle
 </span><a href="Elara.ModuleIndex.html#entryStyle"><span class="hs-identifier hs-var">entryStyle</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ModuleStyle
-</span><a href="#local-6989586621680144860"><span class="hs-identifier hs-var">style</span></a></span><span class="hs-special">}</span><span>
-</span><span id="line-92"></span><span>            </span><span id="local-6989586621680144862"><span class="annot"><span class="annottext">normalizedName :: ModuleName
-</span><a href="#local-6989586621680144862"><span class="hs-identifier hs-var hs-var">normalizedName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName
+</span><a href="#local-6989586621680068364"><span class="hs-identifier hs-var">style</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-92"></span><span>            </span><span id="local-6989586621680068366"><span class="annot"><span class="annottext">normalizedName :: ModuleName
+</span><a href="#local-6989586621680068366"><span class="hs-identifier hs-var hs-var">normalizedName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName
 </span><a href="Elara.ModuleIndex.html#normalizeModuleName"><span class="hs-identifier hs-var">normalizeModuleName</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680144859"><span class="hs-identifier hs-var">moduleName</span></a></span><span>
+</span><a href="#local-6989586621680068363"><span class="hs-identifier hs-var">moduleName</span></a></span><span>
 </span><span id="line-93"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span>
 </span><span id="line-94"></span><span>                </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">moduleToFiles :: Map ModuleName [ModuleEntry]
 </span><a href="Elara.ModuleIndex.html#moduleToFiles"><span class="hs-identifier hs-var">moduleToFiles</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">OneItem (Map ModuleName [ModuleEntry])
 -&gt; Map ModuleName [ModuleEntry]
 forall x. One x =&gt; OneItem x -&gt; x
 </span><span class="hs-identifier hs-var">one</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680144862"><span class="hs-identifier hs-var">normalizedName</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ModuleEntry
-</span><a href="#local-6989586621680144861"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680068366"><span class="hs-identifier hs-var">normalizedName</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ModuleEntry
+</span><a href="#local-6989586621680068365"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
 </span><span id="line-95"></span><span>                </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">fileToModule :: Map FilePath ModuleName
 </span><a href="Elara.ModuleIndex.html#fileToModule"><span class="hs-identifier hs-var">fileToModule</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">OneItem (Map FilePath ModuleName) -&gt; Map FilePath ModuleName
 forall x. One x =&gt; OneItem x -&gt; x
 </span><span class="hs-identifier hs-var">one</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144857"><span class="hs-identifier hs-var">filePath</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680144859"><span class="hs-identifier hs-var">moduleName</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680068361"><span class="hs-identifier hs-var">filePath</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680068363"><span class="hs-identifier hs-var">moduleName</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-96"></span><span>                </span><span class="hs-special">}</span><span>
 </span><span id="line-97"></span><span>
 </span><span id="line-98"></span><span class="annot"><span class="hs-comment">-- | Infer a module name from a file path relative to source roots</span></span><span>
 </span><span id="line-99"></span><span class="annot"><a href="Elara.ModuleIndex.html#inferModuleName"><span class="hs-identifier hs-type">inferModuleName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleStyle"><span class="hs-identifier hs-type">ModuleStyle</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-100"></span><span id="inferModuleName"><span class="annot"><span class="annottext">inferModuleName :: [FilePath] -&gt; FilePath -&gt; Maybe (ModuleName, ModuleStyle)
-</span><a href="Elara.ModuleIndex.html#inferModuleName"><span class="hs-identifier hs-var hs-var">inferModuleName</span></a></span></span><span> </span><span id="local-6989586621680144864"><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680144864"><span class="hs-identifier hs-var">roots</span></a></span></span><span> </span><span id="local-6989586621680144865"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144865"><span class="hs-identifier hs-var">filePath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Elara.ModuleIndex.html#inferModuleName"><span class="hs-identifier hs-var hs-var">inferModuleName</span></a></span></span><span> </span><span id="local-6989586621680068368"><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680068368"><span class="hs-identifier hs-var">roots</span></a></span></span><span> </span><span id="local-6989586621680068369"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068369"><span class="hs-identifier hs-var">filePath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-101"></span><span>    </span><span class="hs-comment">-- Try each root and return the first successful inference</span><span>
 </span><span id="line-102"></span><span>    </span><span class="annot"><span class="annottext">[Maybe (ModuleName, ModuleStyle)]
 -&gt; Maybe (ModuleName, ModuleStyle)
@@ -378,37 +380,37 @@ forall (t :: * -&gt; *) (f :: * -&gt; *) a.
 t (f a) -&gt; f a
 </span><span class="hs-identifier hs-var">asum</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Maybe (ModuleName, ModuleStyle)
 </span><a href="Elara.ModuleIndex.html#inferFromRoot"><span class="hs-identifier hs-var">inferFromRoot</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144868"><span class="hs-identifier hs-var">root</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144865"><span class="hs-identifier hs-var">filePath</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621680144868"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144868"><span class="hs-identifier hs-var">root</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680144864"><span class="hs-identifier hs-var">roots</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621680068372"><span class="hs-identifier hs-var">root</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068369"><span class="hs-identifier hs-var">filePath</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621680068372"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068372"><span class="hs-identifier hs-var">root</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680068368"><span class="hs-identifier hs-var">roots</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-103"></span><span>
 </span><span id="line-104"></span><span class="annot"><span class="hs-comment">-- | Infer module name from a file path relative to a specific root</span></span><span>
 </span><span id="line-105"></span><span class="annot"><a href="Elara.ModuleIndex.html#inferFromRoot"><span class="hs-identifier hs-type">inferFromRoot</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleStyle"><span class="hs-identifier hs-type">ModuleStyle</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-106"></span><span id="inferFromRoot"><span class="annot"><span class="annottext">inferFromRoot :: FilePath -&gt; FilePath -&gt; Maybe (ModuleName, ModuleStyle)
-</span><a href="Elara.ModuleIndex.html#inferFromRoot"><span class="hs-identifier hs-var hs-var">inferFromRoot</span></a></span></span><span> </span><span id="local-6989586621680144869"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144869"><span class="hs-identifier hs-var">root</span></a></span></span><span> </span><span id="local-6989586621680144870"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144870"><span class="hs-identifier hs-var">filePath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Elara.ModuleIndex.html#inferFromRoot"><span class="hs-identifier hs-var hs-var">inferFromRoot</span></a></span></span><span> </span><span id="local-6989586621680068373"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068373"><span class="hs-identifier hs-var">root</span></a></span></span><span> </span><span id="local-6989586621680068374"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068374"><span class="hs-identifier hs-var">filePath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-107"></span><span>    </span><span class="hs-comment">-- Check if the file is under this root</span><span>
-</span><span id="line-108"></span><span>    </span><span id="local-6989586621680144871"><span class="annot"><a href="#local-6989586621680144871"><span class="hs-identifier hs-var">relativePath</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Maybe FilePath
+</span><span id="line-108"></span><span>    </span><span id="local-6989586621680068375"><span class="annot"><a href="#local-6989586621680068375"><span class="hs-identifier hs-var">relativePath</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Maybe FilePath
 </span><a href="Elara.ModuleIndex.html#stripPrefix%27"><span class="hs-identifier hs-var">stripPrefix'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144869"><span class="hs-identifier hs-var">root</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; ShowS
+</span><a href="#local-6989586621680068373"><span class="hs-identifier hs-var">root</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; ShowS
 </span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144870"><span class="hs-identifier hs-var">filePath</span></a></span><span>
-</span><span id="line-109"></span><span>    </span><span class="annot"><a href="Elara.ModuleIndex.html#inferFromRelativePath"><span class="hs-identifier hs-type">inferFromRelativePath</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680144871"><span class="hs-identifier hs-type">relativePath</span></a></span><span>
+</span><a href="#local-6989586621680068374"><span class="hs-identifier hs-var">filePath</span></a></span><span>
+</span><span id="line-109"></span><span>    </span><span class="annot"><a href="Elara.ModuleIndex.html#inferFromRelativePath"><span class="hs-identifier hs-type">inferFromRelativePath</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680068375"><span class="hs-identifier hs-type">relativePath</span></a></span><span>
 </span><span id="line-110"></span><span>
 </span><span id="line-111"></span><span class="annot"><span class="hs-comment">-- | Strip a prefix from a string, returning 'Nothing' if the prefix doesn't match</span></span><span>
 </span><span id="line-112"></span><span class="annot"><a href="Elara.ModuleIndex.html#stripPrefix%27"><span class="hs-identifier hs-type">stripPrefix'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
 </span><span id="line-113"></span><span id="stripPrefix%27"><span class="annot"><span class="annottext">stripPrefix' :: FilePath -&gt; FilePath -&gt; Maybe FilePath
-</span><a href="Elara.ModuleIndex.html#stripPrefix%27"><span class="hs-identifier hs-var hs-var">stripPrefix'</span></a></span></span><span> </span><span id="local-6989586621680144874"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144874"><span class="hs-identifier hs-var">prefix</span></a></span></span><span> </span><span id="local-6989586621680144875"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144875"><span class="hs-identifier hs-var">str</span></a></span></span><span>
+</span><a href="Elara.ModuleIndex.html#stripPrefix%27"><span class="hs-identifier hs-var hs-var">stripPrefix'</span></a></span></span><span> </span><span id="local-6989586621680068378"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068378"><span class="hs-identifier hs-var">prefix</span></a></span></span><span> </span><span id="local-6989586621680068379"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068379"><span class="hs-identifier hs-var">str</span></a></span></span><span>
 </span><span id="line-114"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144874"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Bool
+</span><a href="#local-6989586621680068378"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Bool
 forall a. Eq a =&gt; [a] -&gt; [a] -&gt; Bool
 </span><span class="hs-operator hs-var">`isPrefixOf`</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144875"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Maybe FilePath
+</span><a href="#local-6989586621680068379"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Maybe FilePath
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; ShowS
 forall a. Int -&gt; [a] -&gt; [a]
@@ -416,8 +418,8 @@ forall a. Int -&gt; [a] -&gt; [a]
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144874"><span class="hs-identifier hs-var">prefix</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144875"><span class="hs-identifier hs-var">str</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680068378"><span class="hs-identifier hs-var">prefix</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068379"><span class="hs-identifier hs-var">str</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-115"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 forall a. Maybe a
@@ -426,28 +428,28 @@ forall a. Maybe a
 </span><span id="line-117"></span><span class="annot"><span class="hs-comment">-- | Infer module name from a path relative to a source root</span></span><span>
 </span><span id="line-118"></span><span class="annot"><a href="Elara.ModuleIndex.html#inferFromRelativePath"><span class="hs-identifier hs-type">inferFromRelativePath</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleStyle"><span class="hs-identifier hs-type">ModuleStyle</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-119"></span><span id="inferFromRelativePath"><span class="annot"><span class="annottext">inferFromRelativePath :: FilePath -&gt; Maybe (ModuleName, ModuleStyle)
-</span><a href="Elara.ModuleIndex.html#inferFromRelativePath"><span class="hs-identifier hs-var hs-var">inferFromRelativePath</span></a></span></span><span> </span><span id="local-6989586621680144879"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144879"><span class="hs-identifier hs-var">relativePath</span></a></span></span><span>
+</span><a href="Elara.ModuleIndex.html#inferFromRelativePath"><span class="hs-identifier hs-var hs-var">inferFromRelativePath</span></a></span></span><span> </span><span id="local-6989586621680068383"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068383"><span class="hs-identifier hs-var">relativePath</span></a></span></span><span>
 </span><span id="line-120"></span><span>    </span><span class="hs-comment">-- Rust-style: A/B/C/mod.elr &#8594; A.B.C</span><span>
 </span><span id="line-121"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">ShowS
 </span><span class="hs-identifier hs-var">takeFileName</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144879"><span class="hs-identifier hs-var">relativePath</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Bool
+</span><a href="#local-6989586621680068383"><span class="hs-identifier hs-var">relativePath</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;mod.elr&quot;</span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-122"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144880"><span class="annot"><span class="annottext">dirPath :: FilePath
-</span><a href="#local-6989586621680144880"><span class="hs-identifier hs-var hs-var">dirPath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShowS
+</span><span id="line-122"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068384"><span class="annot"><span class="annottext">dirPath :: FilePath
+</span><a href="#local-6989586621680068384"><span class="hs-identifier hs-var hs-var">dirPath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShowS
 </span><span class="hs-identifier hs-var">takeDirectory</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144879"><span class="hs-identifier hs-var">relativePath</span></a></span><span>
-</span><span id="line-123"></span><span>            </span><span id="local-6989586621680144881"><span class="annot"><span class="annottext">parts :: [Text]
-</span><a href="#local-6989586621680144881"><span class="hs-identifier hs-var hs-var">parts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [Text]
+</span><a href="#local-6989586621680068383"><span class="hs-identifier hs-var">relativePath</span></a></span><span>
+</span><span id="line-123"></span><span>            </span><span id="local-6989586621680068385"><span class="annot"><span class="annottext">parts :: [Text]
+</span><a href="#local-6989586621680068385"><span class="hs-identifier hs-var hs-var">parts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [Text]
 </span><a href="Elara.ModuleIndex.html#splitPath%27"><span class="hs-identifier hs-var">splitPath'</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144880"><span class="hs-identifier hs-var">dirPath</span></a></span><span>
+</span><a href="#local-6989586621680068384"><span class="hs-identifier hs-var">dirPath</span></a></span><span>
 </span><span id="line-124"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Text] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621680144881"><span class="hs-identifier hs-var">parts</span></a></span><span>
+</span><a href="#local-6989586621680068385"><span class="hs-identifier hs-var">parts</span></a></span><span>
 </span><span id="line-125"></span><span>                </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe (ModuleName, ModuleStyle)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
@@ -458,7 +460,7 @@ forall a. a -&gt; Maybe a
 forall l. IsList l =&gt; [Item l] -&gt; l
 </span><span class="hs-identifier hs-var">fromList</span></span><span> </span><span class="annot"><span class="annottext">[Item (NonEmpty Text)]
 [Text]
-</span><a href="#local-6989586621680144881"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ModuleStyle
+</span><a href="#local-6989586621680068385"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ModuleStyle
 </span><a href="Elara.ModuleIndex.html#RustStyle"><span class="hs-identifier hs-var">RustStyle</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-127"></span><span>    </span><span class="hs-comment">-- Flat: A.B.C.elr &#8594; A.B.C</span><span>
 </span><span id="line-128"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Char
@@ -468,29 +470,29 @@ forall (f :: * -&gt; *) a.
 a -&gt; f a -&gt; Bool
 </span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="annot"><span class="annottext">ShowS
 </span><span class="hs-identifier hs-var">takeBaseName</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144879"><span class="hs-identifier hs-var">relativePath</span></a></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-129"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144885"><span class="annot"><span class="annottext">baseName :: FilePath
-</span><a href="#local-6989586621680144885"><span class="hs-identifier hs-var hs-var">baseName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShowS
+</span><a href="#local-6989586621680068383"><span class="hs-identifier hs-var">relativePath</span></a></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-129"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068389"><span class="annot"><span class="annottext">baseName :: FilePath
+</span><a href="#local-6989586621680068389"><span class="hs-identifier hs-var hs-var">baseName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShowS
 </span><span class="hs-identifier hs-var">takeBaseName</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144879"><span class="hs-identifier hs-var">relativePath</span></a></span><span>
-</span><span id="line-130"></span><span>            </span><span id="local-6989586621680144886"><span class="annot"><span class="annottext">parts :: [Text]
-</span><a href="#local-6989586621680144886"><span class="hs-identifier hs-var hs-var">parts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; Text -&gt; Text -&gt; [Text]
+</span><a href="#local-6989586621680068383"><span class="hs-identifier hs-var">relativePath</span></a></span><span>
+</span><span id="line-130"></span><span>            </span><span id="local-6989586621680068390"><span class="annot"><span class="annottext">parts :: [Text]
+</span><a href="#local-6989586621680068390"><span class="hs-identifier hs-var hs-var">parts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HasCallStack =&gt; Text -&gt; Text -&gt; [Text]
 Text -&gt; Text -&gt; [Text]
 </span><span class="hs-identifier hs-var">Text.splitOn</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Text
 forall a. ToText a =&gt; a -&gt; Text
 </span><span class="hs-identifier hs-var">toText</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144885"><span class="hs-identifier hs-var">baseName</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680068389"><span class="hs-identifier hs-var">baseName</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-131"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Text] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621680144886"><span class="hs-identifier hs-var">parts</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621680068390"><span class="hs-identifier hs-var">parts</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Bool) -&gt; [Text] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Bool
 </span><span class="hs-identifier hs-var">Text.null</span></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621680144886"><span class="hs-identifier hs-var">parts</span></a></span><span>
+</span><a href="#local-6989586621680068390"><span class="hs-identifier hs-var">parts</span></a></span><span>
 </span><span id="line-132"></span><span>                </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe (ModuleName, ModuleStyle)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
@@ -501,40 +503,40 @@ forall a. a -&gt; Maybe a
 forall l. IsList l =&gt; [Item l] -&gt; l
 </span><span class="hs-identifier hs-var">fromList</span></span><span> </span><span class="annot"><span class="annottext">[Item (NonEmpty Text)]
 [Text]
-</span><a href="#local-6989586621680144886"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ModuleStyle
+</span><a href="#local-6989586621680068390"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ModuleStyle
 </span><a href="Elara.ModuleIndex.html#FlatStyle"><span class="hs-identifier hs-var">FlatStyle</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-134"></span><span>    </span><span class="hs-comment">-- Nested: A/B/C.elr &#8594; A.B.C</span><span>
 </span><span id="line-135"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-136"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144892"><span class="annot"><span class="annottext">dirPath :: FilePath
-</span><a href="#local-6989586621680144892"><span class="hs-identifier hs-var hs-var">dirPath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShowS
+</span><span id="line-136"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068396"><span class="annot"><span class="annottext">dirPath :: FilePath
+</span><a href="#local-6989586621680068396"><span class="hs-identifier hs-var hs-var">dirPath</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShowS
 </span><span class="hs-identifier hs-var">takeDirectory</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144879"><span class="hs-identifier hs-var">relativePath</span></a></span><span>
-</span><span id="line-137"></span><span>            </span><span id="local-6989586621680144893"><span class="annot"><span class="annottext">baseName :: FilePath
-</span><a href="#local-6989586621680144893"><span class="hs-identifier hs-var hs-var">baseName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShowS
+</span><a href="#local-6989586621680068383"><span class="hs-identifier hs-var">relativePath</span></a></span><span>
+</span><span id="line-137"></span><span>            </span><span id="local-6989586621680068397"><span class="annot"><span class="annottext">baseName :: FilePath
+</span><a href="#local-6989586621680068397"><span class="hs-identifier hs-var hs-var">baseName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShowS
 </span><span class="hs-identifier hs-var">takeBaseName</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144879"><span class="hs-identifier hs-var">relativePath</span></a></span><span>
-</span><span id="line-138"></span><span>            </span><span id="local-6989586621680144894"><span class="annot"><span class="annottext">dirParts :: [Text]
-</span><a href="#local-6989586621680144894"><span class="hs-identifier hs-var hs-var">dirParts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144892"><span class="hs-identifier hs-var">dirPath</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Bool
+</span><a href="#local-6989586621680068383"><span class="hs-identifier hs-var">relativePath</span></a></span><span>
+</span><span id="line-138"></span><span>            </span><span id="local-6989586621680068398"><span class="annot"><span class="annottext">dirParts :: [Text]
+</span><a href="#local-6989586621680068398"><span class="hs-identifier hs-var hs-var">dirParts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068396"><span class="hs-identifier hs-var">dirPath</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [Text]
 </span><a href="Elara.ModuleIndex.html#splitPath%27"><span class="hs-identifier hs-var">splitPath'</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144892"><span class="hs-identifier hs-var">dirPath</span></a></span><span>
-</span><span id="line-139"></span><span>            </span><span id="local-6989586621680144895"><span class="annot"><span class="annottext">parts :: [Text]
-</span><a href="#local-6989586621680144895"><span class="hs-identifier hs-var hs-var">parts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621680144894"><span class="hs-identifier hs-var">dirParts</span></a></span><span> </span><span class="annot"><span class="annottext">[Text] -&gt; [Text] -&gt; [Text]
+</span><a href="#local-6989586621680068396"><span class="hs-identifier hs-var">dirPath</span></a></span><span>
+</span><span id="line-139"></span><span>            </span><span id="local-6989586621680068399"><span class="annot"><span class="annottext">parts :: [Text]
+</span><a href="#local-6989586621680068399"><span class="hs-identifier hs-var hs-var">parts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621680068398"><span class="hs-identifier hs-var">dirParts</span></a></span><span> </span><span class="annot"><span class="annottext">[Text] -&gt; [Text] -&gt; [Text]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath -&gt; Text
 forall a. ToText a =&gt; a -&gt; Text
 </span><span class="hs-identifier hs-var">toText</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144893"><span class="hs-identifier hs-var">baseName</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621680068397"><span class="hs-identifier hs-var">baseName</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-140"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Text] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621680144895"><span class="hs-identifier hs-var">parts</span></a></span><span>
+</span><a href="#local-6989586621680068399"><span class="hs-identifier hs-var">parts</span></a></span><span>
 </span><span id="line-141"></span><span>                </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe (ModuleName, ModuleStyle)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
@@ -545,16 +547,16 @@ forall a. a -&gt; Maybe a
 forall l. IsList l =&gt; [Item l] -&gt; l
 </span><span class="hs-identifier hs-var">fromList</span></span><span> </span><span class="annot"><span class="annottext">[Item (NonEmpty Text)]
 [Text]
-</span><a href="#local-6989586621680144895"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ModuleStyle
+</span><a href="#local-6989586621680068399"><span class="hs-identifier hs-var">parts</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ModuleStyle
 </span><a href="Elara.ModuleIndex.html#NestedStyle"><span class="hs-identifier hs-var">NestedStyle</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-143"></span><span>
 </span><span id="line-144"></span><span class="annot"><span class="hs-comment">-- | Split a path into its components</span></span><span>
 </span><span id="line-145"></span><span class="annot"><a href="Elara.ModuleIndex.html#splitPath%27"><span class="hs-identifier hs-type">splitPath'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">]</span><span>
 </span><span id="line-146"></span><span id="splitPath%27"><span class="annot"><span class="annottext">splitPath' :: FilePath -&gt; [Text]
-</span><a href="Elara.ModuleIndex.html#splitPath%27"><span class="hs-identifier hs-var hs-var">splitPath'</span></a></span></span><span> </span><span id="local-6989586621680144896"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144896"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-147"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680144897"><span class="annot"><span class="annottext">components :: [FilePath]
-</span><a href="#local-6989586621680144897"><span class="hs-identifier hs-var hs-var">components</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Bool) -&gt; [FilePath] -&gt; [FilePath]
+</span><a href="Elara.ModuleIndex.html#splitPath%27"><span class="hs-identifier hs-var hs-var">splitPath'</span></a></span></span><span> </span><span id="local-6989586621680068400"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068400"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-147"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068401"><span class="annot"><span class="annottext">components :: [FilePath]
+</span><a href="#local-6989586621680068401"><span class="hs-identifier hs-var hs-var">components</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Bool) -&gt; [FilePath] -&gt; [FilePath]
 forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Bool
 </span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (FilePath -&gt; Bool) -&gt; FilePath -&gt; Bool
@@ -567,64 +569,64 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; FilePath -&gt; [FilePath]
 </span><a href="Elara.ModuleIndex.html#splitOn"><span class="hs-identifier hs-var">splitOn</span></a></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'/'</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144896"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><a href="#local-6989586621680068400"><span class="hs-identifier hs-var">path</span></a></span><span>
 </span><span id="line-148"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Text) -&gt; [FilePath] -&gt; [Text]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text
 forall a. ToText a =&gt; a -&gt; Text
 </span><span class="hs-identifier hs-var">toText</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621680144897"><span class="hs-identifier hs-var">components</span></a></span><span>
+</span><a href="#local-6989586621680068401"><span class="hs-identifier hs-var">components</span></a></span><span>
 </span><span id="line-149"></span><span>
 </span><span id="line-150"></span><span class="annot"><span class="hs-comment">-- | Split a string on a character</span></span><span>
 </span><span id="line-151"></span><span class="annot"><a href="Elara.ModuleIndex.html#splitOn"><span class="hs-identifier hs-type">splitOn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span>
 </span><span id="line-152"></span><span id="splitOn"><span class="annot"><span class="annottext">splitOn :: Char -&gt; FilePath -&gt; [FilePath]
 </span><a href="Elara.ModuleIndex.html#splitOn"><span class="hs-identifier hs-var hs-var">splitOn</span></a></span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-153"></span><span class="annot"><a href="Elara.ModuleIndex.html#splitOn"><span class="hs-identifier hs-var">splitOn</span></a></span><span> </span><span id="local-6989586621680144901"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680144901"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680144902"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144902"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-154"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680144903"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144903"><span class="hs-identifier hs-var">before</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680144904"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144904"><span class="hs-identifier hs-var">after</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Bool) -&gt; FilePath -&gt; (FilePath, FilePath)
+</span><span id="line-153"></span><span class="annot"><a href="Elara.ModuleIndex.html#splitOn"><span class="hs-identifier hs-var">splitOn</span></a></span><span> </span><span id="local-6989586621680068405"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621680068405"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680068406"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068406"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068407"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068407"><span class="hs-identifier hs-var">before</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068408"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068408"><span class="hs-identifier hs-var">after</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Bool) -&gt; FilePath -&gt; (FilePath, FilePath)
 forall a. (a -&gt; Bool) -&gt; [a] -&gt; ([a], [a])
 </span><span class="hs-identifier hs-var">break</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680144901"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144902"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><a href="#local-6989586621680068405"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068406"><span class="hs-identifier hs-var">s</span></a></span><span>
 </span><span id="line-155"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144903"><span class="hs-identifier hs-var">before</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [FilePath] -&gt; [FilePath]
+</span><a href="#local-6989586621680068407"><span class="hs-identifier hs-var">before</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [FilePath] -&gt; [FilePath]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144904"><span class="hs-identifier hs-var">after</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680068408"><span class="hs-identifier hs-var">after</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-156"></span><span>            </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-157"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680144906"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144906"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; FilePath -&gt; [FilePath]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621680068410"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068410"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; FilePath -&gt; [FilePath]
 </span><a href="Elara.ModuleIndex.html#splitOn"><span class="hs-identifier hs-var">splitOn</span></a></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621680144901"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144906"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><a href="#local-6989586621680068405"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068410"><span class="hs-identifier hs-var">rest</span></a></span><span>
 </span><span id="line-158"></span><span>
 </span><span id="line-159"></span><span class="annot"><span class="hs-comment">-- | Look up all module entries for a given module name (case-insensitive)</span></span><span>
 </span><span id="line-160"></span><span class="annot"><a href="Elara.ModuleIndex.html#lookupModule"><span class="hs-identifier hs-type">lookupModule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleEntry"><span class="hs-identifier hs-type">ModuleEntry</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-161"></span><span id="lookupModule"><span class="annot"><span class="annottext">lookupModule :: ModuleName -&gt; ModuleIndex -&gt; Maybe [ModuleEntry]
-</span><a href="Elara.ModuleIndex.html#lookupModule"><span class="hs-identifier hs-var hs-var">lookupModule</span></a></span></span><span> </span><span id="local-6989586621680144907"><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680144907"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span id="local-6989586621680144908"><span class="annot"><span class="annottext">ModuleIndex
-</span><a href="#local-6989586621680144908"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Map ModuleName [ModuleEntry] -&gt; Maybe [ModuleEntry]
+</span><a href="Elara.ModuleIndex.html#lookupModule"><span class="hs-identifier hs-var hs-var">lookupModule</span></a></span></span><span> </span><span id="local-6989586621680068411"><span class="annot"><span class="annottext">ModuleName
+</span><a href="#local-6989586621680068411"><span class="hs-identifier hs-var">mn</span></a></span></span><span> </span><span id="local-6989586621680068412"><span class="annot"><span class="annottext">ModuleIndex
+</span><a href="#local-6989586621680068412"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ModuleName -&gt; Map ModuleName [ModuleEntry] -&gt; Maybe [ModuleEntry]
 forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ModuleName -&gt; ModuleName
 </span><a href="Elara.ModuleIndex.html#normalizeModuleName"><span class="hs-identifier hs-var">normalizeModuleName</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleName
-</span><a href="#local-6989586621680144907"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ModuleIndex
-</span><a href="#local-6989586621680144908"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleToFiles</span><span>
+</span><a href="#local-6989586621680068411"><span class="hs-identifier hs-var">mn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ModuleIndex
+</span><a href="#local-6989586621680068412"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">moduleToFiles</span><span>
 </span><span id="line-162"></span><span>
 </span><span id="line-163"></span><span class="annot"><span class="hs-comment">-- | Look up the module name for a given file path</span></span><span>
 </span><span id="line-164"></span><span class="annot"><a href="Elara.ModuleIndex.html#lookupFile"><span class="hs-identifier hs-type">lookupFile</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Elara.ModuleIndex.html#ModuleIndex"><span class="hs-identifier hs-type">ModuleIndex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span>
 </span><span id="line-165"></span><span id="lookupFile"><span class="annot"><span class="annottext">lookupFile :: FilePath -&gt; ModuleIndex -&gt; Maybe ModuleName
-</span><a href="Elara.ModuleIndex.html#lookupFile"><span class="hs-identifier hs-var hs-var">lookupFile</span></a></span></span><span> </span><span id="local-6989586621680144910"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144910"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span id="local-6989586621680144911"><span class="annot"><span class="annottext">ModuleIndex
-</span><a href="#local-6989586621680144911"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Map FilePath ModuleName -&gt; Maybe ModuleName
+</span><a href="Elara.ModuleIndex.html#lookupFile"><span class="hs-identifier hs-var hs-var">lookupFile</span></a></span></span><span> </span><span id="local-6989586621680068414"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068414"><span class="hs-identifier hs-var">fp</span></a></span></span><span> </span><span id="local-6989586621680068415"><span class="annot"><span class="annottext">ModuleIndex
+</span><a href="#local-6989586621680068415"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Map FilePath ModuleName -&gt; Maybe ModuleName
 forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621680144910"><span class="hs-identifier hs-var">fp</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleIndex
-</span><a href="#local-6989586621680144911"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">fileToModule</span><span>
+</span><a href="#local-6989586621680068414"><span class="hs-identifier hs-var">fp</span></a></span><span> </span><span class="annot"><span class="annottext">ModuleIndex
+</span><a href="#local-6989586621680068415"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">fileToModule</span><span>
 </span><span id="line-166"></span></pre></body></html>
