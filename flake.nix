@@ -80,6 +80,7 @@
               weeder-report = weederReport hixPkgs;
             }
             // hixPkgs.lib.optionalAttrs hixPkgs.stdenv.hostPlatform.isLinux {
+              elara-static = import ./nix/static.nix { inherit hixPkgs; };
             }
           ) (hixFlake.packages or { });
         };

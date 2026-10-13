@@ -33,6 +33,11 @@ source-repository head
   type: git
   location: https://github.com/ElaraLang/elara
 
+flag static
+  description: Link the elara executable statically (set by the elara-static nix build)
+  manual: True
+  default: False
+
 library
   exposed-modules:
       Effectful.Error.Extra
@@ -305,6 +310,8 @@ executable elara
   mixins:
       base hiding (Prelude)
   default-language: GHC2024
+  if flag(static)
+    ld-options: -static
 
 test-suite elara-test
   type: exitcode-stdio-1.0
@@ -326,6 +333,7 @@ test-suite elara-test
       Lex.Indents
       LiftClosures
       Logging
+      Memo
       Normalise
       Orphans
       Parse
