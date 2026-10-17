@@ -1,21 +1,13 @@
 {
   bounds = {
     elara = {
-      HUnit = {
-        lower = "1.6.0.0";
-        upper = "1.7";
-      };
-      QuickCheck = {
-        lower = "2.14.3";
-        upper = "2.16";
-      };
       aeson = {
         lower = "2.2.3.0";
         upper = "2.4";
       };
       algebraic-graphs = {
         lower = "0.0.1";
-        upper = "0.8";
+        upper = "0.9";
       };
       array = {
         lower = "0.5.8.0";
@@ -23,7 +15,7 @@
       };
       autodocodec = {
         lower = "0.4.0.0";
-        upper = "0.7";
+        upper = "0.8";
       };
       base = {
         lower = "4.21.1.0";
@@ -103,19 +95,11 @@
       };
       hedgehog = {
         lower = "1.5";
-        upper = "1.6";
-      };
-      hspec-megaparsec = {
-        lower = "2.2.1";
-        upper = "2.3";
+        upper = "1.8";
       };
       kind-generics-th = {
         lower = "0.2.3.3";
         upper = "0.3";
-      };
-      lens = {
-        lower = "5.3.6";
-        upper = "5.4";
       };
       lifted-base = {
         lower = "0.2.3.2";
@@ -183,7 +167,7 @@
       };
       sydtest = {
         lower = "0.18.0.0";
-        upper = "0.29";
+        upper = "0.34";
       };
       sydtest-hedgehog = {
         lower = "0.4.0.0";
@@ -203,7 +187,7 @@
       };
       th-abstraction = {
         lower = "0.7.2.0";
-        upper = null;
+        upper = "0.8";
       };
       time = {
         lower = "1.14";
@@ -221,12 +205,10 @@
   };
   versions = {
     latest = {
-      HUnit = "1.6.2.0";
-      QuickCheck = "2.15.0.1";
-      aeson = "2.3.1.0";
-      algebraic-graphs = "0.7";
+      aeson = "2.3.2.0";
+      algebraic-graphs = "0.8";
       array = "0.5.8.0";
-      autodocodec = "0.6.0.0";
+      autodocodec = "0.7.0.0";
       base = "4.21.1.0";
       binary = "0.8.9.3";
       bytestring = "0.12.2.0";
@@ -245,16 +227,14 @@
       generic-optics = "2.3.0.0";
       h2jvm = "0.1.0.0";
       hashable = "1.5.1.0";
-      hedgehog = "1.5";
-      hspec-megaparsec = "2.2.1";
+      hedgehog = "1.7";
       kind-generics-th = "0.2.3.3";
-      lens = "5.3.6";
       lifted-base = "0.2.3.12";
       matrix = "0.3.6.4";
       megaparsec = "9.7.0";
       mtl = "2.3.1";
       neat-interpolation = "0.5.1.4";
-      opt-env-conf = "0.15.0.2";
+      opt-env-conf = "0.15.0.3";
       optics = "0.4.2.1";
       parser-combinators = "1.3.1";
       pretty-simple = "4.1.4.0";
@@ -265,18 +245,17 @@
       safe-exceptions = "0.1.7.4";
       some = "1.0.6";
       stringsearch = "0.3.6.6";
-      sydtest = "0.28.0.0";
+      sydtest = "0.33.0.0";
       sydtest-hedgehog = "0.4.0.0";
       template-haskell = "2.23.0.0";
       terminal-size = "0.3.4";
       text-metrics = "0.3.3";
+      th-abstraction = "0.7.2.0";
       time = "1.14";
       utf8-string = "1.0.2";
       witch = "1.3.1.0";
     };
     lower = {
-      HUnit = "1.6.0.0";
-      QuickCheck = "2.14.3";
       aeson = "2.2.3.0";
       algebraic-graphs = "0.0.1";
       array = "0.5.8.0";
@@ -300,9 +279,7 @@
       h2jvm = "0.1.0.0";
       hashable = "1.5.1.0";
       hedgehog = "1.5";
-      hspec-megaparsec = "2.2.1";
       kind-generics-th = "0.2.3.3";
-      lens = "5.3.6";
       lifted-base = "0.2.3.2";
       matrix = "0.3.6.2";
       megaparsec = "9.5.0";
@@ -333,8 +310,6 @@
   initial = {
     latest = {};
     lower = {
-      HUnit = "1.6.0.0";
-      QuickCheck = "2.15.0.1";
       aeson = "2.2.3.0";
       algebraic-graphs = "0.7";
       array = "0.5.8.0";
@@ -356,9 +331,7 @@
       generic-optics = "2.3.0.0";
       hashable = "1.5.1.0";
       hedgehog = "1.5";
-      hspec-megaparsec = "2.2.1";
       kind-generics-th = "0.2.3.3";
-      lens = "5.3.6";
       lifted-base = "0.2.3.2";
       matrix = "0.3.6.2";
       megaparsec = "9.7.0";
@@ -388,13 +361,18 @@
   overrides = {
     latest = {
       aeson = {
-        version = "2.3.1.0";
-        hash = "0s1jb8ymlp0qkmx3qjj03239yxbxy3sg74krv5yp9kg4pwylsrdx";
+        version = "2.3.2.0";
+        hash = "0kd3l4hkgvr9ihrv88mpy2nw02cc287g1zwi9imwj7d8n6ch6rzr";
+        repo = "hackage.haskell.org";
+      };
+      algebraic-graphs = {
+        version = "0.8";
+        hash = "0qig4y9ki1qmvklkdmm07i6wjqqmh7b2fpy6xjsc0d5anm5n8icn";
         repo = "hackage.haskell.org";
       };
       autodocodec = {
-        version = "0.6.0.0";
-        hash = "1vsxcb4vnjq180c264gvz3jxsbb1mdf2gzwkfh08ap29lz47wkxh";
+        version = "0.7.0.0";
+        hash = "1qb2cz0sxlh26lw4vz4x1jssphwnkqxb7n8yiz2y28bdg3yl8ihs";
         repo = "hackage.haskell.org";
       };
       autodocodec-nix = {
@@ -472,9 +450,14 @@
         hash = "0kk7c4y2ymim2k62r5bzmsbqw6m0pr1hxvgf5bnkgy71lfr8pwg9";
         repo = "hackage.haskell.org";
       };
+      hedgehog = {
+        version = "1.7";
+        hash = "04cjnz4i1qs3v9bza8a3ry1czapwqgxazhywkjzq2rg1544gjmby";
+        repo = "hackage.haskell.org";
+      };
       opt-env-conf = {
-        version = "0.15.0.2";
-        hash = "181qrw8kgcj7lwwk99vgk036vwayx0cni0zxmr6fdg993d1i4rdr";
+        version = "0.15.0.3";
+        hash = "1ng0mghf7zxfyaipnfc59xs4758zpkhnv437isbsga2jwfvgqipn";
         repo = "hackage.haskell.org";
       };
       optparse-applicative = {
@@ -503,8 +486,8 @@
         repo = "hackage.haskell.org";
       };
       sydtest = {
-        version = "0.28.0.0";
-        hash = "105frfhkjhmq6ivwyvwfkf5p0jc1b3cwydpqsx8ppy10dmg7dnqa";
+        version = "0.33.0.0";
+        hash = "1grma9wgrgc7d128l62y1ald30dbi3j1ym0pqq03l50av67ci70y";
         repo = "hackage.haskell.org";
       };
       sydtest-hedgehog = {
