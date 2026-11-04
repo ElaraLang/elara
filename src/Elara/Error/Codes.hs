@@ -187,3 +187,9 @@ requiredDeclNotFound = "E5001"
 
 invalidAnnotationArrangement :: ErrorCode
 invalidAnnotationArrangement = "E5002"
+
+stdlibDirNotFound :: ErrorCode
+stdlibDirNotFound = "E5003"
+
+ejectTargetExists :: ErrorCode
+ejectTargetExists = "E5004"

@@ -76,7 +76,7 @@ buildModuleIndex settings = do
             Nothing -> []
     let roots =
             ordNub $
-                ["stdlib"]
+                [settings.stdlibDir]
                     <> settings.sourceDirs
                     <> mainFileDir
 

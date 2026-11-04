@@ -28,6 +28,14 @@ extra-source-files:
     jvm-stdlib/Elara/PrimOps.java
     jvm-stdlib/Elara/RuntimeSystem.java
     jvm-stdlib/Elara/String.java
+    stdlib/char.elr
+    stdlib/Elara.Prim.elr
+    stdlib/list.elr
+    stdlib/option.elr
+    stdlib/prelude.elr
+    stdlib/result.elr
+    stdlib/string.elr
+    stdlib/tuple.elr
 
 source-repository head
   type: git
@@ -76,6 +84,7 @@ library
       Elara.Core.TypeCheck
       Elara.CoreToCore
       Elara.Data.AtLeast2List
+      Elara.Data.Embed
       Elara.Data.Kind
       Elara.Data.Kind.Infer
       Elara.Data.Pretty
@@ -154,6 +163,7 @@ library
       Elara.Shunt
       Elara.Shunt.Error
       Elara.Shunt.Operator
+      Elara.Stdlib
       Elara.ToCore
       Elara.ToCore.Match
       Elara.TypeInfer
@@ -341,6 +351,7 @@ test-suite elara-test
       Parse.Patterns
       Region
       Shunt
+      Stdlib
       ToANF
   hs-source-dirs:
       test

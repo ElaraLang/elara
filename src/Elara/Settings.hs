@@ -11,6 +11,8 @@ data CompilerSettings = CompilerSettings
     -- ^ A list of arguments to pass to the program being run
     , outputDir :: FilePath
     -- ^ Directory for build artifacts (e.g. JVM class files, dump output)
+    , stdlibDir :: FilePath
+    -- ^ Directory containing the Elara standard library .elr files
     }
     deriving (Eq, Show)
 
@@ -36,4 +38,5 @@ defaultSettings =
         , sourceDirs = []
         , programArgs = []
         , outputDir = "build"
+        , stdlibDir = "stdlib"
         }

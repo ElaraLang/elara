@@ -10,9 +10,11 @@ where
 
 import Autodocodec
 import Control.Exception as E
-import Effectful (runEff)
-import Effectful.Error.Static (runError)
-import Effectful.Writer.Static.Local (runWriter)
+import Effectful (Eff, IOE, runEff)
+import Effectful.Error.Static (Error, runError)
+import Effectful.FileSystem (FileSystem, runFileSystem)
+import Effectful.Temporary (Temporary, runTemporary)
+import Effectful.Writer.Static.Local (Writer, runWriter)
 import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import OptEnvConf
 import System.CPUTime
@@ -34,6 +36,7 @@ import Prelude hiding (reader)
 
 import Elara qualified
 import Elara.Data.Pretty.Styles qualified as Style
+import Elara.Stdlib qualified as Stdlib
 import Paths_elara qualified as Elara
 
 data Settings = Settings
@@ -41,6 +44,7 @@ data Settings = Settings
     , sourceDirs :: [FilePath]
     , programArgs :: [String]
     , buildDir :: FilePath
+    , stdlibDir :: Maybe FilePath
     }
 
 data Instructions = Instructions !Dispatch !Settings
@@ -78,6 +82,15 @@ instance HasParser Settings where
                 , reader str
                 , value "build"
                 ]
+        stdlibDir <-
+            optional $
+                setting
+                    [ help "Directory containing the standard library (default: the stdlib bundled with elara)"
+                    , name "stdlib-dir"
+                    , env "ELARA_STDLIB_DIR"
+                    , metavar "STDLIB_DIR"
+                    , reader str
+                    ]
         pure Settings{..}
 
 instance HasParser Instructions where
@@ -101,6 +114,8 @@ instance HasCodec DumpTarget where
 data Dispatch
     = DispatchBuild !FilePath !RunTarget
     | DispatchRun !FilePath !RunTarget
+    | DispatchStdlibPath
+    | DispatchStdlibEject !FilePath
     deriving (Eq, Show)
 
 data RunTarget = TargetInterpreter | TargetJVM
@@ -139,29 +154,35 @@ instance HasParser Dispatch where
                             , metavar "MAIN_FILE"
                             ]
                         <*> targetParser
+                , command "stdlib" "Inspect or customise the standard library" $
+                    commands
+                        [ command "path" "Print the directory the standard library is loaded from" $
+                            pure DispatchStdlibPath
+                        , command "eject" "Copy the bundled standard library into a directory, for use with --stdlib-dir" $
+                            DispatchStdlibEject
+                                <$> setting
+                                    [ help "Directory to write the standard library to"
+                                    , argument
+                                    , reader str
+                                    , metavar "DIR"
+                                    , value "stdlib"
+                                    ]
+                        ]
                 ]
 
 instance HasCodec RunTarget where
     codec = stringConstCodec $ (TargetInterpreter, "interp") :| [(TargetJVM, "jvm")]
 
-toCompilerSettings :: Dispatch -> Settings -> CompilerSettings
-toCompilerSettings dispatch Settings{..} =
-    let dumps = Set.fromList dumpTargets
-        mainFile = case dispatch of
-            DispatchBuild fp _ -> Just fp
-            DispatchRun fp _ -> Just fp
-     in CompilerSettings
-            { dumpTargets = dumps
-            , mainFile = mainFile
-            , sourceDirs = sourceDirs
-            , programArgs = programArgs
-            , outputDir = buildDir
-            }
-
--- | Convert a CLI dispatch command to a 'Elara.CompileAction'
-dispatchToAction :: Dispatch -> Elara.CompileAction
-dispatchToAction (DispatchBuild _ target) = Elara.CompileAndEmit (targetToBackend target)
-dispatchToAction (DispatchRun _ target) = Elara.CompileAndRun (targetToBackend target)
+toCompilerSettings :: FilePath -> FilePath -> Settings -> CompilerSettings
+toCompilerSettings mainFile resolvedStdlibDir Settings{..} =
+    CompilerSettings
+        { dumpTargets = Set.fromList dumpTargets
+        , mainFile = Just mainFile
+        , sourceDirs = sourceDirs
+        , programArgs = programArgs
+        , outputDir = buildDir
+        , stdlibDir = resolvedStdlibDir
+        }
 
 targetToBackend :: RunTarget -> Elara.Backend
 targetToBackend TargetInterpreter = Elara.Interpreter
@@ -179,34 +200,33 @@ main = do
     Instructions dispatch settings <-
         runSettingsParser Elara.version "Elara Compiler"
 
-    let compilerSettings = toCompilerSettings dispatch settings
-        action = dispatchToAction dispatch
-    run action compilerSettings `finally` cleanup
+    case dispatch of
+        DispatchBuild mainFile target -> compile mainFile (Elara.CompileAndEmit (targetToBackend target)) settings
+        DispatchRun mainFile target -> compile mainFile (Elara.CompileAndRun (targetToBackend target)) settings
+        DispatchStdlibPath -> void $ runReporting $ do
+            dir <- Stdlib.resolveStdlibDir settings.stdlibDir
+            liftIO $ putStrLn dir
+        DispatchStdlibEject dir -> void $ runReporting $ do
+            Stdlib.ejectStdlib dir
+            liftIO $
+                printPretty $
+                    "Wrote the standard library to"
+                        <+> Style.bold (pretty dir)
+                        <> ". To use it, pass"
+                            <+> Style.bold ("--stdlib-dir" <+> pretty dir)
+
+compile :: FilePath -> Elara.CompileAction -> Settings -> IO ()
+compile mainFile action settings = run `finally` cleanup
   where
-    run :: Elara.CompileAction -> CompilerSettings -> IO ()
-    run action compilerSettings = do
+    run = do
         start <- getCPUTime
-        (reports, mResult) <- runEff $ do
-            (elaraResult, warnings) <-
-                runWriter @[ElaraWarning] $
-                    runError @ElaraError $
-                        uniqueGenToGlobalIO $
-                            runLogToStdoutAndFile $
-                                Elara.compile compilerSettings action
+        mResult <- runReporting $ do
+            stdlibDir <- Stdlib.resolveStdlibDir settings.stdlibDir
+            let compilerSettings = toCompilerSettings mainFile stdlibDir settings
+            result <- uniqueGenToGlobalIO $ runLogToStdoutAndFile $ Elara.compile compilerSettings action
+            pure (compilerSettings, result)
 
-            let warnReports = concatMap diagnosticReports warnings
-
-            case elaraResult of
-                Left (callStack, err) -> do
-                    liftIO $ printPretty callStack
-                    pure (warnReports <> diagnosticReports err, Nothing)
-                Right r -> pure (warnReports, Just r)
-
-        unless (null reports) $ do
-            diag <- reportsToDiagnostic reports
-            printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diag
-
-        whenJust mResult $ \result -> do
+        whenJust mResult $ \(compilerSettings, result) -> do
             when (action == Elara.CompileAndRun Elara.JVM) $
                 executeJVM compilerSettings
 
@@ -224,6 +244,28 @@ main = do
                     <> " source files in "
                     <> Style.punctuation (fromString (printf "%.2f" t) <> "ms!")
                 )
+
+{- | Run an action with the compiler's error and warning handling, printing any diagnostics it produces.
+Returns 'Nothing' if it failed with an error.
+-}
+runReporting :: Eff '[Error ElaraError, Writer [ElaraWarning], FileSystem, Temporary, IOE] a -> IO (Maybe a)
+runReporting action = do
+    (reports, mResult) <- runEff $ runTemporary $ runFileSystem $ do
+        (elaraResult, warnings) <- runWriter @[ElaraWarning] $ runError @ElaraError action
+
+        let warnReports = concatMap diagnosticReports warnings
+
+        case elaraResult of
+            Left (callStack, err) -> do
+                liftIO $ printPretty callStack
+                pure (warnReports <> diagnosticReports err, Nothing)
+            Right r -> pure (warnReports, Just r)
+
+    unless (null reports) $ do
+        diag <- reportsToDiagnostic reports
+        printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diag
+
+    pure mResult
 
 cleanup :: IO ()
 cleanup = resetGlobalUniqueSupply

@@ -39,6 +39,7 @@
 
       extra-source-files = [
         "jvm-stdlib/**/*.java"
+        "stdlib/**/*.elr" # embedded into the executable
       ];
 
       flags.static = {
@@ -143,9 +144,6 @@
     ];
     component = {
       other-modules = [ "Paths_elara" ];
-      # only the executable's link: a global -optl=-static would also hit the temporary .so GHC
-      # links to run TH against elara's own modules
-      # verbatim rather than hpack's `when`, which would repeat Paths_elara inside the conditional
       verbatim = ''
         if flag(static)
           ld-options: -static

@@ -8,6 +8,7 @@ import LiftClosures qualified
 import Logging qualified
 import Parse qualified
 import Shunt qualified
+import Stdlib qualified
 import ToANF qualified
 
 main :: IO ()
@@ -26,3 +27,4 @@ spec = do
 
     describe "Golden Test" Golden.spec
     describe "Logging Test" Logging.spec
+    describe "Stdlib Test" Stdlib.spec

@@ -65,7 +65,7 @@ rules compilerSettings key = case key of
                 mainFileDir = case compilerSettings.mainFile of
                     Just fp -> [takeDirectory fp]
                     Nothing -> []
-                roots = ordNub $ ["stdlib"] <> sourceDirs <> mainFileDir
+                roots = ordNub $ [compilerSettings.stdlibDir] <> sourceDirs <> mainFileDir
                 hierarchy = Text.intercalate "/" (toList parts)
                 flat = Text.intercalate "." (toList parts)
                 paths =
