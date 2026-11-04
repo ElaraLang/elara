@@ -41,7 +41,7 @@ let
       dontDisableStatic = true;
     };
 in
-muslPkgs.haskell.lib.overrideCabal
+(muslPkgs.haskell.lib.overrideCabal
   (muslPkgs.haskell.lib.justStaticExecutables muslPkgs.__hix.packages.elara)
   (drv: {
     doCheck = false;
@@ -63,4 +63,11 @@ muslPkgs.haskell.lib.overrideCabal
           || { echo "$b is not statically linked" >&2; exit 1; }
       done
     '';
+  })
+).overrideAttrs
+  (old: {
+    # javac only runs at build time, so use the cached glibc JDK, a musl one would build GTK and X11 from source
+    nativeBuildInputs = lib.filter (d: lib.getName d != "openjdk") old.nativeBuildInputs ++ [
+      hixPkgs.jdk
+    ];
   })

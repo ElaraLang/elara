@@ -117,6 +117,9 @@ library
       Elara.JVM.Lower.Monad
       Elara.JVM.Lower.Util
       Elara.JVM.Query
+      Elara.JVM.Run
+      Elara.JVM.Stdlib
+      Elara.JVM.Version
       Elara.Lexer.Action
       Elara.Lexer.Char
       Elara.Lexer.Lexer

@@ -52,6 +52,7 @@ import Elara.Core.Module (CoreModule)
 import Elara.Data.Pretty
 import Elara.Data.Unique.Effect
 import Elara.Error
+import Elara.JVM.Stdlib (jvmStdlibClasses)
 import Elara.Logging (LogConfig (..), LogLevel (Info), StructuredDebug, getLogConfigFromEnv, ignoreStructuredDebug, logDebug, structuredDebugToLogWith)
 import Elara.Query.Effects (QueryEffects)
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
@@ -267,12 +268,16 @@ emitJVM ::
     [ModuleName] ->
     Eff es [FilePath]
 emitJVM settings moduleNames = do
-    fmap concat $ for moduleNames $ \modName -> do
-        classBytes <- Rock.fetch (Elara.Query.GetJVMClassBytes modName)
-        for classBytes $ \(fp, bytes) -> do
+    let write fp bytes = do
             let fullPath = settings.outputDir <> "/" <> fp
             liftIO $ createAndWriteFile fullPath bytes
             pure fullPath
+
+    stdlib <- for jvmStdlibClasses $ \(fp, bytes) -> write fp (toLazy bytes)
+    emitted <- fmap concat $ for moduleNames $ \modName -> do
+        classBytes <- Rock.fetch (Elara.Query.GetJVMClassBytes modName)
+        for classBytes (uncurry write)
+    pure (stdlib <> emitted)
 
 -- | Run the interpreter on the compiled modules (prints output to stdout).
 runInterpreter ::

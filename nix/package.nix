@@ -12,16 +12,7 @@
     overrideAttrs (old: {
       unfilteredSrc = ../.;
 
-      nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.jdk ]; # jdk is only needed for checks, breaks static building otherwise
-
-      preCheck = ''
-        ${old.preCheck or ""}
-        echo "Compiling Java standard library..."
-
-        JAVA_FILES=$(${pkgs.findutils}/bin/find jvm-stdlib -name "*.java")
-
-        javac $JAVA_FILES
-      '';
+      nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.jdk ];
     }) drv;
 
   cabal = {

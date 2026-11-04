@@ -16,13 +16,13 @@ Elara is a small project and the compiler is usually being rewritten in some way
 
 ```sh
 nix develop      # or install GHC and Cabal yourself
-just test        # builds the JVM stdlib, then runs the test suite
+just test
 just run examples/<file>.elr
 ```
 
 Full instructions, including the non-Nix route, are in the [setup guide](https://elara.readthedocs.io/en/latest/compiler/internals/setup.html).
 
-> `cabal test` won't compile the JVM stdlib, which can lead to test failures. `just test` handles this for you.
+> Building Elara needs a JDK on your `PATH`, because the JVM stdlib is compiled into the compiler. `nix develop` handles this for you, if you use Nix
 
 ## Before you open a PR
 

@@ -13,13 +13,13 @@ import Control.Exception as E
 import Effectful (Eff, IOE, runEff)
 import Effectful.Error.Static (Error, runError)
 import Effectful.FileSystem (FileSystem, runFileSystem)
+import Effectful.Process (Process, runProcess)
 import Effectful.Temporary (Temporary, runTemporary)
 import Effectful.Writer.Static.Local (Writer, runWriter)
 import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
 import OptEnvConf
 import System.CPUTime
 import System.IO (hSetEncoding, utf8)
-import System.Process (callProcess)
 import Text.Printf
 
 import Data.Set qualified as Set
@@ -29,6 +29,7 @@ import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Error
 import Elara.Error.Diagnose (reportsToDiagnostic)
+import Elara.JVM.Run (runJVMOutput)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
 import Print (printPretty)
@@ -188,11 +189,6 @@ targetToBackend :: RunTarget -> Elara.Backend
 targetToBackend TargetInterpreter = Elara.Interpreter
 targetToBackend TargetJVM = Elara.JVM
 
--- | Execute the JVM output via @java -cp <outDir>:jvm-stdlib Main@.
-executeJVM :: CompilerSettings -> IO ()
-executeJVM settings =
-    callProcess "java" ["-cp", settings.outputDir <> ":jvm-stdlib", "Main"]
-
 main :: IO ()
 main = do
     hSetBuffering stdout NoBuffering
@@ -224,12 +220,11 @@ compile mainFile action settings = run `finally` cleanup
             stdlibDir <- Stdlib.resolveStdlibDir settings.stdlibDir
             let compilerSettings = toCompilerSettings mainFile stdlibDir settings
             result <- uniqueGenToGlobalIO $ runLogToStdoutAndFile $ Elara.compile compilerSettings action
-            pure (compilerSettings, result)
-
-        whenJust mResult $ \(compilerSettings, result) -> do
             when (action == Elara.CompileAndRun Elara.JVM) $
-                executeJVM compilerSettings
+                runJVMOutput compilerSettings.outputDir
+            pure result
 
+        whenJust mResult $ \result -> do
             end <- getCPUTime
             let t :: Double
                 t = fromIntegral (end - start) * 1e-9
@@ -248,9 +243,9 @@ compile mainFile action settings = run `finally` cleanup
 {- | Run an action with the compiler's error and warning handling, printing any diagnostics it produces.
 Returns 'Nothing' if it failed with an error.
 -}
-runReporting :: Eff '[Error ElaraError, Writer [ElaraWarning], FileSystem, Temporary, IOE] a -> IO (Maybe a)
+runReporting :: Eff '[Error ElaraError, Writer [ElaraWarning], FileSystem, Temporary, Process, IOE] a -> IO (Maybe a)
 runReporting action = do
-    (reports, mResult) <- runEff $ runTemporary $ runFileSystem $ do
+    (reports, mResult) <- runEff $ runProcess $ runTemporary $ runFileSystem $ do
         (elaraResult, warnings) <- runWriter @[ElaraWarning] $ runError @ElaraError action
 
         let warnReports = concatMap diagnosticReports warnings

@@ -5,12 +5,17 @@ import Effectful (Eff, IOE, runEff)
 import Effectful.Error.Static (Error, runError)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Temporary (Temporary, runTemporary, withSystemTempDirectory)
+import H2JVM.JVMVersion
 import Relude.Extra.Bifunctor (firstF)
 import System.FilePath ((</>))
 import Test.Syd
 
+import Data.ByteString qualified as BS
+
 import Elara.Data.Embed (readDirRecursive)
 import Elara.Error (ElaraError (..))
+import Elara.JVM.Stdlib (jvmStdlibClasses)
+import Elara.JVM.Version (targetJavaVersion)
 import Elara.Stdlib
 
 spec :: Spec
@@ -18,6 +23,11 @@ spec = do
     it "embeds the current contents of stdlib/" $ do
         onDisk <- readDirRecursive "stdlib"
         embeddedStdlib `shouldBe` onDisk
+
+    it "embeds the JVM stdlib as class files for the target Java version" $ do
+        map fst jvmStdlibClasses `shouldContain` ["Elara/IO.class"]
+        for_ jvmStdlibClasses $ \(_, bytes) ->
+            BS.take 8 bytes `shouldBe` BS.pack [0xCA, 0xFE, 0xBA, 0xBE, 0, 0, 0, fromIntegral (unwrapMajor (getMajor targetJavaVersion))]
 
     it "ejects a copy of the bundled stdlib" $ do
         ejected <- succeeds $ runStdlib $ withSystemTempDirectory "eject" $ \tmp -> do

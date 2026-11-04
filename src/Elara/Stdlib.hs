@@ -56,7 +56,7 @@ instance ElaraDiagnostic StdlibError where
     diagnosticNotes (EjectTargetExists _) = [Hint "Choose a different directory, or remove the existing one first"]
 
 -- | The standard library sources, as paths relative to the stdlib root and their contents
-embeddedStdlib :: [(FilePath, Text)]
+embeddedStdlib :: [(FilePath, ByteString)]
 embeddedStdlib = $(embedDir "stdlib")
 
 -- | Determine the stdlib directory to compile against: the custom one if present, otherwise the bundled stdlib
@@ -85,7 +85,9 @@ unpackStdlib = do
             whenLeft_ renamed $ \err -> unlessM (doesDirectoryExist dir) (throwIO err)
     pure dir
   where
-    contentHash = fingerprintFingerprints [fingerprintString (path <> "\0" <> toString contents) | (path, contents) <- embeddedStdlib]
+    -- note the use of show rather than e.g. decodeUtf8 here
+    -- the actual content that we include in the hash is fairly arbitrary, and it's better than risking decode failures
+    contentHash = fingerprintFingerprints [fingerprintString (path <> "\0" <> show contents) | (path, contents) <- embeddedStdlib]
 
 -- | Write a copy of the bundled stdlib to the passed directory
 ejectStdlib :: (FileSystem :> es, Error ElaraError :> es, HasCallStack) => FilePath -> Eff es ()
@@ -97,4 +99,4 @@ writeStdlib :: FileSystem :> es => FilePath -> Eff es ()
 writeStdlib dir = for_ embeddedStdlib $ \(path, contents) -> do
     let file = dir </> path
     createDirectoryIfMissing True (takeDirectory file)
-    Eff.writeFile file (encodeUtf8 contents)
+    Eff.writeFile file contents

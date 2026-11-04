@@ -53,6 +53,7 @@ in
         self.devShells.${config.system}.pre-commit # the pre-commit devshell
       ];
       buildInputs = with config.pkgs; [
+        jdk
         just
         just-lsp
         convco

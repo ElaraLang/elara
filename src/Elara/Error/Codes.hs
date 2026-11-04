@@ -193,3 +193,6 @@ stdlibDirNotFound = "E5003"
 
 ejectTargetExists :: ErrorCode
 ejectTargetExists = "E5004"
+
+javaNotFound :: ErrorCode
+javaNotFound = "E5005"

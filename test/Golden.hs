@@ -191,8 +191,7 @@ runJVMCapture compilerSettings = do
                     Elara.withCompilerEnv compilerSettings $
                         Elara.compile compilerSettings (Elara.CompileAndEmit Elara.JVM)
 
-    let classPath = compilerSettings.outputDir <> ":jvm-stdlib"
-    (code, out, err) <- readProcessWithExitCode "java" ["-cp", classPath, "Main"] ""
+    (code, out, err) <- readProcessWithExitCode "java" ["-cp", compilerSettings.outputDir, "Main"] ""
     case code of
         ExitSuccess -> pure (toString $ stripEnd $ fromString out)
         ExitFailure n -> expectationFailure $ "java exited with " <> show n <> "\n--- stderr ---\n" <> err <> "\n--- stdout ---\n" <> out
