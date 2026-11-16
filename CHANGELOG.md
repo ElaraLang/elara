@@ -29,6 +29,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(ast)* More stable query keys, avoid redundant recomputation by memoising where possible - ([791d8f1](https://github.com/ElaraLang/elara/commit/791d8f18ae26eef7aa16e19abea4acb2dce1c9ea)) 
 - *(ast)* Make `NodeLoc` a phantom newtype - ([e31c2ea](https://github.com/ElaraLang/elara/commit/e31c2eafe425c70c5835f3bd37e1653a85b74f04)) 
+- *(error)* Rethrow errors with their original callstack - ([8d8c1d4](https://github.com/ElaraLang/elara/commit/8d8c1d414a74fee8f1ca4efb54f181eba67c4de1)) 
 - *(interpreter)* :coffin: Remove likely dead `getArgs` impl - ([b0cdfcd](https://github.com/ElaraLang/elara/commit/b0cdfcdd9369d7b10b773e51e0841fafec9747c5)) 
 - *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
 - *(nix)* Split nix config into multiple files - ([42b072a](https://github.com/ElaraLang/elara/commit/42b072aea19fb8314824a20a4e5f8e458e94a122)) 
