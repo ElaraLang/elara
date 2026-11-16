@@ -13,7 +13,7 @@ import Elara.AST.Name (Qualified (..), TypeName (..))
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique (..))
 import Elara.Prim (KnownTypeInfo (..), knownTypeInfo, lookupByQualifiedTypeName)
-import Elara.TypeInfer.Type (Monotype (..), Polytype (..), Type (..), TypeVariable (..))
+import Elara.TypeInfer.Type (Monotype (..), Polytype, Type (..), TypeVariable (..), openPolytype, polytypeBinders)
 
 import Elara.Data.Pretty.Styles qualified as Style
 
@@ -58,9 +58,11 @@ renderTypeVariable (SkolemVar (Unique Nothing i)) = Style.varName ("#_" <> prett
 
 -- | Render a polytype with user-friendly names
 renderPolytype :: Polytype loc -> Doc AnsiStyle
-renderPolytype (Forall _ tvs _ body) = case tvs of
+renderPolytype p = case polytypeBinders p of
     [] -> renderMonotype body
-    _ -> "forall" <+> hsep (pretty <$> tvs) <> "." <+> renderMonotype body
+    tvs -> "forall" <+> hsep (pretty <$> tvs) <> "." <+> renderMonotype body
+  where
+    body = openPolytype UnificationVar p
 
 -- | Render a type with user-friendly names
 renderType :: Type loc -> Doc AnsiStyle

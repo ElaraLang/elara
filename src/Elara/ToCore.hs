@@ -337,17 +337,10 @@ mkTypeVar :: UniqueTyVar -> Core.TypeVariable
 mkTypeVar tv = TypeVariable tv TypeKind
 
 polytypeToCore :: HasCallStack => InnerToCoreC r => Type.Polytype SourceRegion -> Eff r Core.Type
-polytypeToCore (Type.Forall loc tvs _constraints t) = do
-    let protectBoundVars bound = \case
-            Type.TypeVar l (Type.UnificationVar v) tvs | v `elem` bound -> Type.TypeVar l (Type.SkolemVar v) tvs
-            Type.Function l a b -> Type.Function l (protectBoundVars bound a) (protectBoundVars bound b)
-            Type.TypeConstructor l c args -> Type.TypeConstructor l c (fmap (protectBoundVars bound) args)
-            other -> other
-    let tProtected = protectBoundVars tvs t
-
-    t' <- typeToCore tProtected
-    let tvs' = fmap mkTypeVar tvs
-    pure $ foldr Core.ForAllTy t' tvs'
+polytypeToCore p = do
+    -- turn any remaining type vars into binders
+    t' <- typeToCore (Type.openPolytype Type.SkolemVar p)
+    pure $ foldr (Core.ForAllTy . mkTypeVar) t' (Type.polytypeBinders p)
 
 eitherTypeToCore :: HasCallStack => InnerToCoreC r => Type.Type SourceRegion -> Eff r Core.Type
 eitherTypeToCore (Type.Polytype p) = polytypeToCore p

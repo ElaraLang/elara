@@ -12,6 +12,7 @@ where
 
 import Data.Foldable (foldrM)
 import Data.Generics.Product (HasType (typed))
+import Data.List (lookup)
 import Data.Set (member)
 import Effectful
 import Effectful.Error.Static
@@ -20,6 +21,7 @@ import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
 
 import Effectful.State.Extra (scoped)
+import Data.List (lookup)
 import Elara.AST.Location (AstNode (..), NodeLoc (..), TaggedLocate (..), wrap)
 import Elara.AST.Name (Qualified, TypeName, VarName (..))
 import Elara.AST.Phase (NoExtension (..))
@@ -44,7 +46,7 @@ import Elara.TypeInfer.Ftv (Ftv (..), Fuv (fuv))
 import Elara.TypeInfer.Generalise (generalise)
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Substitute
-import Elara.TypeInfer.Type (Constraint (..), ContextStack, Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), equalityWithContext, functionMonotypeArgs, functionMonotypeResult, monotypeLoc, reduce, setMonotypeLoc, simpleEquality, substituteAllContextStack, substitution)
+import Elara.TypeInfer.Type (Constraint (..), ContextStack, Monotype (..), Polytype, Substitutable (..), Substitution (..), Type (..), TypeVariable (SkolemVar, UnificationVar), equalityWithContext, functionMonotypeArgs, functionMonotypeResult, monotypeLoc, openPolytype, polytypeBinders, reduce, setMonotypeLoc, simpleEquality, substituteAllContextStack, substitution)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 
 import Elara.AST.Types qualified as New
@@ -429,16 +431,12 @@ generatePatternConstraints' pattern' over =
 
 instantiate :: forall r loc. ConstraintGenEffects r loc => Type loc -> Eff r (Monotype loc, [TypeVariable])
 instantiate (Lifted t) = pure (t, [])
-instantiate pt@(Polytype (Forall loc tyVars constraint t)) = logDebugWith ("instantiate: " <> pretty pt) $ do
-    fresh <- mapM (const (UnificationVar <$> makeUniqueTyVar)) tyVars
-    let substitution = Substitution $ fromList $ zip (fmap (view typed) tyVars) (fmap (\tv -> TypeVar loc tv []) fresh)
-    let instantiatedConstraint =
-            substituteAll substitution constraint
-        instantiatedMonotype =
-            substituteAll substitution t
-
-    tell instantiatedConstraint
-    pure (instantiatedMonotype, fresh)
+instantiate pt@(Polytype p) = logDebugWith ("instantiate: " <> pretty pt) $ do
+    let binders = polytypeBinders p
+    -- one fresh unification variable per binder, in binder order
+    fresh <- for binders $ \b -> (b,) . UnificationVar <$> makeUniqueTyVar
+    let instantiated = openPolytype (\b -> fromMaybe (SkolemVar b) (lookup b fresh)) p
+    pure (instantiated, snd <$> fresh)
 
 solveConstraint ::
     (UnifyEffects r a, Monoid (Constraint a)) =>

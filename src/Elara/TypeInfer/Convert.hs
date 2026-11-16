@@ -40,7 +40,7 @@ astTypeToGeneralisedInferType t@(New.Type loc _kind t') = do
 
     case skolems of
         [] -> pure $ Lifted asInferType
-        _ -> pure $ Polytype (Forall loc' skolems (EmptyConstraint loc') asInferType)
+        _ -> Polytype <$> either (throwError . InvalidScheme) pure (closeOver loc' skolems asInferType)
 
 astTypeToInferType :: Error TypeConvertError :> r => KindedType -> Eff r (Monotype SourceRegion)
 astTypeToInferType (New.Type loc _kind t') = do
@@ -87,6 +87,7 @@ assertMonotype (Polytype t) = throwError (HigherRankTypesNotSupported t)
 data TypeConvertError
     = HigherRankTypesNotSupported (Polytype SourceRegion)
     | NotSupported Text
+    | InvalidScheme (SchemeError SourceRegion)
     deriving (Eq, Generic, Show)
 
 instance Exception TypeConvertError
@@ -97,9 +98,11 @@ instance Pretty TypeConvertError where
 instance ElaraDiagnostic TypeConvertError where
     diagnosticMessage (HigherRankTypesNotSupported _) = "Higher rank types are not supported yet"
     diagnosticMessage (NotSupported t) = "Not supported:" <+> pretty t
+    diagnosticMessage (InvalidScheme e) = pretty e
 
     diagnosticMarkers (HigherRankTypesNotSupported t) = [ElaraMarker (polytypeLoc t) PrimaryMarker "Higher rank type here"]
     diagnosticMarkers (NotSupported _) = []
+    diagnosticMarkers (InvalidScheme (QuantifiedSkolem l _ _)) = [ElaraMarker l PrimaryMarker "Scheme built here"]
 
 {- | Convert from a 'Kinded' type, to a 'Typed' type.
 A very simple traversal, since the only significant difference between the two is with type variables

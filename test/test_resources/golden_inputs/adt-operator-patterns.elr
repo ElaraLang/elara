@@ -1,0 +1,14 @@
+import Prelude
+import Elara.Prim
+import String
+
+type Box a = | Box a
+
+#LeftAssociative #Fixity 4
+def (<+>) : Box a -> Box b -> Box a
+let (<+>) (Box x) (Box _) = Box x
+
+def unbox : Box a -> a
+let unbox (Box x) = x
+
+let main = println (toString (unbox (Box 1 <+> Box "ignored")))

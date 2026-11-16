@@ -1,9 +1,9 @@
 module Elara.TypeInfer.Ftv where
 
-import Data.Set (difference, member)
+import Data.Set (member)
 
 import Elara.TypeInfer.Environment (LocalTypeEnvironment (..), TypeEnvironment (..))
-import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Type (..), TypeVariable (..))
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype, Type (..), TypeVariable (..), schemeFreeVars)
 import Elara.TypeInfer.Unique (UniqueTyVar)
 
 class Ftv a where
@@ -19,10 +19,7 @@ instance Ftv (Type loc) where
     ftv (Lifted t) = ftv t
 
 instance Ftv (Polytype loc) where
-    ftv (Forall _ tvs _ t) =
-        ftv t
-            `difference` fromList (SkolemVar <$> tvs)
-            `difference` fromList (UnificationVar <$> tvs)
+    ftv = fromList . schemeFreeVars
 
 instance Ftv (TypeEnvironment loc) where
     ftv (TypeEnvironment env) = foldMap ftv env
