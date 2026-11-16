@@ -10,6 +10,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### 🐛 Bug Fixes
 
 - *(examples)* Json parser type error - ([6d89800](https://github.com/ElaraLang/elara/commit/6d89800dab3c31bb46b8bb1dd2de8d794a7b1845)) 
+- *(examples)* Make source.elr compile - ([5bfd77a](https://github.com/ElaraLang/elara/commit/5bfd77a3428c026f8545c0c34f5cf2efe6523d19)) 
 - *(nix)* Pin managed latest/lower compiler to ghc912 - ([ab19502](https://github.com/ElaraLang/elara/commit/ab19502ae263ee86911417f6349498c8a515752f)) 
 - *(nix)* Strip GHC out of the elara release binary's closure - ([a6c8f47](https://github.com/ElaraLang/elara/commit/a6c8f47b992f8f42d1d7663556e16abbeb31d2fd)) 
 - *(nix)* Drop stale hedgehog 1.7 pin from managed lower overrides - ([f259891](https://github.com/ElaraLang/elara/commit/f25989149be40f57c11769bd0bc63782889582e3)) 
