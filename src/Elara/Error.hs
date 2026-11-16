@@ -20,6 +20,8 @@ module Elara.Error (
     runErrorAsElaraError,
     runWriterAsElaraWarning,
     throwElaraError,
+    rethrowError,
+    rethrowErrorWith,
     module Elara.Error.Codes,
 )
 where
@@ -125,9 +127,16 @@ runErrorAsElaraError ::
     Eff r a
 runErrorAsElaraError e = withFrozenCallStack $ do
     r <- Eff.runError e
-    case r of
-        Left (_callStack, err) -> let ?callStack = _callStack in Eff.throwError (ElaraError err)
-        Right a -> pure a
+    rethrowErrorWith ElaraError r
+
+-- | Rethrow an 'Error', using its _original_ 'CallStack' rather than the current one
+rethrowError :: (Eff.Error e :> es, Show e) => Either (CallStack, e) r -> Eff es r
+rethrowError = rethrowErrorWith identity
+
+-- | Rethrow an 'Error' wrapped with some function 'f', using its _original_ 'CallStack' rather than the current one
+rethrowErrorWith :: (Eff.Error e2 :> es, Show e2) => (e -> e2) -> Either (CallStack, e) r -> Eff es r
+rethrowErrorWith f (Left (_callStack, err)) = let ?callStack = _callStack in Eff.throwError (f err)
+rethrowErrorWith _f (Right p) = pure p
 
 runWriterAsElaraWarning ::
     forall w r a f.

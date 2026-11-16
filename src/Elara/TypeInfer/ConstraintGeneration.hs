@@ -32,6 +32,7 @@ import Elara.Data.AtLeast2List (AtLeast2List (..))
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Kind.Infer (KindInferError, inferTypeKind)
 import Elara.Data.Pretty
+import Elara.Error (rethrowError)
 import Elara.Logging (StructuredDebug, debugWithResult, logDebug, logDebugWith)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), knownTypeInfo)
 import Elara.Query.Effects (QueryEffects)
@@ -463,7 +464,7 @@ simplifyConstraint given tch wanted = debugWithResult ("simplifyConstraint: " <>
         Right (residual, unifier) ->
             -- it worked :D
             pure (residual, unifier)
-        Left (_, err) -> do
+        Left (cs, err) -> do
             --  run the greedy solver to try and get more information
             ((_residual, unifier), errors) <-
                 runState [] $
@@ -478,8 +479,8 @@ simplifyConstraint given tch wanted = debugWithResult ("simplifyConstraint: " <>
                             }
 
             case improvedErrors of
-                [] -> throwError err -- Fallback if state was somehow empty
-                [singleErr] -> throwError singleErr
+                [] -> rethrowError $ Left (cs, err) -- Fallback if state was somehow empty
+                [singleErr] -> rethrowError $ Left (cs, singleErr) -- the callstack _should_ be unchanged here. TODO: verify
                 err1 : err2 : errs ->
                     throwError (MultipleUnifyErrors $ AtLeast2List err1 err2 errs)
 

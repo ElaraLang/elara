@@ -198,6 +198,7 @@ type ToCoreC r =
     , StructuredDebug :> r
     , QueryEffects r
     , Rock.Rock Elara.Query.Query :> r
+    , HasCallStack
     )
 
 type InnerToCoreC r =
