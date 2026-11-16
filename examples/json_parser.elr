@@ -35,7 +35,7 @@ let map f p = Parser ( \s -> let result = (runParser p s) in Result.map ( \(a, r
 #LeftAssociative #Fixity 4
 def (*>) : Parser a -> Parser b -> Parser b
 let p *> q =
-  bind p (\_ -> q)
+bind p (\_ -> q)
 
 -- Sequence two parsers, keeping the result of the first
 #LeftAssociative #Fixity 4
@@ -60,10 +60,10 @@ let filter pred p = Parser ( \s -> match runParser p s with
 -- In Haskell, this is the (>>=) operator, but this name is currently taken by IO
 def bind : Parser a -> (a -> Parser b) -> Parser b
 let bind p f =
-  Parser (\s ->
+Parser (\s ->
     match runParser p s with
-      Result.Err e -> Result.Err e 
-      Result.Ok (a, s1) -> runParser (f a) s1)
+    Result.Err e -> Result.Err e 
+    Result.Ok (a, s1) -> runParser (f a) s1)
 
 
 -- A parser that applies the given parser zero or more times, collecting the results in a list
@@ -145,17 +145,17 @@ let digitsToInt ds =
             match ds with
                 Nil -> acc
                 Cons digitValue ds_ ->
-                              digitsToIntHelper ds_ (acc * 10 + digitValue)
+                            digitsToIntHelper ds_ (acc * 10 + digitValue)
     digitsToIntHelper ds 0
 
 
 /- Now we can define our JSON parser using the combinators defined above -/
 
 type Json = JsonNull
-     | JsonInt Int
-     | JsonString String
-     | JsonArray (List Json) 
-     | JsonObject (List (Tuple2 String Json))
+    | JsonInt Int
+    | JsonString String
+    | JsonArray (List Json) 
+    | JsonObject (List (Tuple2 String Json))
 
 -- Define a parser for JSON null
 def jsonNull : Parser Json
@@ -166,11 +166,14 @@ def jsonInt : Parser Json
 let jsonInt = int |> map JsonInt
 
 -- Define a parser for JSON strings
-def jsonString : Parser Json
-let jsonString = 
+def jsonStringLit : Parser String
+let jsonStringLit = 
     -- Parse the body of the string (characters until the next ")
     let stringBody = many (filter ( \c -> c != '"') any ) |> map stringFromList
-    in char '"' *> stringBody <* char '"' |> map JsonString
+    in char '"' *> stringBody <* char '"'
+
+def jsonString : Parser Json
+let jsonString = jsonStringLit |> map JsonString
 
 -- Define a parser for JSON arrays, which are lists of JSON values
 -- We use the lazy combinator in here so that we can reference the json parser recursively
@@ -186,9 +189,9 @@ def jsonObject : Parser Json
 let jsonObject = 
     -- A parser for a single key: value pair in a JSON object
     let jsonPair = 
-            jsonString `bind` ( \key -> lexeme (char ':') *> (lazy (\_ -> json)) |> map (Tuple2 key) )
+            jsonStringLit `bind` ( \key -> let value = lexeme (char ':') *> (lazy (\_ -> json)) in map (Tuple2 key) value)
     -- A parser for multiple key: value pairs separated by commas
-    let jsonPairs =  sepBy jsonPair (lexeme (char ','))
+    let jsonPairs = sepBy jsonPair (lexeme (char ','))
     -- Combine to form the full object parser
     in lexeme (char '{') *> (jsonPairs |> map JsonObject) <* lexeme (char '}')
 
