@@ -11,5 +11,4 @@ let mapWrapper f (Wrapper a) = Wrapper (f a)
 
 let main = 
     let i = Wrapper (TestBox 1)
-    println (mapWrapper (\x -> x + 1) i)
-    i println
+    println (mapWrapper (\(TestBox x) -> TestBox (x + 1)) i)
