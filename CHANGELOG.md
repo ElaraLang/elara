@@ -25,6 +25,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(type-infer)* Stop local lets over-generalising over variables - ([5b21fb2](https://github.com/ElaraLang/elara/commit/5b21fb200ec395a12757e3d20a09bd7f90cf0e87)) 
 - *(type-infer)* Generalise recursive local lets for consistency - ([4fa0367](https://github.com/ElaraLang/elara/commit/4fa03672ab7e215499975ca95336392a7f332e85)) 
 - *(type-infer)* Report the right argument position and function type in type mismatches - ([ef659c9](https://github.com/ElaraLang/elara/commit/ef659c92cff777bb395b50503c313da6dd13879c)) 
+- *(type-infer)* Register constructor schemes once and validate schemes at construction - ([61d7497](https://github.com/ElaraLang/elara/commit/61d749753a9db4ffed3bba2ba8e1c78194e040ff)) 
 
 ### 🚜 Refactor
 
