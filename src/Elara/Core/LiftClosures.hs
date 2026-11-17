@@ -2,7 +2,6 @@ module Elara.Core.LiftClosures (
     ClosureLiftError (..),
     runLiftClosures,
     runGetClosureLiftedModuleQuery,
-    liftClosures,
 ) where
 
 import Control.Monad (foldM)
@@ -104,30 +103,6 @@ runGetClosureLiftedModuleQuery ::
 runGetClosureLiftedModuleQuery mn = runErrorAsElaraError @ClosureLiftError $ do
     coreModule <- Rock.fetch (Elara.Query.GetANFCoreModule mn)
     runLiftClosures coreModule
-
-{- | Lift closures in a Core expression. This turns all closures into top-level functions.
-For example:
-@
-let add5 x =
-   let f y = x + y
-   in f 5
-@
-becomes:
-@
-let add5_f x y = x + y
-let add5 x = add5_f x 5
-@
--}
-liftClosures ::
-    ( HasCallStack
-    , UniqueGen :> r
-    , Writer [(Core.Var, CExpr Core.Var)] :> r
-    , StructuredDebug :> r
-    , Error ClosureLiftError :> r
-    ) =>
-    ModuleName -> Expr Core.Var -> Eff r (Expr Core.Var)
-liftClosures m expr =
-    runReader (LiftContext m Nothing Set.empty) (liftClosures' expr)
 
 -- | Generate a name for a lifted function
 mkLiftedName ::

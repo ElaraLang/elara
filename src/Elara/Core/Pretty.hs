@@ -106,9 +106,6 @@ prettyVdef (v, e) =
             (prettyVar True False v <+> "=" <+> pretty e)
         )
 
-prettyVBind :: PrettyVar v => v -> Doc AnsiStyle
-prettyVBind = prettyVar False True
-
 prettyAlt :: (PrettyVar a, PrettyVar v) => (AltCon, [a], Expr v) -> Doc AnsiStyle
 prettyAlt (con, vars, body) =
     pretty con

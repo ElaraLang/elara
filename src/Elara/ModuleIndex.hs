@@ -4,7 +4,6 @@ module Elara.ModuleIndex (
     ModuleIndex (..),
     buildModuleIndex,
     lookupModule,
-    lookupFile,
 )
 where
 
@@ -159,7 +158,3 @@ splitOn c s =
 -- | Look up all module entries for a given module name (case-insensitive)
 lookupModule :: ModuleName -> ModuleIndex -> Maybe [ModuleEntry]
 lookupModule mn idx = Map.lookup (normalizeModuleName mn) idx.moduleToFiles
-
--- | Look up the module name for a given file path
-lookupFile :: FilePath -> ModuleIndex -> Maybe ModuleName
-lookupFile fp idx = Map.lookup fp idx.fileToModule

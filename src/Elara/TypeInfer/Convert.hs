@@ -80,10 +80,6 @@ astTypeToInferType' loc (New.TUserDefined name) = do
     pure $ TypeConstructor loc (name ^. unlocated) []
 astTypeToInferType' _ (New.TExtension v) = absurd v
 
-assertMonotype :: Error TypeConvertError :> r => Type SourceRegion -> Eff r (Monotype SourceRegion)
-assertMonotype (Lifted t) = pure t
-assertMonotype (Polytype t) = throwError (HigherRankTypesNotSupported t)
-
 data TypeConvertError
     = HigherRankTypesNotSupported (Polytype SourceRegion)
     | NotSupported Text

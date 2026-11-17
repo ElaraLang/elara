@@ -6,8 +6,6 @@
 module Elara.Data.Pretty (
     escapeChar,
     indentDepth,
-    parensIf,
-    blockParensIf,
     Pretty (..),
     gpretty,
     module Pretty,
@@ -39,14 +37,6 @@ import Elara.Width qualified as Width
 
 indentDepth :: Int
 indentDepth = 4
-
-parensIf :: Bool -> Doc ann -> Doc ann
-parensIf True = parens
-parensIf False = identity
-
-blockParensIf :: Bool -> Doc ann -> Doc ann
-blockParensIf True = braces
-blockParensIf False = identity
 
 listToText :: forall a. Pretty a => [a] -> Doc AnsiStyle
 listToText elements =

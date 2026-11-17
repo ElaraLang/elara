@@ -42,9 +42,6 @@ instance Pretty LVKey where
         UnknownName i -> "UnknownName" <+> pretty i
         KnownName u -> "KnownName" <+> pretty u
 
-initialMethodCreationState :: QualifiedClassName -> MethodCreationState
-initialMethodCreationState name = MethodCreationState Map.empty name Map.empty
-
 createMethodCreationState :: [Unique Text] -> QualifiedClassName -> MethodCreationState
 createMethodCreationState args thisName =
     MethodCreationState

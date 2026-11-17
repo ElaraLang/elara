@@ -4,40 +4,21 @@
 
 module Elara.Core.Module where
 
-import Data.Generics.Product
-
 import Elara.AST.Name (ModuleName, Qualified)
-import Elara.Core (CoreBind, DataCon, Type, TypeVariable)
+import Elara.Core (DataCon, Type, TypeVariable)
 import Elara.Core.Pretty (prettyTy, prettyTypeVariables)
 import Elara.Data.Kind (ElaraKind)
 import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.Pretty.Styles (keyword)
-import Elara.Data.TopologicalGraph (HasDependencies (..))
 import Elara.Pretty.Common (prettyCtorsInline)
 
 import Elara.Core qualified as Core
-import Elara.Core.ANF qualified as ANF
 
 data CoreModule bind = CoreModule
     { name :: !ModuleName
     , declarations :: ![CoreDeclaration bind]
     }
     deriving (Generic)
-
--- the constraint is necessary for 'gplate' to be able to find the fields correctly
-instance HasDependencies (CoreModule CoreBind) where
-    type Key (CoreModule CoreBind) = ModuleName
-    key = view (field @"name")
-
-    dependencies m = do
-        m ^.. field @"declarations" % (genericPlate @(Qualified Text)) % field @"qualifier"
-
-instance HasDependencies (CoreModule (ANF.TopLevelBind Core.Var)) where
-    type Key (CoreModule (ANF.TopLevelBind Core.Var)) = ModuleName
-    key = view (field @"name")
-
-    dependencies m = do
-        m ^.. field @"declarations" % (genericPlate @(Qualified Text)) % field @"qualifier"
 
 data CoreDeclaration bind
     = CoreValue bind

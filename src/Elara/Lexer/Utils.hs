@@ -27,7 +27,6 @@ module Elara.Lexer.Utils (
     alexGetByte,
     initialLexState,
     triggerIndentLayout,
-    triggerBlockLayout,
     checkBlockLayout,
 ) where
 
@@ -38,16 +37,14 @@ import Data.List.NonEmpty (span, (<|))
 import Effectful (Eff)
 import Effectful.Error.Static
 import Effectful.State.Static.Local
-import Error.Diagnose (Marker (..), Note (..), Report (Err))
 
 import Data.Text qualified as T
 
 import Effectful.State.Extra (use', (%=), (.=))
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), mkSourceRegionIn, positionToDiagnosePosition)
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), mkSourceRegionIn)
 import Elara.Data.Pretty hiding (indent)
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
 import Elara.Logging (StructuredDebug)
 import Prelude hiding (span)
@@ -210,9 +207,6 @@ pushBack lex = modify (over pendingTokens (\toks -> toks <> [lex]))
 triggerIndentLayout :: LexMonad ()
 triggerIndentLayout =
     layoutExpected .= Just ExpectIndent
-
-triggerBlockLayout :: LexMonad ()
-triggerBlockLayout = layoutExpected .= Just ExpectBlock
 
 {- | If a (block) layout is expected, check the current token's indentation against the top of the stack,
 and insert an INDENT token if necessary

@@ -13,6 +13,3 @@ uniqueIdToTyVar (UniqueId c) = fmap (const Nothing) c
 
 makeUniqueTyVar :: UniqueGen :> r => Eff r UniqueTyVar
 makeUniqueTyVar = uniqueIdToTyVar <$> makeUniqueId
-
-makeUniqueTyVarWith :: UniqueGen :> r => Text -> Eff r UniqueTyVar
-makeUniqueTyVarWith name = const (Just name) <<$>> makeUniqueTyVar
