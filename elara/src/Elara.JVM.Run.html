@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Running emitted JVM output</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.JVM.Run.html"><span class="hs-identifier">Elara.JVM.Run</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Run.html#JVMRunError"><span class="hs-identifier">JVMRunError</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.JVM.Run.html#runJVMOutput"><span class="hs-identifier">runJVMOutput</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Eff</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(:&gt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Error.Static</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Error</span></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Exception</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">throwIO</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">try</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Process</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Process</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">createProcess</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">proc</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">waitForProcess</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Exit</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ExitCode</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ExitSuccess</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.IO.Error</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">isDoesNotExistError</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html"><span class="hs-identifier">Elara.Error.Codes</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Codes</span></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">data</span><span> </span><span id="JVMRunError"><span class="annot"><a href="Elara.JVM.Run.html#JVMRunError"><span class="hs-identifier hs-var">JVMRunError</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="JavaNotFound"><span class="annot"><a href="Elara.JVM.Run.html#JavaNotFound"><span class="hs-identifier hs-var">JavaNotFound</span></a></span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068683"><span id="local-6989586621680068685"><span id="local-6989586621680068689"><span class="annot"><span class="annottext">Int -&gt; JVMRunError -&gt; ShowS
+[JVMRunError] -&gt; ShowS
+JVMRunError -&gt; String
+(Int -&gt; JVMRunError -&gt; ShowS)
+-&gt; (JVMRunError -&gt; String)
+-&gt; ([JVMRunError] -&gt; ShowS)
+-&gt; Show JVMRunError
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; JVMRunError -&gt; ShowS
+showsPrec :: Int -&gt; JVMRunError -&gt; ShowS
+$cshow :: JVMRunError -&gt; String
+show :: JVMRunError -&gt; String
+$cshowList :: [JVMRunError] -&gt; ShowS
+showList :: [JVMRunError] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068698"><span id="local-6989586621680068702"><span id="local-6989586621680068705"><span id="local-6989586621680068708"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.JVM.Run.html#JVMRunError"><span class="hs-identifier hs-type">JVMRunError</span></a></span></span></span></span></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068714"><span id="local-6989586621680068718"><span id="local-6989586621680068723"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.JVM.Run.html#JVMRunError"><span class="hs-identifier hs-type">JVMRunError</span></a></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>    </span><span id="local-6989586621680068729"><span class="annot"><span class="annottext">diagnosticMessage :: JVMRunError -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680068729"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMessage</span></a></span></span><span> </span><span class="annot"><span class="annottext">JVMRunError
+</span><a href="Elara.JVM.Run.html#JavaNotFound"><span class="hs-identifier hs-var">JavaNotFound</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Cannot run the program: java was not found&quot;</span></span><span>
+</span><span id="line-22"></span><span>    </span><span id="local-6989586621680068731"><span class="annot"><span class="annottext">diagnosticCode :: JVMRunError -&gt; Maybe ErrorCode
+</span><a href="#local-6989586621680068731"><span class="hs-identifier hs-var hs-var hs-var">diagnosticCode</span></a></span></span><span> </span><span class="annot"><span class="annottext">JVMRunError
+</span><a href="Elara.JVM.Run.html#JavaNotFound"><span class="hs-identifier hs-var">JavaNotFound</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode -&gt; Maybe ErrorCode
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ErrorCode
+</span><a href="Elara.Error.Codes.html#javaNotFound"><span class="hs-identifier hs-var">Codes.javaNotFound</span></a></span><span>
+</span><span id="line-23"></span><span>    </span><span id="local-6989586621680068735"><span class="annot"><span class="annottext">diagnosticNotes :: JVMRunError -&gt; [ElaraNote]
+</span><a href="#local-6989586621680068735"><span class="hs-identifier hs-var hs-var hs-var">diagnosticNotes</span></a></span></span><span> </span><span class="annot"><span class="annottext">JVMRunError
+</span><a href="Elara.JVM.Run.html#JavaNotFound"><span class="hs-identifier hs-var">JavaNotFound</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; ElaraNote
+</span><a href="Elara.Error.html#Hint"><span class="hs-identifier hs-var">Hint</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Install Java 8 or newer and make sure java is on your PATH&quot;</span></span><span class="hs-special">]</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><span class="hs-comment">-- | Run the @Main@ class in the given directory, exiting with the program's exit code if it fails</span></span><span>
+</span><span id="line-26"></span><span id="local-6989586621680068643"><span class="annot"><a href="Elara.JVM.Run.html#runJVMOutput"><span class="hs-identifier hs-type">runJVMOutput</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Process</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068643"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068643"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068643"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-27"></span><span id="runJVMOutput"><span class="annot"><span class="annottext">runJVMOutput :: forall (es :: [Effect]).
+(Process :&gt; es, Error ElaraError :&gt; es, HasCallStack) =&gt;
+String -&gt; Eff es ()
+</span><a href="Elara.JVM.Run.html#runJVMOutput"><span class="hs-identifier hs-var hs-var">runJVMOutput</span></a></span></span><span> </span><span id="local-6989586621680068763"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680068763"><span class="hs-identifier hs-var">outputDir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-28"></span><span>    </span><span id="local-6989586621680068764"><span class="annot"><a href="#local-6989586621680068764"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-29"></span><span>        </span><span class="annot"><span class="annottext">Eff es ExitCode -&gt; Eff es (Either IOError ExitCode)
+forall e (es :: [Effect]) a.
+Exception e =&gt;
+Eff es a -&gt; Eff es (Either e a)
+</span><span class="hs-identifier hs-var">try</span></span><span> </span><span class="annot"><span class="annottext">(Eff es ExitCode -&gt; Eff es (Either IOError ExitCode))
+-&gt; Eff es ExitCode -&gt; Eff es (Either IOError ExitCode)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-30"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068765"><span class="annot"><a href="#local-6989586621680068765"><span class="hs-identifier hs-var">process</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">CreateProcess
+-&gt; Eff es (Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle)
+forall (es :: [Effect]).
+(Process :&gt; es) =&gt;
+CreateProcess
+-&gt; Eff es (Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle)
+</span><span class="hs-identifier hs-var">createProcess</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; CreateProcess
+</span><span class="hs-identifier hs-var">proc</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;java&quot;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;-cp&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680068763"><span class="hs-identifier hs-var">outputDir</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Main&quot;</span></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">waitForProcess</span></span><span> </span><span class="annot"><a href="#local-6989586621680068765"><span class="hs-identifier hs-type">process</span></a></span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><a href="#local-6989586621680068764"><span class="hs-identifier hs-type">res</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-33"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621680068766"><span class="annot"><span class="annottext">IOError
+</span><a href="#local-6989586621680068766"><span class="hs-identifier hs-var">err</span></a></span></span><span>
+</span><span id="line-34"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">IOError -&gt; Bool
+</span><span class="hs-identifier hs-var">isDoesNotExistError</span></span><span> </span><span class="annot"><span class="annottext">IOError
+</span><a href="#local-6989586621680068766"><span class="hs-identifier hs-var">err</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">JVMRunError -&gt; Eff es ()
+forall e (es :: [Effect]) a.
+(Exception e, ElaraDiagnostic e, Error ElaraError :&gt; es,
+ HasCallStack) =&gt;
+e -&gt; Eff es a
+</span><a href="Elara.Error.html#throwElaraError"><span class="hs-identifier hs-var">throwElaraError</span></a></span><span> </span><span class="annot"><span class="annottext">JVMRunError
+</span><a href="Elara.JVM.Run.html#JavaNotFound"><span class="hs-identifier hs-var">JavaNotFound</span></a></span><span>
+</span><span id="line-35"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IOError -&gt; Eff es ()
+forall e (es :: [Effect]) a.
+(HasCallStack, Exception e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">IOError
+</span><a href="#local-6989586621680068766"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><span id="line-36"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="annot"><span class="annottext">ExitCode
+</span><span class="hs-identifier hs-var">ExitSuccess</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff es ()
+forall (f :: * -&gt; *). Applicative f =&gt; f ()
+</span><span class="hs-identifier hs-var">pass</span></span><span>
+</span><span id="line-37"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621680068769"><span class="annot"><span class="annottext">ExitCode
+</span><a href="#local-6989586621680068769"><span class="hs-identifier hs-var">failure</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ExitCode -&gt; Eff es ()
+forall e (es :: [Effect]) a.
+(HasCallStack, Exception e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">ExitCode
+</span><a href="#local-6989586621680068769"><span class="hs-identifier hs-var">failure</span></a></span><span>
+</span><span id="line-38"></span></pre></body></html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | Compile-time embedding of files into the compiler</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Data.Embed.html"><span class="hs-identifier">Elara.Data.Embed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Embed.html#embedDir"><span class="hs-identifier">embedDir</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Embed.html#embedJavaClasses"><span class="hs-identifier">embedJavaClasses</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Elara.Data.Embed.html#readDirRecursive"><span class="hs-identifier">readDirRecursive</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">runEff</span></span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Temporary</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">runTemporary</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">withSystemTempDirectory</span></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">H2JVM.JVMVersion</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Exp</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Q</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">runIO</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH.Syntax</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">addDependentFile</span></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Directory</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">doesDirectoryExist</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">listDirectory</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">makeAbsolute</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.FilePath</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">makeRelative</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">takeExtension</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(&lt;/&gt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Process</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">callProcess</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH.Syntax</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">TH</span></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.JVM.Version.html"><span class="hs-identifier">Elara.JVM.Version</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.JVM.Version.html#targetJavaVersion"><span class="hs-identifier">targetJavaVersion</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="annot"><span class="hs-comment">{- | Embed every file under a directory (relative to the package root) as @[(FilePath, ByteString)]@,
+with paths relative to that directory.
+For example $(embedDir &quot;./&quot;) might create something like [(&quot;a.txt&quot;, &quot;hello&quot;), (&quot;b.txt&quot;, &quot;aaa&quot;)].
+
+Todo: This might not pick up new files without a clean build! Should probably fix this
+-}</span></span><span>
+</span><span id="line-23"></span><span class="annot"><a href="Elara.Data.Embed.html#embedDir"><span class="hs-identifier hs-type">embedDir</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Exp</span></span><span>
+</span><span id="line-24"></span><span id="embedDir"><span class="annot"><span class="annottext">embedDir :: FilePath -&gt; Q Exp
+</span><a href="Elara.Data.Embed.html#embedDir"><span class="hs-identifier hs-var hs-var">embedDir</span></a></span></span><span> </span><span id="local-6989586621680063465"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063465"><span class="hs-identifier hs-var">dir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-25"></span><span>    </span><span id="local-6989586621680063466"><span class="annot"><a href="#local-6989586621680063466"><span class="hs-identifier hs-var">entries</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO [(FilePath, ByteString)] -&gt; Q [(FilePath, ByteString)]
+forall a. IO a -&gt; Q a
+</span><span class="hs-identifier hs-var">runIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; IO [(FilePath, ByteString)]
+</span><a href="Elara.Data.Embed.html#readDirRecursive"><span class="hs-identifier hs-var">readDirRecursive</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063465"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Elara.Data.Embed.html#dependOnFiles"><span class="hs-identifier hs-type">dependOnFiles</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680063465"><span class="hs-identifier hs-type">dir</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">fst</span></span><span> </span><span class="annot"><a href="#local-6989586621680063466"><span class="hs-identifier hs-type">entries</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">TH.lift</span></span><span> </span><span class="annot"><a href="#local-6989586621680063466"><span class="hs-identifier hs-type">entries</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="annot"><span class="hs-comment">{- | Compile the Java sources under a directory with @javac@ and embed the resulting class files as
+@[(FilePath, ByteString)]@, with paths relative to the classpath root. Needs @javac@ at build time.
+-}</span></span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Elara.Data.Embed.html#embedJavaClasses"><span class="hs-identifier hs-type">embedJavaClasses</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Exp</span></span><span>
+</span><span id="line-33"></span><span id="embedJavaClasses"><span class="annot"><span class="annottext">embedJavaClasses :: FilePath -&gt; Q Exp
+</span><a href="Elara.Data.Embed.html#embedJavaClasses"><span class="hs-identifier hs-var hs-var">embedJavaClasses</span></a></span></span><span> </span><span id="local-6989586621680063469"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063469"><span class="hs-identifier hs-var">dir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-34"></span><span>    </span><span id="local-6989586621680063470"><span class="annot"><a href="#local-6989586621680063470"><span class="hs-identifier hs-var">sources</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO [FilePath] -&gt; Q [FilePath]
+forall a. IO a -&gt; Q a
+</span><span class="hs-identifier hs-var">runIO</span></span><span> </span><span class="annot"><span class="annottext">(IO [FilePath] -&gt; Q [FilePath]) -&gt; IO [FilePath] -&gt; Q [FilePath]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Bool) -&gt; [FilePath] -&gt; [FilePath]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;.java&quot;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Bool) -&gt; (FilePath -&gt; FilePath) -&gt; FilePath -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath
+</span><span class="hs-identifier hs-var">takeExtension</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([FilePath] -&gt; [FilePath])
+-&gt; ([(FilePath, ByteString)] -&gt; [FilePath])
+-&gt; [(FilePath, ByteString)]
+-&gt; [FilePath]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">((FilePath, ByteString) -&gt; FilePath)
+-&gt; [(FilePath, ByteString)] -&gt; [FilePath]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(FilePath, ByteString) -&gt; FilePath
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">([(FilePath, ByteString)] -&gt; [FilePath])
+-&gt; IO [(FilePath, ByteString)] -&gt; IO [FilePath]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO [(FilePath, ByteString)]
+</span><a href="Elara.Data.Embed.html#readDirRecursive"><span class="hs-identifier hs-var">readDirRecursive</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063469"><span class="hs-identifier hs-var">dir</span></a></span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Elara.Data.Embed.html#dependOnFiles"><span class="hs-identifier hs-type">dependOnFiles</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680063469"><span class="hs-identifier hs-type">dir</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680063470"><span class="hs-identifier hs-type">sources</span></a></span><span>
+</span><span id="line-36"></span><span>    </span><span id="local-6989586621680063473"><span class="annot"><a href="#local-6989586621680063473"><span class="hs-identifier hs-var">classes</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">runIO</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">runEff</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">runTemporary</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">withSystemTempDirectory</span></span><span> </span><span class="annot"><span class="hs-string">&quot;elara-jvm-stdlib&quot;</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680063474"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063474"><span class="hs-identifier hs-var">tmp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IO [(FilePath, ByteString)]
+-&gt; Eff '[Temporary, IOE] [(FilePath, ByteString)]
+forall a. IO a -&gt; Eff '[Temporary, IOE] a
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO [(FilePath, ByteString)]
+ -&gt; Eff '[Temporary, IOE] [(FilePath, ByteString)])
+-&gt; IO [(FilePath, ByteString)]
+-&gt; Eff '[Temporary, IOE] [(FilePath, ByteString)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-37"></span><span>        </span><span class="annot"><span class="annottext">FilePath -&gt; [FilePath] -&gt; IO ()
+</span><span class="hs-identifier hs-var">callProcess</span></span><span>
+</span><span id="line-38"></span><span>            </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;javac&quot;</span></span><span>
+</span><span id="line-39"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;--release&quot;</span></span><span>
+</span><span id="line-40"></span><span>              </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Word16 -&gt; FilePath
+forall b a. (Show a, IsString b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MajorVersion -&gt; Word16
+</span><span class="hs-identifier hs-var">unwrapMajor</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">JVMVersion -&gt; MajorVersion
+</span><span class="hs-identifier hs-var">getMajor</span></span><span> </span><span class="annot"><span class="annottext">JVMVersion
+</span><a href="Elara.JVM.Version.html#targetJavaVersion"><span class="hs-identifier hs-var">targetJavaVersion</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Word16 -&gt; Word16 -&gt; Word16
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Word16
+</span><span class="hs-number">44</span></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- turn major version (e.g. 52) into release (e.g. 8)</span><span>
+</span><span id="line-41"></span><span>              </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;-Xlint:-options&quot;</span></span><span> </span><span class="hs-comment">-- silence any old version warning</span><span>
+</span><span id="line-42"></span><span>              </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;-d&quot;</span></span><span>
+</span><span id="line-43"></span><span>              </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063474"><span class="hs-identifier hs-var">tmp</span></a></span><span>
+</span><span id="line-44"></span><span>              </span><span class="hs-special">]</span><span>
+</span><span id="line-45"></span><span>                </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath] -&gt; [FilePath]
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; FilePath) -&gt; [FilePath] -&gt; [FilePath]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063469"><span class="hs-identifier hs-var">dir</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680063470"><span class="hs-identifier hs-var">sources</span></a></span><span>
+</span><span id="line-46"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>        </span><span class="annot"><span class="annottext">FilePath -&gt; IO [(FilePath, ByteString)]
+</span><a href="Elara.Data.Embed.html#readDirRecursive"><span class="hs-identifier hs-var">readDirRecursive</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063474"><span class="hs-identifier hs-var">tmp</span></a></span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">TH.lift</span></span><span> </span><span class="annot"><a href="#local-6989586621680063473"><span class="hs-identifier hs-type">classes</span></a></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="annot"><a href="Elara.Data.Embed.html#dependOnFiles"><span class="hs-identifier hs-type">dependOnFiles</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span id="dependOnFiles"><span class="annot"><span class="annottext">dependOnFiles :: FilePath -&gt; [FilePath] -&gt; Q ()
+</span><a href="Elara.Data.Embed.html#dependOnFiles"><span class="hs-identifier hs-var hs-var">dependOnFiles</span></a></span></span><span> </span><span id="local-6989586621680063479"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063479"><span class="hs-identifier hs-var">dir</span></a></span></span><span> </span><span id="local-6989586621680063480"><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680063480"><span class="hs-identifier hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; (FilePath -&gt; Q ()) -&gt; Q ()
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Foldable t, Applicative f) =&gt;
+t a -&gt; (a -&gt; f b) -&gt; f ()
+</span><span class="hs-identifier hs-var">for_</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621680063480"><span class="hs-identifier hs-var">paths</span></a></span><span> </span><span class="annot"><span class="annottext">((FilePath -&gt; Q ()) -&gt; Q ()) -&gt; (FilePath -&gt; Q ()) -&gt; Q ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680063482"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063482"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><span class="annottext">IO FilePath -&gt; Q FilePath
+forall a. IO a -&gt; Q a
+</span><span class="hs-identifier hs-var">runIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; IO FilePath
+</span><span class="hs-identifier hs-var">makeAbsolute</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063479"><span class="hs-identifier hs-var">dir</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063482"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Q FilePath -&gt; (FilePath -&gt; Q ()) -&gt; Q ()
+forall a b. Q a -&gt; (a -&gt; Q b) -&gt; Q b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Q ()
+</span><span class="hs-identifier hs-var">addDependentFile</span></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="annot"><span class="hs-comment">-- | Returns file under a directory, as paths relative to it and their contents, in a stable (but arbitrary) order</span></span><span>
+</span><span id="line-55"></span><span class="annot"><a href="Elara.Data.Embed.html#readDirRecursive"><span class="hs-identifier hs-type">readDirRecursive</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ByteString</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-56"></span><span id="readDirRecursive"><span class="annot"><span class="annottext">readDirRecursive :: FilePath -&gt; IO [(FilePath, ByteString)]
+</span><a href="Elara.Data.Embed.html#readDirRecursive"><span class="hs-identifier hs-var hs-var">readDirRecursive</span></a></span></span><span> </span><span id="local-6989586621680063483"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063483"><span class="hs-identifier hs-var">root</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO [(FilePath, ByteString)]
+</span><a href="#local-6989586621680063484"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063483"><span class="hs-identifier hs-var">root</span></a></span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-58"></span><span>    </span><span id="local-6989586621680063484"><span class="annot"><span class="annottext">go :: FilePath -&gt; IO [(FilePath, ByteString)]
+</span><a href="#local-6989586621680063484"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621680063485"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063485"><span class="hs-identifier hs-var">dir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>        </span><span id="local-6989586621680063486"><span class="annot"><a href="#local-6989586621680063486"><span class="hs-identifier hs-var">items</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; [FilePath]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">sort</span></span><span> </span><span class="annot"><span class="annottext">([FilePath] -&gt; [FilePath]) -&gt; IO [FilePath] -&gt; IO [FilePath]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO [FilePath]
+</span><span class="hs-identifier hs-var">listDirectory</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063485"><span class="hs-identifier hs-var">dir</span></a></span><span>
+</span><span id="line-60"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">fmap</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">concat</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">for</span></span><span> </span><span class="annot"><a href="#local-6989586621680063486"><span class="hs-identifier hs-type">items</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680063490"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063490"><span class="hs-identifier hs-var">item</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-61"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680063491"><span class="annot"><span class="annottext">path :: FilePath
+</span><a href="#local-6989586621680063491"><span class="hs-identifier hs-var hs-var hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063485"><span class="hs-identifier hs-var">dir</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063490"><span class="hs-identifier hs-var">item</span></a></span><span>
+</span><span id="line-62"></span><span>            </span><span id="local-6989586621680063492"><span class="annot"><a href="#local-6989586621680063492"><span class="hs-identifier hs-var">isDir</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Bool
+</span><span class="hs-identifier hs-var">doesDirectoryExist</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680063491"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-63"></span><span>            </span><span class="hs-keyword">if</span><span> </span><span class="annot"><a href="#local-6989586621680063492"><span class="hs-identifier hs-type">isDir</span></a></span><span>
+</span><span id="line-64"></span><span>                </span><span class="hs-keyword">then</span><span> </span><span class="annot"><a href="#local-6989586621680063484"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680063491"><span class="hs-identifier hs-type">path</span></a></span><span>
+</span><span id="line-65"></span><span>                </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-66"></span><span>                    </span><span id="local-6989586621680063493"><span class="annot"><a href="#local-6989586621680063493"><span class="hs-identifier hs-var">contents</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-identifier hs-type">readFileBS</span></span><span> </span><span class="annot"><a href="#local-6989586621680063491"><span class="hs-identifier hs-type">path</span></a></span><span>
+</span><span id="line-67"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">makeRelative</span></span><span> </span><span class="annot"><a href="#local-6989586621680063483"><span class="hs-identifier hs-type">root</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680063491"><span class="hs-identifier hs-type">path</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680063493"><span class="hs-identifier hs-type">contents</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-68"></span></pre></body></html>

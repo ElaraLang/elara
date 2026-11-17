@@ -1,0 +1,312 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="annot"><span class="hs-comment">{- | The Elara standard library bundled into the compiler binary to make a truly portable build.
+
+Unless overridden (e.g. with @--stdlib-dir@), the bundled sources are unpacked into the user's $XDG_CACHE directory and
+compiled from there.
+-}</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Elara.Stdlib.html"><span class="hs-identifier">Elara.Stdlib</span></a></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Elara.Stdlib.html#StdlibError"><span class="hs-identifier">StdlibError</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Elara.Stdlib.html#embeddedStdlib"><span class="hs-identifier">embeddedStdlib</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><a href="Elara.Stdlib.html#resolveStdlibDir"><span class="hs-identifier">resolveStdlibDir</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Elara.Stdlib.html#unpackStdlib"><span class="hs-identifier">unpackStdlib</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Elara.Stdlib.html#ejectStdlib"><span class="hs-identifier">ejectStdlib</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Eff</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(:&gt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Error.Static</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Error</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Exception</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">IOException</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">throwIO</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">try</span></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.FileSystem</span></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><span class="hs-identifier">FileSystem</span></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-identifier">XdgDirectory</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">XdgCache</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-identifier">createDirectoryIfMissing</span></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><span class="hs-identifier">doesDirectoryExist</span></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="hs-identifier">doesPathExist</span></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-identifier">getXdgDirectory</span></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><span class="hs-identifier">renameDirectory</span></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span> </span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.Temporary</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Temporary</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">withTempDirectory</span></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Fingerprint</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">fingerprintFingerprints</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">fingerprintString</span></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.FilePath</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">takeDirectory</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(&lt;/&gt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Effectful.FileSystem.IO.ByteString</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Eff</span></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Embed.html"><span class="hs-identifier">Elara.Data.Embed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Embed.html#embedDir"><span class="hs-identifier">embedDir</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html"><span class="hs-identifier">Elara.Data.Pretty</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.html"><span class="hs-identifier">Elara.Error</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.Styles.html"><span class="hs-identifier">Elara.Data.Pretty.Styles</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Style</span></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html"><span class="hs-identifier">Elara.Error.Codes</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Codes</span></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">data</span><span> </span><span id="StdlibError"><span class="annot"><a href="Elara.Stdlib.html#StdlibError"><span class="hs-identifier hs-var">StdlibError</span></a></span></span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | A stdlib directory was explicitly given, but doesn't exist</span></span><span>
+</span><span id="line-43"></span><span>      </span><span id="StdlibDirNotFound"><span class="annot"><a href="Elara.Stdlib.html#StdlibDirNotFound"><span class="hs-identifier hs-var">StdlibDirNotFound</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | Refusing to eject into an existing path</span></span><span>
+</span><span id="line-45"></span><span>      </span><span id="EjectTargetExists"><span class="annot"><a href="Elara.Stdlib.html#EjectTargetExists"><span class="hs-identifier hs-var">EjectTargetExists</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068411"><span id="local-6989586621680068420"><span id="local-6989586621680068424"><span class="annot"><span class="annottext">Int -&gt; StdlibError -&gt; ShowS
+[StdlibError] -&gt; ShowS
+StdlibError -&gt; FilePath
+(Int -&gt; StdlibError -&gt; ShowS)
+-&gt; (StdlibError -&gt; FilePath)
+-&gt; ([StdlibError] -&gt; ShowS)
+-&gt; Show StdlibError
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; FilePath) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; StdlibError -&gt; ShowS
+showsPrec :: Int -&gt; StdlibError -&gt; ShowS
+$cshow :: StdlibError -&gt; FilePath
+show :: StdlibError -&gt; FilePath
+$cshowList :: [StdlibError] -&gt; ShowS
+showList :: [StdlibError] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068434"><span id="local-6989586621680068438"><span id="local-6989586621680068441"><span id="local-6989586621680068444"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Stdlib.html#StdlibError"><span class="hs-identifier hs-type">StdlibError</span></a></span></span></span></span></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680068450"><span id="local-6989586621680068454"><span id="local-6989586621680068459"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.Stdlib.html#StdlibError"><span class="hs-identifier hs-type">StdlibError</span></a></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>    </span><span id="local-6989586621680068474"><span class="annot"><span class="annottext">diagnosticMessage :: StdlibError -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680068474"><span class="hs-identifier hs-var hs-var hs-var">diagnosticMessage</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Stdlib.html#StdlibDirNotFound"><span class="hs-identifier hs-type">StdlibDirNotFound</span></a></span><span> </span><span id="local-6989586621680068476"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068476"><span class="hs-identifier hs-var">dir</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Standard library directory not found: &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#bold"><span class="hs-identifier hs-var">Style.bold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068476"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><a href="Elara.Error.html#diagnosticMessage"><span class="hs-identifier hs-var">diagnosticMessage</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Stdlib.html#EjectTargetExists"><span class="hs-identifier hs-type">EjectTargetExists</span></a></span><span> </span><span id="local-6989586621680068479"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068479"><span class="hs-identifier hs-var">dir</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Cannot eject the standard library: &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#bold"><span class="hs-identifier hs-var">Style.bold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068479"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot; already exists&quot;</span></span><span>
+</span><span id="line-53"></span><span>    </span><span id="local-6989586621680068480"><span class="annot"><span class="annottext">diagnosticCode :: StdlibError -&gt; Maybe ErrorCode
+</span><a href="#local-6989586621680068480"><span class="hs-identifier hs-var hs-var hs-var">diagnosticCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Stdlib.html#StdlibDirNotFound"><span class="hs-identifier hs-type">StdlibDirNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode -&gt; Maybe ErrorCode
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ErrorCode
+</span><a href="Elara.Error.Codes.html#stdlibDirNotFound"><span class="hs-identifier hs-var">Codes.stdlibDirNotFound</span></a></span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="Elara.Error.html#diagnosticCode"><span class="hs-identifier hs-var">diagnosticCode</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Stdlib.html#EjectTargetExists"><span class="hs-identifier hs-type">EjectTargetExists</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode -&gt; Maybe ErrorCode
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ErrorCode
+</span><a href="Elara.Error.Codes.html#ejectTargetExists"><span class="hs-identifier hs-var">Codes.ejectTargetExists</span></a></span><span>
+</span><span id="line-55"></span><span>    </span><span id="local-6989586621680068490"><span class="annot"><span class="annottext">diagnosticNotes :: StdlibError -&gt; [ElaraNote]
+</span><a href="#local-6989586621680068490"><span class="hs-identifier hs-var hs-var hs-var">diagnosticNotes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Stdlib.html#StdlibDirNotFound"><span class="hs-identifier hs-type">StdlibDirNotFound</span></a></span><span> </span><span id="local-6989586621680068492"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068492"><span class="hs-identifier hs-var">dir</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; ElaraNote
+</span><a href="Elara.Error.html#Hint"><span class="hs-identifier hs-var">Hint</span></a></span><span> </span><span class="annot"><span class="annottext">(Doc AnsiStyle -&gt; ElaraNote) -&gt; Doc AnsiStyle -&gt; ElaraNote
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Create one with &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.Styles.html#bold"><span class="hs-identifier hs-var">Style.bold</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;elara stdlib eject &quot;</span></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; Doc AnsiStyle -&gt; Doc AnsiStyle
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Doc AnsiStyle
+forall a. Pretty a =&gt; a -&gt; Doc AnsiStyle
+</span><a href="Elara.Data.Pretty.html#pretty"><span class="hs-identifier hs-var">pretty</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068492"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="Elara.Error.html#diagnosticNotes"><span class="hs-identifier hs-var">diagnosticNotes</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Stdlib.html#EjectTargetExists"><span class="hs-identifier hs-type">EjectTargetExists</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Doc AnsiStyle -&gt; ElaraNote
+</span><a href="Elara.Error.html#Hint"><span class="hs-identifier hs-var">Hint</span></a></span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span class="hs-string">&quot;Choose a different directory, or remove the existing one first&quot;</span></span><span class="hs-special">]</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><span class="hs-comment">-- | The standard library sources, as paths relative to the stdlib root and their contents</span></span><span>
+</span><span id="line-59"></span><span class="annot"><a href="Elara.Stdlib.html#embeddedStdlib"><span class="hs-identifier hs-type">embeddedStdlib</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ByteString</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-60"></span><span id="embeddedStdlib"><span class="annot"><span class="annottext">embeddedStdlib :: [(FilePath, ByteString)]
+</span><a href="Elara.Stdlib.html#embeddedStdlib"><span class="hs-identifier hs-var hs-var">embeddedStdlib</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><a href="Elara.Data.Embed.html#embedDir"><span class="hs-identifier hs-type">embedDir</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;stdlib&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="annot"><span class="hs-comment">-- | Determine the stdlib directory to compile against: the custom one if present, otherwise the bundled stdlib</span></span><span>
+</span><span id="line-63"></span><span id="local-6989586621680068332"><span class="annot"><a href="Elara.Stdlib.html#resolveStdlibDir"><span class="hs-identifier hs-type">resolveStdlibDir</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-64"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068332"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Temporary</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068332"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068332"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-65"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068332"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span></span><span>
+</span><span id="line-67"></span><span id="resolveStdlibDir"><span class="annot"><span class="annottext">resolveStdlibDir :: forall (es :: [Effect]).
+(FileSystem :&gt; es, Temporary :&gt; es, Error ElaraError :&gt; es) =&gt;
+Maybe FilePath -&gt; Eff es FilePath
+</span><a href="Elara.Stdlib.html#resolveStdlibDir"><span class="hs-identifier hs-var hs-var">resolveStdlibDir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff es FilePath
+forall (es :: [Effect]).
+(FileSystem :&gt; es, Temporary :&gt; es) =&gt;
+Eff es FilePath
+</span><a href="Elara.Stdlib.html#unpackStdlib"><span class="hs-identifier hs-var">unpackStdlib</span></a></span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680068511"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068511"><span class="hs-identifier hs-var">dir</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-70"></span><span>        </span><span class="annot"><span class="annottext">Eff es Bool -&gt; Eff es () -&gt; Eff es ()
+forall (m :: * -&gt; *). Monad m =&gt; m Bool -&gt; m () -&gt; m ()
+</span><span class="hs-identifier hs-var">unlessM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Eff es Bool
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+FilePath -&gt; Eff es Bool
+</span><span class="hs-identifier hs-var">doesDirectoryExist</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068511"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Eff es () -&gt; Eff es ()) -&gt; Eff es () -&gt; Eff es ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">StdlibError -&gt; Eff es ()
+forall e (es :: [Effect]) a.
+(Exception e, ElaraDiagnostic e, Error ElaraError :&gt; es,
+ HasCallStack) =&gt;
+e -&gt; Eff es a
+</span><a href="Elara.Error.html#throwElaraError"><span class="hs-identifier hs-var">throwElaraError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; StdlibError
+</span><a href="Elara.Stdlib.html#StdlibDirNotFound"><span class="hs-identifier hs-var">StdlibDirNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068511"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>        </span><span class="annot"><span class="annottext">FilePath -&gt; Eff es FilePath
+forall a. a -&gt; Eff es a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068511"><span class="hs-identifier hs-var">dir</span></a></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="annot"><span class="hs-comment">-- | Unpack the bundled stdlib into the cache directory, or reuse if already present, and return its path.</span></span><span>
+</span><span id="line-74"></span><span id="local-6989586621680068342"><span class="annot"><a href="Elara.Stdlib.html#unpackStdlib"><span class="hs-identifier hs-type">unpackStdlib</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068342"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Temporary</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068342"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068342"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span></span><span>
+</span><span id="line-75"></span><span id="unpackStdlib"><span class="annot"><span class="annottext">unpackStdlib :: forall (es :: [Effect]).
+(FileSystem :&gt; es, Temporary :&gt; es) =&gt;
+Eff es FilePath
+</span><a href="Elara.Stdlib.html#unpackStdlib"><span class="hs-identifier hs-var hs-var">unpackStdlib</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-76"></span><span>    </span><span id="local-6989586621680068543"><span class="annot"><a href="#local-6989586621680068543"><span class="hs-identifier hs-var">cacheDir</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">XdgDirectory -&gt; FilePath -&gt; Eff es FilePath
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+XdgDirectory -&gt; FilePath -&gt; Eff es FilePath
+</span><span class="hs-identifier hs-var">getXdgDirectory</span></span><span> </span><span class="annot"><span class="annottext">XdgDirectory
+</span><span class="hs-identifier hs-var">XdgCache</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;elara&quot;</span></span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068544"><span class="annot"><a href="#local-6989586621680068544"><span class="hs-identifier hs-var hs-var">dir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068543"><span class="hs-identifier hs-var">cacheDir</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; ShowS
+</span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;stdlib-&quot;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Fingerprint -&gt; FilePath
+forall b a. (Show a, IsString b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Fingerprint
+</span><a href="#local-6989586621680068546"><span class="hs-identifier hs-var">contentHash</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">unlessM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">doesDirectoryExist</span></span><span> </span><span class="annot"><a href="#local-6989586621680068544"><span class="hs-identifier hs-type">dir</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-79"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">createDirectoryIfMissing</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">True</span></span><span> </span><span class="annot"><a href="#local-6989586621680068543"><span class="hs-identifier hs-type">cacheDir</span></a></span><span>
+</span><span id="line-80"></span><span>        </span><span class="hs-comment">-- use temp directory so concurrent things don't break</span><span>
+</span><span id="line-81"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">withTempDirectory</span></span><span> </span><span class="annot"><a href="#local-6989586621680068543"><span class="hs-identifier hs-type">cacheDir</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;stdlib.tmp&quot;</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680068547"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068547"><span class="hs-identifier hs-var">tmp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-82"></span><span>            </span><span class="annot"><span class="annottext">FilePath -&gt; Eff es ()
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+FilePath -&gt; Eff es ()
+</span><a href="Elara.Stdlib.html#writeStdlib"><span class="hs-identifier hs-var">writeStdlib</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068547"><span class="hs-identifier hs-var">tmp</span></a></span><span>
+</span><span id="line-83"></span><span>            </span><span id="local-6989586621680068549"><span class="annot"><a href="#local-6989586621680068549"><span class="hs-identifier hs-var">renamed</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall e (es :: [Effect]) a.
+Exception e =&gt;
+Eff es a -&gt; Eff es (Either e a)
+</span><span class="hs-identifier hs-var">try</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">IOException</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Eff es ()
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+FilePath -&gt; FilePath -&gt; Eff es ()
+</span><span class="hs-identifier hs-var">renameDirectory</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068547"><span class="hs-identifier hs-var">tmp</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068544"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>            </span><span class="hs-comment">-- if the rename failed because another process got there first, use its copy</span><span>
+</span><span id="line-85"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">whenLeft_</span></span><span> </span><span class="annot"><a href="#local-6989586621680068549"><span class="hs-identifier hs-type">renamed</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680068551"><span class="annot"><span class="annottext">IOException
+</span><a href="#local-6989586621680068551"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Eff es Bool -&gt; Eff es () -&gt; Eff es ()
+forall (m :: * -&gt; *). Monad m =&gt; m Bool -&gt; m () -&gt; m ()
+</span><span class="hs-identifier hs-var">unlessM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Eff es Bool
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+FilePath -&gt; Eff es Bool
+</span><span class="hs-identifier hs-var">doesDirectoryExist</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068544"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IOException -&gt; Eff es ()
+forall e (es :: [Effect]) a.
+(HasCallStack, Exception e) =&gt;
+e -&gt; Eff es a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">IOException
+</span><a href="#local-6989586621680068551"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">pure</span></span><span> </span><span class="annot"><a href="#local-6989586621680068544"><span class="hs-identifier hs-type">dir</span></a></span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-88"></span><span>    </span><span class="hs-comment">-- note the use of show rather than e.g. decodeUtf8 here</span><span>
+</span><span id="line-89"></span><span>    </span><span class="hs-comment">-- the actual content that we include in the hash is fairly arbitrary, and it's better than risking decode failures</span><span>
+</span><span id="line-90"></span><span>    </span><span id="local-6989586621680068546"><span class="annot"><span class="annottext">contentHash :: Fingerprint
+</span><a href="#local-6989586621680068546"><span class="hs-identifier hs-var hs-var">contentHash</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Fingerprint] -&gt; Fingerprint
+</span><span class="hs-identifier hs-var">fingerprintFingerprints</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath -&gt; Fingerprint
+</span><span class="hs-identifier hs-var">fingerprintString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068559"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;\0&quot;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; FilePath
+forall b a. (Show a, IsString b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621680068560"><span class="hs-identifier hs-var">contents</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680068559"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068559"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068560"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621680068560"><span class="hs-identifier hs-var">contents</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(FilePath, ByteString)]
+</span><a href="Elara.Stdlib.html#embeddedStdlib"><span class="hs-identifier hs-var">embeddedStdlib</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span class="annot"><span class="hs-comment">-- | Write a copy of the bundled stdlib to the passed directory</span></span><span>
+</span><span id="line-93"></span><span id="local-6989586621680068372"><span class="annot"><a href="Elara.Stdlib.html#ejectStdlib"><span class="hs-identifier hs-type">ejectStdlib</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068372"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Error</span></span><span> </span><span class="annot"><a href="Elara.Error.html#ElaraError"><span class="hs-identifier hs-type">ElaraError</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068372"><span class="hs-identifier hs-type">es</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068372"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-94"></span><span id="ejectStdlib"><span class="annot"><span class="annottext">ejectStdlib :: forall (es :: [Effect]).
+(FileSystem :&gt; es, Error ElaraError :&gt; es, HasCallStack) =&gt;
+FilePath -&gt; Eff es ()
+</span><a href="Elara.Stdlib.html#ejectStdlib"><span class="hs-identifier hs-var hs-var">ejectStdlib</span></a></span></span><span> </span><span id="local-6989586621680068573"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068573"><span class="hs-identifier hs-var">dir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-95"></span><span>    </span><span class="annot"><span class="annottext">Eff es Bool -&gt; Eff es () -&gt; Eff es ()
+forall (m :: * -&gt; *). Monad m =&gt; m Bool -&gt; m () -&gt; m ()
+</span><span class="hs-identifier hs-var">whenM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Eff es Bool
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+FilePath -&gt; Eff es Bool
+</span><span class="hs-identifier hs-var">doesPathExist</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068573"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Eff es () -&gt; Eff es ()) -&gt; Eff es () -&gt; Eff es ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">StdlibError -&gt; Eff es ()
+forall e (es :: [Effect]) a.
+(Exception e, ElaraDiagnostic e, Error ElaraError :&gt; es,
+ HasCallStack) =&gt;
+e -&gt; Eff es a
+</span><a href="Elara.Error.html#throwElaraError"><span class="hs-identifier hs-var">throwElaraError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; StdlibError
+</span><a href="Elara.Stdlib.html#EjectTargetExists"><span class="hs-identifier hs-var">EjectTargetExists</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068573"><span class="hs-identifier hs-var">dir</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>    </span><span class="annot"><span class="annottext">FilePath -&gt; Eff es ()
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+FilePath -&gt; Eff es ()
+</span><a href="Elara.Stdlib.html#writeStdlib"><span class="hs-identifier hs-var">writeStdlib</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068573"><span class="hs-identifier hs-var">dir</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span id="local-6989586621680068361"><span class="annot"><a href="Elara.Stdlib.html#writeStdlib"><span class="hs-identifier hs-type">writeStdlib</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FileSystem</span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:&gt;</span></span><span> </span><span class="annot"><a href="#local-6989586621680068361"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eff</span></span><span> </span><span class="annot"><a href="#local-6989586621680068361"><span class="hs-identifier hs-type">es</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-99"></span><span id="writeStdlib"><span class="annot"><span class="annottext">writeStdlib :: forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+FilePath -&gt; Eff es ()
+</span><a href="Elara.Stdlib.html#writeStdlib"><span class="hs-identifier hs-var hs-var">writeStdlib</span></a></span></span><span> </span><span id="local-6989586621680068582"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068582"><span class="hs-identifier hs-var">dir</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(FilePath, ByteString)]
+-&gt; ((FilePath, ByteString) -&gt; Eff es ()) -&gt; Eff es ()
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Foldable t, Applicative f) =&gt;
+t a -&gt; (a -&gt; f b) -&gt; f ()
+</span><span class="hs-identifier hs-var">for_</span></span><span> </span><span class="annot"><span class="annottext">[(FilePath, ByteString)]
+</span><a href="Elara.Stdlib.html#embeddedStdlib"><span class="hs-identifier hs-var">embeddedStdlib</span></a></span><span> </span><span class="annot"><span class="annottext">(((FilePath, ByteString) -&gt; Eff es ()) -&gt; Eff es ())
+-&gt; ((FilePath, ByteString) -&gt; Eff es ()) -&gt; Eff es ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680068584"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068584"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680068585"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621680068585"><span class="hs-identifier hs-var">contents</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-100"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680068586"><span class="annot"><span class="annottext">file :: FilePath
+</span><a href="#local-6989586621680068586"><span class="hs-identifier hs-var hs-var hs-var">file</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068582"><span class="hs-identifier hs-var">dir</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; ShowS
+</span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068584"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-101"></span><span>    </span><span class="annot"><span class="annottext">Bool -&gt; FilePath -&gt; Eff es ()
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+Bool -&gt; FilePath -&gt; Eff es ()
+</span><span class="hs-identifier hs-var">createDirectoryIfMissing</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ShowS
+</span><span class="hs-identifier hs-var">takeDirectory</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068586"><span class="hs-identifier hs-var">file</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>    </span><span class="annot"><span class="annottext">FilePath -&gt; ByteString -&gt; Eff es ()
+forall (es :: [Effect]).
+(FileSystem :&gt; es) =&gt;
+FilePath -&gt; ByteString -&gt; Eff es ()
+</span><span class="hs-identifier hs-var">Eff.writeFile</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621680068586"><span class="hs-identifier hs-var">file</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621680068585"><span class="hs-identifier hs-var">contents</span></a></span><span>
+</span><span id="line-103"></span></pre></body></html>
