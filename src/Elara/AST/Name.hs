@@ -25,9 +25,6 @@ import Elara.Data.Pretty.Styles qualified as Style
 newtype ModuleName = ModuleName (NonEmpty Text)
     deriving (Data, Eq, Generic, Ord, Show)
 
-appendModule :: ModuleName -> Text -> ModuleName
-appendModule (ModuleName m) n = ModuleName (m <> pure n)
-
 {- | A valid Variable name. This includes anything that could appear in `let [name] = ...`
 In other words, a normal alphanumeric name, or a parenthesis wrapped operator name
 -}
@@ -277,9 +274,3 @@ instance HasName (Unqualified n) n where
 
 instance HasName Name Name where
     name = lensVL identity
-
-class ContainsName a n | a -> n where
-    containedName :: Getter a n
-
--- instance HasName a n => ContainsName a n where
---     containedName = castOptic name

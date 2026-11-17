@@ -48,12 +48,6 @@ varRefVal :: forall c n. _ => VarRef' c n -> VarRefImpl c n
 varRefVal (Global n) = mapVarRefImpl @c @(Qualified n) @n (view name) n
 varRefVal (Local n) = mapVarRefImpl @c @(Unique n) @n (view uniqueVal) n
 
-varRefVal' :: Traversal (VarRef n) (VarRef n') n n'
-varRefVal' = traversalVL $ \f ->
-    \case
-        (Global n) -> let n' = traverse (traverse f) n in Global <$> n'
-        (Local n) -> let n' = traverse (traverse f) n in Local <$> n'
-
 withName :: ToName n => VarRef n -> VarRef Name
 withName (Global n) = Global (toName <<$>> n)
 withName (Local n) = Local (toName <<$>> n)

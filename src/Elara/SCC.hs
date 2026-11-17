@@ -76,17 +76,6 @@ buildSCCs ReachableSubgraph{nodes, edges} =
             ]
      in stronglyConnComp triples
 
--- Find the SCC that contains the root binder
-sccContainingRoot :: ReachableSubgraph -> SCC (Qualified VarName)
-sccContainingRoot g@ReachableSubgraph{root} =
-    case find containsRoot (buildSCCs g) of
-        Just s -> s
-        Nothing -> AcyclicSCC root
-  where
-    containsRoot = \case
-        AcyclicSCC v -> v == root
-        CyclicSCC vs -> root `elem` vs
-
 -- | Collect free variable references from an expression (manual recursion replacing cosmosOf plate)
 valueDependencies :: NewS.ShuntedExpr -> HashSet (Qualified VarName)
 valueDependencies (New.Expr _ _ e') = case e' of
@@ -112,15 +101,3 @@ valueDependencies (New.Expr _ _ e') = case e' of
 -- | Collect pattern dependencies (currently always empty but kept for completeness)
 patternDependencies :: NewS.ShuntedExpr -> HashSet (Qualified VarName)
 patternDependencies _ = mempty
-
--- | Collect type dependencies from a shunted type
-typeDependencies :: NewS.ShuntedType -> HashSet (Qualified Name)
-typeDependencies (New.Type _ _ t') = case t' of
-    New.TUserDefined (TaggedLocate _ e) -> one (NameType <$> e)
-    New.TFun t1 t2 -> typeDependencies t1 <> typeDependencies t2
-    New.TApp t1 t2 -> typeDependencies t1 <> typeDependencies t2
-    New.TList t -> typeDependencies t
-    New.TRecord fields -> foldMap (typeDependencies . snd) (toList fields)
-    New.TVar _ -> mempty
-    New.TUnit -> mempty
-    New.TExtension v -> absurd v

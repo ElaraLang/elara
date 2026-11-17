@@ -22,12 +22,6 @@ simpleTok t len _ = do
     region <- createRegionStartingAt start
     emitAt t (RealSourceRegion region)
 
-inlineLayoutTok :: Token -> LexAction
-inlineLayoutTok t len seq = do
-    res <- simpleTok t len seq
-    triggerBlockLayout
-    pure res
-
 indentLayoutTok :: Token -> LexAction
 indentLayoutTok t len seq = do
     res <- simpleTok t len seq

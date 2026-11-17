@@ -35,7 +35,6 @@ import Data.Generics.Product (field)
 import Effectful
 import Effectful.Error.Static
 import Effectful.State.Static.Local
-import Error.Diagnose hiding (Hint, Note)
 import Optics (set, traverseOf_)
 
 import Data.Map qualified as Map
@@ -45,7 +44,7 @@ import Elara.AST.Instances ()
 import Elara.AST.Location
 import Elara.AST.Name (LowerAlphaName, Qualified, TypeName)
 import Elara.AST.Phase
-import Elara.AST.Region (SourceRegion, sourceRegionToDiagnosePosition, unlocated)
+import Elara.AST.Region (SourceRegion, unlocated)
 import Elara.Data.Kind
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique)
@@ -100,11 +99,6 @@ instance Pretty ConstraintOrigin where
         DefinitionKind n -> "Definition of" <+> pretty n
         PrimitiveConstraint s -> pretty s
         UserDefinedTypeConstraint n -> "User defined type" <+> pretty (n ^. unlocated)
-
-originPositions :: ConstraintOrigin -> [(Position, Marker (Doc AnsiStyle))]
-originPositions = \case
-    FunctionApplication (New.Type loc _ _) _ -> [(sourceRegionToDiagnosePosition $ getLocation loc, This "Function application")]
-    _ -> []
 
 data InferState = InferState
     { env :: Map (Either (Qualified TypeName) (Unique LowerAlphaName)) KindVar

@@ -158,23 +158,6 @@ tokenRepr = \case
     TokenLineSeparator -> "end of line"
     TokenEOF -> "end of input"
 
-unsafeTokenText :: Token -> Text
-unsafeTokenText = \case
-    TokenVariableIdentifier i -> i
-    TokenConstructorIdentifier i -> i
-    TokenOperatorIdentifier i -> i
-    t -> error ("unsafeTokenText: " <> show t)
-
-unsafeTokenInt :: Token -> Integer
-unsafeTokenInt = \case
-    TokenInt i -> i
-    t -> error ("unsafeTokenInt: " <> show t)
-
-unsafeTokenFloat :: Token -> Double
-unsafeTokenFloat = \case
-    TokenFloat f -> f
-    t -> error ("unsafeTokenFloat: " <> show t)
-
 isIndent :: Token -> Bool
 isIndent TokenIndent = True
 isIndent TokenDedent = True

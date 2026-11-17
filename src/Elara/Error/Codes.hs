@@ -76,17 +76,11 @@ defWithoutLet = "E1006"
 partialNamesNotEqual :: ErrorCode
 partialNamesNotEqual = "E1007"
 
-tooManyDeclarations :: ErrorCode
-tooManyDeclarations = "E1008"
-
 nonExistentModuleDeclaration :: ErrorCode
 nonExistentModuleDeclaration = "E1009"
 
 infixDeclarationWithoutValue :: ErrorCode
 infixDeclarationWithoutValue = "E10010"
-
-duplicateFixityAnnotations :: ErrorCode
-duplicateFixityAnnotations = "E10011"
 
 tuplePatternTooShort :: ErrorCode
 tuplePatternTooShort = "E10012"
@@ -99,9 +93,6 @@ blockEndsWithLet = "E10014"
 
 recursiveTypeAlias :: ErrorCode
 recursiveTypeAlias = "E10015"
-
-nativeDefUnsupported :: ErrorCode
-nativeDefUnsupported = "E10016"
 
 unknownCurrentModule :: ErrorCode
 unknownCurrentModule = "[Internal] E10017" -- todo: why is this internal but not an InternalError?
@@ -175,12 +166,6 @@ unknownVariable = "E3024"
 
 patternArityMismatch :: ErrorCode
 patternArityMismatch = "E3025"
-
-invokeStaticLocal :: ErrorCode
-invokeStaticLocal = "E4001"
-
-localVariableNotFound :: ErrorCode
-localVariableNotFound = "E4002"
 
 requiredDeclNotFound :: ErrorCode
 requiredDeclNotFound = "E5001"

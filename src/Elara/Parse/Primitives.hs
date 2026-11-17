@@ -6,10 +6,8 @@ module Elara.Parse.Primitives (
     fmapLocated,
     located,
     taggedLocated,
-    optionallyInParens,
     inParens,
     inBraces,
-    commaSeparated,
     oneOrCommaSeparatedInParens,
     token,
     token_,
@@ -100,14 +98,8 @@ locatedTokens' tokenList = do
 inParens :: Parser a -> Parser a
 inParens = between (token_ TokenLeftParen) (token_ TokenRightParen)
 
-optionallyInParens :: Parser a -> Parser a
-optionallyInParens p = inParens p <|> p
-
 inBraces :: Parser a -> Parser a
 inBraces = between (token_ TokenLeftBrace) (token_ TokenRightBrace)
-
-commaSeparated :: Parser a -> Parser [a]
-commaSeparated p = p `sepBy` token_ TokenComma
 
 oneOrCommaSeparatedInParens :: Parser a -> Parser [a]
 oneOrCommaSeparatedInParens p = inParens (p `sepBy` token_ TokenComma) <|> one <$> p

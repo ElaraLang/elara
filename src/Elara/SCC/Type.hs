@@ -1,5 +1,5 @@
 -- | Types for working with strongly connected components (SCCs)
-module Elara.SCC.Type (sccKeyFromSCC, sccKeyToSCC, SCCKey, ReachableSubgraph (..)) where
+module Elara.SCC.Type (sccKeyToSCC, SCCKey, ReachableSubgraph (..)) where
 
 import Data.Graph
 
@@ -38,12 +38,3 @@ sccKeyToSCC (SCCKey ms) =
         [] -> error "sccKeyToSCC: empty SCCKey"
         [v] -> AcyclicSCC v
         vs -> CyclicSCC vs
-
--- | Convert an 'SCC (Qualified VarName)' to its canonical 'SCCKey'
-sccKeyFromSCC :: SCC (Qualified VarName) -> SCCKey
-sccKeyFromSCC (AcyclicSCC v) = mkSCCKey (v :| [])
-sccKeyFromSCC (CyclicSCC vs) = mkSCCKey (fromList vs)
-
--- | Build a canonical key from a non-empty set/list of members
-mkSCCKey :: NonEmpty (Qualified VarName) -> SCCKey
-mkSCCKey (x :| xs) = SCCKey (fromList (x : xs))

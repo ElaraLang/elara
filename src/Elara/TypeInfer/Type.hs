@@ -44,7 +44,6 @@ module Elara.TypeInfer.Type (
     substitution,
     InferenceContext,
     ContextStack,
-    substituteContextStack,
     substituteAllContextStack,
 )
 where
@@ -404,16 +403,8 @@ instance Eq loc => Substitutable Type loc where
     substituteAll s (Lifted m) = Lifted (substituteAll s m)
     substituteAll s (Polytype (Forall loc tvs m)) = Polytype (Forall loc tvs (substituteAll s m))
 
-substituteContextStack :: UniqueTyVar -> Monotype loc -> Ctx.ContextStack (Monotype loc) -> Ctx.ContextStack (Monotype loc)
-substituteContextStack tv t (Ctx.ContextStack stack) = Ctx.ContextStack (substituteInferenceContext tv t <$> stack)
-
 substituteAllContextStack :: Eq loc => Substitution loc -> Ctx.ContextStack (Monotype loc) -> Ctx.ContextStack (Monotype loc)
 substituteAllContextStack subst (Ctx.ContextStack stack) = Ctx.ContextStack (substituteAllInferenceContext subst <$> stack)
-
-substituteInferenceContext :: UniqueTyVar -> Monotype loc -> Ctx.InferenceContext (Monotype loc) -> Ctx.InferenceContext (Monotype loc)
-substituteInferenceContext tv t = \case
-    Ctx.CheckingFunctionArgument pos name fType aType site -> Ctx.CheckingFunctionArgument pos name (substitute tv t fType) (substitute tv t aType) site
-    other -> other
 
 substituteAllInferenceContext :: Eq loc => Substitution loc -> Ctx.InferenceContext (Monotype loc) -> Ctx.InferenceContext (Monotype loc)
 substituteAllInferenceContext subst = \case

@@ -1,14 +1,9 @@
 -- Primitive core names
 module Elara.Prim.Core where
 
-import Effectful
-
-import Elara.AST.Name (NameLike (nameText), Qualified (..))
-import Elara.AST.VarRef
-import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..), TypeVariable (TypeVariable), Var (..))
-import Elara.Data.Kind (ElaraKind (TypeKind))
-import Elara.Data.Unique.Effect
-import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), falseCtorName, knownTypeInfo, mkPrimQual, trueCtorName, unitCtorName, wiredInPrimCtors)
+import Elara.AST.Name (NameLike (nameText))
+import Elara.Core (DataCon (..), TyCon (..), TyConDetails (..), Type (..))
+import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), WiredInPrim (..), falseCtorName, knownTypeInfo, trueCtorName, unitCtorName, wiredInPrimCtors)
 
 -- | Build a 'TyCon' for a wired-in primitive, deriving constructors from the registry
 wiredInTyCon :: WiredInPrim -> TyCon
@@ -62,9 +57,3 @@ falseCtor = DataCon falseCtorName (ConTy boolCon) boolCon
 
 unitCtor :: DataCon
 unitCtor = DataCon unitCtorName (ConTy unitCon) unitCon
-
-undefinedId :: UniqueGen :> r => Eff r Var
-undefinedId = do
-    a <- makeUnique (Just "a")
-    let tvA = TypeVariable a TypeKind
-    pure $ Id (Global $ mkPrimQual "undefined") (ForAllTy tvA (TyVarTy tvA)) Nothing
