@@ -82,6 +82,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Speed up CI where possible - ([623cab3](https://github.com/ElaraLang/elara/commit/623cab373fe42f59dbdd5cfc50ba487806975204)) 
 - Remove old run / release scripts - ([0f63432](https://github.com/ElaraLang/elara/commit/0f634329de50872bcad559cd610cbddd43b0df9a)) 
 - Replace `master` with `main` everywhere - ([c605962](https://github.com/ElaraLang/elara/commit/c605962386db64db6c6d724c91f27d854cd0bef5)) 
+- Run `nix fmt` - ([09dac05](https://github.com/ElaraLang/elara/commit/09dac05c0442d643a3d861e9ed4020b2863fcdf1)) 
 
 ### Build
 
