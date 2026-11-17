@@ -282,7 +282,11 @@ emitExpr expr = case expr of
     IR.PrimitiveLitBool True -> emit JVM.IConst1 >> pure (Just (PrimitiveClassInfoType JVM.JBoolean))
     IR.PrimitiveLitBool False -> emit JVM.IConst0 >> pure (Just (PrimitiveClassInfoType JVM.JBoolean))
     IR.LitUnit -> do
-        emit $ JVM.GetStatic (ClassInfoType "Elara.Prim.Unit") "unit" (ObjectFieldType "Elara.Prim.Unit")
+        -- unit lits become `new Elara.Prim.Unit()`
+        -- todo: have 1 single shared unit instance
+        emit $ JVM.New (ClassInfoType "Elara.Prim.Unit")
+        emit JVM.Dup
+        emit $ JVM.InvokeSpecial (ClassInfoType "Elara.Prim.Unit") "<init>" (MethodDescriptor [] VoidReturn)
         pure $ Just (ClassInfoType "Elara.Prim.Unit")
     IR.InstanceOf e t -> do
         emitExpr e
