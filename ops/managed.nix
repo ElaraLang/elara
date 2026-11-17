@@ -59,7 +59,7 @@
       };
       diagnose = {
         lower = "1.8.2";
-        upper = "2.6";
+        upper = "2.7";
       };
       directory = {
         lower = "1.3.9.0";
