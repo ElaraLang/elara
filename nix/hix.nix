@@ -14,7 +14,7 @@ let
     }:
     {
       h2jvm = nodoc (notest (source.root inputs.h2jvm));
-      diagnose = nodoc (enable "megaparsec-compat" (source.root inputs.diagnose));
+      diagnose = nodoc (source.root inputs.diagnose);
       dependent-hashmap = nodoc (source.root inputs.dependent-hashmap);
       co-log-effectful = nodoc (jailbreak unbreak);
       optics = nodoc notest; # test fails on ghc 9.12
