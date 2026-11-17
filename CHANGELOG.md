@@ -7,6 +7,11 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(stdlib)* Make elara source stdlib portable by bundling into binary - ([ecda257](https://github.com/ElaraLang/elara/commit/ecda257b9cd30d9723fad9a797a0607d38d35a8c)) 
+- Embed the JVM stdlib into the binary for more portabiltiy - ([36d2512](https://github.com/ElaraLang/elara/commit/36d2512b8200ece69f24c9a55bc73a4d0580e775)) 
+
 ### 🐛 Bug Fixes
 
 - *(examples)* Json parser type error - ([6d89800](https://github.com/ElaraLang/elara/commit/6d89800dab3c31bb46b8bb1dd2de8d794a7b1845)) 
@@ -31,6 +36,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(ast)* More stable query keys, avoid redundant recomputation by memoising where possible - ([791d8f1](https://github.com/ElaraLang/elara/commit/791d8f18ae26eef7aa16e19abea4acb2dce1c9ea)) 
 - *(ast)* Make `NodeLoc` a phantom newtype - ([e31c2ea](https://github.com/ElaraLang/elara/commit/e31c2eafe425c70c5835f3bd37e1653a85b74f04)) 
+- *(error)* Rethrow errors with their original callstack - ([79ce482](https://github.com/ElaraLang/elara/commit/79ce482328bc2e31ee69922a9593034366fc2a50)) 
 - *(error)* Rethrow errors with their original callstack - ([8d8c1d4](https://github.com/ElaraLang/elara/commit/8d8c1d414a74fee8f1ca4efb54f181eba67c4de1)) 
 - *(interpreter)* :coffin: Remove likely dead `getArgs` impl - ([b0cdfcd](https://github.com/ElaraLang/elara/commit/b0cdfcdd9369d7b10b773e51e0841fafec9747c5)) 
 - *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
@@ -84,6 +90,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Remove old run / release scripts - ([0f63432](https://github.com/ElaraLang/elara/commit/0f634329de50872bcad559cd610cbddd43b0df9a)) 
 - Replace `master` with `main` everywhere - ([c605962](https://github.com/ElaraLang/elara/commit/c605962386db64db6c6d724c91f27d854cd0bef5)) 
 - Run `nix fmt` - ([09dac05](https://github.com/ElaraLang/elara/commit/09dac05c0442d643a3d861e9ed4020b2863fcdf1)) 
+- Format - ([e0c5e98](https://github.com/ElaraLang/elara/commit/e0c5e98b19b15fd570524f6db17cbcbf0f80b82a)) 
 
 ### Build
 
