@@ -5,6 +5,7 @@ import Data.Set (difference, member)
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.State.Static.Local (State, get)
+
 import Elara.AST.Region
 import Elara.Logging
 import Elara.TypeInfer.Environment

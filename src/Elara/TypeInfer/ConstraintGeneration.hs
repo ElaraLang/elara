@@ -21,7 +21,6 @@ import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
 
 import Effectful.State.Extra (scoped)
-import Data.List (lookup)
 import Elara.AST.Location (AstNode (..), NodeLoc (..), TaggedLocate (..), wrap)
 import Elara.AST.Name (Qualified, TypeName, VarName (..))
 import Elara.AST.Phase (NoExtension (..))
