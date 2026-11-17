@@ -95,6 +95,12 @@ spec = describe "Golden tests" $ do
         it "Parse error surfaces as module not found" $
             runGoldenError defaultSettings "error-parse-missing-expr"
 
+        it "Match arms not indented" $
+            runGoldenError defaultSettings "error-parse-match-arms-not-indented"
+
+        it "If branch not indented" $
+            runGoldenError defaultSettings "error-parse-then-not-indented"
+
         it "Duplicate definition" $
             runGoldenError defaultSettings "error-duplicate-def"
 

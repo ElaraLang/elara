@@ -23,7 +23,7 @@ import Elara.AST.Phases.Frontend (FrontendExpr)
 import Elara.AST.Region (Located, SourceRegion, diagnosePositionToSourceRegion, sourceRegion, sourceRegionToDiagnosePosition, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Lexer.Token (Lexeme)
+import Elara.Lexer.Token (Lexeme, Token (TokenDedent, TokenLineSeparator))
 import Elara.Parse.Stream (TokenStream)
 import Prelude hiding (lines)
 
@@ -182,6 +182,12 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
             MP.ErrorIndentation{} -> []
             MP.ErrorCustom e -> parseErrorSources e
 
+    -- A layout break at end of input (e.g. an unclosed bracket) isn't an indentation problem
+    moreInputAfter :: MP.ParseError s e -> Bool
+    moreInputAfter err =
+        let (_, pos) = MP.reachOffset (MP.errorOffset err + 1) bundlePosState
+         in isJust (MP.take1_ (MP.pstateInput pos))
+
     errorLength :: MP.ParseError s e -> Int
     errorLength MP.TrivialError{} = 1
     errorLength (MP.FancyError _ errs) = sum (errorLength' <$> Set.toList errs)
@@ -198,11 +204,25 @@ diagnosticFromBundle isError code msg (fromMaybe [] -> trivialHints) MP.ParseErr
          in Position start end sourceName
 
     errorHints :: MP.ParseError s e -> [Diag.Note msg]
+    -- Layout tokens are virtual, so an unexpected one means a block was expected but the next line
+    -- was not indented far enough (e.g. match arms, or the body of an if/let/lambda)
+    errorHints err@(MP.TrivialError _ (Just (MP.Tokens ts)) _)
+        | any (isLayoutBreak . view unlocated) ts
+        , moreInputAfter err =
+            trivialHints
+                <> [ Diag.Note "A new line that isn't indented further than its enclosing block starts a new item, so it can't continue the previous construct."
+                   , Diag.Hint "If this line belongs to the construct above (e.g. match arms, or the body of an if/let/lambda), indent it further."
+                   ]
     errorHints MP.TrivialError{} = trivialHints
     errorHints (MP.FancyError _ errs) =
         Set.toList errs >>= \case
             MP.ErrorCustom e -> hints e
             _ -> mempty
+
+isLayoutBreak :: Token -> Bool
+isLayoutBreak TokenLineSeparator = True
+isLayoutBreak TokenDedent = True
+isLayoutBreak _ = False
 
 both :: (a -> b) -> (a, a) -> (b, b)
 both f ~(x, y) = (f x, f y)
