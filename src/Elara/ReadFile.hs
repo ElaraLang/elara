@@ -2,7 +2,7 @@ module Elara.ReadFile (FileContents (FileContents, fileContents), ReadFileError,
 
 import Effectful (Eff, (:>))
 import Effectful.Error.Static (Error)
-import Effectful.FileSystem (FileSystem, createDirectoryIfMissing, listDirectory)
+import Effectful.FileSystem (FileSystem, listDirectory)
 import System.FilePath (takeExtension, (</>))
 
 import Data.HashSet qualified as HashSet
@@ -57,8 +57,7 @@ instance Pretty ModulePathError where
 
 getInputFiles :: FileSystem :> es => CompilerSettings -> Eff es (HashSet FilePath)
 getInputFiles settings = do
-    createDirectoryIfMissing True "stdlib"
-    stdlib <- fmap ("stdlib/" <>) <$> listDirectory "stdlib"
+    stdlib <- fmap (settings.stdlibDir </>) <$> listDirectory settings.stdlibDir
     let source = fromMaybe "source.elr" settings.mainFile
 
     pure $ HashSet.fromList (stdlib <> [source])

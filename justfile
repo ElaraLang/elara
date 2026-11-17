@@ -4,21 +4,8 @@ ghc_flags := '--ghc-options=-O0'
 default:
     @just --list
 
-# Compile the Java Stdlib, skipping it when no .java file changed since the last build
-stdlib:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    stamp=build/stdlib.stamp
-    if [ -f "$stamp" ] && [ -z "$(/usr/bin/find jvm-stdlib -name '*.java' -newer "$stamp")" ]; then
-        exit 0
-    fi
-    javac $(/usr/bin/find jvm-stdlib -name '*.java')
-    mkdir -p build
-    touch "$stamp"
-
 clean:
-    /usr/bin/find jvm-stdlib -name "*.class" -delete
-    rm -f build/
+    rm -rf build/
 
 # Build everything
 build:
@@ -33,11 +20,10 @@ repl:
     cabal repl {{ ghc_flags }} elara
 
 # Run the project tests, optionally filtering with args (e.g. `just test -p Parse`)
-test *args: stdlib
+test *args:
     cabal test {{ ghc_flags }} elara-test --test-options='{{ args }}'
 
 # Run an Elara file, e.g. `just run examples/json_parser.elr --target jvm`
 [arg('target', long='target', pattern='interp|jvm')]
 run file target='interp':
-    {{ if target == 'jvm' { 'just stdlib' } else { '' } }} # only build java stdlib if required
     cabal run {{ ghc_flags }} elara -- run {{ file }} --target {{ target }}

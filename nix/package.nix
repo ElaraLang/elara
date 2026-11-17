@@ -12,16 +12,7 @@
     overrideAttrs (old: {
       unfilteredSrc = ../.;
 
-      nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.jdk ]; # jdk is only needed for checks, breaks static building otherwise
-
-      preCheck = ''
-        ${old.preCheck or ""}
-        echo "Compiling Java standard library..."
-
-        JAVA_FILES=$(${pkgs.findutils}/bin/find jvm-stdlib -name "*.java")
-
-        javac $JAVA_FILES
-      '';
+      nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.jdk ];
     }) drv;
 
   cabal = {
@@ -39,6 +30,7 @@
 
       extra-source-files = [
         "jvm-stdlib/**/*.java"
+        "stdlib/**/*.elr" # embedded into the executable
       ];
 
       flags.static = {
@@ -143,9 +135,6 @@
     ];
     component = {
       other-modules = [ "Paths_elara" ];
-      # only the executable's link: a global -optl=-static would also hit the temporary .so GHC
-      # links to run TH against elara's own modules
-      # verbatim rather than hpack's `when`, which would repeat Paths_elara inside the conditional
       verbatim = ''
         if flag(static)
           ld-options: -static

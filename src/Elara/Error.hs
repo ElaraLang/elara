@@ -155,5 +155,5 @@ runWriterAsElaraWarning m = do
 
     pure result
 
-throwElaraError :: (Exception e, ElaraDiagnostic e, Eff.Error ElaraError :> es) => e -> Eff es a
+throwElaraError :: (Exception e, ElaraDiagnostic e, Eff.Error ElaraError :> es, HasCallStack) => e -> Eff es a
 throwElaraError = Eff.throwError . ElaraError

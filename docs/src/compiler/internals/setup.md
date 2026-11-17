@@ -3,7 +3,7 @@
 This section provides instructions on how to set up the Elara compiler in your development environment.
 
 The recommended workflow to build is with Nix, as this will ensure you have the correct versions of all dependencies and tools.
-If you don't have / want Nix, you _should_ be able to get away with a manually installed GHC 9.12.2 and Cabal
+If you don't have / want Nix, you _should_ be able to get away with a manually installed GHC 9.12.2, Cabal, and a JDK.
 
 ### Building with Nix
 

@@ -62,6 +62,7 @@ import Elara.JVM.Emit.State
 import Elara.JVM.Emit.Types (stringTypeName)
 import Elara.JVM.Error
 import Elara.JVM.IR as IR
+import Elara.JVM.Version (targetJavaVersion)
 import Elara.Logging
 
 import Elara.Prim qualified as Prim
@@ -69,7 +70,7 @@ import Elara.Prim qualified as Prim
 -- | Emit an IR Module to a list of ClassFiles
 emitIRModule :: (StructuredDebug :> r, Eff.Error JVMLoweringError :> r) => IR.Module -> Eff r [ClassFile]
 emitIRModule (IR.Module moduleName classes) = do
-    for classes $ fmap fst . runClassBuilder moduleName java8 . emitIRClass
+    for classes $ fmap fst . runClassBuilder moduleName targetJavaVersion . emitIRClass
 
 -- | Emit a single IR Class to a ClassFile
 emitIRClass :: (StructuredDebug :> r, ClassBuilder :> r, Eff.Error JVMLoweringError :> r) => IR.Class -> Eff r ()

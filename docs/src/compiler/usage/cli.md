@@ -18,7 +18,27 @@ Compiles the Elara source code.
   Compiles and runs the Elara source code
 
 By default, this runs in interpreted mode. You can use `--target jvm` to compile to JVM bytecode instead.
-For example, `elara run source.elr --target jvm`
+For example, `elara run source.elr --target jvm`. This needs Java 8 or newer on your `PATH` to run the compiled bytecode.
+
+- `stdlib path`
+  Prints the directory the standard library is loaded from.
+
+- `stdlib eject [DIR]`
+  Copies the bundled standard library into a new directory (`stdlib` by default), so you can customise it.
+  
+  > [!NOTE]
+  > This is unlikely to be useful for the average user, but helpful for testing if modifying the standard library!
+
+## Standard library
+
+The standard library is bundled into the `elara` executable and unpacked into your `$XDG_CACHE` (or MacOS/Windows equivalents) directory on first use, so you can run `elara` from any directory.
+To use a different copy, for example one made with `elara stdlib eject`, set one of these:
+
+- the `--stdlib-dir DIR` flag
+- the `ELARA_STDLIB_DIR` environment variable
+- `stdlib-dir` in the config file
+
+The native Java part of the standard library is bundled too. It can't be customised (for now?), and is written into the `build` directory alongside your compiled classes, so `java -cp build Main` should just work!
 
 ## Dumping
 
