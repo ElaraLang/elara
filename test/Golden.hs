@@ -57,6 +57,9 @@ spec = describe "Golden tests" $ do
         it "Option type and matching" $
             runGolden defaultSettings backend "option-type"
 
+        it "Constructor patterns in annotated polymorphic operators" $
+            runGolden defaultSettings backend "adt-operator-patterns"
+
         it "Higher-order functions (identity, const, flip)" $
             runGolden defaultSettings backend "higher-order"
 

@@ -9,10 +9,15 @@ module Elara.TypeInfer.Type (
 
     -- * Types
     Type (..),
-    Polytype (..),
+    Polytype,
+    SchemeError (..),
     Monotype (..),
-    typeLoc,
+    closeOver,
+    openPolytype,
+    polytypeBinders,
     polytypeLoc,
+    schemeFreeVars,
+    typeLoc,
     monotypeLoc,
     functionMonotypeResult,
     functionMonotypeArgs,
@@ -28,6 +33,7 @@ module Elara.TypeInfer.Type (
 
     -- * Data Constructors
     DataCon,
+    mkConstructorScheme,
 
     -- * Axiom Schemes
     AxiomScheme (..),
@@ -48,7 +54,7 @@ import Data.Map qualified as Map
 
 import Elara.AST.Name
 import Elara.AST.Region (SourceRegion, generatedSourceRegion)
-import Elara.Data.Pretty (Pretty (..), hsep, parens)
+import Elara.Data.Pretty (Pretty (..), hsep, parens, (<+>))
 import Elara.TypeInfer.Unique
 
 import Elara.Data.Pretty.Styles qualified as Style
@@ -66,16 +72,99 @@ data Type loc
     | Lifted (Monotype loc)
     deriving (Eq, Generic, Ord, Show)
 
+{- | A type scheme @∀ a b. τ@.
+The constructor is not exported, so use 'closeOver' to build a type scheme.
+-}
 data Polytype loc
-    = Forall loc [UniqueTyVar] (Constraint loc) (Monotype loc)
+    = Forall
+        loc
+        -- | what to universally quantify over
+        [UniqueTyVar]
+        -- | the underlying monotype @τ@ that is quantified over
+        (Monotype loc)
     deriving (Eq, Generic, Ord, Show)
+
+-- | Why a type scheme could not be built
+data SchemeError loc
+    = {- | quantified variables occur in the body as rigid (skolem) variables,
+      so 'openPolytype' could never instantiate them
+      -}
+      QuantifiedSkolem loc [UniqueTyVar] (Monotype loc)
+    deriving (Eq, Generic, Show)
+
+instance Pretty (SchemeError loc) where
+    pretty (QuantifiedSkolem _ vars body) =
+        "Internal error: quantified type variable"
+            <> (if length vars == 1 then "" else "s")
+                <+> hsep (pretty <$> vars)
+                <+> "occur(s) as skolems in the scheme"
+                <+> pretty body
+
+{- | Quantify over the given unification variables, i.e. taking @a, b, c@ and @τ@ and producing @∀ a b c. τ@
+
+Fails if any unification variables occur in @τ@ as a skolem, as such a scheme can never be instantiated.
+This is a slightly overcautious approach to fixing accidental confusion of skolems/unification vars
+which has caused lots of issues in the past :)
+-}
+closeOver ::
+    loc ->
+    -- | unification variables to close over, e.g. @a b c@
+    [UniqueTyVar] ->
+    -- | the monotype @τ@
+    Monotype loc ->
+    Either (SchemeError loc) (Polytype loc)
+closeOver loc binders body = case [u | SkolemVar u <- varsOf body, u `elem` binders] of
+    [] -> Right (Forall loc binders body)
+    rigid -> Left (QuantifiedSkolem loc rigid body)
+
+{- | Turn a type scheme into a monotype by replacing each quantified unification with the result of some function 'f'.
+This generalises e.g. instantiation (replacing each variable with a fresh unification var), 'skolemise' (replace each var with a skolem),
+rendering (replace any var with a prettier version), etc
+-}
+openPolytype :: (UniqueTyVar -> TypeVariable) -> Polytype loc -> Monotype loc
+openPolytype f (Forall _ binders body) = mapVars open body
+  where
+    open = \case
+        UnificationVar u | u `elem` binders -> f u
+        tv -> tv
+
+-- | The variables a scheme quantifies over, in order
+polytypeBinders :: Polytype loc -> [UniqueTyVar]
+polytypeBinders (Forall _ binders _) = binders
+
+-- | The variables that occur in a scheme but are not quantified by it
+schemeFreeVars :: Polytype loc -> [TypeVariable]
+schemeFreeVars (Forall _ binders body) = filter (not . quantified) (varsOf body)
+  where
+    quantified = \case
+        UnificationVar u -> u `elem` binders
+        SkolemVar _ -> False
+
+-- | Build the scheme of a constructor @C : arg1 -> ... argn -> T v1 ... vn@ of the type @T v1 ... vn@.
+mkConstructorScheme ::
+    -- | where the constructor is declared
+    loc ->
+    -- | the type the constructor constructs, e.g. @T@
+    Qualified TypeName ->
+    -- | the type's parameters, e.g. @v1 ... vn@
+    [UniqueTyVar] ->
+    -- | the constructor's argument types, e.g. @arg1, ... argn@
+    [Monotype loc] ->
+    {- | In the case of a success, e.g. @∀ arg1 ... argn. arg1 -> ... -> argn -> T v1 ... vn@.
+    Obviously, variables will only be quantified when they are type variables
+    -}
+    Either (SchemeError loc) (Polytype loc)
+mkConstructorScheme loc tyName params args =
+    closeOver loc params (foldr (Function loc) result args)
+  where
+    result = TypeConstructor loc tyName ((\v -> TypeVar loc (UnificationVar v) []) <$> params)
 
 typeLoc :: Type loc -> loc
 typeLoc (Polytype p) = polytypeLoc p
 typeLoc (Lifted m) = monotypeLoc m
 
 polytypeLoc :: Polytype loc -> loc
-polytypeLoc (Forall loc _ _ _) = loc
+polytypeLoc (Forall loc _ _) = loc
 
 -- | A constraint Q
 data Constraint loc
@@ -195,6 +284,20 @@ data Monotype (loc :: Kind.Type)
 
 instance Generic loc => Plated (Monotype loc) (Monotype loc)
 
+-- | Rewrite the variables of a type
+mapVars :: (TypeVariable -> TypeVariable) -> Monotype loc -> Monotype loc
+mapVars f = \case
+    TypeVar loc v args -> TypeVar loc (f v) (mapVars f <$> args)
+    TypeConstructor loc c args -> TypeConstructor loc c (mapVars f <$> args)
+    Function loc a b -> Function loc (mapVars f a) (mapVars f b)
+
+-- | Every variable occurrence in a type
+varsOf :: Monotype loc -> [TypeVariable]
+varsOf = \case
+    TypeVar _ v args -> v : concatMap varsOf args
+    TypeConstructor _ _ args -> concatMap varsOf args
+    Function _ a b -> varsOf a <> varsOf b
+
 monotypeLoc :: Monotype loc -> loc
 monotypeLoc (TypeVar loc _ _) = loc
 monotypeLoc (TypeConstructor loc _ _) = loc
@@ -296,10 +399,10 @@ instance Substitutable Substitution loc where
 
 instance Eq loc => Substitutable Type loc where
     substitute tv t (Lifted m) = Lifted (substitute tv t m)
-    substitute tv t (Polytype (Forall loc tvs c m)) = Polytype (Forall loc tvs (substitute tv t c) (substitute tv t m))
+    substitute tv t (Polytype (Forall loc tvs m)) = Polytype (Forall loc tvs (substitute tv t m))
 
     substituteAll s (Lifted m) = Lifted (substituteAll s m)
-    substituteAll s (Polytype (Forall loc tvs c m)) = Polytype (Forall loc tvs (substituteAll s c) (substituteAll s m))
+    substituteAll s (Polytype (Forall loc tvs m)) = Polytype (Forall loc tvs (substituteAll s m))
 
 substituteContextStack :: UniqueTyVar -> Monotype loc -> Ctx.ContextStack (Monotype loc) -> Ctx.ContextStack (Monotype loc)
 substituteContextStack tv t (Ctx.ContextStack stack) = Ctx.ContextStack (substituteInferenceContext tv t <$> stack)
@@ -322,7 +425,7 @@ instance Pretty loc => Pretty (Type loc) where
     pretty (Lifted m) = pretty m
 
 instance Pretty loc => Pretty (Polytype loc) where
-    pretty (Forall _ tv c m) = "∀" <> hsep (pretty <$> tv) <> ". " <> pretty c <> " ⇒ " <> pretty m
+    pretty p = "∀" <> hsep (pretty <$> polytypeBinders p) <> ". " <> pretty (openPolytype UnificationVar p)
 
 instance Pretty loc => Pretty (Constraint loc) where
     pretty EmptyConstraint{} = Style.builtin "𝜖"

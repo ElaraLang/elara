@@ -11,7 +11,6 @@ module Elara.TypeInfer (
 )
 where
 
-import Data.Generics.Product (HasType (typed))
 import Data.Graph (SCC, flattenSCC)
 import Effectful
 import Effectful.Error.Static
@@ -46,13 +45,13 @@ import Elara.Shunt ()
 import Elara.TypeInfer.ConstraintGeneration
 import Elara.TypeInfer.Context (emptyContextStack)
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind, kindedToTypedType)
-import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addType', emptyLocalTypeEnvironment, emptyTypeEnvironment)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addConstructorType, addTermType, emptyLocalTypeEnvironment, emptyTypeEnvironment, schemeOrThrow)
 import Elara.TypeInfer.Error (UnifyError (..))
 import Elara.TypeInfer.Ftv (Fuv (..))
 import Elara.TypeInfer.Generalise
 import Elara.TypeInfer.Monad
 import Elara.TypeInfer.Substitute
-import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype (..), Substitutable (..), Substitution (..), Type (..), TypeVariable (..), monotypeLoc, simpleEquality, typeLoc)
+import Elara.TypeInfer.Type (Constraint (..), Monotype (..), Polytype, Substitutable (..), Type (..), TypeVariable (..), mkConstructorScheme, openPolytype, simpleEquality, typeLoc)
 import Elara.TypeInfer.Unique (UniqueTyVar, makeUniqueTyVar)
 
 import Elara.AST.Phases.Kinded qualified as NewK
@@ -172,7 +171,7 @@ runGetTypeAliasQuery name = do
             New.TypeDeclarationBody n _ _ _ _ _ -> (n ^. (unlocated % unqualified)) == tn
             _ -> False
 
-seedConstructorsFor :: (HasCallStack, QueryEffects r, Error ElaraError :> r, Writer [ElaraWarning] :> r, Rock.Rock Query :> r, StructuredDebug :> r, State Kind.InferState :> r, State (TypeEnvironment SourceRegion) :> r, State (LocalTypeEnvironment SourceRegion) :> r, Error KindInferError :> r, Error TypeConvertError :> r, Error (UnifyError SourceRegion) :> r) => ModuleName -> Eff r ()
+seedConstructorsFor :: (HasCallStack, QueryEffects r, Error ElaraError :> r, Writer [ElaraWarning] :> r, Rock.Rock Query :> r, StructuredDebug :> r, State Kind.InferState :> r, State (TypeEnvironment SourceRegion) :> r, State (LocalTypeEnvironment SourceRegion) :> r, Error KindInferError :> r, Error TypeConvertError :> r, Error (InferError SourceRegion) :> r, Error (UnifyError SourceRegion) :> r) => ModuleName -> Eff r ()
 seedConstructorsFor moduleName = logDebugWith ("seedConstructorsFor: " <> pretty moduleName) $ do
     -- Fetch all declarations in the module
     mod <- Rock.fetch $ Elara.Query.ModuleByName @Shunted moduleName
@@ -192,23 +191,11 @@ seedConstructorsFor moduleName = logDebugWith ("seedConstructorsFor: " <> pretty
                 _ <- astTypeToInferType t
                 pass -- we don't need to do anything with an alias i think
             New.ADT ctors -> do
-                let tyVars' = fmap createTypeVar typeVars
                 let nameLoc = view sourceRegion name
-                let typeConstructorType =
-                        TypeConstructor
-                            nameLoc
-                            (name ^. unlocated)
-                            (fmap ((\tv -> TypeVar nameLoc tv []) . UnificationVar) tyVars')
-
-                let inferCtor (ctorName, t :: [KindedType]) = do
-                        t' <- traverse astTypeToInferTypeWithKind t
-                        let ctorType =
-                                foldr (Function nameLoc . fst) typeConstructorType t'
-                        addType' (DataConKey (ctorName ^. unlocated)) (Polytype (Forall nameLoc tyVars' (EmptyConstraint (monotypeLoc ctorType)) ctorType))
-
-                        pure (ctorName, t')
-
-                for_ ctors inferCtor
+                for_ ctors $ \(ctorName, argTypes :: [KindedType]) -> do
+                    args <- traverse astTypeToInferType argTypes
+                    scheme <- schemeOrThrow (mkConstructorScheme nameLoc (name ^. unlocated) (fmap createTypeVar typeVars) args)
+                    addConstructorType (ctorName ^. unlocated) scheme
   where
     extractTypeDecl :: New.Declaration SourceRegion Shunted -> Maybe (TaggedLocate TypeNode SourceRegion (Qualified TypeName), [TaggedLocate TypeNode SourceRegion (Unique LowerAlphaName)], New.TypeDeclaration SourceRegion Shunted, [New.Annotation SourceRegion Shunted])
     extractTypeDecl (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ body'))) =
@@ -303,7 +290,7 @@ runTypeCheckedDeclarationQuery name = do
                 -- Only seed if it's not part of the current recursive cycle
                 unless (dep `Set.member` sccSet) $ do
                     t <- Rock.fetch (Elara.Query.TypeOf (TermVarKey dep))
-                    addType' (TermVarKey dep) t
+                    addTermType dep t
 
             -- Values might use constructors,
             -- so we need to ensure their types are in the environment.
@@ -393,7 +380,7 @@ seedDeclaration (New.Declaration _ (New.Declaration' _ (New.DeclarationBody _ bo
             -- its quantified variables so they cannot unify with concrete types.
             expectedAsMono <- skolemise expected
             logDebug $ "Skolemised expected type of" <+> pretty valueName <+> ": " <> pretty expectedAsMono
-            addType' (TermVarKey (valueName ^. unlocated)) expected
+            addTermType (valueName ^. unlocated) expected
         _ -> pass -- TODO
 
 inferDeclarationScheme :: forall r. (InferPipelineEffects r, Infer SourceRegion r) => New.Declaration SourceRegion Shunted -> Eff r (Polytype SourceRegion)
@@ -401,7 +388,7 @@ inferDeclarationScheme (New.Declaration _ (New.Declaration' _ (New.DeclarationBo
     New.ValueDeclaration valueName valueExpr _ _ _ _ -> logDebugWith ("inferDeclarationScheme: " <> pretty valueName) $ do
         expectedType <- lookupType (TermVarKey (valueName ^. unlocated))
         (_, polytype) <- inferValue (valueName ^. unlocated) valueExpr (Just expectedType)
-        addType' (TermVarKey (valueName ^. unlocated)) (Polytype polytype)
+        addTermType (valueName ^. unlocated) (Polytype polytype)
         logDebug $ "Inferred type for " <> pretty valueName <> ": " <> pretty polytype
         pure polytype
     _ -> error "only value declarations are supported currently"
@@ -425,7 +412,7 @@ inferDeclaration (New.Declaration dloc (New.Declaration' mn (New.DeclarationBody
             logDebug $ "Expected type for " <> pretty name <> ": " <> pretty expectedType
             (typedExpr, polytype) <- inferValue (name ^. unlocated) e expectedType
             logDebug $ "Inferred type for " <> pretty name <> ": " <> pretty polytype
-            addType' (TermVarKey (name ^. unlocated)) (Polytype polytype)
+            addTermType (name ^. unlocated) (Polytype polytype)
             typedAnns <- traverse inferAnnotation anns
 
             pure (New.ValueDeclaration name typedExpr () () (Polytype polytype) typedAnns)
@@ -447,23 +434,8 @@ inferDeclaration (New.Declaration dloc (New.Declaration' mn (New.DeclarationBody
                             kind
                             typedAnns
                         )
-                New.ADT ctors -> do
+                New.ADT _ctors -> do
                     let tyVars' = fmapToSnd createTypeVar tyVars
-                    let typeConstructorType =
-                            TypeConstructor
-                                (getLocation $ stripTag name)
-                                (name ^. unlocated)
-                                (fmap (\(tyVarLocation, tyVar) -> TypeVar (getLocation $ stripTag tyVarLocation) (SkolemVar tyVar) []) tyVars')
-
-                    let inferCtor (ctorName, t :: [KindedType]) = do
-                            t' <- traverse astTypeToInferTypeWithKind t
-                            let ctorType =
-                                    foldr (Function (getLocation $ stripTag ctorName) . fst) typeConstructorType t'
-                            addType' (DataConKey (stripTag ctorName ^. unlocated)) (Polytype (Forall (getLocation $ stripTag ctorName) (snd <$> tyVars') (EmptyConstraint (monotypeLoc ctorType)) ctorType))
-
-                            pure (ctorName, t')
-
-                    traverse_ inferCtor ctors
                     typedAnns <- traverse inferAnnotation anns
 
                     pure
@@ -527,7 +499,7 @@ inferValue valueName valueExpr expectedType = do
     -- When we have an expected type (e.g., from a user annotation), skolemise
     -- its quantified variables so they cannot unify with concrete types.
     expectedAsMono <- skolemise expected
-    addType' (TermVarKey valueName) expected
+    addTermType valueName expected
     ((typedExpr, t), constraint) <- runWriter $ generateConstraints valueExpr
 
     let constraint' = constraint <> simpleEquality (typeLoc expected) expectedAsMono t
@@ -563,8 +535,4 @@ exprLocation (New.Expr loc _ _) = loc
 skolemise :: forall r. Type SourceRegion -> Eff r (Monotype SourceRegion)
 skolemise = \case
     Lifted t -> pure t
-    Polytype (Forall loc tyVars _ t) -> do
-        -- Build a substitution mapping each quantified variable α to a rigid skolem #α
-        let pairs = zip (fmap (view typed) tyVars) ((\tv -> TypeVar loc tv []) . SkolemVar <$> tyVars)
-            subst = Substitution $ fromList @(Map _ _) pairs
-        pure $ substituteAll subst t
+    Polytype p -> pure (openPolytype SkolemVar p)

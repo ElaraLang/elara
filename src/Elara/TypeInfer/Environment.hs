@@ -43,8 +43,17 @@ instance Pretty TypeEnvKey where
 addType :: TypeEnvKey -> Type loc -> TypeEnvironment loc -> TypeEnvironment loc
 addType key ty (TypeEnvironment env) = TypeEnvironment (Map.insert key ty env)
 
-addType' :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Type loc -> Eff r ()
-addType' key ty = modify (addType key ty)
+-- | Record the type of a term variable
+addTermType :: State (TypeEnvironment loc) :> r => Qualified VarName -> Type loc -> Eff r ()
+addTermType name ty = modify (addType (TermVarKey name) ty)
+
+-- | Record the type of a data constructor.
+addConstructorType :: State (TypeEnvironment loc) :> r => DataCon -> Polytype loc -> Eff r ()
+addConstructorType con scheme = modify (addType (DataConKey con) (Polytype scheme))
+
+-- | Fail with an 'InferError' if a scheme could not be built
+schemeOrThrow :: (Error (InferError loc) :> r, Show loc) => Either (SchemeError loc) a -> Eff r a
+schemeOrThrow = either (throwError . InvalidScheme) pure
 
 lookupTypeMaybe :: State (TypeEnvironment loc) :> r => TypeEnvKey -> Eff r (Maybe (Type loc))
 lookupTypeMaybe key = do
@@ -101,6 +110,8 @@ lookupLocalVar name = get >>= lookupLocalVarType name
 data InferError loc
     = UnboundTermVar TypeEnvKey (TypeEnvironment loc)
     | UnboundLocalVar (Unique VarName) (LocalTypeEnvironment loc)
+    | -- | a compiler bug: inference built an ill-formed type scheme
+      InvalidScheme (SchemeError loc)
     deriving (Generic, Show)
 
 instance Pretty loc => Pretty (InferError loc)
@@ -114,6 +125,11 @@ instance ElaraDiagnostic (InferError SourceRegion) where
     diagnosticMessage (UnboundTermVar (TermVarKey key) _) = "Unbound term variable" <+> pretty key
     diagnosticMessage (UnboundTermVar (DataConKey key) _) = "Unbound data constructor" <+> pretty key
     diagnosticMessage (UnboundLocalVar name _) = "Unbound local variable" <+> pretty name
+    diagnosticMessage (InvalidScheme e) = pretty e
+
+    diagnosticMarkers (InvalidScheme (QuantifiedSkolem l _ _)) = [ElaraMarker l PrimaryMarker "Scheme built here"]
+    diagnosticMarkers _ = []
 
     diagnosticNotes (UnboundTermVar _ (TypeEnvironment env)) = [Elara.Error.Note $ "Possible names:" <+> listToText (pretty <$> Map.keys env)]
     diagnosticNotes (UnboundLocalVar _ (LocalTypeEnvironment env)) = [Elara.Error.Note $ "Possible names:" <+> listToText (pretty <$> Map.keys env)]
+    diagnosticNotes (InvalidScheme _) = []

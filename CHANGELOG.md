@@ -10,6 +10,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 ### 🐛 Bug Fixes
 
 - *(examples)* Json parser type error - ([6d89800](https://github.com/ElaraLang/elara/commit/6d89800dab3c31bb46b8bb1dd2de8d794a7b1845)) 
+- *(examples)* Make source.elr compile - ([5bfd77a](https://github.com/ElaraLang/elara/commit/5bfd77a3428c026f8545c0c34f5cf2efe6523d19)) 
 - *(nix)* Pin managed latest/lower compiler to ghc912 - ([ab19502](https://github.com/ElaraLang/elara/commit/ab19502ae263ee86911417f6349498c8a515752f)) 
 - *(nix)* Strip GHC out of the elara release binary's closure - ([a6c8f47](https://github.com/ElaraLang/elara/commit/a6c8f47b992f8f42d1d7663556e16abbeb31d2fd)) 
 - *(nix)* Drop stale hedgehog 1.7 pin from managed lower overrides - ([f259891](https://github.com/ElaraLang/elara/commit/f25989149be40f57c11769bd0bc63782889582e3)) 
@@ -24,11 +25,13 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(type-infer)* Stop local lets over-generalising over variables - ([5b21fb2](https://github.com/ElaraLang/elara/commit/5b21fb200ec395a12757e3d20a09bd7f90cf0e87)) 
 - *(type-infer)* Generalise recursive local lets for consistency - ([4fa0367](https://github.com/ElaraLang/elara/commit/4fa03672ab7e215499975ca95336392a7f332e85)) 
 - *(type-infer)* Report the right argument position and function type in type mismatches - ([ef659c9](https://github.com/ElaraLang/elara/commit/ef659c92cff777bb395b50503c313da6dd13879c)) 
+- *(type-infer)* Register constructor schemes once and validate schemes at construction - ([61d7497](https://github.com/ElaraLang/elara/commit/61d749753a9db4ffed3bba2ba8e1c78194e040ff)) 
 
 ### 🚜 Refactor
 
 - *(ast)* More stable query keys, avoid redundant recomputation by memoising where possible - ([791d8f1](https://github.com/ElaraLang/elara/commit/791d8f18ae26eef7aa16e19abea4acb2dce1c9ea)) 
 - *(ast)* Make `NodeLoc` a phantom newtype - ([e31c2ea](https://github.com/ElaraLang/elara/commit/e31c2eafe425c70c5835f3bd37e1653a85b74f04)) 
+- *(error)* Rethrow errors with their original callstack - ([8d8c1d4](https://github.com/ElaraLang/elara/commit/8d8c1d414a74fee8f1ca4efb54f181eba67c4de1)) 
 - *(interpreter)* :coffin: Remove likely dead `getArgs` impl - ([b0cdfcd](https://github.com/ElaraLang/elara/commit/b0cdfcdd9369d7b10b773e51e0841fafec9747c5)) 
 - *(nix)* Drop unused elara-bin output, flatten elara-static overrides - ([a8cdad2](https://github.com/ElaraLang/elara/commit/a8cdad20ae6249153636e44cfb2e14919132ae8d)) 
 - *(nix)* Split nix config into multiple files - ([42b072a](https://github.com/ElaraLang/elara/commit/42b072aea19fb8314824a20a4e5f8e458e94a122)) 
@@ -80,6 +83,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Speed up CI where possible - ([623cab3](https://github.com/ElaraLang/elara/commit/623cab373fe42f59dbdd5cfc50ba487806975204)) 
 - Remove old run / release scripts - ([0f63432](https://github.com/ElaraLang/elara/commit/0f634329de50872bcad559cd610cbddd43b0df9a)) 
 - Replace `master` with `main` everywhere - ([c605962](https://github.com/ElaraLang/elara/commit/c605962386db64db6c6d724c91f27d854cd0bef5)) 
+- Run `nix fmt` - ([09dac05](https://github.com/ElaraLang/elara/commit/09dac05c0442d643a3d861e9ed4020b2863fcdf1)) 
 
 ### Build
 
