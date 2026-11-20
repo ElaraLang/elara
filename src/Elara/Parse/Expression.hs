@@ -227,12 +227,12 @@ charL = locatedExpr (EChar <$> charLiteral) <?> "char"
 match :: ExpressionGrammar -> Parser FrontendExpr
 match grammar = locatedExpr $ do
     token_ TokenMatch
-    expr <- exprBlock grammar.pElement <?> "expression after 'match'"
+    expr <- exprBlock TokenMatch grammar.pElement <?> "expression after 'match'"
     token_ TokenWith <?> "'with' keyword after match expression"
 
     let emptyMatchBody =
             token_ TokenLeftBrace *> token_ TokenRightBrace $> []
-    let normalMatchBody = toList <$> block identity one (matchCase <?> "match case")
+    let normalMatchBody = toList <$> block TokenWith identity one (matchCase <?> "match case")
     cases <-
         (try emptyMatchBody <?> "empty match body")
             <|> (normalMatchBody <?> "match body")
@@ -243,7 +243,7 @@ match grammar = locatedExpr $ do
         case' <- patParser
         token_ TokenRightArrow
 
-        expr <- exprBlock (grammar.pElement <?> "match case expression")
+        expr <- exprBlock TokenRightArrow (grammar.pElement <?> "match case expression")
         pure (case', expr)
 
 lambda :: ExpressionGrammar -> Parser FrontendExpr
@@ -259,7 +259,7 @@ lambda grammar = locatedExpr $ do
                 *> customFailure
                     (EmptyLambda emptyLambdaLoc)
 
-    res <- failEmptyBody <|> exprBlock grammar.pElement <?> "lambda body"
+    res <- failEmptyBody <|> exprBlock TokenRightArrow grammar.pElement <?> "lambda body"
     let Located _ patterns = args
     pure $ EExtension (FrontendMultiLam patterns res)
 
@@ -269,10 +269,10 @@ ifElse grammar = locatedExpr $ do
     condition <- grammar.pExpression <?> "condition after 'if'"
     _ <- optional lineSeparator
     token_ TokenThen <?> "'then' keyword after condition"
-    thenBranch <- exprBlock grammar.pElement <?> "expression after 'then'"
+    thenBranch <- exprBlock TokenThen grammar.pElement <?> "expression after 'then'"
     _ <- optional lineSeparator
     token_ TokenElse <?> "'else' branch"
-    elseBranch <- exprBlock grammar.pElement <?> "expression after 'else'"
+    elseBranch <- exprBlock TokenElse grammar.pElement <?> "expression after 'else'"
     pure (EIf condition thenBranch elseBranch)
 
 letPreamble :: ExpressionGrammar -> Parser (TaggedLocate VarNode SourceRegion VarName, [FrontendPattern], FrontendExpr)
@@ -281,7 +281,7 @@ letPreamble grammar = do
     (name, patterns) <- try infixDef <|> prefixDef
     token_ TokenEquals
 
-    e <- exprBlock grammar.pElement
+    e <- exprBlock TokenEquals grammar.pElement
     pure (tagLocated @VarNode name, patterns, e)
   where
     prefixDef :: Parser (Located VarName, [FrontendPattern])
@@ -311,7 +311,7 @@ letInExpression grammar = locatedExpr $ do
     optional lineSeparator
     token_ TokenIn <?> "'in' keyword after let binding"
 
-    body <- exprBlock grammar.pElement <?> "expression after 'in'"
+    body <- exprBlock TokenIn grammar.pElement <?> "expression after 'in'"
     pure $ case patterns of
         [] -> ELetIn NoExtension name e body
         _ -> EExtension (FrontendLetInWithPatterns name patterns e body)

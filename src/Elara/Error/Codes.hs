@@ -55,6 +55,9 @@ unterminatedStringLiteral = "E0004"
 genericParseError :: ErrorCode
 genericParseError = "E0005"
 
+expectedIndentation :: ErrorCode
+expectedIndentation = "E0006"
+
 unknownName :: ErrorCode
 unknownName = "E1001"
 

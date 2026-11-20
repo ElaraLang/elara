@@ -1,17 +1,15 @@
-[error]: test/test_resources/golden_inputs/error-parse-match-arms-not-indented.elr:6:5:
-           |
-         6 |     1 -> 2
-           |     ^^^^^^^
-         unexpected end of line
-         expecting empty match body or match body
+[error E0006]: test/test_resources/golden_inputs/error-parse-match-arms-not-indented.elr:6:5:
+                 |
+               6 |     1 -> 2
+                 |     ^
+               Expected an indented body after 'with'
 
-     ╭──▶ test/test_resources/golden_inputs/error-parse-match-arms-not-indented.elr@6:5-6:5
+     ╭──▶ test/test_resources/golden_inputs/error-parse-match-arms-not-indented.elr@6:5-6:6
      │
    6 │     1 -> 2
-     •      
-     •     ├╸ unexpected end of line
-     •     ╰╸ expecting empty match body or match body
+     •     ┬ 
+     •     ╰╸ Expected an indented body after 'with'
      •
-     │ Note: A new line that isn't indented further than its enclosing block starts a new item, so it can't continue the previous construct.
-     │ Hint: If this line belongs to the construct above (e.g. match arms, or the body of an if/let/lambda), indent it further.
+     │ Note: The previous line ends after 'with', but this line isn't indented further than the enclosing block, so it starts a new item instead of continuing that body.
+     │ Hint: Indent the body after 'with' on the next line, or write it on the same line.
 ─────╯

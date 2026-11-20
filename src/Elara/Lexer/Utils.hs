@@ -37,16 +37,14 @@ import Data.List.NonEmpty (span, (<|))
 import Effectful (Eff)
 import Effectful.Error.Static
 import Effectful.State.Static.Local
-import Error.Diagnose (Marker (..), Note (..), Report (Err))
 
 import Data.Text qualified as T
 
 import Effectful.State.Extra (use', (%=), (.=))
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), endPos, mkSourceRegionIn, positionToDiagnosePosition)
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), endPos, mkSourceRegionIn)
 import Elara.Data.Pretty hiding (indent)
 import Elara.Error
-import Elara.Error.Diagnose (toDiagnoseReports)
 import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), isLayoutBreak, tokenEndsExpr)
 import Elara.Logging (StructuredDebug)
 import Prelude hiding (span)

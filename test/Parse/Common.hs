@@ -22,6 +22,7 @@ import Text.Megaparsec (ShowErrorComponent, TraversableStream, VisualStream, eof
 import Elara.AST.Phases.Frontend (Frontend)
 import Elara.AST.Phases.Frontend.Pretty ()
 import Elara.Lexer.Reader (readTokensWith)
+import Elara.Lexer.Token (Token (TokenEquals))
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle (..), unWParseErrorBundle)
 import Elara.Parse.Grammar (element)
@@ -85,7 +86,7 @@ shouldParsePattern source expected = withFrozenCallStack $ do
 
 shouldParseExpr :: MonadTest m => Text -> New.Expr () Frontend -> m ()
 shouldParseExpr source expected = withFrozenCallStack $ do
-    parsed <- lexAndParse (exprBlock element) source >>= evalEitherParseError
+    parsed <- lexAndParse (exprBlock TokenEquals element) source >>= evalEitherParseError
     diff (stripExpr parsed) (==) expected
 
 shouldFailToParse :: MonadTest m => Text -> m ()

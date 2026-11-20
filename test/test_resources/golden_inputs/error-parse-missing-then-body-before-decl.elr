@@ -1,0 +1,9 @@
+import Elara.Prim
+import Prelude
+
+let f x =
+    if x then
+
+let g y = y
+
+let main = println (g 1)

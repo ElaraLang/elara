@@ -1,0 +1,14 @@
+[error E0005]: test/test_resources/golden_inputs/error-parse-match-missing-with.elr:5:12:
+                 |
+               5 |     match x
+                 |            ^
+               unexpected end of line
+               expecting 'with' keyword after match expression, expression, or operator
+
+     ╭──▶ test/test_resources/golden_inputs/error-parse-match-missing-with.elr@5:12-5:13
+     │
+   5 │     match x
+     •            ┬
+     •            ├╸ unexpected end of line
+     •            ╰╸ expecting 'with' keyword after match expression, expression, or operator
+─────╯

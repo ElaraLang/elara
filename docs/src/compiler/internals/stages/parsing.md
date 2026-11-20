@@ -24,3 +24,10 @@ These aim to provide more helpful errors than the standard Megaparsec errors, an
 - `ModuleNameMismatch`: The file path does not correspond to the module declaration at the top of the file (see [Module System](../../../language/modules.md)).
 - Nicer parse errors for common mistakes like `EmptyRecord` or `EmptyLambda`
 - `InvalidConstantExpression`: Using a dynamic expression in a context that requires compile-time evaluation (see [Constant Expressions](../../../language/syntax/constant-expressions.md)).
+- `ExpectedIndentation`: A block body (after `then`, `else`, `=`, `in`, a lambda's `->`, `match ... with`, etc.) is missing or isn't indented far enough to belong to the construct before it. See [below](#indentation-errors).
+
+### Indentation errors
+
+Layout is represented with the virtual tokens `TokenIndent`, `TokenDedent` and `TokenLineSeparator` (see [Layout Processing](../stages/lexing.md#layout-processing)). When a construct like `then` needs a body, the lexer only opens a block if the next line is indented further than the `then`.
+
+If it isn't, there's no block for the parser to read, and it instead sees a layout break (`TokenDedent` or `TokenLineSeparator`) where the body should be. The `block` and `exprBlock` combinators in `Elara.Parse.Indents` detect this and throw an `ExpectedIndentation` error.

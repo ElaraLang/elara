@@ -18,7 +18,7 @@ import Elara.AST.Phases.Frontend (FrontendExpr)
 import Elara.AST.Region (Located, SourceRegion, diagnosePositionToSourceRegion, sourceRegion, unlocated)
 import Elara.Data.Pretty
 import Elara.Error
-import Elara.Lexer.Token (Lexeme)
+import Elara.Lexer.Token (Token, quoted)
 import Elara.Parse.Stream (TokenStream)
 import Prelude hiding (lines)
 
@@ -34,6 +34,12 @@ data ElaraParseError
         { expectedName :: ModuleName
         , declaredName :: Located ModuleName
         }
+    | -- | A block body is missing or isn't indented far enough to belong to the construct before it.
+      ExpectedIndentation
+        -- | The token that introduced the expected block, e.g. @then@, @=@, etc.
+        Token
+        -- | location of the first token after the expected block
+        SourceRegion
     deriving (Eq, Ord, Show)
 
 parseErrorSources :: ElaraParseError -> [SourceRegion]
@@ -43,6 +49,7 @@ parseErrorSources (EmptyLambda sr) = [sr]
 parseErrorSources (InfixPrecTooHigh l) = [view sourceRegion l]
 parseErrorSources (InvalidConstantExpression _a _b) = []
 parseErrorSources (ModuleNameMismatch _ declaredLoc) = [view sourceRegion declaredLoc]
+parseErrorSources (ExpectedIndentation _ firstToken) = [firstToken]
 
 hints :: ElaraParseError -> [ElaraNote]
 hints (KeywordUsedAsName kw) =
@@ -77,6 +84,7 @@ instance ShowErrorComponent ElaraParseError where
     showErrorComponent (InfixPrecTooHigh l) = "Infix precedence too high: " <> show l
     showErrorComponent (InvalidConstantExpression _ _) = "Invalid constant expression"
     showErrorComponent (ModuleNameMismatch expected declared) = "Module name mismatch: expected " <> show expected <> " but found " <> show declared
+    showErrorComponent (ExpectedIndentation introducer _) = "Expected an indented body after " <> toString (quoted introducer)
 
 newtype WParseErrorBundle e m = WParseErrorBundle {unWParseErrorBundle :: ParseErrorBundle e m}
 
@@ -91,12 +99,17 @@ instance Pretty (WParseErrorBundle TokenStream ElaraParseError) where
 
 instance ElaraDiagnostic (WParseErrorBundle TokenStream ElaraParseError) where
     diagnosticMessage (WParseErrorBundle e) = Elara.Data.Pretty.pretty (errorBundlePretty e)
-    diagnosticCode _ = Just Codes.genericParseError
+    diagnosticCode (WParseErrorBundle MP.ParseErrorBundle{..}) = Just (parseErrorCode (head bundleErrors))
     diagnosticReports (WParseErrorBundle e) = parseErrorBundleReports e
 
-diagNoteToElaraNote :: Diag.Note (Doc AnsiStyle) -> ElaraNote
-diagNoteToElaraNote (Diag.Note msg) = Elara.Error.Note msg
-diagNoteToElaraNote (Diag.Hint msg) = Elara.Error.Hint msg
+-- | Turn 'MP.FancyError's into specific codes where possible, and everything else into a generic parse error.
+parseErrorCode :: MP.ParseError s ElaraParseError -> ErrorCode
+parseErrorCode (MP.FancyError _ errs)
+    | any isExpectedIndentation (Set.toList errs) = Codes.expectedIndentation
+  where
+    isExpectedIndentation (MP.ErrorCustom ExpectedIndentation{}) = True
+    isExpectedIndentation _ = False
+parseErrorCode _ = Codes.genericParseError
 
 {- | Builds one 'ElaraReport' per error in the bundle.
 
@@ -113,7 +126,7 @@ parseErrorBundleReports bundle@MP.ParseErrorBundle{..} = toReport <$> toList bun
             marker markerType msg = ElaraMarker{markerRegion = region, markerType, markerMessage = fromString msg}
          in ElaraReport
                 { reportSeverity = ErrorSeverity
-                , reportCode = Just Codes.genericParseError
+                , reportCode = Just (parseErrorCode err)
                 , reportMessage = pretty (errorBundlePretty bundle)
                 , reportMarkers = case lines (MP.parseErrorTextPretty err) of
                     [m] -> [marker PrimaryMarker m]

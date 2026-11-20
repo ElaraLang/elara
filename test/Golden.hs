@@ -101,6 +101,39 @@ spec = describe "Golden tests" $ do
         it "If branch not indented" $
             runGoldenError defaultSettings "error-parse-then-not-indented"
 
+        it "Else branch not indented" $
+            runGoldenError defaultSettings "error-parse-else-not-indented"
+
+        it "Lambda body not indented" $
+            runGoldenError defaultSettings "error-parse-lambda-body-not-indented"
+
+        it "Unclosed paren at end of input has no indentation hint" $
+            runGoldenError defaultSettings "error-parse-unclosed-paren-eof"
+
+        it "Unclosed list mid-file is not an indentation error" $
+            runGoldenError defaultSettings "error-parse-unclosed-list-mid-file"
+
+        it "Dangling operator in nested block is not an indentation error" $
+            runGoldenError defaultSettings "error-parse-dangling-operator-nested"
+
+        it "Match without 'with' is not an indentation error" $
+            runGoldenError defaultSettings "error-parse-match-missing-with"
+
+        it "Unclosed paren in nested block at end of input is not an indentation error" $
+            runGoldenError defaultSettings "error-parse-unclosed-paren-nested-eof"
+
+        it "Missing else body at end of input is not an indentation error" $
+            runGoldenError defaultSettings "error-parse-missing-else-body-nested-eof"
+
+        it "Missing then body followed by the next declaration" $
+            runGoldenError defaultSettings "error-parse-missing-then-body-before-decl"
+
+        it "Missing else body followed by the next declaration" $
+            runGoldenError defaultSettings "error-parse-missing-else-body-before-decl"
+
+        it "Match arm with no indented body" $
+            runGoldenError defaultSettings "error-parse-missing-arm-body"
+
         it "Duplicate definition" $
             runGoldenError defaultSettings "error-duplicate-def"
 

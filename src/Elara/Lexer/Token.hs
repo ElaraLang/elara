@@ -194,6 +194,10 @@ isLayoutBreak TokenLineSeparator = True
 isLayoutBreak TokenDedent = True
 isLayoutBreak _ = False
 
+-- | A token's description in quotes, for use in messages, e.g. @'then'@
+quoted :: Token -> Text
+quoted token = "'" <> describeToken token <> "'"
+
 instance Pretty Token where
     pretty = pretty . tokenRepr
 
