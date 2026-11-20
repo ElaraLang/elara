@@ -14,6 +14,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(parse)* Hint when a block's body isn't indented far enough - ([9b9a30d](https://github.com/ElaraLang/elara/commit/9b9a30dacc83b5a693fc228d42a451b8ec50ef58)) 
 - *(parse)* Report ExpectedIndentation (E0006) when a block body isn't indented - ([0c994af](https://github.com/ElaraLang/elara/commit/0c994afe9d39653ea305bea30757932d1d60f440)) 
 - *(stdlib)* Make elara source stdlib portable by bundling into binary - ([ecda257](https://github.com/ElaraLang/elara/commit/ecda257b9cd30d9723fad9a797a0607d38d35a8c)) 
+- *(stdlib)* Add `List.map` - ([130a5ae](https://github.com/ElaraLang/elara/commit/130a5ae19b2f2fdc8213001dcb4e8775a77a456a)) 
+- *(stdlib)* Make json_parser example round-trip - ([2ca4c48](https://github.com/ElaraLang/elara/commit/2ca4c48feaa11ce57e91d3836cb77731764afcce)) 
 - Embed the JVM stdlib into the binary for more portabiltiy - ([36d2512](https://github.com/ElaraLang/elara/commit/36d2512b8200ece69f24c9a55bc73a4d0580e775)) 
 
 ### 🐛 Bug Fixes
