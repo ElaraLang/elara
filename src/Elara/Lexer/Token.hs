@@ -181,6 +181,11 @@ isIndent TokenDedent = True
 isIndent TokenLineSeparator = True
 isIndent _ = False
 
+isLayoutBreak :: Token -> Bool
+isLayoutBreak TokenLineSeparator = True
+isLayoutBreak TokenDedent = True
+isLayoutBreak _ = False
+
 instance Pretty Token where
     pretty = pretty . tokenRepr
 
