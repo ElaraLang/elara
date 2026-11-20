@@ -11,7 +11,12 @@ let append l1 l2 =
     match l1 with
         Nil -> l2
         Cons x xs -> Cons x (append xs l2)
-        
+
+def map : (a -> b) -> List a -> List b
+let map f list =
+    match list with
+        Nil -> Nil
+        Cons x xs -> Cons (f x) (map f xs)        
 
 def zip : List a -> List b -> List (Tuple2 a b)
 let zip l1 l2 =
