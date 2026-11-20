@@ -9,6 +9,8 @@ import Data.Map qualified as Map
 import Elara.AST.Instances ()
 import Elara.AST.Location
 import Elara.AST.Name
+import Elara.AST.Phases.Desugared (Desugared, DesugaredExpr)
+import Elara.AST.Pretty (prettyExpr)
 import Elara.AST.Region
 import Elara.AST.VarRef
 import Elara.Data.Pretty
@@ -70,6 +72,7 @@ data RenameError
       The first argument is the expected name (from the import or query); the second is what was found in the file
       -}
       ModuleNameMismatch (Located ModuleName) (Located ModuleName)
+    | StandaloneLetOrLetBang (Located VarName) DesugaredExpr
 
 deriving instance Show RenameError
 
@@ -87,6 +90,7 @@ instance ElaraDiagnostic RenameError where
     diagnosticMessage (AmbiguousTypeName n _) = "Ambiguous type name: " <> pretty n
     diagnosticMessage UnknownCurrentModule = "Could not determine the current module (internal error)"
     diagnosticMessage (RecursiveTypeAlias n _) = "Recursive type alias: " <> pretty n
+    diagnosticMessage (StandaloneLetOrLetBang name val) = "StandaloneLetOrLetBang" <+> pretty name <+> "in" <+> prettyExpr val
 
     diagnosticCode (UnknownModule _) = Just Codes.unknownModule
     diagnosticCode (QualifiedInWrongModule _ _) = Just Codes.qualifiedWithWrongModule
@@ -210,6 +214,7 @@ instance ElaraDiagnostic RenameError where
         [ Note "Type aliases cannot be recursive."
         , Hint "Define a data type instead: use `|` to create an ADT with a single constructor."
         ]
+    diagnosticNotes (StandaloneLetOrLetBang _ _) = []
 
 instance Pretty RenameError where
     pretty = diagnosticMessage

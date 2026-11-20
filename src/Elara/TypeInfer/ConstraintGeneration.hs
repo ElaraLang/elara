@@ -320,14 +320,6 @@ generateConstraints' expr' =
                         pure (typedPattern, typedBody)
 
                     pure (New.EMatch typedE cases', TypeVar eLoc resultTyVar [])
-                New.EBlock exprs -> do
-                    vals <- for exprs $ \expr -> generateConstraints expr
-
-                    let exprs' = fmap fst vals
-
-                    let exprTypes = fmap snd vals
-
-                    pure (New.EBlock exprs', last exprTypes)
                 New.ELet NoExtension (TaggedLocate loc varName) varExpr -> do
                     let locSr = view sourceRegion loc
                     recursiveVar <- UnificationVar <$> makeUniqueTyVar

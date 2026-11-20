@@ -86,4 +86,4 @@ exprBlock introducer = block introducer merge identity
         single :| [] -> single
         _ -> do
             let region = Region.spanningRegion (exprRegion <$> expressions)
-            Expr region () (EBlock expressions)
+            Expr region () (EExtension (FrontendBlock expressions))
