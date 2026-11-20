@@ -39,15 +39,15 @@ data Token
       TokenLeftBracket
     | -- | ]
       TokenRightBracket
-    | -- | <-
+    | -- | @<-@
       TokenLeftArrow
-    | -- | ->
+    | -- | @->@
       TokenRightArrow
-    | -- | =>
+    | -- | @=>@
       TokenDoubleRightArrow
-    | -- | @
+    | -- | @\@@
       TokenAt
-    | -- | #
+    | -- | @#@
       TokenHash
     | -- | `
       TokenBacktick
