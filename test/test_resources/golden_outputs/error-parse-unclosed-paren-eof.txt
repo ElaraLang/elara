@@ -1,0 +1,14 @@
+[error E0005]: test/test_resources/golden_inputs/error-parse-unclosed-paren-eof.elr:4:24:
+                 |
+               4 | let main = println (1 +
+                 |                        ^
+               unexpected end of input
+               expecting expression
+
+     ╭──▶ test/test_resources/golden_inputs/error-parse-unclosed-paren-eof.elr@4:24-4:25
+     │
+   4 │ let main = println (1 +
+     •                        ┬
+     •                        ├╸ unexpected end of input
+     •                        ╰╸ expecting expression
+─────╯

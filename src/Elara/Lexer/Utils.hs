@@ -18,7 +18,6 @@ module Elara.Lexer.Utils (
     pendingTokens,
     position,
     rest,
-    cleanIndentation,
     createRegionStartingAt,
     emitAt,
     createRegion,
@@ -390,19 +389,6 @@ startWhite _ str = do
                     setPrevEndsExpr False
                     emitLineSep
                 else pure Nothing
-
--- Insert dedent for any leftover unclosed indents
-cleanIndentation :: LexMonad [Lexeme]
-cleanIndentation = do
-    indentStack' <- use' indentStack
-    case indentStack' of
-        _base :| [] -> pure []
-        _ -> do
-            let toClose = init indentStack'
-                base = last indentStack'
-            dedents <- catMaybes <$> traverse (const emitDedent) toClose
-            indentStack .= (base :| [])
-            pure dedents
 
 -- The functions that must be provided to Alex's basic interface
 

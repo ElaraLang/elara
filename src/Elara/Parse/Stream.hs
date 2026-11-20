@@ -94,7 +94,7 @@ instance TraversableStream TokenStream where
         newSourcePos = case postLexemes of
             (x : _) -> sourceRegionToSourcePos x -- first token after offset
             [] -> case viaNonEmpty last preLexemes of
-                Just lastTok -> sourceRegionToSourcePos lastTok -- fallback to last token
+                Just lastTok -> sourceRegionEndToSourcePos lastTok -- end of input, place just after the last token
                 Nothing -> pstateSourcePos
 
         fullText = tokenStreamInput pstateInput
@@ -110,6 +110,15 @@ sourceRegionToSourcePos :: Located a -> SourcePos
 sourceRegionToSourcePos loc =
     let fp = view path loc
         pos = loc ^? sourceRegion % _RealSourceRegion % startPos
+     in case pos of
+            Just p -> realPositionToSourcePos fp p
+            Nothing -> generatedSourcePos fp
+
+-- | The position just after the end of a token
+sourceRegionEndToSourcePos :: Located a -> SourcePos
+sourceRegionEndToSourcePos loc =
+    let fp = view path loc
+        pos = loc ^? sourceRegion % _RealSourceRegion % endPos
      in case pos of
             Just p -> realPositionToSourcePos fp p
             Nothing -> generatedSourcePos fp

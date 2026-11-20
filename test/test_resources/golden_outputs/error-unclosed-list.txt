@@ -1,14 +1,14 @@
-[error E0005]: test/test_resources/golden_inputs/error-unclosed-list.elr:5:1:
+[error E0005]: test/test_resources/golden_inputs/error-unclosed-list.elr:4:20:
                  |
-               5 | 
-                 | ^
-               unexpected end of line
+               4 | let main = [1, 2, 3
+                 |                    ^
+               unexpected end of input
                expecting ']' to close list, expression, or operator
 
-     ╭──▶ test/test_resources/golden_inputs/error-unclosed-list.elr@5:1-5:1
+     ╭──▶ test/test_resources/golden_inputs/error-unclosed-list.elr@4:20-4:21
      │
-   5 │ <no line>
-     • 
-     • ├╸ unexpected end of line
-     • ╰╸ expecting ']' to close list, expression, or operator
+   4 │ let main = [1, 2, 3
+     •                    ┬
+     •                    ├╸ unexpected end of input
+     •                    ╰╸ expecting ']' to close list, expression, or operator
 ─────╯

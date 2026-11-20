@@ -1,14 +1,14 @@
-[error E0005]: test/test_resources/golden_inputs/error-if-no-else.elr:4:1:
+[error E0005]: test/test_resources/golden_inputs/error-if-no-else.elr:3:26:
                  |
-               4 | 
-                 | ^
+               3 | let main = if True then 1
+                 |                          ^
                unexpected end of input
-               expecting 'else' branch
+               expecting 'else' branch, expression, or operator
 
-     ╭──▶ test/test_resources/golden_inputs/error-if-no-else.elr@4:1-4:2
+     ╭──▶ test/test_resources/golden_inputs/error-if-no-else.elr@3:26-3:27
      │
-   4 │ <no line>
-     • ┬
-     • ├╸ unexpected end of input
-     • ╰╸ expecting 'else' branch
+   3 │ let main = if True then 1
+     •                          ┬
+     •                          ├╸ unexpected end of input
+     •                          ╰╸ expecting 'else' branch, expression, or operator
 ─────╯

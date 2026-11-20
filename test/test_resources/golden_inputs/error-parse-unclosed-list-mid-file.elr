@@ -1,0 +1,7 @@
+import Elara.Prim
+import Prelude
+
+let xs = [1, 2, 3
+let y = 1
+
+let main = println y

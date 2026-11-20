@@ -23,12 +23,15 @@ dedentToken =
     token_ TokenDedent
         <|> token_ TokenRightBrace
 
+-- | A block of one or more @p@s separated by line separators: either an indented block @<INDENT> ... <DEDENT>@ or an explicit @{ ... }@.
 blockExpr :: Parser a -> Parser (NonEmpty a)
-blockExpr p = do
-    indentToken
-    xs <- sepEndBy1' p lineSeparator
-    dedentToken
-    pure xs
+blockExpr p = indented <|> braced
+  where
+    indented =
+        token_ TokenIndent
+            *> sepEndBy1' p lineSeparator
+            <* (token_ TokenDedent <|> eof) -- lexer doesn't automatically close dedents in the case of EOF
+    braced = token_ TokenLeftBrace *> sepEndBy1' p lineSeparator <* token_ TokenRightBrace
 
 block :: (NonEmpty a -> b) -> (a -> b) -> Parser a -> Parser b
 block mergeFunction single exprParser =
