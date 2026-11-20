@@ -463,6 +463,10 @@ emitExpr expr = case expr of
                 emitExpr b
                 emit $ JVM.InvokeStatic (ClassInfoType "Elara.PrimOps") "compare" (MethodDescriptor [javaObject, javaObject] (TypeReturn $ ObjectFieldType "java.lang.Integer"))
                 pure $ Just (ClassInfoType "java.lang.Integer")
+            (IR.CorePrim Prim.PrimIOPure, [x]) -> do
+                emitExpr x
+                emit $ JVM.InvokeStatic (ClassInfoType "Elara.IO") "pure" (MethodDescriptor [javaObject] (TypeReturn $ ObjectFieldType "Elara.IO"))
+                pure $ Just (ClassInfoType "Elara.IO")
             (IR.CorePrim Prim.PrimIOBind, [io, func]) -> do
                 emitExpr io
                 emitExpr func

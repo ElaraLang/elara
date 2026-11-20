@@ -170,6 +170,7 @@ data PrimOp
     | PrimStringTail
     | PrimEquals
     | PrimCompare
+    | PrimIOPure
     | PrimIOBind
     | PrimThrowError
     | PrimDebugWithMsg
@@ -196,6 +197,7 @@ parsePrimOp = \case
     "stringTail" -> Just PrimStringTail
     "==" -> Just PrimEquals
     "compare" -> Just PrimCompare
+    "pure" -> Just PrimIOPure
     ">>=" -> Just PrimIOBind
     "error" -> Just PrimThrowError
     "debugWithMsg" -> Just PrimDebugWithMsg
@@ -220,6 +222,7 @@ primOpArity = \case
     PrimStringTail -> 1
     PrimEquals -> 2
     PrimCompare -> 2
+    PrimIOPure -> 1
     PrimIOBind -> 2
     PrimThrowError -> 1
     PrimDebugWithMsg -> 2
