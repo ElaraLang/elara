@@ -26,7 +26,6 @@ module Elara.Lexer.Utils (
     alexGetByte,
     initialLexState,
     triggerIndentLayout,
-    triggerBlockLayout,
     checkBlockLayout,
 ) where
 
@@ -212,9 +211,6 @@ pushBack lex = modify (over pendingTokens (\toks -> toks <> [lex]))
 triggerIndentLayout :: LexMonad ()
 triggerIndentLayout =
     layoutExpected .= Just ExpectIndent
-
-triggerBlockLayout :: LexMonad ()
-triggerBlockLayout = layoutExpected .= Just ExpectBlock
 
 {- | If a (block) layout is expected, check the current token's indentation against the top of the stack,
 and insert an INDENT token if necessary

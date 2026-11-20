@@ -1,10 +1,7 @@
 module Elara.Core.LiftClosures.Util where
 
-import Data.Set qualified as Set
-
 import Elara.AST.VarRef
 import Elara.Core.ANF as ANF
-import Elara.Core.Analysis
 
 import Elara.Core qualified as Core
 
@@ -17,20 +14,6 @@ varTermType (Core.TyVar _) = Nothing
 isGlobal :: Core.Var -> Bool
 isGlobal (Core.Id (Global _) _ _) = True
 isGlobal _ = False
-
--- | Check if a variable is local
-isLocal :: Core.Var -> Bool
-isLocal (Core.Id (Local _) _ _) = True
-isLocal _ = False
-
--- | Filter to only local variables
-filterLocals :: Set Core.Var -> Set Core.Var
-filterLocals = Set.filter isLocal
-
--- | Compute captured variables (free locals minus the binding itself)
-computeCaptures :: Core.Var -> Set Core.Var -> [Core.Var]
-computeCaptures bound freeVars =
-    Set.toList $ filterLocals $ Set.delete bound freeVars
 
 -- | Check if an atom is a lambda
 isLam :: ANF.AExpr b -> Bool
@@ -61,14 +44,3 @@ liftedType :: Traversable f => f Core.Var -> Core.Type -> Maybe Core.Type
 liftedType captures originalType = do
     captureTypes <- traverse varTermType captures
     pure $ foldr Core.FuncTy originalType captureTypes
-
--- | Get the closed local variables in an expression
-closedVariables :: FreeCoreVars ast => ast Core.Var -> Set Core.Var
-closedVariables e = filerLocal $ freeCoreVars e
-  where
-    filerLocal =
-        Set.filter
-            ( \case
-                Core.Id (Local _) _ _ -> True
-                _ -> False
-            )

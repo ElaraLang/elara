@@ -5,7 +5,6 @@ module GenericUtils where
 
 import GHC.Generics
 import Optics
-import Relude (Functor (fmap), Identity (..), concatMap, runIdentity, ($), (>>>))
 
 import Data.Kind qualified as Kind
 
@@ -55,20 +54,5 @@ instance SafeGPlate V1 a
 -- | Every field must have a 'Generic' instance
 instance Generic f => SafeGPlate (K1 i f) a
 
-cosmos :: Plated a a => Fold a a
-cosmos = cosmosOf plate
-
-cosmosOn :: Plated a a => Traversal' a a -> Fold a a
-cosmosOn d = cosmosOnOf d plate
-
-cosmosOnOf :: Plated a a => Traversal' a a -> Traversal' a a -> Fold a a
-cosmosOnOf d p = d % cosmosOf p
-
 transform :: Plated a a => (a -> a) -> a -> a
 transform = transformOf plate
-
-transformOf' :: Is k A_Traversal => Optic k is s a1 a2 b -> (a2 -> b) -> s -> a1
-transformOf' optic f a = runIdentity $ traverseOf optic (fmap Identity f) a
-
-concatMapOf :: Is k A_Fold => Optic' k is a1 a2 -> (a2 -> [b]) -> a1 -> [b]
-concatMapOf l f = toListOf l >>> concatMap f

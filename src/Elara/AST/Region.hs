@@ -10,7 +10,7 @@ import Data.Data (Data)
 import GHC.Exts (the)
 import Optics (FoldableWithIndex, FunctorWithIndex, TraversableWithIndex, maximumOf, minimumOf)
 import Relude.Unsafe (fromJust)
-import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos, unPos)
+import Text.Megaparsec (SourcePos (SourcePos, sourceColumn, sourceLine, sourceName), mkPos)
 
 import Error.Diagnose.Position qualified as Diag
 
@@ -74,33 +74,11 @@ instance HasPath RealSourceRegion where
         getter (UnsafeMkSourceRegion fp _ _) = fp
         setter (UnsafeMkSourceRegion _ start end) fp = mkSourceRegionIn fp start end
 
-mkSourceRegion :: SourcePos -> SourcePos -> RealSourceRegion
-mkSourceRegion first snd =
-    mkSourceRegionIn
-        (Just $ the (sourceName <$> [first, snd]))
-        (spToPosition first)
-        (spToPosition snd)
-
 mkSourceRegionIn :: HasCallStack => Maybe FilePath -> RealPosition -> RealPosition -> RealSourceRegion
 mkSourceRegionIn fp start end =
     if start > end
         then error "mkSourceRegionIn: start position is after end position"
         else UnsafeMkSourceRegion fp start end
-
-spToPosition :: SourcePos -> RealPosition
-spToPosition sp =
-    Position
-        { _line = unPos $ sourceLine sp
-        , _column = unPos $ sourceColumn sp
-        }
-
-positionToSp :: FilePath -> RealPosition -> SourcePos
-positionToSp fp pos =
-    SourcePos
-        { sourceName = fp
-        , sourceLine = mkPos (pos ^. line)
-        , sourceColumn = mkPos (pos ^. column)
-        }
 
 generatedSourcePos :: Maybe FilePath -> SourcePos
 generatedSourcePos fp =
@@ -169,9 +147,6 @@ makePrisms ''Located
 type family Unlocate g where
     Unlocate (Located a) = a
     Unlocate a = a
-
-generatedSourceRegionFrom :: Located a -> SourceRegion
-generatedSourceRegionFrom = generatedSourceRegion . view (sourceRegion % path)
 
 class LocatedElement w where
     unlocated :: Lens (w a) (w b) a b

@@ -7,9 +7,6 @@ module Prelude (
     module Relude,
     for,
     (:~:),
-    (<<$),
-    ($>>),
-    (<<&>>),
     (?:!),
     insertWithM,
     identity,
@@ -20,12 +17,7 @@ module Prelude (
     Plated (..),
     SafeGPlate,
     genericPlate,
-    cosmos,
-    cosmosOn,
-    cosmosOnOf,
     transform,
-    transformOf',
-    concatMapOf,
     GenericsSum.AsConstructor (..),
     GenericsSum.AsConstructor' (..),
 )
@@ -108,22 +100,13 @@ import "generic-optics" Data.Generics.Sum qualified as GenericsSum
 
 import GenericUtils
 
-(<<$) :: (Functor f, Functor g) => a -> f (g b) -> f (g a)
-a <<$ f = fmap (a <$) f
-
-($>>) :: (Functor f, Functor g) => f (g a) -> b -> f (g b)
-f $>> a = fmap ($> a) f
-
-(<<&>>) :: (Functor f, Functor g) => f (g a) -> (a -> b) -> f (g b)
-f <<&>> a = fmap (a <$>) f
-
 -- | Effectful version of '(?:)'
 (?:!) :: Monad m => m (Maybe b) -> m b -> m b
 (?:!) m orElse = do
     m' <- m
     maybe orElse pure m'
 
-infixl 4 <<$, $>>, <<&>>, ?:!
+infixl 4 ?:!
 
 insertWithM :: (Ord k, Applicative m) => (a -> a -> m a) -> k -> a -> Map k a -> m (Map k a)
 insertWithM f k v m = case M.lookup k m of

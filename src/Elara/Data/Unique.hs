@@ -62,9 +62,6 @@ resetGlobalUniqueSupply = writeIORef globalUniqueSupply freshUniqueSupply
 makeLenses ''UniqueSupply
 makeLenses ''Unique
 
-getUniqueId :: Unique a -> UniqueId
-getUniqueId = UniqueId . void
-
 uniqueToText :: (a -> Text) -> Unique a -> Text
 uniqueToText f (Unique a i) = f a <> Prelude.show i
 

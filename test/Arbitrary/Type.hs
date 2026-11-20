@@ -9,7 +9,6 @@ import Elara.AST.Name
 import Elara.Data.Unique (unsafeMkUnique)
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.Type
-import Region (qualifiedTest)
 
 -- | contrary to what the name suggests, this will NOT be unique :)
 genUniqueTypeVar :: Gen TypeVariable
@@ -21,14 +20,3 @@ primitiveTypeNames = knownQualified . knownTypeInfo <$> [KnownOpaque PrimInt, Kn
 
 typeConstructorNames :: [TypeName]
 typeConstructorNames = ["List", "Maybe", "Pair", "Box", "IO"]
-
-genMonotype :: Gen (Monotype ())
-genMonotype =
-    Gen.recursive
-        Gen.choice
-        [ TypeVar () <$> genUniqueTypeVar <*> pure []
-        , TypeConstructor () <$> Gen.element primitiveTypeNames <*> pure [] -- Primitive types have no args
-        ]
-        [ TypeConstructor () <$> Gen.element (qualifiedTest <$> typeConstructorNames) <*> Gen.list (Range.linear 0 2) genMonotype
-        , Function () <$> genMonotype <*> genMonotype
-        ]

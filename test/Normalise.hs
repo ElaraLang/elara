@@ -14,7 +14,6 @@ module Normalise (
     -- * Smart constructors (unlocated)
     mkExpr,
     mkPat,
-    mkType,
 
     -- * Stripping InParens for new types
     stripNewInParens,
@@ -34,9 +33,6 @@ mkExpr = Expr (wrap ExprNode ()) ()
 
 mkPat :: Pattern' () Frontend -> Pattern () Frontend
 mkPat = Pattern (wrap PatternNode ()) Nothing
-
-mkType :: Type' () Frontend -> Type () Frontend
-mkType = Type (wrap TypeNode ()) ()
 
 stripExpr :: Expr SourceRegion Frontend -> Expr () Frontend
 stripExpr (Expr _ meta e') = Expr (wrap ExprNode ()) meta (stripExpr' e')

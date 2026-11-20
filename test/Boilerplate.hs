@@ -1,11 +1,8 @@
 {-# LANGUAGE ImplicitParams #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 -- | Test boilerplate and utilities for running the compiler pipeline in tests
 module Boilerplate (
     -- * Expression Loading
-    loadRenamedExpr',
-    loadRenamedExprIO,
     loadShuntedExpr',
     loadShuntedExprIO,
 
@@ -13,7 +10,6 @@ module Boilerplate (
     runQueryEffects,
     finaliseEffects,
     pipelineResShouldSucceed,
-    evalPipelineRes,
 
     -- * Test Data
     fakeTypeEnvironment,
@@ -21,24 +17,17 @@ module Boilerplate (
     operatorRenameState,
 
     -- * Pattern Matching Helpers
-    ensureExpressionMatches,
-    shouldMatch,
 )
 where
 
-import Control.Exception (throwIO)
 import Effectful
 import Effectful.Error.Static (Error, runError, throwError)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Reader.Static (runReader)
 import Effectful.State.Static.Local (evalState)
 import Error.Diagnose.Diagnostic
-import Hedgehog
-import Hedgehog.Internal.Property (failDiff, failWith)
-import Language.Haskell.TH
-import Language.Haskell.TH.Syntax (Lift, Name (..), NameFlavour (..))
+import Language.Haskell.TH.Syntax (Lift)
 import Test.Syd (expectationFailure)
-import Test.Syd.Run (mkNotEqualButShouldHaveBeenEqual)
 import Text.Megaparsec (runParserT)
 import Text.Show
 
@@ -46,11 +35,10 @@ import Data.Dependent.HashMap qualified as DHashMap
 import Data.Map qualified as Map
 import Effectful.Writer.Static.Local qualified as Eff
 
-import Common (diagShouldSucceed)
 import Elara.AST.Name hiding (Name)
 import Elara.AST.Region
 import Elara.AST.VarRef
-import Elara.Data.Pretty (AnsiStyle, Doc, prettyToText)
+import Elara.Data.Pretty (prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
 import Elara.Desugar (desugarExpr)
 import Elara.Desugar.Error (DesugarError)
@@ -78,41 +66,11 @@ import Region (qualifiedTest, testLocated, testRegion)
 
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Phases.Desugared qualified as NewD
-import Elara.AST.Phases.Renamed qualified as NewR
 import Elara.AST.Phases.Shunted qualified as NewS
 import Elara.Lexer.Token qualified
 import Elara.Query qualified
 import Rock qualified
 import Rock.Memo qualified
-
--- | Load and rename an expression from source text
-loadRenamedExpr' ::
-    forall w.
-    ( IOE :> w
-    , Error ElaraError :> w
-    , Eff.Writer [ElaraWarning] :> w
-    ) =>
-    Text ->
-    Eff w NewR.RenamedExpr
-loadRenamedExpr' source = runQueryEffects $ do
-    let fp = "<tests>"
-    tokens <- runErrorAsElaraError @LexerError $ readTokensWith (FileContents fp source)
-    parsed <- runErrorAsElaraError @(WParseErrorBundle _ _) $ do
-        parseResult <- inject $ parseExprWith exprParser fp source tokens
-        case parseResult of
-            Left err -> throwError err
-            Right p -> pure p
-    newDesugared <- runErrorAsElaraError @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
-
-    runReader Nothing $
-        runReader (Nothing @(NewModule.Module SourceRegion NewD.Desugared)) $
-            evalState operatorRenameState $
-                runErrorAsElaraError @RenameError $
-                    renameExpr newDesugared
-
--- | Load and rename an expression (IO version)
-loadRenamedExprIO :: Text -> IO ([ElaraReport], Maybe NewR.RenamedExpr)
-loadRenamedExprIO source = finaliseEffects $ loadRenamedExpr' source
 
 -- | Load, rename, and shunt an expression using the fake operator table
 loadShuntedExpr' ::
@@ -191,15 +149,6 @@ pipelineResShouldSucceed m = do
         Just ok -> pure ok
         Nothing -> expectationFailure "Pipeline failed without returning a result."
 
--- | Assert that a pipeline result succeeds (for hedgehog)
-evalPipelineRes :: (MonadIO m, MonadTest m) => IO (Diagnostic (Doc AnsiStyle), Maybe b) -> m b
-evalPipelineRes m = do
-    (d, x) <- liftIO m
-    diagShouldSucceed (d, x)
-    case x of
-        Just ok -> pure ok
-        Nothing -> failWith Nothing $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) d
-
 -- | Rename state with fake operators for testing
 operatorRenameState :: RenameState
 operatorRenameState =
@@ -270,35 +219,7 @@ fakeOpLookup name =
 mkFakeVar :: OpName -> VarRef VarName
 mkFakeVar name = Global (testLocated (qualifiedTest (OperatorVarName name)))
 
-mkFakeOp :: OpName -> VarRef OpName
-mkFakeOp name = Global (testLocated (qualifiedTest name))
-
--- | Create a pattern matching assertion for hedgehog
-ensureExpressionMatches :: HasCallStack => Q Pat -> Q Exp
-ensureExpressionMatches qpat = do
-    pat <- qpat
-    let msg = Shown $ pprint (stripQualifiers pat)
-    [e|\case $(pure pat) -> pass; o -> withFrozenCallStack $ failDiff msg o|]
-
--- | Create a pattern matching assertion for sydtest
-shouldMatch :: HasCallStack => Q Pat -> Q Exp
-shouldMatch qpat = do
-    pat <- qpat
-    let msg = pprint (stripQualifiers pat)
-    [|\case $(pure pat) -> pass; o -> throwIO =<< mkNotEqualButShouldHaveBeenEqual (ppShow o) msg|]
-
 newtype Shown = Shown String deriving (Lift)
 
 instance Show Shown where
     show (Shown s) = s
-
--- | Strip qualifiers from a pattern for better error messages
-stripQualifiers :: Pat -> Pat
-stripQualifiers = transformOf gplate $ \case
-    ConP name t ps -> ConP (stripQualifiersName name) t ps
-    x -> x
-  where
-    stripQualifiersName :: Name -> Name
-    stripQualifiersName (Name x (NameQ _)) = Name x NameS
-    stripQualifiersName (Name x (NameG{})) = Name x NameS
-    stripQualifiersName n = n

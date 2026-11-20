@@ -4,7 +4,12 @@ roots = [
   # alex-generated lexer internals
   "^Elara\\.Lexer\\.Lexer\\.alex_",
   # optics prisms
-  "\\._[A-Z]"
+  "\\._[A-Z]",
+  # Template Haskell helpers
+  "^Elara\\.Query\\.TH\\.(makeTag|deriveSameCtor|deriveHashableInstance|deriveKeyChecks)$",
+  "^Elara\\.Query\\.Generics\\.checkKey$",
+  # makeLenses output
+  "^Elara\\.AST\\.Region\\.(line|column)$"
 ]
 type-class-roots = true
 unused-types = false

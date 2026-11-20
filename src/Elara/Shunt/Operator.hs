@@ -6,14 +6,10 @@ module Elara.Shunt.Operator (
     mkPrecedence,
     OpInfo (..),
     prettyOp,
-    prettyOpTable,
 ) where
-
-import Data.Map qualified as Map
 
 import Elara.AST.Name
 import Elara.AST.Region (SourceRegion)
-import Elara.AST.VarRef
 import Elara.Data.Pretty
 
 import Elara.AST.Phases.Renamed qualified as NewR
@@ -59,10 +55,3 @@ data Associativity
 prettyOp :: New.BinaryOperator SourceRegion NewR.Renamed -> Doc AnsiStyle
 prettyOp (New.SymOp _ opRef) = Style.operator $ pretty opRef
 prettyOp (New.InfixedOp _ vn) = Style.operator $ "`" <> pretty vn <> "`"
-
-prettyOpTable :: OpTable -> Doc AnsiStyle
-prettyOpTable table = brackets (vsep (map prettyOpInfo (Map.toList table)))
-  where
-    prettyOpInfo :: (Qualified Name, OpInfo) -> Doc AnsiStyle
-    prettyOpInfo (opName, info) =
-        pretty info <+> pretty opName

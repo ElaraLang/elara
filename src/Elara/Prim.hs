@@ -10,7 +10,6 @@ module Elara.Prim (
     knownTypeInfo,
     wiredInPrimCtors,
     lookupByInternalName,
-    lookupByUserName,
     lookupByQualifiedTypeName,
     allOpaquePrims,
     allWiredInPrims,
@@ -23,8 +22,6 @@ module Elara.Prim (
 
     -- * Module & Region Utilities
     primModuleName,
-    primRegion,
-    primLocated,
     mkPrimQual,
     mkPrimVarRef,
     elaraPrimitiveName,
@@ -59,7 +56,7 @@ import Data.Data (Data)
 import Data.Map.Strict qualified as Map
 
 import Elara.AST.Name (ModuleName (..), Qualified (..), TypeName (..))
-import Elara.AST.Region (Located, SourceRegion, generatedLocated, generatedSourceRegion)
+import Elara.AST.Region (Located, generatedLocated)
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..))
 
@@ -151,14 +148,6 @@ lookupByInternalName tn = Map.lookup tn internalNameMap
     internalNameMap = Map.fromList [(knownInternalName (knownTypeInfo p), p) | p <- allKnownTypes]
     {-# NOINLINE internalNameMap #-}
 
--- | Look up a known type by its user-facing name (e.g. @"Int"@).
-lookupByUserName :: Text -> Maybe KnownType
-lookupByUserName name = Map.lookup name userNameMap
-  where
-    userNameMap :: Map Text KnownType
-    userNameMap = Map.fromList [(knownUserFacingName (knownTypeInfo p), p) | p <- allKnownTypes]
-    {-# NOINLINE userNameMap #-}
-
 -- | Check if a qualified type name refers to a known type.
 lookupByQualifiedTypeName :: Qualified TypeName -> Maybe KnownType
 lookupByQualifiedTypeName (Qualified tn modName)
@@ -239,12 +228,6 @@ primOpArity = \case
 
 primModuleName :: ModuleName
 primModuleName = ModuleName ["Elara", "Prim"]
-
-primRegion :: SourceRegion
-primRegion = generatedSourceRegion (Just "<primitive>")
-
-primLocated :: a -> Located a
-primLocated = generatedLocated (Just "<primitive>")
 
 mkPrimQual :: c -> Qualified c
 mkPrimQual c = Qualified c primModuleName

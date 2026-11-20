@@ -4,8 +4,6 @@ Maps internal primitive names to user-friendly names.
 module Elara.TypeInfer.Render (
     renderTypeName,
     renderMonotype,
-    renderType,
-    renderPolytype,
 )
 where
 
@@ -13,7 +11,7 @@ import Elara.AST.Name (Qualified (..), TypeName (..))
 import Elara.Data.Pretty
 import Elara.Data.Unique (Unique (..))
 import Elara.Prim (KnownTypeInfo (..), knownTypeInfo, lookupByQualifiedTypeName)
-import Elara.TypeInfer.Type (Monotype (..), Polytype, Type (..), TypeVariable (..), openPolytype, polytypeBinders)
+import Elara.TypeInfer.Type (Monotype (..), TypeVariable (..))
 
 import Elara.Data.Pretty.Styles qualified as Style
 
@@ -55,16 +53,3 @@ renderTypeVariable (UnificationVar (Unique (Just name) _)) = Style.varName (pret
 renderTypeVariable (UnificationVar (Unique Nothing i)) = Style.varName ("_" <> pretty i)
 renderTypeVariable (SkolemVar (Unique (Just name) _)) = Style.varName ("#" <> pretty name)
 renderTypeVariable (SkolemVar (Unique Nothing i)) = Style.varName ("#_" <> pretty i)
-
--- | Render a polytype with user-friendly names
-renderPolytype :: Polytype loc -> Doc AnsiStyle
-renderPolytype p = case polytypeBinders p of
-    [] -> renderMonotype body
-    tvs -> "forall" <+> hsep (pretty <$> tvs) <> "." <+> renderMonotype body
-  where
-    body = openPolytype UnificationVar p
-
--- | Render a type with user-friendly names
-renderType :: Type loc -> Doc AnsiStyle
-renderType (Lifted m) = renderMonotype m
-renderType (Polytype p) = renderPolytype p

@@ -1,8 +1,7 @@
-module Elara.Parse.Combinators (sepBy1', sepEndBy1', liftedBinary) where
+module Elara.Parse.Combinators (sepBy1', sepEndBy1') where
 
 import Text.Megaparsec (try)
 
-import Elara.AST.Region (Located (Located), enclosingRegion, sourceRegion)
 import Elara.Parse.Primitives (Parser)
 
 {- | Safe version of 'Control.Applicative.Combinators.sepBy1' that backtracks if the parser after the separator fails.
@@ -22,11 +21,3 @@ sepEndBy1' p sep = do
     (x :|) -- at least one
         <$> many (try (sep *> p)) -- many
         <* optional (try sep) -- optional ending
-
--- Lift a binary operator to work on `Expr` instead of `FrontendExpr`. Probably not the best way to do this, but it works
-liftedBinary op f _Expr = do
-    op' <- op
-    let create l r =
-            let region = enclosingRegion (l ^. _Expr % sourceRegion) (r ^. _Expr % sourceRegion)
-             in Located region (f op' l r) ^. re _Expr
-    pure create

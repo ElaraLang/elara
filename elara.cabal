@@ -89,7 +89,6 @@ library
       Elara.Data.Kind.Infer
       Elara.Data.Pretty
       Elara.Data.Pretty.Styles
-      Elara.Data.TopologicalGraph
       Elara.Data.Unique
       Elara.Data.Unique.Effect
       Elara.Data.Unwrap
@@ -106,7 +105,6 @@ library
       Elara.JVM.Emit.Operator
       Elara.JVM.Emit.State
       Elara.JVM.Emit.Types
-      Elara.JVM.Emit.Utils
       Elara.JVM.Error
       Elara.JVM.IR
       Elara.JVM.Lower
