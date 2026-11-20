@@ -12,7 +12,7 @@ import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
-import Elara.Data.Pretty (Pretty (..))
+import Elara.Data.Pretty (Pretty (..), punctuate)
 import Prelude hiding (group)
 
 {- | The Frontend AST stage, produced by the parser.
@@ -70,6 +70,20 @@ data FrontendExpressionExtension loc
       FrontendLetWithPatterns (LocateNode VarNode loc VarName) [Pattern loc Frontend] (Expr loc Frontend)
     | -- | Let-in with pattern binding
       FrontendLetInWithPatterns (LocateNode VarNode loc VarName) [Pattern loc Frontend] (Expr loc Frontend) (Expr loc Frontend)
+    | -- | A monadic let: @let! x = val@
+      FrontendLetBang
+        -- | @x@
+        (LocateNode VarNode loc VarName)
+        -- | @val@
+        (Expr loc Frontend)
+    | -- | A monadic let-in: @let! x = val in b@
+      FrontendLetBangIn
+        -- | @x@
+        (LocateNode VarNode loc VarName)
+        -- | @val@
+        (Expr loc Frontend)
+        -- | @b@
+        (Expr loc Frontend)
     | -- | Binary operator application e.g. @x + y@
       FrontendBinaryOperator (BinaryOperatorExtension loc Frontend)
     | -- | In-parens expression e.g. @(f x)@
@@ -78,6 +92,8 @@ data FrontendExpressionExtension loc
       FrontendList (ListExprExtension loc Frontend)
     | -- | Tuple literal e.g. @(x, y)@
       FrontendTuple (TupleExprExtension loc Frontend)
+    | -- | A block @{x; ...; y}@ containing many expressions/statements separated by semicolons
+      FrontendBlock (NonEmpty (Expr loc Frontend))
     deriving (Generic)
 
 -- | Frontend-specific declaration body
@@ -151,10 +167,24 @@ prettyFrontendExprExt = \case
                 <+> prettyExpr val
                 <> flatAlt (line <> "in" <+> prettyExpr body) (" in " <> prettyExpr body)
             )
+    FrontendLetBang binder val ->
+        "let!"
+            <+> pretty binder
+            <+> "="
+            <+> prettyExpr val
+    FrontendLetBangIn binder val body ->
+        group
+            ( "let!"
+                <+> pretty binder
+                <+> "="
+                <+> prettyExpr val
+                <> flatAlt (line <> "in" <+> prettyExpr body) (" in " <> prettyExpr body)
+            )
     FrontendBinaryOperator ext -> prettyBinaryOperatorExt ext
     FrontendInParens ext -> prettyInParensExt ext
     FrontendList ext -> prettyListExprExt ext
     FrontendTuple ext -> prettyTupleExprExt ext
+    FrontendBlock exprs -> "{" <+> hsep (punctuate ";" (map prettyExpr (toList exprs))) <+> "}"
 
 prettyFrontendDeclBodyExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendDeclBodyExtension loc -> Doc AnsiStyle
 prettyFrontendDeclBodyExt (FrontendValueTypeDef name ty _annotations) =

@@ -122,7 +122,7 @@ genStatement' =
                         [] -> ELet NoExtension n e
                         _ -> EExtension (FrontendLetWithPatterns n pats e)
                 )
-            , EBlock <$> Gen.nonEmpty (Range.linear 2 10) genExpr
+            , EExtension . FrontendBlock <$> Gen.nonEmpty (Range.linear 2 10) genExpr
             ]
         )
 

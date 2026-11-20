@@ -48,7 +48,6 @@ substituteExpr' tv t = \case
     EMatch e cases -> EMatch (substituteExpr tv t e) (bimapF (substitutePattern tv t) (substituteExpr tv t) cases)
     ELetIn ext binder e1 e2 -> ELetIn ext binder (substituteExpr tv t e1) (substituteExpr tv t e2)
     ELet ext binder e1 -> ELet ext binder (substituteExpr tv t e1)
-    EBlock exprs -> EBlock (fmap (substituteExpr tv t) exprs)
     EAnn e ty -> EAnn (substituteExpr tv t e) (substituteAstType tv t ty)
     EExtension v -> absurd v
 
@@ -68,7 +67,6 @@ substituteAllExpr' s = \case
     EMatch e cases -> EMatch (substituteAllExpr s e) (bimapF (substituteAllPattern s) (substituteAllExpr s) cases)
     ELetIn ext binder e1 e2 -> ELetIn ext binder (substituteAllExpr s e1) (substituteAllExpr s e2)
     ELet ext binder e1 -> ELet ext binder (substituteAllExpr s e1)
-    EBlock exprs -> EBlock (fmap (substituteAllExpr s) exprs)
     EAnn e ty -> EAnn (substituteAllExpr s e) (substituteAllAstType s ty)
     EExtension v -> absurd v
 

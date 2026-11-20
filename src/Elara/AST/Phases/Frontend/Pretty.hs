@@ -68,8 +68,6 @@ prettyExprRoundTrip' = \case
         parens ("let" <+> prettyValueBinder @Frontend @loc binder <+> "=" <+> prettyExprRoundTrip val <+> "in" <+> prettyExprRoundTrip body)
     ELet _ binder val ->
         parens ("let" <+> prettyValueBinder @Frontend @loc binder <+> "=" <+> prettyExprRoundTrip val)
-    EBlock exprs ->
-        "{" <+> hsep (punctuate ";" (map prettyExprRoundTrip (toList exprs))) <+> "}"
     EAnn e t -> prettyExprRoundTrip e <+> ":" <+> prettyType t
     EExtension ext -> prettyFrontendExprExtRoundTrip ext
 

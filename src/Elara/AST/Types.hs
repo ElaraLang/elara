@@ -26,7 +26,6 @@ data Expr' loc p
     | EMatch (Expr loc p) [(Pattern loc p, Expr loc p)]
     | ELetIn (LetExtension p) (ValueBinder p loc) (Expr loc p) (Expr loc p)
     | ELet (LetExtension p) (ValueBinder p loc) (Expr loc p)
-    | EBlock (NonEmpty (Expr loc p))
     | EAnn (Expr loc p) (Type loc p)
     | EExtension (ExpressionExtension p loc)
     deriving (Generic)

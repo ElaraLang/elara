@@ -3,12 +3,6 @@ import Elara.Prim
 import List
 import String
 
-def map : (a -> b) -> List a -> List b
-let map f list =
-    match list with
-        Nil -> Nil
-        Cons x xs -> Cons (f x) (map f xs)
-
 def filter : (a -> Bool) -> List a -> List a
 let filter p list =
     match list with

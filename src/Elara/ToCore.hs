@@ -475,7 +475,6 @@ toCore le@(New.Expr _ t e) = do
                         else NonRecursive (Core.Id ref t' Nothing, e1')
                     )
                     e2'
-        New.EBlock exprs -> desugarBlock exprs
         New.EAnn expr' _ty -> toCore expr'
         New.EExtension v -> absurd v
 
@@ -492,7 +491,6 @@ isRecursive vn = go
         New.ELet _ _ e1 -> go e1
         New.EIf c t f -> go c || go t || go f
         New.EMatch e1 cases -> go e1 || any (\(_, rhs) -> go rhs) cases
-        New.EBlock exprs -> any go exprs
         New.ETyApp e1 _ -> go e1
         New.EAnn e1 _ -> go e1
         New.ECon _ _ -> False
@@ -538,7 +536,3 @@ mkBindName (New.Expr _ t _) = do
     t' <- typeToCore t
     unique <- makeUnique "bind"
     pure (Core.Id (Local unique) t' Nothing)
-
-desugarBlock :: InnerToCoreC r => NonEmpty TypedExpr -> Eff r CoreExpr
-desugarBlock (a :| []) = toCore a
-desugarBlock _ = error "todo"

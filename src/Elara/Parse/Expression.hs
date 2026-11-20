@@ -73,6 +73,7 @@ term grammar =
         , list grammar <?> "list"
         , ifElse grammar <?> "if expression"
         , letInExpression grammar <?> "let-in expression"
+        , letBangInExpression grammar <?> "monadic let-in expression"
         , lambda grammar <?> "lambda expression"
         , match grammar <?> "match expression"
         , float <?> "float"
@@ -97,7 +98,8 @@ in places where they are valid, such as in the body of a function.
 -}
 statement :: ExpressionGrammar -> Parser FrontendExpr
 statement grammar =
-    letStatement grammar <?> "let statement"
+    (letBangStatement grammar <?> "monadic let statement")
+        <|> (letStatement grammar <?> "let statement")
 
 binOp, cons, functionCall :: Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
 
@@ -275,9 +277,9 @@ ifElse grammar = locatedExpr $ do
     elseBranch <- exprBlock TokenElse grammar.pElement <?> "expression after 'else'"
     pure (EIf condition thenBranch elseBranch)
 
-letPreamble :: ExpressionGrammar -> Parser (TaggedLocate VarNode SourceRegion VarName, [FrontendPattern], FrontendExpr)
-letPreamble grammar = do
-    token_ TokenLet
+letPreamble :: ExpressionGrammar -> Token -> Parser (TaggedLocate VarNode SourceRegion VarName, [FrontendPattern], FrontendExpr)
+letPreamble grammar letToken = do
+    token_ letToken
     (name, patterns) <- try infixDef <|> prefixDef
     token_ TokenEquals
 
@@ -307,7 +309,7 @@ letPreamble grammar = do
 
 letInExpression :: ExpressionGrammar -> Parser FrontendExpr
 letInExpression grammar = locatedExpr $ do
-    (name, patterns, e) <- letPreamble grammar
+    (name, patterns, e) <- letPreamble grammar TokenLet
     optional lineSeparator
     token_ TokenIn <?> "'in' keyword after let binding"
 
@@ -316,12 +318,30 @@ letInExpression grammar = locatedExpr $ do
         [] -> ELetIn NoExtension name e body
         _ -> EExtension (FrontendLetInWithPatterns name patterns e body)
 
+letBangInExpression :: ExpressionGrammar -> Parser FrontendExpr
+letBangInExpression grammar = locatedExpr $ do
+    (name, patterns, e) <- letPreamble grammar TokenLetBang
+    unless (null patterns) $
+        fail "cannot have let! with patterns"
+    optional lineSeparator
+    token_ TokenIn <?> "'in' keyword after let! binding"
+    body <- exprBlock TokenIn grammar.pElement <?> "expression after 'in'"
+    pure $ EExtension (FrontendLetBangIn name e body)
+
 letStatement :: ExpressionGrammar -> Parser FrontendExpr
 letStatement grammar = locatedExpr $ do
-    (name, patterns, e) <- letPreamble grammar
+    (name, patterns, e) <- letPreamble grammar TokenLet
     pure $ case patterns of
         [] -> ELet NoExtension name e
         _ -> EExtension (FrontendLetWithPatterns name patterns e)
+
+letBangStatement :: ExpressionGrammar -> Parser FrontendExpr
+letBangStatement grammar = locatedExpr $ do
+    (name, patterns, e) <- letPreamble grammar TokenLetBang
+    unless (null patterns) $
+        fail "cannot have let! with patterns"
+    -- TODO: check that `patterns` are irrefutable before using
+    pure $ EExtension (FrontendLetBang name e)
 
 list :: ExpressionGrammar -> Parser FrontendExpr
 list grammar = locatedExpr $ do

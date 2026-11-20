@@ -310,9 +310,6 @@ shuntExpr (Expr loc meta e') = do
     shuntExpr' _ (ELet NoExtension vn e) = do
         e' <- fixExpr e
         pure (ELet NoExtension vn e', Nothing)
-    shuntExpr' _ (EBlock es) = do
-        es' <- traverse fixExpr es
-        pure (EBlock es', Nothing)
     shuntExpr' _ (EAnn e t) = do
         e' <- fixExpr e
         pure (EAnn e' (phaseCoerce t), Nothing)

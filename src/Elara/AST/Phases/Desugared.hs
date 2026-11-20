@@ -69,6 +69,14 @@ data DesugaredExpressionExtension loc
     | DesugaredInParens (InParensExtension loc Desugared)
     | DesugaredList (ListExprExtension loc Desugared)
     | DesugaredTuple (TupleExprExtension loc Desugared)
+    | DesugaredLetBang
+        (LocateNode VarNode loc VarName)
+        (Expr loc Desugared)
+    | DesugaredLetBangIn
+        (LocateNode VarNode loc VarName)
+        (Expr loc Desugared)
+        (Expr loc Desugared)
+    | DesugaredBlock (NonEmpty (Expr loc Desugared))
     deriving (Generic)
 
 -- Type aliases

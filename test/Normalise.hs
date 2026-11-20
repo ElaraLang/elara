@@ -53,7 +53,6 @@ stripExpr' = \case
     EMatch e cases -> EMatch (stripExpr e) (map (bimap stripPattern stripExpr) cases)
     ELetIn ext n e body -> ELetIn ext (view unlocated n) (stripExpr e) (stripExpr body)
     ELet ext n e -> ELet ext (view unlocated n) (stripExpr e)
-    EBlock es -> EBlock (fmap stripExpr es)
     EAnn e t -> EAnn (stripExpr e) (stripType t)
     EExtension ext -> EExtension (stripExprExt ext)
 
@@ -67,6 +66,9 @@ stripExprExt = \case
     FrontendInParens (InParensExpression e) -> FrontendInParens (InParensExpression (stripExpr e))
     FrontendList (ListExpression es) -> FrontendList (ListExpression (map stripExpr es))
     FrontendTuple (TupleExpression es) -> FrontendTuple (TupleExpression (fmap stripExpr es))
+    FrontendBlock bs -> FrontendBlock (fmap stripExpr bs)
+    FrontendLetBang n val -> FrontendLetBang (view unlocated n) (stripExpr val)
+    FrontendLetBangIn n val in' -> FrontendLetBangIn (view unlocated n) (stripExpr val) (stripExpr in')
 
 stripPattern :: Pattern SourceRegion Frontend -> Pattern () Frontend
 stripPattern (Pattern _ meta p') = Pattern (wrap PatternNode ()) (fmap stripType meta) (stripPattern' p')
@@ -123,7 +125,6 @@ stripNewInParens = go
         EMatch e cases -> EMatch (go e) (map (bimap goP go) cases)
         ELetIn ext n e body -> ELetIn ext n (go e) (go body)
         ELet ext n e -> ELet ext n (go e)
-        EBlock es -> EBlock (fmap go es)
         EAnn e t -> EAnn (go e) t
         EExtension ext -> EExtension (goExt ext)
         other -> other
@@ -137,6 +138,9 @@ stripNewInParens = go
         FrontendInParens (InParensExpression e) -> FrontendInParens (InParensExpression (go e))
         FrontendList (ListExpression es) -> FrontendList (ListExpression (map go es))
         FrontendTuple (TupleExpression es) -> FrontendTuple (TupleExpression (fmap go es))
+        FrontendBlock es -> FrontendBlock (fmap go es)
+        FrontendLetBang n val -> FrontendLetBang n (go val)
+        FrontendLetBangIn n val in' -> FrontendLetBangIn n (go val) (go in')
 
     goP (Pattern loc meta p') = Pattern loc meta (goP' p')
     goP' = \case

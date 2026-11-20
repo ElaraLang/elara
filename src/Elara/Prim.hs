@@ -37,6 +37,9 @@ module Elara.Prim (
     -- * Kind Context
     primKindCheckContext,
 
+    -- * Primitive Function Names
+    bindName,
+
     -- * Constructor Names
     trueCtorName,
     falseCtorName,
@@ -55,7 +58,7 @@ import Data.Data (Data)
 
 import Data.Map.Strict qualified as Map
 
-import Elara.AST.Name (ModuleName (..), Qualified (..), TypeName (..))
+import Elara.AST.Name (ModuleName (..), Qualified (..), TypeName (..), VarName (..))
 import Elara.AST.Region (Located, generatedLocated)
 import Elara.Data.Kind (ElaraKind (..))
 import Elara.Data.Pretty (Pretty (..))
@@ -240,6 +243,10 @@ mkPrimVarRef c = generatedLocated (Just "<primitive>") (mkPrimQual c)
 
 elaraPrimitiveName :: IsString s => Qualified s
 elaraPrimitiveName = mkPrimQual "elaraPrimitive"
+
+-- Elara.Prim.>>= for IO
+bindName :: Qualified VarName
+bindName = mkPrimQual (OperatorVarName ">>=")
 
 -- | Type names to seed into the primitive rename state.
 primitiveTypes :: [TypeName]
