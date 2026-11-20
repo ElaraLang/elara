@@ -8,7 +8,7 @@ import Text.Megaparsec
 
 import Data.Text qualified as T
 
-import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
+import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), endPos, generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
 import Elara.Lexer.Token
 
 data TokenStream = TokenStream
@@ -64,7 +64,7 @@ instance VisualStream TokenStream where
         toString
             . T.intercalate " "
             . toList
-            . fmap (tokenRepr . view unlocated)
+            . fmap (describeToken . view unlocated)
     tokensLength Proxy xs = sum (tokenLength <$> xs)
 
 instance TraversableStream TokenStream where
@@ -132,4 +132,8 @@ realPositionToSourcePos fp (Position line column) =
         }
 
 tokenLength :: Lexeme -> Int
-tokenLength = T.length . tokenRepr . view unlocated
+tokenLength lexeme
+    | isIndent token = 1 -- layout tokens don't really have a length but we want it to not be 0 so it gets reported in errors
+    | otherwise = T.length (tokenRepr token)
+  where
+    token = view unlocated lexeme

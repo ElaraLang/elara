@@ -158,6 +158,14 @@ tokenRepr = \case
     TokenLineSeparator -> "end of line"
     TokenEOF -> "end of input"
 
+-- | A user-friendly description of a token for use in error messages.
+describeToken :: Token -> Text
+describeToken = \case
+    TokenIndent -> "indentation"
+    TokenDedent -> "end of block"
+    TokenLineSeparator -> "end of line"
+    t -> tokenRepr t
+
 unsafeTokenText :: Token -> Text
 unsafeTokenText = \case
     TokenVariableIdentifier i -> i
