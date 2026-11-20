@@ -1,0 +1,5 @@
+import Elara.Prim
+import Prelude
+
+let f x =
+    (1 + 2

@@ -1,0 +1,15 @@
+[error E0006]: test/test_resources/golden_inputs/error-parse-then-not-indented.elr:6:5:
+                 |
+               6 |     1
+                 |     ^
+               Expected an indented body after 'then'
+
+     ╭──▶ test/test_resources/golden_inputs/error-parse-then-not-indented.elr@6:5-6:6
+     │
+   6 │     1
+     •     ┬
+     •     ╰╸ Expected an indented body after 'then'
+     •
+     │ Note: The previous line ends after 'then', but this line isn't indented further than the enclosing block, so it starts a new item instead of continuing that body.
+     │ Hint: Indent the body after 'then' on the next line, or write it on the same line.
+─────╯

@@ -158,11 +158,28 @@ tokenRepr = \case
     TokenLineSeparator -> "end of line"
     TokenEOF -> "end of input"
 
+-- | A user-friendly description of a token for use in error messages.
+describeToken :: Token -> Text
+describeToken = \case
+    TokenIndent -> "indentation"
+    TokenDedent -> "end of block"
+    TokenLineSeparator -> "end of line"
+    t -> tokenRepr t
+
 isIndent :: Token -> Bool
 isIndent TokenIndent = True
 isIndent TokenDedent = True
 isIndent TokenLineSeparator = True
 isIndent _ = False
+
+isLayoutBreak :: Token -> Bool
+isLayoutBreak TokenLineSeparator = True
+isLayoutBreak TokenDedent = True
+isLayoutBreak _ = False
+
+-- | A token's description in quotes, for use in messages, e.g. @'then'@
+quoted :: Token -> Text
+quoted token = "'" <> describeToken token <> "'"
 
 instance Pretty Token where
     pretty = pretty . tokenRepr

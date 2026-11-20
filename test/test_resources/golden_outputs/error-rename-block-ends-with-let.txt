@@ -2,10 +2,9 @@
      ╭──▶ test/test_resources/golden_inputs/error-rename-block-ends-with-let.elr@5:5-5:14
      │
    4 │ ╭┤ let main =
-   5 │ │      let x = 1
+   5 │ ├┤     let x = 1
      • │      ┬────────
      • │      ╰╸ this let has no body
-   6 │ ├┤ <no line>
      • │ 
      • ╰╸ inside this declaration
      •

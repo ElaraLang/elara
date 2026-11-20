@@ -1,5 +1,6 @@
 module Elara.Lexer.Reader where
 
+import Data.List (dropWhileEnd)
 import Effectful (Eff, inject, (:>))
 import Effectful.Error.Static
 import Effectful.State.Static.Local
@@ -31,11 +32,10 @@ readToken = do
             case alexScan (s ^. input) (s ^. lexSC) of
                 AlexEOF -> do
                     when (s ^. lexSC == stringSC) (throwError (UnterminatedStringLiteral s))
-                    closeIndents <- cleanIndentation
                     pos <- use' (input % position)
                     region <- createRegion pos pos
                     let eofToken = Located (RealSourceRegion region) TokenEOF
-                    modify (over pendingTokens (<> (closeIndents <> [eofToken])))
+                    modify (over pendingTokens (<> [eofToken]))
                     readToken
                 AlexError token -> throwError (GenericAlexError token)
                 AlexSkip inp _ -> do
@@ -49,15 +49,20 @@ readToken = do
                     res <- act n (Text.take n buf)
                     maybe readToken pure res
 
+{- | Lexes the whole input into tokens, not including the final 'TokenEOF', and dropping any 'isLayoutBreak' tokens
+at the end of the stream.
+
+See <https://elara.readthedocs.io/en/latest/compiler/internals/stages/lexing.html#end-of-input the lexing documentation> the rationale behind this.
+-}
 readTokens :: LexMonad [Lexeme]
-readTokens = logDebugWith "readTokens" $ do
-    tok <- readToken
-    logDebug $ "Read " <+> pretty tok
-    case tok ^. unlocated of
-        TokenEOF -> pure []
-        _ -> do
-            next <- readTokens
-            pure (tok : next)
+readTokens = logDebugWith "readTokens" $ dropWhileEnd (isLayoutBreak . view unlocated) <$> readUntilEof
+  where
+    readUntilEof = do
+        tok <- readToken
+        logDebug $ "Read " <+> pretty tok
+        case tok ^. unlocated of
+            TokenEOF -> pure []
+            _ -> (tok :) <$> readUntilEof
 
 readTokensWith ::
     (Error LexerError :> es, StructuredDebug :> es) =>

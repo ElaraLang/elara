@@ -18,7 +18,6 @@ module Elara.Lexer.Utils (
     pendingTokens,
     position,
     rest,
-    cleanIndentation,
     createRegionStartingAt,
     emitAt,
     createRegion,
@@ -42,10 +41,10 @@ import Data.Text qualified as T
 
 import Effectful.State.Extra (use', (%=), (.=))
 import Elara.AST.Name (ModuleName (..))
-import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), mkSourceRegionIn)
+import Elara.AST.Region (Located (Located), RealPosition (..), RealSourceRegion (..), SourceRegion (..), endPos, mkSourceRegionIn)
 import Elara.Data.Pretty hiding (indent)
 import Elara.Error
-import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), tokenEndsExpr)
+import Elara.Lexer.Token (Lexeme, TokPosition, Token (..), isLayoutBreak, tokenEndsExpr)
 import Elara.Logging (StructuredDebug)
 import Prelude hiding (span)
 
@@ -91,6 +90,10 @@ data ParseState = ParseState
     -- ^ nested comment depth
     , _layoutExpected :: Maybe LayoutExpectation
     -- ^ Tracks if the previous token triggers a layout block
+    , _prevTokenEnd :: RealPosition
+    {- ^ Where the last real (non-layout) token ended.
+    This dictates what location information virtual layout breaks tokens are given.
+    -}
     }
     deriving (Generic, Show)
 
@@ -196,6 +199,7 @@ initialLexState fp s =
         , _delimDepth = 0
         , _commentDepth = 0
         , _layoutExpected = Nothing
+        , _prevTokenEnd = Position 1 1
         }
 
 pushFront :: Lexeme -> LexMonad ()
@@ -229,6 +233,12 @@ checkBlockLayout tokenLen = do
             layoutExpected .= Nothing
         _ -> pass
 
+-- | Stores 'endPos' of 'region' in 'prevTokenEnd' if @'not' ('isLayoutBreak' t)@, otherwise does nothing.
+recordTokenEnd :: Token -> SourceRegion -> LexMonad ()
+recordTokenEnd t region = case region of
+    RealSourceRegion r | not (isLayoutBreak t) -> prevTokenEnd .= (r ^. endPos)
+    _ -> pass
+
 -- Emits a token, updating the prevEndsExpr state if necessary
 emitAt :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
 emitAt t region = do
@@ -243,6 +253,7 @@ emitAt t region = do
         _ -> emit
   where
     emit = do
+        recordTokenEnd t region
         setPrevEndsExpr (tokenEndsExpr t)
         let lex = Located region t
         pending <- use' pendingTokens
@@ -265,6 +276,7 @@ Return the first pending token (typically a DEDENT) so stream becomes "… <DEDE
 emitCloser :: Token -> SourceRegion -> LexMonad (Maybe Lexeme)
 emitCloser closerTok closerReg = do
     flushLayoutBeforeCloser
+    recordTokenEnd closerTok closerReg
     modify (delimDepth %~ (\x -> max 0 (x - 1)))
     let closerLex = Located closerReg closerTok
     pushBack closerLex
@@ -286,8 +298,7 @@ flushLayoutBeforeCloser = do
         [] -> pass -- base should remain
         (b : bs) -> do
             put (st & indentStack .~ (b :| bs))
-            curPos <- use' (input % position)
-            ds <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) curPos) toClose
+            ds <- catMaybes <$> traverse (const emitDedent) toClose
             mapM_ pushFront (reverse ds)
 
 emitLayoutAt :: Token -> RealSourceRegion -> LexMonad (Maybe Lexeme)
@@ -298,15 +309,17 @@ emitIndentAt pos = do
     r <- createRegion pos pos
     emitLayoutAt TokenIndent r
 
-emitDedentAt :: TokPosition -> TokPosition -> LexMonad (Maybe Lexeme)
-emitDedentAt start end = do
-    r <- createRegion start end
-    emitLayoutAt TokenDedent r
+-- | Create a 'RealSourceRegion' from the current 'prevTokenEnd'
+layoutBreakRegion :: LexMonad RealSourceRegion
+layoutBreakRegion = do
+    end <- use' prevTokenEnd
+    createRegion end end
 
-emitLineSepAt :: RealPosition -> LexMonad (Maybe Lexeme)
-emitLineSepAt pos = do
-    r <- createRegion pos pos
-    emitLayoutAt TokenLineSeparator r
+emitDedent :: LexMonad (Maybe Lexeme)
+emitDedent = layoutBreakRegion >>= emitLayoutAt TokenDedent
+
+emitLineSep :: LexMonad (Maybe Lexeme)
+emitLineSep = layoutBreakRegion >>= emitLayoutAt TokenLineSeparator
 
 startWhite :: Int -> Text -> LexMonad (Maybe Lexeme)
 startWhite _ str = do
@@ -334,10 +347,8 @@ startWhite _ str = do
 
             case topAndRest of
                 (top : xs) -> do
-                    eofPos <- use' (input % position)
-
                     -- emit DEDENTs for everything we popped
-                    dedents <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) eofPos) closingLevels
+                    dedents <- catMaybes <$> traverse (const emitDedent) closingLevels
 
                     -- check validity against the new top of stack
                     -- a valid continuation is one that is >= top indent
@@ -351,7 +362,7 @@ startWhite _ str = do
 
                             sep <-
                                 if isNewStmt
-                                    then emitLineSepAt eofPos
+                                    then emitLineSep
                                     else pure Nothing -- no separator for continuations
                             setPrevEndsExpr False
 
@@ -367,26 +378,11 @@ startWhite _ str = do
             pure Nothing
         EQ -> do
             ends <- getPrevEndsExpr
-            pos <- use' (input % position)
             if ends
                 then do
                     setPrevEndsExpr False
-                    emitLineSepAt pos
+                    emitLineSep
                 else pure Nothing
-
--- Insert dedent for any leftover unclosed indents
-cleanIndentation :: LexMonad [Lexeme]
-cleanIndentation = do
-    indentStack' <- use' indentStack
-    case indentStack' of
-        _base :| [] -> pure []
-        _ -> do
-            let toClose = init indentStack'
-                base = last indentStack'
-            eofPos <- use' (input % position)
-            dedents <- catMaybes <$> mapM (\lvl -> emitDedentAt (lvl ^. indentPos) eofPos) toClose
-            indentStack .= (base :| [])
-            pure dedents
 
 -- The functions that must be provided to Alex's basic interface
 

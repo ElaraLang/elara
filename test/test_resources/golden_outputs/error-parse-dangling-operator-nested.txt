@@ -1,0 +1,14 @@
+[error E0005]: test/test_resources/golden_inputs/error-parse-dangling-operator-nested.elr:5:8:
+                 |
+               5 |     1 +
+                 |        ^
+               unexpected end of block
+               expecting expression
+
+     ╭──▶ test/test_resources/golden_inputs/error-parse-dangling-operator-nested.elr@5:8-5:9
+     │
+   5 │     1 +
+     •        ┬
+     •        ├╸ unexpected end of block
+     •        ╰╸ expecting expression
+─────╯

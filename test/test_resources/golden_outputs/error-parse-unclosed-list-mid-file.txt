@@ -1,0 +1,14 @@
+[error E0005]: test/test_resources/golden_inputs/error-parse-unclosed-list-mid-file.elr:4:18:
+                 |
+               4 | let xs = [1, 2, 3
+                 |                  ^
+               unexpected end of line
+               expecting ']' to close list, expression, or operator
+
+     ╭──▶ test/test_resources/golden_inputs/error-parse-unclosed-list-mid-file.elr@4:18-4:19
+     │
+   4 │ let xs = [1, 2, 3
+     •                  ┬
+     •                  ├╸ unexpected end of line
+     •                  ╰╸ expecting ']' to close list, expression, or operator
+─────╯

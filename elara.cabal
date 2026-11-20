@@ -217,7 +217,7 @@ library
     , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3
-    , diagnose >=1.8.2 && <2.6
+    , diagnose >=1.8.2 && <2.7
     , directory >=1.3.9.0 && <1.4
     , effectful >=2.6.1.0 && <2.7
     , effectful-core >=2.6.1.0 && <2.7
@@ -286,7 +286,7 @@ executable elara
     , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3
-    , diagnose >=1.8.2 && <2.6
+    , diagnose >=1.8.2 && <2.7
     , directory >=1.3.9.0 && <1.4
     , effectful >=2.6.1.0 && <2.7
     , effectful-core >=2.6.1.0 && <2.7
@@ -381,7 +381,7 @@ test-suite elara-test
     , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3
-    , diagnose >=1.8.2 && <2.6
+    , diagnose >=1.8.2 && <2.7
     , directory >=1.3.9.0 && <1.4
     , effectful >=2.6.1.0 && <2.7
     , effectful-core >=2.6.1.0 && <2.7

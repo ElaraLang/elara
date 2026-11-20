@@ -19,15 +19,15 @@
     "diagnose": {
       "flake": false,
       "locked": {
-        "lastModified": 1732210354,
-        "narHash": "sha256-sDRkSs/sxHjbkXVBsinKMJvJWMnyE648JcvNK94pvt8=",
-        "owner": "bristermitten",
+        "lastModified": 1794933077,
+        "narHash": "sha256-Y9D5HpE+LNGimu8ZKlyhV/N1l6hwWXhZKmfQtQSjjT8=",
+        "owner": "ElaraLang",
         "repo": "diagnose",
-        "rev": "3dac026c9663f041d0e5df77b73053ff5627af4b",
+        "rev": "d86419d886012e87f12fd46ce40b6f1f6c458c8f",
         "type": "github"
       },
       "original": {
-        "owner": "bristermitten",
+        "owner": "ElaraLang",
         "repo": "diagnose",
         "type": "github"
       }

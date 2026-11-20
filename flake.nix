@@ -19,7 +19,7 @@
     };
     h2jvm.url = "github:ElaraLang/h2jvm";
     diagnose = {
-      url = "github:bristermitten/diagnose";
+      url = "github:ElaraLang/diagnose";
       flake = false;
     };
 

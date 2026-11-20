@@ -8,7 +8,7 @@ import Text.Megaparsec
 
 import Data.Text qualified as T
 
-import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
+import Elara.AST.Region (HasPath (path), Located (Located), RealPosition (Position), endPos, generatedFileName, generatedSourcePos, sourceRegion, startPos, unlocated, _RealSourceRegion)
 import Elara.Lexer.Token
 
 data TokenStream = TokenStream
@@ -64,7 +64,7 @@ instance VisualStream TokenStream where
         toString
             . T.intercalate " "
             . toList
-            . fmap (tokenRepr . view unlocated)
+            . fmap (describeToken . view unlocated)
     tokensLength Proxy xs = sum (tokenLength <$> xs)
 
 instance TraversableStream TokenStream where
@@ -94,7 +94,7 @@ instance TraversableStream TokenStream where
         newSourcePos = case postLexemes of
             (x : _) -> sourceRegionToSourcePos x -- first token after offset
             [] -> case viaNonEmpty last preLexemes of
-                Just lastTok -> sourceRegionToSourcePos lastTok -- fallback to last token
+                Just lastTok -> sourceRegionEndToSourcePos lastTok -- end of input, place just after the last token
                 Nothing -> pstateSourcePos
 
         fullText = tokenStreamInput pstateInput
@@ -114,6 +114,15 @@ sourceRegionToSourcePos loc =
             Just p -> realPositionToSourcePos fp p
             Nothing -> generatedSourcePos fp
 
+-- | The position just after the end of a token
+sourceRegionEndToSourcePos :: Located a -> SourcePos
+sourceRegionEndToSourcePos loc =
+    let fp = view path loc
+        pos = loc ^? sourceRegion % _RealSourceRegion % endPos
+     in case pos of
+            Just p -> realPositionToSourcePos fp p
+            Nothing -> generatedSourcePos fp
+
 realPositionToSourcePos :: Maybe FilePath -> RealPosition -> SourcePos
 realPositionToSourcePos fp (Position line column) =
     SourcePos
@@ -123,4 +132,8 @@ realPositionToSourcePos fp (Position line column) =
         }
 
 tokenLength :: Lexeme -> Int
-tokenLength = T.length . tokenRepr . view unlocated
+tokenLength lexeme
+    | isIndent token = 1 -- layout tokens don't really have a length but we want it to not be 0 so it gets reported in errors
+    | otherwise = T.length (tokenRepr token)
+  where
+    token = view unlocated lexeme
