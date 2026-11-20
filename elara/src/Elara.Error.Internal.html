@@ -14,7 +14,7 @@ Unlike the stage-based errors, these errors indicate that something has gone wro
 </span><span id="line-14"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DuplicateDeclAfterDesugar"><span class="annot"><a href="Elara.Error.Internal.html#DuplicateDeclAfterDesugar"><span class="hs-identifier hs-var">DuplicateDeclAfterDesugar</span></a></span></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#ModuleName"><span class="hs-identifier hs-type">ModuleName</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span>
 </span><span id="line-15"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | When we parse an annotation at compile time but its arrangement is invalid</span></span><span>
 </span><span id="line-16"></span><span>      </span><span id="InvalidAnnotationArrangement"><span class="annot"><a href="Elara.Error.Internal.html#InvalidAnnotationArrangement"><span class="hs-identifier hs-var">InvalidAnnotationArrangement</span></a></span></span><span>
-</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680045125"><span id="local-6989586621680045139"><span class="annot"><span class="annottext">InternalError -&gt; InternalError -&gt; Bool
+</span><span id="line-17"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680045880"><span id="local-6989586621680045894"><span class="annot"><span class="annottext">InternalError -&gt; InternalError -&gt; Bool
 (InternalError -&gt; InternalError -&gt; Bool)
 -&gt; (InternalError -&gt; InternalError -&gt; Bool) -&gt; Eq InternalError
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -22,7 +22,7 @@ $c== :: InternalError -&gt; InternalError -&gt; Bool
 == :: InternalError -&gt; InternalError -&gt; Bool
 $c/= :: InternalError -&gt; InternalError -&gt; Bool
 /= :: InternalError -&gt; InternalError -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680045147"><span id="local-6989586621680045149"><span class="annot"><span class="annottext">(forall x. InternalError -&gt; Rep InternalError x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680045902"><span id="local-6989586621680045904"><span class="annot"><span class="annottext">(forall x. InternalError -&gt; Rep InternalError x)
 -&gt; (forall x. Rep InternalError x -&gt; InternalError)
 -&gt; Generic InternalError
 forall x. Rep InternalError x -&gt; InternalError
@@ -33,7 +33,7 @@ $cfrom :: forall x. InternalError -&gt; Rep InternalError x
 from :: forall x. InternalError -&gt; Rep InternalError x
 $cto :: forall x. Rep InternalError x -&gt; InternalError
 to :: forall x. Rep InternalError x -&gt; InternalError
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680045155"><span id="local-6989586621680045170"><span id="local-6989586621680045174"><span class="annot"><span class="annottext">Int -&gt; InternalError -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680045910"><span id="local-6989586621680045925"><span id="local-6989586621680045929"><span class="annot"><span class="annottext">Int -&gt; InternalError -&gt; ShowS
 [InternalError] -&gt; ShowS
 InternalError -&gt; String
 (Int -&gt; InternalError -&gt; ShowS)
@@ -50,13 +50,13 @@ $cshowList :: [InternalError] -&gt; ShowS
 showList :: [InternalError] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-18"></span><span>
-</span><span id="line-19"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680045182"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680045937"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span><span>
 </span><span id="line-20"></span><span>
-</span><span id="line-21"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680045252"><span id="local-6989586621680045256"><span id="local-6989586621680045259"><span id="local-6989586621680045262"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680046007"><span id="local-6989586621680046011"><span id="local-6989586621680046014"><span id="local-6989586621680046017"><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span><span>
 </span><span id="line-22"></span><span>
-</span><span id="line-23"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680045268"><span id="local-6989586621680045272"><span id="local-6989586621680045276"><span id="local-6989586621680045280"><span id="local-6989586621680045283"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-24"></span><span>    </span><span id="local-6989586621680045286"><span class="annot"><span class="annottext">diagnosticCode :: InternalError -&gt; Maybe ErrorCode
-</span><a href="#local-6989586621680045286"><span class="hs-identifier hs-var hs-var hs-var">diagnosticCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.Internal.html#RequiredDeclNotFound"><span class="hs-identifier hs-type">RequiredDeclNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
+</span><span id="line-23"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680046023"><span id="local-6989586621680046027"><span id="local-6989586621680046031"><span id="local-6989586621680046035"><span id="local-6989586621680046038"><span class="annot"><a href="Elara.Error.html#ElaraDiagnostic"><span class="hs-identifier hs-type">ElaraDiagnostic</span></a></span><span> </span><span class="annot"><a href="Elara.Error.Internal.html#InternalError"><span class="hs-identifier hs-type">InternalError</span></a></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>    </span><span id="local-6989586621680046041"><span class="annot"><span class="annottext">diagnosticCode :: InternalError -&gt; Maybe ErrorCode
+</span><a href="#local-6989586621680046041"><span class="hs-identifier hs-var hs-var hs-var">diagnosticCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.Internal.html#RequiredDeclNotFound"><span class="hs-identifier hs-type">RequiredDeclNotFound</span></a></span><span> </span><span class="annot"><span class="annottext">Qualified Name
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode -&gt; Maybe ErrorCode
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ErrorCode
