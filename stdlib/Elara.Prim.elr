@@ -92,6 +92,9 @@ let readFile = elaraPrimitive "readFile"
 def getArgs : IO (List String)
 let getArgs = elaraPrimitive "getArgs"
 
+def pure : a -> IO a
+let pure = elaraPrimitive "pure"
+
 def (>>=) : IO a -> (a -> IO b) -> IO b
 let (>>=) = elaraPrimitive ">>="
 
