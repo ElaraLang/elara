@@ -1,0 +1,13 @@
+[error E10014]: Block ends with a let! binding
+     ╭──▶ test/test_resources/golden_inputs/error-desugar-block-ends-with-let-bang.elr@6:5-6:20
+     │
+   5 │ ╭┤     println "a"
+   6 │ ├┤     let! x = pure 1
+     • │      ┬──────────────
+     • │      ╰╸ this let! has no body
+     • │ 
+     • ╰╸ inside this block
+     •
+     │ Note: Blocks must end with an expression, not a let! binding.
+     │ Hint: Perhaps you meant to use a let! ... in construct?
+─────╯

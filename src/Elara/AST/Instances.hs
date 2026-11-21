@@ -61,6 +61,10 @@ deriving instance CoreConstraint Show loc p => Show (Expr loc p)
 
 deriving instance CoreConstraint Show loc p => Show (Expr' loc p)
 
+deriving instance CoreConstraint Show loc p => Show (Statement loc p)
+
+deriving instance CoreConstraint Show loc p => Show (Statement' loc p)
+
 deriving instance CoreConstraint Show loc p => Show (Pattern loc p)
 
 deriving instance CoreConstraint Show loc p => Show (Pattern' loc p)
@@ -90,6 +94,10 @@ deriving instance CoreConstraint Eq loc p => Eq (Expr loc p)
 
 deriving instance CoreConstraint Eq loc p => Eq (Expr' loc p)
 
+deriving instance CoreConstraint Eq loc p => Eq (Statement loc p)
+
+deriving instance CoreConstraint Eq loc p => Eq (Statement' loc p)
+
 deriving instance CoreConstraint Eq loc p => Eq (Pattern loc p)
 
 deriving instance CoreConstraint Eq loc p => Eq (Pattern' loc p)
@@ -118,6 +126,10 @@ deriving instance CoreConstraint Eq loc p => Eq (DeclarationBody' loc p)
 deriving instance CoreConstraint Ord loc p => Ord (Expr loc p)
 
 deriving instance CoreConstraint Ord loc p => Ord (Expr' loc p)
+
+deriving instance CoreConstraint Ord loc p => Ord (Statement loc p)
+
+deriving instance CoreConstraint Ord loc p => Ord (Statement' loc p)
 
 deriving instance CoreConstraint Ord loc p => Ord (Pattern loc p)
 

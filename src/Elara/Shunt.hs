@@ -307,9 +307,6 @@ shuntExpr (Expr loc meta e') = do
         e' <- fixExpr e
         body' <- fixExpr body
         pure (ELetIn NoExtension vn e' body', Nothing)
-    shuntExpr' _ (ELet NoExtension vn e) = do
-        e' <- fixExpr e
-        pure (ELet NoExtension vn e', Nothing)
     shuntExpr' _ (EAnn e t) = do
         e' <- fixExpr e
         pure (EAnn e' (phaseCoerce t), Nothing)

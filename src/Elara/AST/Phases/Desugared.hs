@@ -2,7 +2,7 @@
 
 module Elara.AST.Phases.Desugared where
 
-import Prettyprinter (Doc)
+import Prettyprinter (Doc, flatAlt, group, hsep, line, (<+>))
 import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Elara.AST.Extensions
@@ -12,7 +12,8 @@ import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
-import Elara.Data.Pretty (Pretty (..))
+import Elara.Data.Pretty (Pretty (..), punctuate)
+import Prelude hiding (group)
 
 {- | Desugared AST stage. Key changes from Frontend:
 * Lambdas have exactly 1 argument (multi-arg desugared into nested)
@@ -69,14 +70,12 @@ data DesugaredExpressionExtension loc
     | DesugaredInParens (InParensExtension loc Desugared)
     | DesugaredList (ListExprExtension loc Desugared)
     | DesugaredTuple (TupleExprExtension loc Desugared)
-    | DesugaredLetBang
-        (LocateNode VarNode loc VarName)
-        (Expr loc Desugared)
     | DesugaredLetBangIn
         (LocateNode VarNode loc VarName)
         (Expr loc Desugared)
         (Expr loc Desugared)
-    | DesugaredBlock (NonEmpty (Expr loc Desugared))
+    | -- | A block @{s1; ...; sn; e}@: one or more statements followed by the expression that determines the block's type and value.
+      DesugaredBlock (NonEmpty (Statement loc Desugared)) (Expr loc Desugared)
     deriving (Generic)
 
 -- Type aliases
@@ -133,3 +132,13 @@ prettyDesugaredExprExt = \case
     DesugaredInParens ext -> prettyInParensExt ext
     DesugaredList ext -> prettyListExprExt ext
     DesugaredTuple ext -> prettyTupleExprExt ext
+    DesugaredLetBangIn binder val body ->
+        group
+            ( "let!"
+                <+> pretty binder
+                <+> "="
+                <+> prettyExpr val
+                <> flatAlt (line <> "in" <+> prettyExpr body) (" in " <> prettyExpr body)
+            )
+    DesugaredBlock stmts final ->
+        "{" <+> hsep (punctuate ";" (map prettyStatement (toList stmts) <> [prettyExpr final])) <+> "}"

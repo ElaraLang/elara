@@ -13,7 +13,7 @@ import Elara.AST.Phases.Frontend
 import Elara.AST.Phases.Frontend.Pretty ()
 import Elara.AST.Types
 import Elara.Parse.Grammar (exprParser)
-import Normalise (mkExpr, mkPat, stripExpr, stripNewInParens)
+import Normalise (mkExpr, mkPat, mkStatement, stripExpr, stripNewInParens)
 import Orphans ()
 import Parse.Common
 import Print (showPrettyUnannotated)
@@ -69,10 +69,17 @@ weirdEdgeCases = describe "Parses some weird edge cases correctly" $ do
                         (NormalVarName (LowerAlphaName "a"))
                         (mkExpr (EInt 0))
                         ( mkExpr
-                            ( ELet
-                                NoExtension
-                                (NormalVarName (LowerAlphaName "a"))
-                                (mkExpr (EInt (-98905857)))
+                            ( EExtension
+                                ( FrontendBlock
+                                    ( mkStatement
+                                        ( SLet
+                                            (NormalVarName (LowerAlphaName "a"))
+                                            []
+                                            (mkExpr (EInt (-98905857)))
+                                        )
+                                        :| []
+                                    )
+                                )
                             )
                         )
                     )

@@ -25,9 +25,17 @@ data Expr' loc p
     | EIf (Expr loc p) (Expr loc p) (Expr loc p)
     | EMatch (Expr loc p) [(Pattern loc p, Expr loc p)]
     | ELetIn (LetExtension p) (ValueBinder p loc) (Expr loc p) (Expr loc p)
-    | ELet (LetExtension p) (ValueBinder p loc) (Expr loc p)
     | EAnn (Expr loc p) (Type loc p)
     | EExtension (ExpressionExtension p loc)
+    deriving (Generic)
+
+data Statement loc p = Statement !(NodeLoc ExprNode loc) (Statement' loc p)
+    deriving (Generic)
+
+data Statement' loc p
+    = SLet (ValueBinder p loc) (ValueDeclPatterns p loc) (Expr loc p)
+    | SLetBang (ValueBinder p loc) (Expr loc p)
+    | SExpr (Expr loc p)
     deriving (Generic)
 
 -- | Pattern node with location and metadata
