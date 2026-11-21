@@ -14,6 +14,7 @@ import Elara.AST.Name
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Frontend
 import Elara.AST.Types
+import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
 import Normalise (mkExpr, mkPat, mkStatement)
 import Prelude hiding (Op)
 
@@ -102,7 +103,7 @@ genExpr' =
                         [] -> ELetIn NoExtension n e body
                         _ -> EExtension (FrontendLetInWithPatterns n pats e body)
                 )
-            , EExtension . FrontendTuple . TupleExpression . AtLeast2List.fromNonEmptyUnsafe <$> Gen.nonEmpty (Range.linear 2 10) genExpr
+            , EExtension . FrontendTuple . TupleExpression <$> (AtLeast2List <$> genExpr <*> genExpr <*> Gen.list (Range.linear 0 10) genExpr)
             ]
         )
 

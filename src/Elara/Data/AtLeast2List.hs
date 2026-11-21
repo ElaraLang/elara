@@ -21,10 +21,6 @@ fromList :: [a] -> Maybe (AtLeast2List a)
 fromList (x : y : xs) = Just $ AtLeast2List x y xs
 fromList _ = Nothing
 
-fromNonEmptyUnsafe :: HasCallStack => NonEmpty a -> AtLeast2List a
-fromNonEmptyUnsafe (x :| (y : xs)) = AtLeast2List x y xs
-fromNonEmptyUnsafe _ = error "fromNonEmptyUnsafe: NonEmpty list has less than 2 elements"
-
 fromHeadAndTail :: a -> NonEmpty a -> AtLeast2List a
 fromHeadAndTail x (y :| ys) = AtLeast2List x y ys
 
