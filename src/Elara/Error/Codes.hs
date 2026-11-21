@@ -146,9 +146,6 @@ unboundKindVar = "E3016"
 occursCheckFailedKind :: ErrorCode
 occursCheckFailedKind = "E3017"
 
-letInTopLevel :: ErrorCode
-letInTopLevel = "E3018"
-
 unknownDataConstructor :: ErrorCode
 unknownDataConstructor = "E3019"
 

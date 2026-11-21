@@ -66,16 +66,8 @@ instance ElaraPhase Frontend where
 data FrontendExpressionExtension loc
     = -- | Lambda with multiple patterns (desugared into nested lambdas) e.g. @\ x y-> ...@
       FrontendMultiLam [Pattern loc Frontend] (Expr loc Frontend)
-    | -- | Let with pattern binding (desugared into let + pattern match) e.g. @let (x, y) = pair in ...@
-      FrontendLetWithPatterns (LocateNode VarNode loc VarName) [Pattern loc Frontend] (Expr loc Frontend)
     | -- | Let-in with pattern binding
       FrontendLetInWithPatterns (LocateNode VarNode loc VarName) [Pattern loc Frontend] (Expr loc Frontend) (Expr loc Frontend)
-    | -- | A monadic let: @let! x = val@
-      FrontendLetBang
-        -- | @x@
-        (LocateNode VarNode loc VarName)
-        -- | @val@
-        (Expr loc Frontend)
     | -- | A monadic let-in: @let! x = val in b@
       FrontendLetBangIn
         -- | @x@
@@ -92,8 +84,8 @@ data FrontendExpressionExtension loc
       FrontendList (ListExprExtension loc Frontend)
     | -- | Tuple literal e.g. @(x, y)@
       FrontendTuple (TupleExprExtension loc Frontend)
-    | -- | A block @{x; ...; y}@ containing many expressions/statements separated by semicolons
-      FrontendBlock (NonEmpty (Expr loc Frontend))
+    | -- | A block @{x; ...; y}@ containing many statements separated by semicolons
+      FrontendBlock (NonEmpty (Statement loc Frontend))
     deriving (Generic)
 
 -- | Frontend-specific declaration body
@@ -105,6 +97,10 @@ data FrontendDeclBodyExtension loc
 type FrontendExpr = Expr SourceRegion Frontend
 
 type FrontendExpr' = Expr' SourceRegion Frontend
+
+type FrontendStatement = Statement SourceRegion Frontend
+
+type FrontendStatement' = Statement' SourceRegion Frontend
 
 type FrontendPattern = Pattern SourceRegion Frontend
 
@@ -156,8 +152,6 @@ prettyFrontendExprExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendExpr
 prettyFrontendExprExt = \case
     FrontendMultiLam pats body ->
         parens ("\\" <> hsep (map prettyPattern pats) <+> "->" <+> parens (prettyExpr body))
-    FrontendLetWithPatterns binder pats val ->
-        "let" <+> pretty binder <+> hsep (map prettyPattern pats) <+> "=" <+> prettyExpr val
     FrontendLetInWithPatterns binder pats val body ->
         group
             ( "let"
@@ -167,11 +161,6 @@ prettyFrontendExprExt = \case
                 <+> prettyExpr val
                 <> flatAlt (line <> "in" <+> prettyExpr body) (" in " <> prettyExpr body)
             )
-    FrontendLetBang binder val ->
-        "let!"
-            <+> pretty binder
-            <+> "="
-            <+> prettyExpr val
     FrontendLetBangIn binder val body ->
         group
             ( "let!"
@@ -184,7 +173,7 @@ prettyFrontendExprExt = \case
     FrontendInParens ext -> prettyInParensExt ext
     FrontendList ext -> prettyListExprExt ext
     FrontendTuple ext -> prettyTupleExprExt ext
-    FrontendBlock exprs -> "{" <+> hsep (punctuate ";" (map prettyExpr (toList exprs))) <+> "}"
+    FrontendBlock stmts -> "{" <+> hsep (punctuate ";" (map prettyStatement (toList stmts))) <+> "}"
 
 prettyFrontendDeclBodyExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendDeclBodyExtension loc -> Doc AnsiStyle
 prettyFrontendDeclBodyExt (FrontendValueTypeDef name ty _annotations) =

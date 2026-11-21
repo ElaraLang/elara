@@ -38,7 +38,7 @@ import Elara.Prim qualified as Prim
 
 -- | Data type putting all expression parsers together to avoid deadlocks in CAF initialisation.
 data ExpressionGrammar = ExpressionGrammar
-    { pElement :: Parser FrontendExpr
+    { pElement :: Parser FrontendStatement
     , pExpression :: Parser FrontendExpr
     -- ^ the main expression parser
     }
@@ -50,6 +50,11 @@ locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
 locatedExpr p = do
     Located loc node <- located p
     pure $ Expr (wrap ExprNode loc) () node
+
+locatedStatement :: Parser FrontendStatement' -> Parser FrontendStatement
+locatedStatement p = do
+    Located loc node <- located p
+    pure $ Statement (wrap ExprNode loc) node
 
 {- | The main recursive expression parser.
 Adds function application, cons, and binary operators on top of the basic 'term's.
@@ -88,15 +93,17 @@ term grammar =
 {- | A top level element, comprised of either an expression or a let declaration
 Note that top level let declarations are not parsed here, but in the "Elara.Parse.Declaration" module.
 -}
-element :: ExpressionGrammar -> Parser FrontendExpr
-element grammar = choice [try (pExpression grammar), statement grammar]
+element :: ExpressionGrammar -> Parser FrontendStatement
+element grammar = choice [try (exprStatement <$> pExpression grammar), statement grammar]
+  where
+    exprStatement e = Statement (exprRegion e) (SExpr e)
 
 {- | This is not a "statement" in an imperative sense, but is used to parse let expressions that are not at the top level.
 The reason for having this distinction is that if let's were considered a normal expression, then something like
 @let x = let y = 1@ would be considered valid code, which it is not. Having a separate parser means local let bindings can only be allowed
 in places where they are valid, such as in the body of a function.
 -}
-statement :: ExpressionGrammar -> Parser FrontendExpr
+statement :: ExpressionGrammar -> Parser FrontendStatement
 statement grammar =
     (letBangStatement grammar <?> "monadic let statement")
         <|> (letStatement grammar <?> "let statement")
@@ -328,20 +335,18 @@ letBangInExpression grammar = locatedExpr $ do
     body <- exprBlock TokenIn grammar.pElement <?> "expression after 'in'"
     pure $ EExtension (FrontendLetBangIn name e body)
 
-letStatement :: ExpressionGrammar -> Parser FrontendExpr
-letStatement grammar = locatedExpr $ do
+letStatement :: ExpressionGrammar -> Parser FrontendStatement
+letStatement grammar = locatedStatement $ do
     (name, patterns, e) <- letPreamble grammar TokenLet
-    pure $ case patterns of
-        [] -> ELet NoExtension name e
-        _ -> EExtension (FrontendLetWithPatterns name patterns e)
+    pure (SLet name patterns e)
 
-letBangStatement :: ExpressionGrammar -> Parser FrontendExpr
-letBangStatement grammar = locatedExpr $ do
+letBangStatement :: ExpressionGrammar -> Parser FrontendStatement
+letBangStatement grammar = locatedStatement $ do
     (name, patterns, e) <- letPreamble grammar TokenLetBang
     unless (null patterns) $
         fail "cannot have let! with patterns"
     -- TODO: check that `patterns` are irrefutable before using
-    pure $ EExtension (FrontendLetBang name e)
+    pure (SLetBang name e)
 
 list :: ExpressionGrammar -> Parser FrontendExpr
 list grammar = locatedExpr $ do

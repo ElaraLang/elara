@@ -5,7 +5,7 @@ import Text.Megaparsec (ErrorFancy (ErrorCustom), MonadParsec (..), ParseError (
 import Elara.AST.Location
 import Elara.AST.Phases.Frontend
 import Elara.AST.Region (SourceRegion, sourceRegion, unlocated)
-import Elara.AST.Types (Expr (..), Expr' (..))
+import Elara.AST.Types (Expr (..), Expr' (..), Statement (..), Statement' (..))
 import Elara.Lexer.Token (Lexeme, Token (..), isLayoutBreak)
 import Elara.Parse.Combinators (sepEndBy1')
 import Elara.Parse.Error (ElaraParseError (ExpectedIndentation))
@@ -70,20 +70,27 @@ block introducer mergeBlock single exprParser =
                 -- something is present eventually! whatever it is should probably be indented properly...
                 customFailureAt offset (ExpectedIndentation introducer (firstToken ^. sourceRegion))
 
--- | Helper for parsing blocks of 'FrontendExpr's, merging them based on region and creating a single 'EBlock' wrapping the result.
+{- | Helper for parsing blocks of statements, merging them based on region and creating a single 'FrontendBlock' wrapping the result.
+
+A single expression statement is returned as the expression itself.
+This parses semantically invalid blocks such as blocks ending with @let@ statements, which
+are removed later in the desugar phase.
+-}
 exprBlock ::
     -- | The same as in 'block'
     Token ->
-    Parser FrontendExpr ->
+    Parser FrontendStatement ->
     Parser FrontendExpr
-exprBlock introducer = block introducer merge identity
+exprBlock introducer = block introducer merge single
   where
-    exprRegion :: FrontendExpr -> NodeLoc ExprNode SourceRegion
-    exprRegion (Expr loc _ _) = loc
+    stmtRegion :: FrontendStatement -> NodeLoc ExprNode SourceRegion
+    stmtRegion (Statement loc _) = loc
 
-    merge :: NonEmpty FrontendExpr -> FrontendExpr
-    merge expressions = case expressions of
-        single :| [] -> single
-        _ -> do
-            let region = Region.spanningRegion (exprRegion <$> expressions)
-            Expr region () (EExtension (FrontendBlock expressions))
+    single :: FrontendStatement -> FrontendExpr
+    single (Statement _ (SExpr e)) = e
+    single stmt = Expr (stmtRegion stmt) () (EExtension (FrontendBlock (stmt :| [])))
+
+    merge :: NonEmpty FrontendStatement -> FrontendExpr
+    merge (stmt :| []) = single stmt
+    merge statements =
+        Expr (Region.spanningRegion (stmtRegion <$> statements)) () (EExtension (FrontendBlock statements))

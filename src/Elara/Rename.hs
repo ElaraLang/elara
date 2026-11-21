@@ -381,14 +381,14 @@ isExposingAndExists m@(Module _ m') n =
     isExposition _ _ _ = False
 
 renameDeclaration :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => Declaration SourceRegion Desugared -> Eff r RenamedDeclaration
-renameDeclaration decl@(Declaration dloc (Declaration' mn body)) = do
-    body' <- Eff.runReader (Just decl) $ renameDeclarationBody body
+renameDeclaration (Declaration dloc (Declaration' mn body)) = do
+    body' <- renameDeclarationBody body
     pure $ Declaration dloc (Declaration' mn body')
   where
-    renameDeclarationBody :: (InnerRename r, Rock.Rock Elara.Query.Query :> r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r) => DeclarationBody SourceRegion Desugared -> Eff r RenamedDeclarationBody
+    renameDeclarationBody :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DeclarationBody SourceRegion Desugared -> Eff r RenamedDeclarationBody
     renameDeclarationBody (DeclarationBody bloc body') = DeclarationBody bloc <$> renameDeclarationBody' body'
 
-    renameDeclarationBody' :: (InnerRename r, Rock.Rock Elara.Query.Query :> r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r) => DeclarationBody' SourceRegion Desugared -> Eff r RenamedDeclarationBody'
+    renameDeclarationBody' :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DeclarationBody' SourceRegion Desugared -> Eff r RenamedDeclarationBody'
     renameDeclarationBody' (ValueDeclaration name val _pats _mTy mTypeMeta anns) = scoped $ do
         mTypeMeta' <- traverse renameSimpleTypeAllowNewVars mTypeMeta
         val' <- renameExpr val
@@ -417,7 +417,7 @@ renameDeclaration decl@(Declaration dloc (Declaration' mn body)) = do
             pure $ TypeDeclarationBody qualifiedName vars' typeDecl' Nothing NoExtension anns'
     renameDeclarationBody' (DeclBodyExtension v) = absurd v
 
-renameAnnotation :: (InnerRename r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) => Annotation SourceRegion Desugared -> Eff r (Annotation SourceRegion Renamed)
+renameAnnotation :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => Annotation SourceRegion Desugared -> Eff r (Annotation SourceRegion Renamed)
 renameAnnotation (Annotation name args) = do
     name' <- qualifyTypeName name
     args' <- traverse (\(AnnotationArg e) -> AnnotationArg <$> renameExpr e) args
@@ -507,13 +507,13 @@ renameType antv (TExtension (TupleType tupleElems)) = do
     let (head', tail) = AtLeast2List.toHeadAndTail elems'
     pure $ foldl' (TApp . Type loc ()) (TApp tupleCtor head') tail
 
-renameExpr :: (InnerRename r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpr -> Eff r RenamedExpr
+renameExpr :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpr -> Eff r RenamedExpr
 renameExpr (Expr loc () e') = do
     (e'', meta) <- renameExpr' loc e'
     pure $ Expr loc meta e''
   where
     renameExpr' ::
-        (InnerRename r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) =>
+        (InnerRename r, Rock.Rock Elara.Query.Query :> r) =>
         NodeLoc ExprNode SourceRegion -> Expr' SourceRegion Desugared -> Eff r (RenamedExpr', Maybe RenamedType)
     renameExpr' _ (EInt i) = pure (EInt i, Nothing)
     renameExpr' _ (EFloat i) = pure (EFloat i, Nothing)
@@ -558,9 +558,8 @@ renameExpr (Expr loc () e') = do
         let Expr _ _ e'' = e'
         pure (e'', Just ty')
     renameExpr' _ (EExtension ext) = renameExprExtension ext
-    renameExpr' _ (ELet{}) = error "renameExpr': Let should be handled by renameExpr"
 
-    renameExprExtension :: (InnerRename r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpressionExtension SourceRegion -> Eff r (RenamedExpr', Maybe RenamedType)
+    renameExprExtension :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpressionExtension SourceRegion -> Eff r (RenamedExpr', Maybe RenamedType)
     renameExprExtension (DesugaredBinaryOperator (BinaryOperatorExpression op left right)) = do
         op' <- renameBinaryOperator op
         left' <- renameExpr left
@@ -622,10 +621,9 @@ renameExpr (Expr loc () e') = do
         let Expr _ _ r = foldl' (\acc m -> Expr loc Nothing (EApp NoExtension acc m)) headCtorExpr elemsList
 
         pure (r, Nothing)
-    renameExprExtension (DesugaredBlock es) = do
-        Expr _ ty e <- desugarBlock es
+    renameExprExtension (DesugaredBlock stmts final) = do
+        Expr _ ty e <- renameBlock stmts final
         pure (e, ty)
-    renameExprExtension (DesugaredLetBang name val) = throwError $ StandaloneLetOrLetBang (stripTag name) val
     renameExprExtension (DesugaredLetBangIn name val body) = do
         Expr _ t e <- renameLetBang loc name val (renameExpr body)
         pure (e, t)
@@ -736,7 +734,7 @@ patternToVarName (Pattern _ _ p) =
 
 -- | Turn a pattern and a body into a variable and a match expression. Used for renaming lambdas who use patterns as binders.
 patternToMatch ::
-    (InnerRename r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) =>
+    (InnerRename r, Rock.Rock Elara.Query.Query :> r) =>
     -- | Pattern to turn into a match
     DesugaredPattern ->
     -- | Body of the lambda
@@ -770,41 +768,41 @@ This is a little bit special because patterns have to be converted to match expr
 For example,
 @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 -}
-renameLambda :: (InnerRename r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) => DesugaredPattern -> DesugaredExpr -> Eff r (RenamedExpr', Maybe RenamedType)
+renameLambda :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredPattern -> DesugaredExpr -> Eff r (RenamedExpr', Maybe RenamedType)
 renameLambda p@(Pattern _ argType _) e = do
     (arg, match) <- patternToMatch p e
     argType' <- traverse renameSimpleType argType
     let binder = TypedLambdaParam (arg ^. unlocated) argType'
     pure (ELam NoExtension binder match, Nothing)
 
-desugarBlock ::
-    (InnerRename r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) =>
-    NonEmpty DesugaredExpr -> Eff r RenamedExpr
-desugarBlock (e@(Expr _ () (ELet{})) :| []) = do
-    decl <- Eff.ask @(Maybe (Declaration SourceRegion Desugared))
-    throwError (BlockEndsWithLet e (fmap (\(Declaration _ (Declaration' _ body)) -> body) decl))
-desugarBlock (e :| []) = renameExpr e
-desugarBlock (Expr l () (ELet NoExtension n val) :| (xs1 : xs')) = do
-    n' <- uniquify n
-    locally (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local (stripTag n'))) $ do
-        val' <- renameExpr val
-        block <- desugarBlock (xs1 :| xs')
-        pure $ Expr l Nothing (ELetIn NoExtension n' val' block)
-desugarBlock (Expr l () (EExtension (DesugaredLetBang name val)) :| (next : rest)) = do
-    -- turn @let! x = val; rest@ into @val >>= \x -> rest@
-    renameLetBang l name val (desugarBlock (next :| rest))
-desugarBlock (x :| y : rest) = do
-    -- turn `x; y` into `x >>= \ignored -> y`
-    x' <- renameExpr x
-    ignored <- uniquify (TaggedLocate (tag VarNode (exprLoc x)) (NormalVarName "$ignored"))
-    mkBind (exprLoc x') ignored x' <$> desugarBlock (y :| rest)
+{- | Rename a block @{s1; ...; sn; final}@ by desugaring its statements:
 
-{- | @mkBind loc x val body@ builds @val >>= \x -> body@.
-@loc@ should match the
-@loc@ is the statement that produced the bind: the @>>=@ reference and the
-partial application use it, and the whole expression spans from it to the end of @body@.
+* @let x = v; rest@ becomes @let x = v in rest@
+* @let! x = v; rest@ becomes @v >>= \x -> rest@
+* @e; rest@ becomes @e >>= \ignored -> rest@
 -}
+renameBlock ::
+    (InnerRename r, Rock.Rock Elara.Query.Query :> r) =>
+    NonEmpty (Statement SourceRegion Desugared) ->
+    DesugaredExpr ->
+    Eff r RenamedExpr
+renameBlock (Statement l stmt :| rest) final = case stmt of
+    SLet n () val -> do
+        n' <- uniquify n
+        locally (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local (stripTag n'))) $ do
+            val' <- renameExpr val
+            Expr l Nothing . ELetIn NoExtension n' val' <$> renameRest
+    SLetBang name val -> renameLetBang l name val renameRest
+    SExpr x -> do
+        x' <- renameExpr x
+        ignored <- uniquify (TaggedLocate (tag VarNode (exprLoc x)) (NormalVarName "$ignored"))
+        mkBind (exprLoc x') ignored x' <$> renameRest
+  where
+    renameRest = maybe (renameExpr final) (`renameBlock` final) (nonEmpty rest)
+
+-- | @mkBind loc x val body@ builds @val >>= \x -> body@.
 mkBind ::
+    -- | location of the statement that produced the bind, which will be used as the location of the @>>=@ reference and its partial application. The overall expression has a span from this location to the end of @body@'s location
     NodeLoc ExprNode SourceRegion ->
     TaggedLocate VarNode SourceRegion (Unique VarName) ->
     RenamedExpr ->
@@ -819,7 +817,7 @@ mkBind loc binder val body =
     lam = Expr (exprLoc body) Nothing (ELam NoExtension (TypedLambdaParam (stripTag binder ^. unlocated) Nothing) body)
 
 renameLetBang ::
-    (InnerRename r, Eff.Reader (Maybe (Declaration SourceRegion Desugared)) :> r, Rock.Rock Elara.Query.Query :> r) =>
+    (InnerRename r, Rock.Rock Elara.Query.Query :> r) =>
     NodeLoc ExprNode SourceRegion ->
     TaggedLocate VarNode SourceRegion VarName ->
     DesugaredExpr ->

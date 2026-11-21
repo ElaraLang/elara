@@ -22,7 +22,7 @@ grammarKnot =
 exprParser :: Parser FrontendExpr
 exprParser = grammarKnot.pExpression
 
-element :: Parser FrontendExpr
+element :: Parser FrontendStatement
 element = grammarKnot.pElement
 
 letPreambleParser :: Parser (TaggedLocate VarNode SourceRegion VarName, [FrontendPattern], FrontendExpr)

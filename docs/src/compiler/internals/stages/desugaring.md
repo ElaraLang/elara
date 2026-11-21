@@ -44,5 +44,6 @@ However we still do a traversal for most of the AST, which handles some specific
 - Multi parameter lambdas desugar into nested single-parameter lambdas, e.g. `\x y -> x` becomes `\x -> \y -> x`
 - `let` bindings with multiple parameters are also desugared into bindings with nested lambdas, e.g. `let f x y = x` becomes `let f = \x -> \y -> x`
 - Tuple pattterns are checked that they have at least length 2. This is mostly a sanity check because the parser should never emit a 1-tuple pattern
+- Blocks (`FrontendBlock`) are split into their leading statements (`let`, `let!`, or a bare expression) and a final expression, producing `DesugaredBlock`. A block whose last element is a `let` or `let!` is rejected with `BlockEndsWithLet`.
 
 Everything else is more or less the identity traversal

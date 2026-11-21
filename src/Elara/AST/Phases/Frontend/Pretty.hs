@@ -10,6 +10,7 @@ Pretty class defined in Elara.Data.Pretty).
 module Elara.AST.Phases.Frontend.Pretty (
     prettyExprRoundTrip,
     prettyPatternRoundTrip,
+    prettyStatementRoundTrip,
 ) where
 
 import Prettyprinter hiding (Pretty (..))
@@ -66,8 +67,6 @@ prettyExprRoundTrip' = \case
         prettyAlt (pat, body) = prettyPatternRoundTrip pat <+> "->" <+> prettyExprRoundTrip body
     ELetIn _ binder val body ->
         parens ("let" <+> prettyValueBinder @Frontend @loc binder <+> "=" <+> prettyExprRoundTrip val <+> "in" <+> prettyExprRoundTrip body)
-    ELet _ binder val ->
-        parens ("let" <+> prettyValueBinder @Frontend @loc binder <+> "=" <+> prettyExprRoundTrip val)
     EAnn e t -> prettyExprRoundTrip e <+> ":" <+> prettyType t
     EExtension ext -> prettyFrontendExprExtRoundTrip ext
 
@@ -75,10 +74,10 @@ prettyFrontendExprExtRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Fro
 prettyFrontendExprExtRoundTrip = \case
     FrontendMultiLam pats body ->
         parens ("\\" <> hsep (map prettyPatternRoundTrip pats) <+> "->" <+> parens (prettyExprRoundTrip body))
-    FrontendLetWithPatterns binder pats val ->
-        parens ("let" <+> pretty binder <+> hsep (map prettyPatternRoundTrip pats) <+> "=" <+> prettyExprRoundTrip val)
     FrontendLetInWithPatterns binder pats val body ->
         parens ("let" <+> pretty binder <+> hsep (map prettyPatternRoundTrip pats) <+> "=" <+> prettyExprRoundTrip val <+> "in" <+> prettyExprRoundTrip body)
+    FrontendLetBangIn binder val body ->
+        parens ("let!" <+> pretty binder <+> "=" <+> prettyExprRoundTrip val <+> "in" <+> prettyExprRoundTrip body)
     FrontendBinaryOperator (BinaryOperatorExpression op lhs rhs) ->
         parens (prettyExprRoundTrip lhs <+> prettyBinaryOperator @_ @Frontend op <+> prettyExprRoundTrip rhs)
     FrontendInParens (InParensExpression e) ->
@@ -87,6 +86,14 @@ prettyFrontendExprExtRoundTrip = \case
         "[" <+> hsep (punctuate "," (map prettyExprRoundTrip es)) <+> "]"
     FrontendTuple (TupleExpression items) ->
         parens (hsep (punctuate "," (map prettyExprRoundTrip (AtLeast2List.toList items))))
+    FrontendBlock stmts ->
+        "{" <+> hsep (punctuate ";" (map prettyStatementRoundTrip (toList stmts))) <+> "}"
+
+prettyStatementRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Statement loc Frontend -> Doc AnsiStyle
+prettyStatementRoundTrip (Statement _ node) = case node of
+    SLet binder pats val -> hsep (["let", prettyValueBinder @Frontend @loc binder] <> map prettyPatternRoundTrip pats) <+> "=" <+> prettyExprRoundTrip val
+    SLetBang binder val -> "let!" <+> prettyValueBinder @Frontend @loc binder <+> "=" <+> prettyExprRoundTrip val
+    SExpr e -> prettyExprRoundTrip e
 
 prettyPatternRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Pattern loc Frontend -> Doc AnsiStyle
 prettyPatternRoundTrip (Pattern _ meta node) =

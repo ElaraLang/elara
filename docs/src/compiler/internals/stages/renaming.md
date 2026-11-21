@@ -34,6 +34,12 @@ Some syntactic sugar is desugared at rename time:
 - `TUnit` types are desugared to `Elara.Prim.Unit`
 - Tuple expressions are desugared to applications of `Elara.Prim.Tuple2` (and `Tuple3`, etc.)
 - List syntax is desugared to chains of `Elara.Prim.Cons` terminated by `Elara.Prim.Nil`
+- Blocks (`DesugaredBlock`) are lowered statement by statement, replacing statements with normal and monadic expressions:
+  - `let x = v; rest` becomes `let x = v in rest`
+  - `let! x = v; rest` becomes `v >>= \x -> rest`
+  - `e; rest` becomes `e >>= \ignored -> rest`
+
+- `let! x = v in body` becomes `v >>= \x -> body`
 
 ## Scope Management
 
@@ -60,6 +66,5 @@ When the renamer encounters problems, it throws a [`RenameError`]({{hackage_base
 - `NonExistentModuleDeclaration` - module declaration does not exist
 - `UnknownTypeVariable` - type variable not in scope
 - `RecursiveTypeAlias` - a type alias directly or indirectly references itself
-- `BlockEndsWithLet` - a block ends with a let binding, we can't desugar this in any meaningful way
 - `QualifiedInWrongModule` - a qualified declaration is used in the wrong module
 - `UnknownCurrentModule` - internal error when the current module cannot be determined

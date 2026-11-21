@@ -220,49 +220,61 @@ desugarExpr (Expr loc () e') = Expr loc () <$> desugarExpr' e'
         pure (EMatch e'' cases')
     desugarExpr' (ELetIn NoExtension n e body) =
         ELetIn NoExtension n <$> desugarExpr e <*> desugarExpr body
-    desugarExpr' (ELet NoExtension n e) =
-        ELet NoExtension n <$> desugarExpr e
     desugarExpr' (EAnn e ty) = EAnn <$> desugarExpr e <*> desugarType ty
-    desugarExpr' (EExtension ext) = desugarExprExtension ext
+    desugarExpr' (EExtension ext) = desugarExprExtension loc ext
 
-desugarExprExtension :: Frontend.FrontendExpressionExtension SourceRegion -> Desugar (Expr' SourceRegion Desugared)
-desugarExprExtension (Frontend.FrontendMultiLam pats body) = do
+desugarExprExtension ::
+    -- | Location of the whole expression, used for error reporting
+    NodeLoc ExprNode SourceRegion ->
+    Frontend.FrontendExpressionExtension SourceRegion ->
+    Desugar (Expr' SourceRegion Desugared)
+desugarExprExtension _ (Frontend.FrontendMultiLam pats body) = do
     pats' <- traverse desugarPattern pats
     body' <- desugarExpr body
     let folded = foldLambda pats' body'
     let Expr _ () inner = folded
     pure inner
-desugarExprExtension (Frontend.FrontendLetWithPatterns n pats e) = do
-    pats' <- traverse desugarPattern pats
-    e' <- desugarExpr e
-    pure (ELet NoExtension n (foldLambda pats' e'))
-desugarExprExtension (Frontend.FrontendLetInWithPatterns n pats e body) = do
+desugarExprExtension _ (Frontend.FrontendLetInWithPatterns n pats e body) = do
     pats' <- traverse desugarPattern pats
     e' <- desugarExpr e
     body' <- desugarExpr body
     pure (ELetIn NoExtension n (foldLambda pats' e') body')
-desugarExprExtension (Frontend.FrontendBinaryOperator ext) = do
+desugarExprExtension _ (Frontend.FrontendBinaryOperator ext) = do
     ext' <- desugarBinaryOperatorExtension ext
     pure (EExtension (DesugaredBinaryOperator ext'))
-desugarExprExtension (Frontend.FrontendInParens (InParensExpression e)) = do
+desugarExprExtension _ (Frontend.FrontendInParens (InParensExpression e)) = do
     e' <- desugarExpr e
     pure (EExtension (DesugaredInParens (InParensExpression e')))
-desugarExprExtension (Frontend.FrontendList (ListExpression es)) = do
+desugarExprExtension _ (Frontend.FrontendList (ListExpression es)) = do
     es' <- traverse desugarExpr es
     pure (EExtension (DesugaredList (ListExpression es')))
-desugarExprExtension (Frontend.FrontendTuple (TupleExpression es)) = do
+desugarExprExtension _ (Frontend.FrontendTuple (TupleExpression es)) = do
     es' <- traverse desugarExpr es
     pure (EExtension (DesugaredTuple (TupleExpression es')))
-desugarExprExtension (Frontend.FrontendLetBang name val) = do
-    val' <- desugarExpr val
-    pure (EExtension (DesugaredLetBang name val'))
-desugarExprExtension (Frontend.FrontendLetBangIn name val body) = do
+desugarExprExtension _ (Frontend.FrontendLetBangIn name val body) = do
     val' <- desugarExpr val
     body' <- desugarExpr body
     pure (EExtension (DesugaredLetBangIn name val' body'))
-desugarExprExtension (Frontend.FrontendBlock exprs) = do
-    exprs' <- traverse desugarExpr exprs
-    pure (EExtension (DesugaredBlock exprs'))
+desugarExprExtension blockLoc (Frontend.FrontendBlock stmts) = do
+    stmts' <- traverse desugarStatement stmts
+    case last stmts' of
+        Statement _ (SExpr final) ->
+            case nonEmpty (init stmts') of
+                Nothing -> let Expr _ () inner = final in pure inner -- if the block is just 1 expression, replace with just that expression
+                Just leading -> pure (EExtension (DesugaredBlock leading final)) -- all leading statements and the final expression
+        Statement letLoc SLet{} -> throwError (BlockEndsWithLet PlainLet letLoc blockLoc)
+        Statement letLoc SLetBang{} -> throwError (BlockEndsWithLet LetBang letLoc blockLoc)
+
+desugarStatement :: Statement SourceRegion Frontend.Frontend -> Desugar (Statement SourceRegion Desugared)
+desugarStatement (Statement loc stmt) = Statement loc <$> desugarStatement' stmt
+  where
+    desugarStatement' :: Statement' SourceRegion Frontend.Frontend -> Desugar (Statement' SourceRegion Desugared)
+    desugarStatement' (SLet n pats e) = do
+        pats' <- traverse desugarPattern pats
+        e' <- desugarExpr e
+        pure (SLet n () (foldLambda pats' e'))
+    desugarStatement' (SLetBang n e) = SLetBang n <$> desugarExpr e
+    desugarStatement' (SExpr e) = SExpr <$> desugarExpr e
 
 desugarBinaryOperatorExtension :: BinaryOperatorExtension SourceRegion Frontend.Frontend -> Desugar (BinaryOperatorExtension SourceRegion Desugared)
 desugarBinaryOperatorExtension (BinaryOperatorExpression op a b) = do
