@@ -146,6 +146,9 @@ spec = describe "Golden tests" $ do
         it "Trailing operator with no right operand" $
             runGoldenError defaultSettings "error-trailing-operator"
 
+        it "Expression annotation that doesn't match the expression's type" $
+            runGoldenError defaultSettings "error-annotation-mismatch"
+
         it "Block whose last statement is a let binding" $
             runGoldenError defaultSettings "error-desugar-block-ends-with-let"
 
