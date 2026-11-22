@@ -24,25 +24,25 @@ The remaining digits are arbitrary and should be incremented for each new error 
 Some errors are internal, rather than user-facing (i.e. something internal has gone wrong if they are thrown).
   These errors' codes should be prefixed with @[Internal]@.
 -}</span></span><span>
-</span><span id="line-27"></span><span class="hs-keyword">newtype</span><span> </span><span id="ErrorCode"><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-var">ErrorCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ErrorCode"><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-var">ErrorCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680026208"><span class="annot"><a href="#local-6989586621680026208"><span class="hs-identifier hs-type">ann</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621680026208"><span class="hs-identifier hs-type">ann</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">newtype</span><span> </span><span id="ErrorCode"><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-var">ErrorCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ErrorCode"><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-var">ErrorCode</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680038797"><span class="annot"><a href="#local-6989586621680038797"><span class="hs-identifier hs-type">ann</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Doc</span></span><span> </span><span class="annot"><a href="#local-6989586621680038797"><span class="hs-identifier hs-type">ann</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-28"></span><span>
 </span><span id="line-29"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-30"></span><span>    </span><span id="local-6989586621680026270"><span class="annot"><span class="annottext">pretty :: ErrorCode -&gt; Doc AnsiStyle
-</span><a href="#local-6989586621680026270"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span> </span><span id="local-6989586621680026272"><span class="annot"><span class="annottext">forall ann. Doc ann
-</span><a href="#local-6989586621680026272"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621680038858"><span class="annot"><span class="annottext">pretty :: ErrorCode -&gt; Doc AnsiStyle
+</span><a href="#local-6989586621680038858"><span class="hs-identifier hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span> </span><span id="local-6989586621680038860"><span class="annot"><span class="annottext">forall ann. Doc ann
+</span><a href="#local-6989586621680038860"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Doc AnsiStyle
 forall ann. Doc ann
-</span><a href="#local-6989586621680026272"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><a href="#local-6989586621680038860"><span class="hs-identifier hs-var">d</span></a></span><span>
 </span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span id="local-6989586621680026274"><span id="local-6989586621680026280"><span id="local-6989586621680026284"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span></span></span></span><span>
+</span><span id="line-32"></span><span id="local-6989586621680038862"><span id="local-6989586621680038868"><span id="local-6989586621680038872"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span></span></span></span><span>
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-35"></span><span>    </span><span id="local-6989586621680026290"><span class="annot"><span class="annottext">fromString :: String -&gt; ErrorCode
-</span><span class="hs-identifier hs-var hs-var hs-var">fromString</span></span></span><span> </span><span id="local-6989586621680026291"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680026291"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall ann. Doc ann) -&gt; ErrorCode
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621680038878"><span class="annot"><span class="annottext">fromString :: String -&gt; ErrorCode
+</span><span class="hs-identifier hs-var hs-var hs-var">fromString</span></span></span><span> </span><span id="local-6989586621680038879"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680038879"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall ann. Doc ann) -&gt; ErrorCode
 </span><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-var">ErrorCode</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Doc ann
 forall a. IsString a =&gt; String -&gt; a
 </span><span class="hs-identifier hs-var">fromString</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621680026291"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621680038879"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-36"></span><span>
 </span><span id="line-37"></span><span class="annot"><a href="Elara.Error.Codes.html#fileReadError"><span class="hs-identifier hs-type">fileReadError</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
 </span><span id="line-38"></span><span id="fileReadError"><span class="annot"><span class="annottext">fileReadError :: ErrorCode
@@ -230,68 +230,63 @@ forall a. IsString a =&gt; String -&gt; a
 </span><a href="Elara.Error.Codes.html#occursCheckFailedKind"><span class="hs-identifier hs-var hs-var">occursCheckFailedKind</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E3017&quot;</span></span><span>
 </span><span id="line-148"></span><span>
-</span><span id="line-149"></span><span class="annot"><a href="Elara.Error.Codes.html#letInTopLevel"><span class="hs-identifier hs-type">letInTopLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-150"></span><span id="letInTopLevel"><span class="annot"><span class="annottext">letInTopLevel :: ErrorCode
-</span><a href="Elara.Error.Codes.html#letInTopLevel"><span class="hs-identifier hs-var hs-var">letInTopLevel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
-</span><span class="hs-string">&quot;E3018&quot;</span></span><span>
-</span><span id="line-151"></span><span>
-</span><span id="line-152"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownDataConstructor"><span class="hs-identifier hs-type">unknownDataConstructor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-153"></span><span id="unknownDataConstructor"><span class="annot"><span class="annottext">unknownDataConstructor :: ErrorCode
+</span><span id="line-149"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownDataConstructor"><span class="hs-identifier hs-type">unknownDataConstructor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-150"></span><span id="unknownDataConstructor"><span class="annot"><span class="annottext">unknownDataConstructor :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownDataConstructor"><span class="hs-identifier hs-var hs-var">unknownDataConstructor</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E3019&quot;</span></span><span>
-</span><span id="line-154"></span><span>
-</span><span id="line-155"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownPrimConstructor"><span class="hs-identifier hs-type">unknownPrimConstructor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-156"></span><span id="unknownPrimConstructor"><span class="annot"><span class="annottext">unknownPrimConstructor :: ErrorCode
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownPrimConstructor"><span class="hs-identifier hs-type">unknownPrimConstructor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-153"></span><span id="unknownPrimConstructor"><span class="annot"><span class="annottext">unknownPrimConstructor :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownPrimConstructor"><span class="hs-identifier hs-var hs-var">unknownPrimConstructor</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E3020&quot;</span></span><span>
-</span><span id="line-157"></span><span>
-</span><span id="line-158"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownTypeConstructor"><span class="hs-identifier hs-type">unknownTypeConstructor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-159"></span><span id="unknownTypeConstructor"><span class="annot"><span class="annottext">unknownTypeConstructor :: ErrorCode
+</span><span id="line-154"></span><span>
+</span><span id="line-155"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownTypeConstructor"><span class="hs-identifier hs-type">unknownTypeConstructor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-156"></span><span id="unknownTypeConstructor"><span class="annot"><span class="annottext">unknownTypeConstructor :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownTypeConstructor"><span class="hs-identifier hs-var hs-var">unknownTypeConstructor</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E3021&quot;</span></span><span>
-</span><span id="line-160"></span><span>
-</span><span id="line-161"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownLambdaType"><span class="hs-identifier hs-type">unknownLambdaType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-162"></span><span id="unknownLambdaType"><span class="annot"><span class="annottext">unknownLambdaType :: ErrorCode
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownLambdaType"><span class="hs-identifier hs-type">unknownLambdaType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-159"></span><span id="unknownLambdaType"><span class="annot"><span class="annottext">unknownLambdaType :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownLambdaType"><span class="hs-identifier hs-var hs-var">unknownLambdaType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E3022&quot;</span></span><span>
-</span><span id="line-163"></span><span>
-</span><span id="line-164"></span><span class="annot"><a href="Elara.Error.Codes.html#unsolvedTypeSnuckIn"><span class="hs-identifier hs-type">unsolvedTypeSnuckIn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-165"></span><span id="unsolvedTypeSnuckIn"><span class="annot"><span class="annottext">unsolvedTypeSnuckIn :: ErrorCode
+</span><span id="line-160"></span><span>
+</span><span id="line-161"></span><span class="annot"><a href="Elara.Error.Codes.html#unsolvedTypeSnuckIn"><span class="hs-identifier hs-type">unsolvedTypeSnuckIn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-162"></span><span id="unsolvedTypeSnuckIn"><span class="annot"><span class="annottext">unsolvedTypeSnuckIn :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unsolvedTypeSnuckIn"><span class="hs-identifier hs-var hs-var">unsolvedTypeSnuckIn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E3023&quot;</span></span><span>
-</span><span id="line-166"></span><span>
-</span><span id="line-167"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownVariable"><span class="hs-identifier hs-type">unknownVariable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-168"></span><span id="unknownVariable"><span class="annot"><span class="annottext">unknownVariable :: ErrorCode
+</span><span id="line-163"></span><span>
+</span><span id="line-164"></span><span class="annot"><a href="Elara.Error.Codes.html#unknownVariable"><span class="hs-identifier hs-type">unknownVariable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-165"></span><span id="unknownVariable"><span class="annot"><span class="annottext">unknownVariable :: ErrorCode
 </span><a href="Elara.Error.Codes.html#unknownVariable"><span class="hs-identifier hs-var hs-var">unknownVariable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E3024&quot;</span></span><span>
-</span><span id="line-169"></span><span>
-</span><span id="line-170"></span><span class="annot"><a href="Elara.Error.Codes.html#patternArityMismatch"><span class="hs-identifier hs-type">patternArityMismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-171"></span><span id="patternArityMismatch"><span class="annot"><span class="annottext">patternArityMismatch :: ErrorCode
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span class="annot"><a href="Elara.Error.Codes.html#patternArityMismatch"><span class="hs-identifier hs-type">patternArityMismatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-168"></span><span id="patternArityMismatch"><span class="annot"><span class="annottext">patternArityMismatch :: ErrorCode
 </span><a href="Elara.Error.Codes.html#patternArityMismatch"><span class="hs-identifier hs-var hs-var">patternArityMismatch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E3025&quot;</span></span><span>
-</span><span id="line-172"></span><span>
-</span><span id="line-173"></span><span class="annot"><a href="Elara.Error.Codes.html#requiredDeclNotFound"><span class="hs-identifier hs-type">requiredDeclNotFound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-174"></span><span id="requiredDeclNotFound"><span class="annot"><span class="annottext">requiredDeclNotFound :: ErrorCode
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span class="annot"><a href="Elara.Error.Codes.html#requiredDeclNotFound"><span class="hs-identifier hs-type">requiredDeclNotFound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-171"></span><span id="requiredDeclNotFound"><span class="annot"><span class="annottext">requiredDeclNotFound :: ErrorCode
 </span><a href="Elara.Error.Codes.html#requiredDeclNotFound"><span class="hs-identifier hs-var hs-var">requiredDeclNotFound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E5001&quot;</span></span><span>
-</span><span id="line-175"></span><span>
-</span><span id="line-176"></span><span class="annot"><a href="Elara.Error.Codes.html#invalidAnnotationArrangement"><span class="hs-identifier hs-type">invalidAnnotationArrangement</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-177"></span><span id="invalidAnnotationArrangement"><span class="annot"><span class="annottext">invalidAnnotationArrangement :: ErrorCode
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span class="annot"><a href="Elara.Error.Codes.html#invalidAnnotationArrangement"><span class="hs-identifier hs-type">invalidAnnotationArrangement</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-174"></span><span id="invalidAnnotationArrangement"><span class="annot"><span class="annottext">invalidAnnotationArrangement :: ErrorCode
 </span><a href="Elara.Error.Codes.html#invalidAnnotationArrangement"><span class="hs-identifier hs-var hs-var">invalidAnnotationArrangement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E5002&quot;</span></span><span>
-</span><span id="line-178"></span><span>
-</span><span id="line-179"></span><span class="annot"><a href="Elara.Error.Codes.html#stdlibDirNotFound"><span class="hs-identifier hs-type">stdlibDirNotFound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-180"></span><span id="stdlibDirNotFound"><span class="annot"><span class="annottext">stdlibDirNotFound :: ErrorCode
+</span><span id="line-175"></span><span>
+</span><span id="line-176"></span><span class="annot"><a href="Elara.Error.Codes.html#stdlibDirNotFound"><span class="hs-identifier hs-type">stdlibDirNotFound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-177"></span><span id="stdlibDirNotFound"><span class="annot"><span class="annottext">stdlibDirNotFound :: ErrorCode
 </span><a href="Elara.Error.Codes.html#stdlibDirNotFound"><span class="hs-identifier hs-var hs-var">stdlibDirNotFound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E5003&quot;</span></span><span>
-</span><span id="line-181"></span><span>
-</span><span id="line-182"></span><span class="annot"><a href="Elara.Error.Codes.html#ejectTargetExists"><span class="hs-identifier hs-type">ejectTargetExists</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-183"></span><span id="ejectTargetExists"><span class="annot"><span class="annottext">ejectTargetExists :: ErrorCode
+</span><span id="line-178"></span><span>
+</span><span id="line-179"></span><span class="annot"><a href="Elara.Error.Codes.html#ejectTargetExists"><span class="hs-identifier hs-type">ejectTargetExists</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-180"></span><span id="ejectTargetExists"><span class="annot"><span class="annottext">ejectTargetExists :: ErrorCode
 </span><a href="Elara.Error.Codes.html#ejectTargetExists"><span class="hs-identifier hs-var hs-var">ejectTargetExists</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E5004&quot;</span></span><span>
-</span><span id="line-184"></span><span>
-</span><span id="line-185"></span><span class="annot"><a href="Elara.Error.Codes.html#javaNotFound"><span class="hs-identifier hs-type">javaNotFound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
-</span><span id="line-186"></span><span id="javaNotFound"><span class="annot"><span class="annottext">javaNotFound :: ErrorCode
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span class="annot"><a href="Elara.Error.Codes.html#javaNotFound"><span class="hs-identifier hs-type">javaNotFound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.Error.Codes.html#ErrorCode"><span class="hs-identifier hs-type">ErrorCode</span></a></span><span>
+</span><span id="line-183"></span><span id="javaNotFound"><span class="annot"><span class="annottext">javaNotFound :: ErrorCode
 </span><a href="Elara.Error.Codes.html#javaNotFound"><span class="hs-identifier hs-var hs-var">javaNotFound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ErrorCode
 </span><span class="hs-string">&quot;E5005&quot;</span></span><span>
-</span><span id="line-187"></span></pre></body></html>
+</span><span id="line-184"></span></pre></body></html>
