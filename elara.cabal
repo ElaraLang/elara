@@ -223,6 +223,8 @@ library
     , hashable >=1.5.1.0 && <1.6
     , kind-generics-th >=0.2.3.3 && <0.3
     , lifted-base >=0.2.3.2 && <0.3
+    , lsp >=2.8.0.0
+    , lsp-types
     , matrix >=0.3.6.2 && <0.4
     , megaparsec >=9.5.0 && <9.8
     , mtl >=2.3.1 && <2.4
@@ -277,6 +279,8 @@ executable elara
     , effectful
     , effectful-core
     , elara
+    , lsp >=2.8.0.0
+    , lsp-types
     , opt-env-conf >=0.5.0.0 && <0.18
     , relude
   mixins:
@@ -343,6 +347,8 @@ test-suite elara-test
     , filepath
     , h2jvm
     , hedgehog >=1.5 && <1.8
+    , lsp >=2.8.0.0
+    , lsp-types
     , megaparsec
     , neat-interpolation >=0.5.1.4 && <0.6
     , prettyprinter

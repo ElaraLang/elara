@@ -28,6 +28,16 @@ source-repository-package
     --sha256: sha256-n5LhwJUZn4NZDmV3W1FMsp/vmuDQrhbVy/WPx+3Dbvs=
     subdir: safe-coloured-text-terminfo
 
+-- latest unreleased lsp build has conditional websocket support
+source-repository-package
+    type: git
+    location: https://github.com/haskell/lsp
+    tag: 965490d9fe64b68370f8fb1c4127ac9ce6f20afd
+    --sha256: sha256-/0vWCqQIOJFBm3l0JsmZDRh6eZ11YGJEVZPnMa+BHjk=
+    subdir:
+        lsp
+        lsp-types
+
 package elara
     haddock-options: --source-module="https://github.com/ElaraLang/elara/tree/main/%F" --source-entity="https://github.com/ElaraLang/elara/tree/main/%F#L%L"
     optimization: False
@@ -42,3 +52,6 @@ if arch(wasm32)
   -- Template Haskell on wasm loads dependencies as shared libraries
   package *
     shared: True
+
+  package lsp
+    flags: -websocket

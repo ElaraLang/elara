@@ -36,6 +36,8 @@ dependencies:
   - name: base
     version: ">=4.21.1.0 && <4.22"
     mixin: [hiding (Prelude)]
+  - lsp>=2.8.0.0
+  - lsp-types
 library:
   source-dirs: src
   build-tools:
