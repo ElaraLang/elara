@@ -25,7 +25,8 @@ data Expr' loc p
     | EIf (Expr loc p) (Expr loc p) (Expr loc p)
     | EMatch (Expr loc p) [(Pattern loc p, Expr loc p)]
     | ELetIn (LetExtension p) (ValueBinder p loc) (Expr loc p) (Expr loc p)
-    | EAnn (Expr loc p) (Type loc p)
+    | -- | Type annotation / ascription @(e : T)@
+      EAnn (Expr loc p) (Type loc p)
     | EExtension (ExpressionExtension p loc)
     deriving (Generic)
 

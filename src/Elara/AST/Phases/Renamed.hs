@@ -58,7 +58,7 @@ instance ElaraPhase Renamed where
     type LambdaBinder Renamed loc = TypedLambdaParam (Unique VarName) loc Renamed
 
     -- Metadata
-    type ExpressionMeta Renamed loc = Maybe (Type loc Renamed) -- carried through from source
+    type ExpressionMeta Renamed loc = ()
     type PatternMeta Renamed loc = Maybe (Type loc Renamed)
     type TypeMeta Renamed loc = ()
 
@@ -126,8 +126,7 @@ instance PrettyPhase Renamed where
     prettyTypeVariable = pretty
     prettyConstructorBinder = pretty
     prettyLambdaBinder = prettyTypedLambdaParam
-    prettyExpressionMeta Nothing = Nothing
-    prettyExpressionMeta (Just t) = Just (prettyType t)
+    prettyExpressionMeta () = Nothing
     prettyPatternMeta Nothing = Nothing
     prettyPatternMeta (Just t) = Just (prettyType t)
     prettyTypeMeta () = Nothing

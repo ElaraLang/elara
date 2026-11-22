@@ -508,88 +508,65 @@ renameType antv (TExtension (TupleType tupleElems)) = do
     pure $ foldl' (TApp . Type loc ()) (TApp tupleCtor head') tail
 
 renameExpr :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpr -> Eff r RenamedExpr
-renameExpr (Expr loc () e') = do
-    (e'', meta) <- renameExpr' loc e'
-    pure $ Expr loc meta e''
+renameExpr (Expr loc () e') = Expr loc () <$> renameExpr' e'
   where
     renameExpr' ::
         (InnerRename r, Rock.Rock Elara.Query.Query :> r) =>
-        NodeLoc ExprNode SourceRegion -> Expr' SourceRegion Desugared -> Eff r (RenamedExpr', Maybe RenamedType)
-    renameExpr' _ (EInt i) = pure (EInt i, Nothing)
-    renameExpr' _ (EFloat i) = pure (EFloat i, Nothing)
-    renameExpr' _ (EString i) = pure (EString i, Nothing)
-    renameExpr' _ (EChar i) = pure (EChar i, Nothing)
-    renameExpr' _ EUnit = pure (EUnit, Nothing)
-    renameExpr' _ (EVar NoExtension i) = do
-        i' <- lookupVarName i
-        pure (EVar NoExtension i', Nothing)
-    renameExpr' _ (ECon NoExtension i) = do
-        i' <- lookupTypeName i
-        pure (ECon NoExtension i', Nothing)
-    renameExpr' _ (ELam NoExtension pat body) = do
-        (e'', meta) <- renameLambda pat body
-        pure (e'', meta)
-    renameExpr' _ (EApp NoExtension e1 e2) = do
-        e1' <- renameExpr e1
-        e2' <- renameExpr e2
-        pure (EApp NoExtension e1' e2', Nothing)
-    renameExpr' _ (ETyApp e1 t1) = do
-        e1' <- renameExpr e1
-        t1' <- renameSimpleType t1
-        pure (ETyApp e1' t1', Nothing)
-    renameExpr' _ (EIf e1 e2 e3) = do
-        e1' <- renameExpr e1
-        e2' <- renameExpr e2
-        e3' <- renameExpr e3
-        pure (EIf e1' e2' e3', Nothing)
-    renameExpr' _ (EMatch e cases) = do
+        Expr' SourceRegion Desugared -> Eff r RenamedExpr'
+    renameExpr' (EInt i) = pure (EInt i)
+    renameExpr' (EFloat i) = pure (EFloat i)
+    renameExpr' (EString i) = pure (EString i)
+    renameExpr' (EChar i) = pure (EChar i)
+    renameExpr' EUnit = pure EUnit
+    renameExpr' (EVar NoExtension i) = EVar NoExtension <$> lookupVarName i
+    renameExpr' (ECon NoExtension i) = ECon NoExtension <$> lookupTypeName i
+    renameExpr' (ELam NoExtension pat body) = renameLambda pat body
+    renameExpr' (EApp NoExtension e1 e2) = EApp NoExtension <$> renameExpr e1 <*> renameExpr e2
+    renameExpr' (ETyApp e1 t1) = ETyApp <$> renameExpr e1 <*> renameSimpleType t1
+    renameExpr' (EIf e1 e2 e3) = EIf <$> renameExpr e1 <*> renameExpr e2 <*> renameExpr e3
+    renameExpr' (EMatch e cases) = do
         e' <- renameExpr e
         cases' <- traverse (bitraverse renamePattern renameExpr) cases
-        pure (EMatch e' cases', Nothing)
-    renameExpr' _ (ELetIn NoExtension vn e body) = do
+        pure (EMatch e' cases')
+    renameExpr' (ELetIn NoExtension vn e body) = do
         vn' <- uniquify vn
         locally (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local (stripTag vn'))) $ do
             exp' <- renameExpr e
             body' <- renameExpr body
-            pure (ELetIn NoExtension vn' exp' body', Nothing)
-    renameExpr' _ (EAnn e ty) = do
-        e' <- renameExpr e
-        ty' <- renameSimpleType ty
-        let Expr _ _ e'' = e'
-        pure (e'', Just ty')
-    renameExpr' _ (EExtension ext) = renameExprExtension ext
+            pure (ELetIn NoExtension vn' exp' body')
+    renameExpr' (EAnn e ty) = EAnn <$> renameExpr e <*> renameSimpleType ty
+    renameExpr' (EExtension ext) = renameExprExtension ext
 
-    renameExprExtension :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpressionExtension SourceRegion -> Eff r (RenamedExpr', Maybe RenamedType)
+    renameExprExtension :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredExpressionExtension SourceRegion -> Eff r RenamedExpr'
     renameExprExtension (DesugaredBinaryOperator (BinaryOperatorExpression op left right)) = do
         op' <- renameBinaryOperator op
         left' <- renameExpr left
         right' <- renameExpr right
-        pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression op' left' right')), Nothing)
+        pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression op' left' right')))
     renameExprExtension (DesugaredInParens (InParensExpression e)) = do
         e' <- renameExpr e
-        pure (EExtension (RenamedInParens (InParensExpression e')), Nothing)
+        pure (EExtension (RenamedInParens (InParensExpression e')))
     renameExprExtension (DesugaredList (ListExpression [])) = do
         let typeLoc = wrap TypeNode (view sourceRegion loc)
-        pure (ECon NoExtension (TaggedLocate typeLoc Prim.nilCtorName), Nothing)
+        pure (ECon NoExtension (TaggedLocate typeLoc Prim.nilCtorName))
     renameExprExtension (DesugaredList (ListExpression (x : xs))) = do
         xs' <- traverse renameExpr (x :| xs)
         let lastCons :: RenamedExpr =
                 let typeLoc = wrap TypeNode (view sourceRegion loc)
-                 in Expr (exprLoc (last xs')) Nothing (ECon NoExtension (TaggedLocate typeLoc Prim.nilCtorName))
+                 in Expr (exprLoc (last xs')) () (ECon NoExtension (TaggedLocate typeLoc Prim.nilCtorName))
         let cons :: RenamedExpr -> RenamedExpr -> RenamedExpr
             cons x' y =
                 let xLoc = exprLoc x'
                     yLoc = exprLoc y
                     typeLoc = wrap TypeNode (view sourceRegion loc)
-                    consE = Expr loc Nothing (ECon NoExtension (TaggedLocate typeLoc Prim.consCtorName))
-                    appConsX = Expr xLoc Nothing (EApp NoExtension consE x')
-                 in Expr yLoc Nothing (EApp NoExtension appConsX y)
+                    consE = Expr loc () (ECon NoExtension (TaggedLocate typeLoc Prim.consCtorName))
+                    appConsX = Expr xLoc () (EApp NoExtension consE x')
+                 in Expr yLoc () (EApp NoExtension appConsX y)
         let createConses :: [RenamedExpr] -> RenamedExpr
             createConses [] = lastCons
             createConses (x' : xs'') = cons x' (createConses xs'')
-        let result = createConses (toList xs')
-        let Expr _ meta e'' = result
-        pure (e'', meta)
+        let Expr _ () e'' = createConses (toList xs')
+        pure e''
     renameExprExtension (DesugaredTuple (TupleExpression (AtLeast2List fst' snd' []))) = do
         fst'' <- renameExpr fst'
         snd'' <- renameExpr snd'
@@ -597,17 +574,17 @@ renameExpr (Expr loc () e') = do
         let base =
                 Expr
                     loc
-                    Nothing
+                    ()
                     ( EApp
                         NoExtension
                         ( Expr
                             loc
-                            Nothing
+                            ()
                             (ECon NoExtension (TaggedLocate typeLoc Prim.tuple2CtorName))
                         )
                         fst''
                     )
-        pure (EApp NoExtension base snd'', Nothing)
+        pure (EApp NoExtension base snd'')
     renameExprExtension (DesugaredTuple (TupleExpression tupleElems)) = do
         -- turn it into Elara.Prim.TupleN type
         let tupleName :: Qualified TypeName = Prim.tupleNCtorName (length tupleElems)
@@ -615,18 +592,18 @@ renameExpr (Expr loc () e') = do
         elems' <- traverse renameExpr tupleElems
         let typeLoc = wrap TypeNode (view sourceRegion loc)
         let headCtorExpr :: Expr SourceRegion Renamed =
-                Expr loc Nothing (ECon NoExtension (TaggedLocate typeLoc tupleName))
+                Expr loc () (ECon NoExtension (TaggedLocate typeLoc tupleName))
 
         let elemsList = AtLeast2List.toNonEmpty elems'
-        let Expr _ _ r = foldl' (\acc m -> Expr loc Nothing (EApp NoExtension acc m)) headCtorExpr elemsList
+        let Expr _ () r = foldl' (\acc m -> Expr loc () (EApp NoExtension acc m)) headCtorExpr elemsList
 
-        pure (r, Nothing)
+        pure r
     renameExprExtension (DesugaredBlock stmts final) = do
-        Expr _ ty e <- renameBlock stmts final
-        pure (e, ty)
+        Expr _ () e <- renameBlock stmts final
+        pure e
     renameExprExtension (DesugaredLetBangIn name val body) = do
-        Expr _ t e <- renameLetBang loc name val (renameExpr body)
-        pure (e, t)
+        Expr _ () e <- renameLetBang loc name val (renameExpr body)
+        pure e
 
 renameBinaryOperator :: forall r. (InnerRename r, Rock.Rock Elara.Query.Query :> r) => BinaryOperator SourceRegion Desugared -> Eff r (BinaryOperator SourceRegion Renamed)
 renameBinaryOperator (SymOp opLoc occ) = do
@@ -758,9 +735,9 @@ patternToMatch pat body = do
     body' <- renameExpr body
     let match =
             EMatch
-                (Expr (widen (exprLocP pat')) Nothing (EVar NoExtension varRef))
+                (Expr (widen (exprLocP pat')) () (EVar NoExtension varRef))
                 [(pat', body')]
-    pure (uniqueVn, Expr (patLocation <.> bodyLocation) Nothing match)
+    pure (uniqueVn, Expr (patLocation <.> bodyLocation) () match)
 
 {- | Rename a lambda expression.
 This is a little bit special because patterns have to be converted to match expressions.
@@ -768,12 +745,12 @@ This is a little bit special because patterns have to be converted to match expr
 For example,
 @\(a, b) -> a@  becomes @\ab_ -> match ab_ with (a, b) -> a@
 -}
-renameLambda :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredPattern -> DesugaredExpr -> Eff r (RenamedExpr', Maybe RenamedType)
+renameLambda :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DesugaredPattern -> DesugaredExpr -> Eff r RenamedExpr'
 renameLambda p@(Pattern _ argType _) e = do
     (arg, match) <- patternToMatch p e
     argType' <- traverse renameSimpleType argType
     let binder = TypedLambdaParam (arg ^. unlocated) argType'
-    pure (ELam NoExtension binder match, Nothing)
+    pure (ELam NoExtension binder match)
 
 {- | Rename a block @{s1; ...; sn; final}@ by desugaring its statements:
 
@@ -791,7 +768,7 @@ renameBlock (Statement l stmt :| rest) final = case stmt of
         n' <- uniquify n
         locally (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local (stripTag n'))) $ do
             val' <- renameExpr val
-            Expr l Nothing . ELetIn NoExtension n' val' <$> renameRest
+            Expr l () . ELetIn NoExtension n' val' <$> renameRest
     SLetBang name val -> renameLetBang l name val renameRest
     SExpr x -> do
         x' <- renameExpr x
@@ -809,12 +786,12 @@ mkBind ::
     RenamedExpr ->
     RenamedExpr
 mkBind loc binder val body =
-    Expr (loc <.> exprLoc body) Nothing (EApp NoExtension partial lam)
+    Expr (loc <.> exprLoc body) () (EApp NoExtension partial lam)
   where
     sr = loc ^. sourceRegion
-    bindVar = Expr loc Nothing (EVar NoExtension (tagLocated (Located sr (Global (Located sr Prim.bindName)))))
-    partial = Expr loc Nothing (EApp NoExtension bindVar val)
-    lam = Expr (exprLoc body) Nothing (ELam NoExtension (TypedLambdaParam (stripTag binder ^. unlocated) Nothing) body)
+    bindVar = Expr loc () (EVar NoExtension (tagLocated (Located sr (Global (Located sr Prim.bindName)))))
+    partial = Expr loc () (EApp NoExtension bindVar val)
+    lam = Expr (exprLoc body) () (ELam NoExtension (TypedLambdaParam (stripTag binder ^. unlocated) Nothing) body)
 
 renameLetBang ::
     (InnerRename r, Rock.Rock Elara.Query.Query :> r) =>
