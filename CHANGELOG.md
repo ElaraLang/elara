@@ -134,6 +134,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Make `just run` take the file positionally - ([28edeec](https://github.com/ElaraLang/elara/commit/28edeec166bda7eae1b5996f15fe01c18749838d)) 
 - Add weeder - ([b4004a8](https://github.com/ElaraLang/elara/commit/b4004a87128cd76c6ad72b36d229cbe346b68ac3)) 
 - Relax diagnose version bounds - ([78ea4aa](https://github.com/ElaraLang/elara/commit/78ea4aadc833b1a52bced6994debe7c2e12d42d6)) 
+- Make .envrc accept-flake-config - ([8bcf034](https://github.com/ElaraLang/elara/commit/8bcf034d3ad88484b7baa424cdb56b12a82dfa03)) 
 
 ### Stdlib
 
