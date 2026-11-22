@@ -17,9 +17,12 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(stdlib)* Add `List.map` - ([130a5ae](https://github.com/ElaraLang/elara/commit/130a5ae19b2f2fdc8213001dcb4e8775a77a456a)) 
 - *(stdlib)* Make json_parser example round-trip - ([2ca4c48](https://github.com/ElaraLang/elara/commit/2ca4c48feaa11ce57e91d3836cb77731764afcce)) 
 - Embed the JVM stdlib into the binary for more portabiltiy - ([36d2512](https://github.com/ElaraLang/elara/commit/36d2512b8200ece69f24c9a55bc73a4d0580e775)) 
+- Add `pure` IO prim - ([6cecf3b](https://github.com/ElaraLang/elara/commit/6cecf3b0a165f408212c967910d4b4d0b2337fce)) 
+- First draft of monadic let and let-in (`let!`) - ([7ed59bf](https://github.com/ElaraLang/elara/commit/7ed59bf409cdb460e4f9b1179351434db5cc5c15)) 
 
 ### 🐛 Bug Fixes
 
+- *(core)* Unalias both sides when comparing Core types - ([171d357](https://github.com/ElaraLang/elara/commit/171d357e7906f78640c57241b145f038bb5a77eb)) 
 - *(examples)* Json parser type error - ([6d89800](https://github.com/ElaraLang/elara/commit/6d89800dab3c31bb46b8bb1dd2de8d794a7b1845)) 
 - *(examples)* Make source.elr compile - ([5bfd77a](https://github.com/ElaraLang/elara/commit/5bfd77a3428c026f8545c0c34f5cf2efe6523d19)) 
 - *(jvm)* Invalid unit literal code generated - ([8023b23](https://github.com/ElaraLang/elara/commit/8023b233ab3e38024d59e1cbe30bb5f5a27dab0f)) 
@@ -34,6 +37,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - *(nix)* Pass absolute .a paths to linker, avoid -l/-L ordering issue - ([8f07f77](https://github.com/ElaraLang/elara/commit/8f07f779e0bc46ec998d646c67d3c4377bfcec4a)) 
 - *(nix)* Drop lifted-async 0.11.0 pin, conflicts with hedgehog-1.5's <0.11 bound - ([1edee01](https://github.com/ElaraLang/elara/commit/1edee0114eb8022b2f3f43d21f15ac8132396f42)) 
 - *(nix)* Static linking failing - ([d1a536f](https://github.com/ElaraLang/elara/commit/d1a536f1bf16b7c6580c22921cf4fd0ffe96397f)) 
+- *(renamer)* Don't remove `EAnn` nodes, so that annotations get properly type checked - ([d37a25d](https://github.com/ElaraLang/elara/commit/d37a25d897eb0e8778cfb125bee727ece7a41b63)) 
 - *(type-infer)* Stop local lets over-generalising over variables - ([5b21fb2](https://github.com/ElaraLang/elara/commit/5b21fb200ec395a12757e3d20a09bd7f90cf0e87)) 
 - *(type-infer)* Generalise recursive local lets for consistency - ([4fa0367](https://github.com/ElaraLang/elara/commit/4fa03672ab7e215499975ca95336392a7f332e85)) 
 - *(type-infer)* Report the right argument position and function type in type mismatches - ([ef659c9](https://github.com/ElaraLang/elara/commit/ef659c92cff777bb395b50503c313da6dd13879c)) 
@@ -43,6 +47,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 
 - *(ast)* More stable query keys, avoid redundant recomputation by memoising where possible - ([791d8f1](https://github.com/ElaraLang/elara/commit/791d8f18ae26eef7aa16e19abea4acb2dce1c9ea)) 
 - *(ast)* Make `NodeLoc` a phantom newtype - ([e31c2ea](https://github.com/ElaraLang/elara/commit/e31c2eafe425c70c5835f3bd37e1653a85b74f04)) 
+- *(ast)* `replace `ELet` and let-statement extensions with `Statement` - ([28dbfe1](https://github.com/ElaraLang/elara/commit/28dbfe16dc813e3c4d022bf64dda7d641e7e47f7)) 
 - *(error)* Rethrow errors with their original callstack - ([79ce482](https://github.com/ElaraLang/elara/commit/79ce482328bc2e31ee69922a9593034366fc2a50)) 
 - *(error)* Rethrow errors with their original callstack - ([8d8c1d4](https://github.com/ElaraLang/elara/commit/8d8c1d414a74fee8f1ca4efb54f181eba67c4de1)) 
 - *(interpreter)* :coffin: Remove likely dead `getArgs` impl - ([b0cdfcd](https://github.com/ElaraLang/elara/commit/b0cdfcdd9369d7b10b773e51e0841fafec9747c5)) 
@@ -59,9 +64,11 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Make `InternalError` a normal `ElaraError` - ([fd796b8](https://github.com/ElaraLang/elara/commit/fd796b829582daf1612f428658a57a901fde81d9)) 
 - Finally remove deprecated logging code usage - ([60f90de](https://github.com/ElaraLang/elara/commit/60f90ded599b38f79b85895fc04e65cdc037ebf2)) 
 - Throw missing-constructor error at the use site - ([f327cdb](https://github.com/ElaraLang/elara/commit/f327cdbe9a19abf61c4a57b674a9873653e56f93)) 
+- Remove unnecessary `unsafe` usage - ([951f79c](https://github.com/ElaraLang/elara/commit/951f79c2d4ef7f286d72df6592ead41b02fb39b3)) 
 
 ### 📚 Documentation
 
+- *(lexer)* Fix invalid haddock notation in Token docs - ([c366b31](https://github.com/ElaraLang/elara/commit/c366b31388d058a2ca6fb48b09acedfc19287816)) 
 - Update readme and add CONTRIBUTING.md - ([ee78d0e](https://github.com/ElaraLang/elara/commit/ee78d0e61639690ffc34a0fcafdea4079b4c61e7)) 
 - Fix typo in readme - ([60cf6e5](https://github.com/ElaraLang/elara/commit/60cf6e55842615ab401280c47b5c498331c54093)) 
 - Clarify readme instructions - ([c17a0a4](https://github.com/ElaraLang/elara/commit/c17a0a45d93f1e109ece3c983d31b260cced106b)) 
