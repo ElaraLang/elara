@@ -81,6 +81,8 @@
       "hashable"
       "kind-generics-th"
       "lifted-base"
+      "lsp"
+      "lsp-types"
       "matrix"
       "megaparsec"
       "mtl"
