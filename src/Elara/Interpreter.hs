@@ -349,6 +349,8 @@ apply f' a' = case f' of
                     other -> prettyToUnannotatedText other
             printText asString
             pure (Ctor unitCtor [])
+    VPrimOp Prim.PrimIOPure ->
+        pure $ IOAction (pure a')
     VPrimOp Prim.PrimReadFile -> do
         case a' of
             String s -> pure $ IOAction $ do

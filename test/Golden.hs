@@ -146,15 +146,24 @@ spec = describe "Golden tests" $ do
         it "Trailing operator with no right operand" $
             runGoldenError defaultSettings "error-trailing-operator"
 
+        it "Expression annotation that doesn't match the expression's type" $
+            runGoldenError defaultSettings "error-annotation-mismatch"
+
+        it "Block whose last statement is a let binding" $
+            runGoldenError defaultSettings "error-desugar-block-ends-with-let"
+
+        it "Multi-statement block whose last statement is a let binding" $
+            runGoldenError defaultSettings "error-desugar-block-ends-with-let-multi"
+
+        it "Block whose last statement is a monadic let binding" $
+            runGoldenError defaultSettings "error-desugar-block-ends-with-let-bang"
+
         describe "Rename error golden tests" $ do
             it "Explicit import of a name that doesn't exist in the module" $
                 runGoldenError defaultSettings "error-rename-nonexistent-import"
 
             it "Type alias body references an unbound type variable" $
                 runGoldenError defaultSettings "error-rename-unknown-type-var"
-
-            it "Block whose last statement is a let binding" $
-                runGoldenError defaultSettings "error-rename-block-ends-with-let"
 
             it "Type alias that refers to itself" $
                 runGoldenError defaultSettings "error-rename-recursive-alias"

@@ -1,14 +1,8 @@
 import Prelude
 import Elara.Prim
 
-type TestBox a = | TestBox a
-
-type Wrapper f a = | Wrapper (f a)
-
-let mapWrapper f (Wrapper a) = Wrapper (f a)
-
-
 
 let main = 
-    let i = Wrapper (TestBox 1)
-    println (mapWrapper (\(TestBox x) -> TestBox (x + 1)) i)
+    let! i = pure 1
+    println i
+    println (i + 1)

@@ -38,7 +38,7 @@ import Elara.Prim qualified as Prim
 
 -- | Data type putting all expression parsers together to avoid deadlocks in CAF initialisation.
 data ExpressionGrammar = ExpressionGrammar
-    { pElement :: Parser FrontendExpr
+    { pElement :: Parser FrontendStatement
     , pExpression :: Parser FrontendExpr
     -- ^ the main expression parser
     }
@@ -50,6 +50,11 @@ locatedExpr :: Parser FrontendExpr' -> Parser FrontendExpr
 locatedExpr p = do
     Located loc node <- located p
     pure $ Expr (wrap ExprNode loc) () node
+
+locatedStatement :: Parser FrontendStatement' -> Parser FrontendStatement
+locatedStatement p = do
+    Located loc node <- located p
+    pure $ Statement (wrap ExprNode loc) node
 
 {- | The main recursive expression parser.
 Adds function application, cons, and binary operators on top of the basic 'term's.
@@ -73,6 +78,7 @@ term grammar =
         , list grammar <?> "list"
         , ifElse grammar <?> "if expression"
         , letInExpression grammar <?> "let-in expression"
+        , letBangInExpression grammar <?> "monadic let-in expression"
         , lambda grammar <?> "lambda expression"
         , match grammar <?> "match expression"
         , float <?> "float"
@@ -87,17 +93,20 @@ term grammar =
 {- | A top level element, comprised of either an expression or a let declaration
 Note that top level let declarations are not parsed here, but in the "Elara.Parse.Declaration" module.
 -}
-element :: ExpressionGrammar -> Parser FrontendExpr
-element grammar = choice [try (pExpression grammar), statement grammar]
+element :: ExpressionGrammar -> Parser FrontendStatement
+element grammar = choice [try (exprStatement <$> pExpression grammar), statement grammar]
+  where
+    exprStatement e = Statement (exprRegion e) (SExpr e)
 
 {- | This is not a "statement" in an imperative sense, but is used to parse let expressions that are not at the top level.
 The reason for having this distinction is that if let's were considered a normal expression, then something like
 @let x = let y = 1@ would be considered valid code, which it is not. Having a separate parser means local let bindings can only be allowed
 in places where they are valid, such as in the body of a function.
 -}
-statement :: ExpressionGrammar -> Parser FrontendExpr
+statement :: ExpressionGrammar -> Parser FrontendStatement
 statement grammar =
-    letStatement grammar <?> "let statement"
+    (letBangStatement grammar <?> "monadic let statement")
+        <|> (letStatement grammar <?> "let statement")
 
 binOp, cons, functionCall :: Parser (FrontendExpr -> FrontendExpr -> FrontendExpr)
 
@@ -275,9 +284,9 @@ ifElse grammar = locatedExpr $ do
     elseBranch <- exprBlock TokenElse grammar.pElement <?> "expression after 'else'"
     pure (EIf condition thenBranch elseBranch)
 
-letPreamble :: ExpressionGrammar -> Parser (TaggedLocate VarNode SourceRegion VarName, [FrontendPattern], FrontendExpr)
-letPreamble grammar = do
-    token_ TokenLet
+letPreamble :: ExpressionGrammar -> Token -> Parser (TaggedLocate VarNode SourceRegion VarName, [FrontendPattern], FrontendExpr)
+letPreamble grammar letToken = do
+    token_ letToken
     (name, patterns) <- try infixDef <|> prefixDef
     token_ TokenEquals
 
@@ -307,7 +316,7 @@ letPreamble grammar = do
 
 letInExpression :: ExpressionGrammar -> Parser FrontendExpr
 letInExpression grammar = locatedExpr $ do
-    (name, patterns, e) <- letPreamble grammar
+    (name, patterns, e) <- letPreamble grammar TokenLet
     optional lineSeparator
     token_ TokenIn <?> "'in' keyword after let binding"
 
@@ -316,12 +325,28 @@ letInExpression grammar = locatedExpr $ do
         [] -> ELetIn NoExtension name e body
         _ -> EExtension (FrontendLetInWithPatterns name patterns e body)
 
-letStatement :: ExpressionGrammar -> Parser FrontendExpr
-letStatement grammar = locatedExpr $ do
-    (name, patterns, e) <- letPreamble grammar
-    pure $ case patterns of
-        [] -> ELet NoExtension name e
-        _ -> EExtension (FrontendLetWithPatterns name patterns e)
+letBangInExpression :: ExpressionGrammar -> Parser FrontendExpr
+letBangInExpression grammar = locatedExpr $ do
+    (name, patterns, e) <- letPreamble grammar TokenLetBang
+    unless (null patterns) $
+        fail "cannot have let! with patterns"
+    optional lineSeparator
+    token_ TokenIn <?> "'in' keyword after let! binding"
+    body <- exprBlock TokenIn grammar.pElement <?> "expression after 'in'"
+    pure $ EExtension (FrontendLetBangIn name e body)
+
+letStatement :: ExpressionGrammar -> Parser FrontendStatement
+letStatement grammar = locatedStatement $ do
+    (name, patterns, e) <- letPreamble grammar TokenLet
+    pure (SLet name patterns e)
+
+letBangStatement :: ExpressionGrammar -> Parser FrontendStatement
+letBangStatement grammar = locatedStatement $ do
+    (name, patterns, e) <- letPreamble grammar TokenLetBang
+    unless (null patterns) $
+        fail "cannot have let! with patterns"
+    -- TODO: check that `patterns` are irrefutable before using
+    pure (SLetBang name e)
 
 list :: ExpressionGrammar -> Parser FrontendExpr
 list grammar = locatedExpr $ do

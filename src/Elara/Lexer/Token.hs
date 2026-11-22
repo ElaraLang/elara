@@ -39,15 +39,15 @@ data Token
       TokenLeftBracket
     | -- | ]
       TokenRightBracket
-    | -- | <-
+    | -- | @<-@
       TokenLeftArrow
-    | -- | ->
+    | -- | @->@
       TokenRightArrow
-    | -- | =>
+    | -- | @=>@
       TokenDoubleRightArrow
-    | -- | @
+    | -- | @\@@
       TokenAt
-    | -- | #
+    | -- | @#@
       TokenHash
     | -- | `
       TokenBacktick
@@ -57,6 +57,7 @@ data Token
     | -- | Keywords
       TokenString Text
     | TokenLet
+    | TokenLetBang
     | TokenDef
     | TokenIn
     | TokenIf
@@ -123,6 +124,7 @@ tokenRepr = \case
     TokenChar c -> show c
     TokenString s -> show s
     TokenLet -> "let"
+    TokenLetBang -> "let!"
     TokenDef -> "def"
     TokenIn -> "in"
     TokenIf -> "if"

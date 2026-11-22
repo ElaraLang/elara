@@ -14,7 +14,8 @@ import Elara.AST.Name
 import Elara.AST.Phase (NoExtension (..))
 import Elara.AST.Phases.Frontend
 import Elara.AST.Types
-import Normalise (mkExpr, mkPat)
+import Elara.Data.AtLeast2List (AtLeast2List (AtLeast2List))
+import Normalise (mkExpr, mkPat, mkStatement)
 import Prelude hiding (Op)
 
 import Elara.Data.AtLeast2List qualified as AtLeast2List
@@ -102,29 +103,23 @@ genExpr' =
                         [] -> ELetIn NoExtension n e body
                         _ -> EExtension (FrontendLetInWithPatterns n pats e body)
                 )
-            , EExtension . FrontendTuple . TupleExpression . AtLeast2List.fromNonEmptyUnsafe <$> Gen.nonEmpty (Range.linear 2 10) genExpr
+            , EExtension . FrontendTuple . TupleExpression <$> (AtLeast2List <$> genExpr <*> genExpr <*> Gen.list (Range.linear 0 10) genExpr)
             ]
         )
 
-genStatement' :: Gen (Expr' () Frontend)
+genStatement :: Gen (Statement () Frontend)
+genStatement = Normalise.mkStatement <$> genStatement'
+
+genStatement' :: Gen (Statement' () Frontend)
 genStatement' =
-    Gen.recursive
-        Gen.choice
-        [genExpr']
-        ( smallRecursive
-            [ Gen.subtermM
-                genExpr'
-                ( \x -> do
-                    n <- genVarName
-                    pats <- Gen.list (Range.linear 0 5) genPattern
-                    let e = Normalise.mkExpr x
-                    pure $ case pats of
-                        [] -> ELet NoExtension n e
-                        _ -> EExtension (FrontendLetWithPatterns n pats e)
-                )
-            , EBlock <$> Gen.nonEmpty (Range.linear 2 10) genExpr
-            ]
-        )
+    Gen.choice
+        [ SExpr <$> genExpr
+        , do
+            n <- genVarName
+            pats <- Gen.list (Range.linear 0 5) genPattern
+            SLet n pats <$> genExpr
+        , SLetBang <$> genVarName <*> genExpr
+        ]
 
-genStatement :: Gen (Expr () Frontend)
-genStatement = Normalise.mkExpr <$> genStatement'
+genBlock' :: Gen (Expr' () Frontend)
+genBlock' = EExtension . FrontendBlock <$> Gen.nonEmpty (Range.linear 2 10) genStatement

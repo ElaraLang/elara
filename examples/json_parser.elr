@@ -83,7 +83,7 @@ let sepBy1 p sep =
 
 -- Like sepBy1, but allows zero occurrences of the first parser
 def sepBy : Parser a -> Parser sep -> Parser (List a)
-let sepBy p sep = sepBy1 p sep <|> pure []
+let sepBy p sep = sepBy1 p sep <|> Main.pure []
 
 -- Choice operator for parsers
 -- Tries the first parser, if it fails, tries the second parser
@@ -119,7 +119,7 @@ let lexeme p = p <* many (char ' ')
 def string : String -> Parser String
 let string str = 
     match stringToList str with
-        []  -> pure ""
+        []  -> Main.pure ""
         (c::cs) -> char c *> (string (stringFromList cs)) |> map ( \s -> stringCons c s )
 
 -- A parser that matches any single character
@@ -215,6 +215,10 @@ let prettyJson json =
 
 
 let main = 
-    match runParser json "[{\"a\": 1}, 12345, null]" with
-            Result.Err e -> println ("Failed to parse: " ++ e)
-            Result.Ok (result, _) -> println (prettyJson result) -- This branch should succeed!
+    let printParsedJson input = 
+        match runParser json input with
+                Result.Err e -> println ("Failed to parse: " ++ e)
+                Result.Ok (result, _) -> println (prettyJson result)
+
+    printParsedJson "[{\"a\": 1}, 12345, null]" >>= \_ ->
+        printParsedJson "invalid json"

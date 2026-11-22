@@ -10,10 +10,12 @@ module Normalise (
     stripPattern,
     stripType,
     stripBinaryOperator,
+    stripStatement,
 
     -- * Smart constructors (unlocated)
     mkExpr,
     mkPat,
+    mkStatement,
 
     -- * Stripping InParens for new types
     stripNewInParens,
@@ -34,6 +36,9 @@ mkExpr = Expr (wrap ExprNode ()) ()
 mkPat :: Pattern' () Frontend -> Pattern () Frontend
 mkPat = Pattern (wrap PatternNode ()) Nothing
 
+mkStatement :: Statement' () Frontend -> Statement () Frontend
+mkStatement = Statement (wrap ExprNode ())
+
 stripExpr :: Expr SourceRegion Frontend -> Expr () Frontend
 stripExpr (Expr _ meta e') = Expr (wrap ExprNode ()) meta (stripExpr' e')
 
@@ -52,21 +57,29 @@ stripExpr' = \case
     EIf a b c -> EIf (stripExpr a) (stripExpr b) (stripExpr c)
     EMatch e cases -> EMatch (stripExpr e) (map (bimap stripPattern stripExpr) cases)
     ELetIn ext n e body -> ELetIn ext (view unlocated n) (stripExpr e) (stripExpr body)
-    ELet ext n e -> ELet ext (view unlocated n) (stripExpr e)
-    EBlock es -> EBlock (fmap stripExpr es)
     EAnn e t -> EAnn (stripExpr e) (stripType t)
     EExtension ext -> EExtension (stripExprExt ext)
 
 stripExprExt :: FrontendExpressionExtension SourceRegion -> FrontendExpressionExtension ()
 stripExprExt = \case
     FrontendMultiLam pats body -> FrontendMultiLam (map stripPattern pats) (stripExpr body)
-    FrontendLetWithPatterns n pats e -> FrontendLetWithPatterns (view unlocated n) (map stripPattern pats) (stripExpr e)
     FrontendLetInWithPatterns n pats e body -> FrontendLetInWithPatterns (view unlocated n) (map stripPattern pats) (stripExpr e) (stripExpr body)
     FrontendBinaryOperator (BinaryOperatorExpression op a b) ->
         FrontendBinaryOperator (BinaryOperatorExpression (stripBinaryOperator op) (stripExpr a) (stripExpr b))
     FrontendInParens (InParensExpression e) -> FrontendInParens (InParensExpression (stripExpr e))
     FrontendList (ListExpression es) -> FrontendList (ListExpression (map stripExpr es))
     FrontendTuple (TupleExpression es) -> FrontendTuple (TupleExpression (fmap stripExpr es))
+    FrontendBlock bs -> FrontendBlock (fmap stripStatement bs)
+    FrontendLetBangIn n val in' -> FrontendLetBangIn (view unlocated n) (stripExpr val) (stripExpr in')
+
+stripStatement :: Statement SourceRegion Frontend -> Statement () Frontend
+stripStatement (Statement _ s) = Statement (wrap ExprNode ()) (stripStatement' s)
+
+stripStatement' :: Statement' SourceRegion Frontend -> Statement' () Frontend
+stripStatement' = \case
+    SLet n pats e -> SLet (view unlocated n) (map stripPattern pats) (stripExpr e)
+    SLetBang n e -> SLetBang (view unlocated n) (stripExpr e)
+    SExpr e -> SExpr (stripExpr e)
 
 stripPattern :: Pattern SourceRegion Frontend -> Pattern () Frontend
 stripPattern (Pattern _ meta p') = Pattern (wrap PatternNode ()) (fmap stripType meta) (stripPattern' p')
@@ -122,21 +135,20 @@ stripNewInParens = go
         EIf a b c -> EIf (go a) (go b) (go c)
         EMatch e cases -> EMatch (go e) (map (bimap goP go) cases)
         ELetIn ext n e body -> ELetIn ext n (go e) (go body)
-        ELet ext n e -> ELet ext n (go e)
-        EBlock es -> EBlock (fmap go es)
         EAnn e t -> EAnn (go e) t
         EExtension ext -> EExtension (goExt ext)
         other -> other
 
     goExt = \case
         FrontendMultiLam pats body -> FrontendMultiLam (map goP pats) (go body)
-        FrontendLetWithPatterns n pats e -> FrontendLetWithPatterns n (map goP pats) (go e)
         FrontendLetInWithPatterns n pats e body -> FrontendLetInWithPatterns n (map goP pats) (go e) (go body)
         FrontendBinaryOperator (BinaryOperatorExpression op a b) ->
             FrontendBinaryOperator (BinaryOperatorExpression op (go a) (go b))
         FrontendInParens (InParensExpression e) -> FrontendInParens (InParensExpression (go e))
         FrontendList (ListExpression es) -> FrontendList (ListExpression (map go es))
         FrontendTuple (TupleExpression es) -> FrontendTuple (TupleExpression (fmap go es))
+        FrontendBlock ss -> FrontendBlock (fmap goS ss)
+        FrontendLetBangIn n val in' -> FrontendLetBangIn n (go val) (go in')
 
     goP (Pattern loc meta p') = Pattern loc meta (goP' p')
     goP' = \case
@@ -147,3 +159,8 @@ stripNewInParens = go
         ListPattern pats -> ListPattern (map goP pats)
         TuplePattern pats -> TuplePattern (fmap goP pats)
         ConsPattern l r -> ConsPattern (goP l) (goP r)
+
+    goS (Statement loc s) = Statement loc $ case s of
+        SLet n pats e -> SLet n (map goP pats) (go e)
+        SLetBang n e -> SLetBang n (go e)
+        SExpr e -> SExpr (go e)

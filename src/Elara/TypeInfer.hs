@@ -341,8 +341,6 @@ collectConstructors (New.Expr _ _ e') = case e' of
     New.EIf c t f -> collectConstructors c <> collectConstructors t <> collectConstructors f
     New.EMatch e cases -> collectConstructors e <> concatMap (\(p, b) -> collectPatternConstructors p <> collectConstructors b) cases
     New.ELetIn _ _ e1 e2 -> collectConstructors e1 <> collectConstructors e2
-    New.ELet _ _ e1 -> collectConstructors e1
-    New.EBlock exprs -> concatMap collectConstructors (toList exprs)
     New.EAnn e _ -> collectConstructors e
     New.EExtension v -> absurd v
 

@@ -320,25 +320,6 @@ generateConstraints' expr' =
                         pure (typedPattern, typedBody)
 
                     pure (New.EMatch typedE cases', TypeVar eLoc resultTyVar [])
-                New.EBlock exprs -> do
-                    vals <- for exprs $ \expr -> generateConstraints expr
-
-                    let exprs' = fmap fst vals
-
-                    let exprTypes = fmap snd vals
-
-                    pure (New.EBlock exprs', last exprTypes)
-                New.ELet NoExtension (TaggedLocate loc varName) varExpr -> do
-                    let locSr = view sourceRegion loc
-                    recursiveVar <- UnificationVar <$> makeUniqueTyVar
-                    (typedVarExpr, varType) <- withLocalType varName (Lifted $ TypeVar locSr recursiveVar []) $ generateConstraints varExpr
-
-                    let recursiveConstraint = simpleEquality (view sourceRegion exprLoc) (TypeVar locSr recursiveVar []) varType
-                    tell recursiveConstraint
-
-                    modify (addLocalType varName (Lifted varType))
-
-                    pure (New.ELet NoExtension (TaggedLocate loc varName) typedVarExpr, varType)
                 New.EAnn e ty -> do
                     -- type annotations / ascriptions
                     kindedTy <- inferTypeKind ty

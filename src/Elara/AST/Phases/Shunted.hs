@@ -29,7 +29,7 @@ instance ElaraPhase Shunted where
     type ConstructorBinder Shunted loc = LocateNode TypeNode loc (Qualified TypeName)
     type LambdaBinder Shunted loc = TypedLambdaParam (Unique VarName) loc Shunted
 
-    type ExpressionMeta Shunted loc = Maybe (Type loc Shunted)
+    type ExpressionMeta Shunted loc = ()
     type PatternMeta Shunted loc = Maybe (Type loc Shunted)
     type TypeMeta Shunted loc = ()
 
@@ -77,8 +77,7 @@ instance PrettyPhase Shunted where
     prettyTypeVariable = pretty
     prettyConstructorBinder = pretty
     prettyLambdaBinder = prettyTypedLambdaParam
-    prettyExpressionMeta Nothing = Nothing
-    prettyExpressionMeta (Just t) = Just (prettyType t)
+    prettyExpressionMeta () = Nothing
     prettyPatternMeta Nothing = Nothing
     prettyPatternMeta (Just t) = Just (prettyType t)
     prettyTypeMeta () = Nothing

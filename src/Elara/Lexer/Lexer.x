@@ -101,6 +101,7 @@ tokens :-
 
       -- Keywords
       let					 { simpleTok TokenLet }
+      let\!                  { simpleTok TokenLetBang }
       def                    { simpleTok TokenDef }
       if                     { indentLayoutTok TokenIf }
       then                   { indentLayoutTok TokenThen }

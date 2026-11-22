@@ -7,7 +7,6 @@ import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 
 import Elara.AST.Instances ()
-import Elara.AST.Location
 import Elara.AST.Name
 import Elara.AST.Region
 import Elara.AST.VarRef
@@ -17,7 +16,6 @@ import Elara.Rename.Imports (isImportedBy)
 
 import Elara.AST.Module qualified as NewModule
 import Elara.AST.Phases.Desugared qualified as NewD
-import Elara.AST.Types qualified as New
 import Elara.Error.Codes qualified as Codes
 
 data RenameError
@@ -54,12 +52,6 @@ data RenameError
       AmbiguousVarName (Located Name) (NonEmpty (VarRef VarName))
     | -- | Same as 'AmbiguousVarName' but for type names
       AmbiguousTypeName (Located Name) (NonEmpty (VarRef TypeName))
-    | -- | A block ends with a @let@ binding rather than an expression.
-      BlockEndsWithLet
-        -- | The @let@ expression that ends the block
-        (New.Expr SourceRegion NewD.Desugared)
-        -- | The surrounding declaration, if any, for better error location
-        (Maybe (New.DeclarationBody SourceRegion NewD.Desugared))
     | -- | The current module couldn't be determined (internal compiler error, should not occur in normal use)
       UnknownCurrentModule
     | {- | A type alias directly or indirectly refers to itself, which is forbidden.
@@ -82,7 +74,6 @@ instance ElaraDiagnostic RenameError where
     diagnosticMessage (NonExistentModuleDeclaration m n) = pretty (n ^. unlocated) <+> "does not exist in module" <+> pretty m
     diagnosticMessage (UnknownTypeVariable n) = "Unknown type variable: " <> pretty n
     diagnosticMessage (UnknownName n _ _) = "Unknown name: " <> pretty n
-    diagnosticMessage (BlockEndsWithLet _ _) = "Block ends with a let binding"
     diagnosticMessage (AmbiguousVarName n _) = "Ambiguous variable name: " <> pretty n
     diagnosticMessage (AmbiguousTypeName n _) = "Ambiguous type name: " <> pretty n
     diagnosticMessage UnknownCurrentModule = "Could not determine the current module (internal error)"
@@ -93,7 +84,6 @@ instance ElaraDiagnostic RenameError where
     diagnosticCode (NonExistentModuleDeclaration _ _) = Just Codes.nonExistentModuleDeclaration
     diagnosticCode (UnknownTypeVariable _) = Just Codes.unknownTypeVariable
     diagnosticCode (UnknownName{}) = Just Codes.unknownName
-    diagnosticCode (BlockEndsWithLet _ _) = Just Codes.blockEndsWithLet
     diagnosticCode (AmbiguousVarName _ _) = Just Codes.ambiguousName
     diagnosticCode (AmbiguousTypeName _ _) = Just Codes.ambiguousName
     diagnosticCode UnknownCurrentModule = Just Codes.unknownCurrentModule
@@ -115,9 +105,6 @@ instance ElaraDiagnostic RenameError where
             ]
     diagnosticMarkers (NonExistentModuleDeclaration _ n) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
     diagnosticMarkers (UnknownName n _ _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
-    diagnosticMarkers (BlockEndsWithLet (New.Expr loc _ _) decl) =
-        ElaraMarker (view sourceRegion loc) PrimaryMarker "this let has no body"
-            : maybe [] (\(New.DeclarationBody dloc _) -> [ElaraMarker (view sourceRegion dloc) SecondaryMarker "inside this declaration"]) decl
     diagnosticMarkers (AmbiguousVarName n _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
     diagnosticMarkers (AmbiguousTypeName n _) = [ElaraMarker (n ^. sourceRegion) PrimaryMarker "referenced here"]
     diagnosticMarkers (RecursiveTypeAlias n usePoint) =
@@ -181,10 +168,6 @@ instance ElaraDiagnostic RenameError where
                                         ]
                                 ]
          in namesThatMightveBeenIntendedButNotImported <> possibleTypos
-    diagnosticNotes (BlockEndsWithLet _ _) =
-        [ Note "Blocks must end with an expression, not a let binding."
-        , Hint "Perhaps you meant to use a let ... in construct?"
-        ]
     diagnosticNotes (AmbiguousVarName n options) =
         [ Note $
             vsep

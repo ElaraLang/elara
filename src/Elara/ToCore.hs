@@ -18,7 +18,7 @@ import Elara.AST.Name (ModuleName, Name (..), NameLike (..), Qualified (..), Typ
 import Elara.AST.Phase (LocateNode, NoExtension (..))
 import Elara.AST.Phases.Renamed (TypedLambdaParam (..))
 import Elara.AST.Phases.Typed (Typed, TypedDeclaration, TypedExpr, TypedExpr', TypedPattern)
-import Elara.AST.Region (HasSourceRegion (sourceRegion), Located (Located), SourceRegion, unlocated)
+import Elara.AST.Region (Located (Located), SourceRegion, unlocated)
 import Elara.AST.VarRef (UnlocatedVarRef, VarRef, VarRef' (Global, Local), varRefVal)
 import Elara.Core as Core
 import Elara.Core.Generic (Bind (..))
@@ -47,8 +47,7 @@ import Elara.TypeInfer.Type qualified as Type
 import Rock qualified
 
 data ToCoreError
-    = LetInTopLevel !TypedExpr
-    | UnknownConstructor !(Located (Qualified TypeName)) CtorSymbolTable
+    = UnknownConstructor !(Located (Qualified TypeName)) CtorSymbolTable
     | UnknownPrimConstructor !(Qualified TypeName)
     | UnknownTypeConstructor !(Qualified Text) CtorSymbolTable
     | UnknownLambdaType !(Type.Type SourceRegion)
@@ -59,7 +58,6 @@ data ToCoreError
 instance Exception ToCoreError
 
 instance ElaraDiagnostic ToCoreError where
-    diagnosticMessage (LetInTopLevel _) = "Let in top level"
     diagnosticMessage (UnknownConstructor (Located _ qn) _) = "Unknown constructor: " <> pretty qn
     diagnosticMessage (UnknownPrimConstructor qn) = "Unknown primitive constructor: " <> pretty qn
     diagnosticMessage (UnknownTypeConstructor qn _) = "Unknown type constructor: " <> pretty qn
@@ -67,7 +65,6 @@ instance ElaraDiagnostic ToCoreError where
     diagnosticMessage (UnsolvedTypeSnuckIn t) = "Unsolved type snuck in" <+> pretty t
     diagnosticMessage (UnknownVariable (Located _ qn)) = "Unknown variable: " <> pretty qn
 
-    diagnosticCode (LetInTopLevel _) = Just Codes.letInTopLevel
     diagnosticCode (UnknownConstructor _ _) = Just Codes.unknownDataConstructor
     diagnosticCode (UnknownPrimConstructor _) = Just Codes.unknownPrimConstructor
     diagnosticCode (UnknownTypeConstructor _ _) = Just Codes.unknownTypeConstructor
@@ -75,7 +72,6 @@ instance ElaraDiagnostic ToCoreError where
     diagnosticCode (UnsolvedTypeSnuckIn _) = Just Codes.unsolvedTypeSnuckIn
     diagnosticCode (UnknownVariable _) = Just Codes.unknownVariable
 
-    diagnosticMarkers (LetInTopLevel (New.Expr loc _ _)) = [ElaraMarker (view sourceRegion loc) PrimaryMarker "Let-binding here"]
     diagnosticMarkers (UnknownConstructor (Located loc _) _) = [ElaraMarker loc PrimaryMarker "Unknown constructor"]
     diagnosticMarkers (UnknownVariable (Located loc _)) = [ElaraMarker loc PrimaryMarker "Unknown variable"]
     diagnosticMarkers (UnsolvedTypeSnuckIn (Type.Lifted uv)) = [ElaraMarker (Type.monotypeLoc uv) PrimaryMarker "Unsolved type"]
@@ -458,7 +454,6 @@ toCore le@(New.Expr _ t e) = do
                     , (Core.DataAlt falseCtor, [], ifFalse')
                     ]
         New.EMatch e1 pats -> desugarMatch e1 pats
-        New.ELet{} -> throwError (LetInTopLevel le)
         New.ELetIn NoExtension vn e1 e2 -> do
             e1' <- toCore e1
             e2' <- toCore e2
@@ -475,7 +470,6 @@ toCore le@(New.Expr _ t e) = do
                         else NonRecursive (Core.Id ref t' Nothing, e1')
                     )
                     e2'
-        New.EBlock exprs -> desugarBlock exprs
         New.EAnn expr' _ty -> toCore expr'
         New.EExtension v -> absurd v
 
@@ -489,10 +483,8 @@ isRecursive vn = go
         New.ELam _ _ body -> go body
         New.EApp _ e1 e2 -> go e1 || go e2
         New.ELetIn _ _ e1 e2 -> go e1 || go e2
-        New.ELet _ _ e1 -> go e1
         New.EIf c t f -> go c || go t || go f
         New.EMatch e1 cases -> go e1 || any (\(_, rhs) -> go rhs) cases
-        New.EBlock exprs -> any go exprs
         New.ETyApp e1 _ -> go e1
         New.EAnn e1 _ -> go e1
         New.ECon _ _ -> False
@@ -538,7 +530,3 @@ mkBindName (New.Expr _ t _) = do
     t' <- typeToCore t
     unique <- makeUnique "bind"
     pure (Core.Id (Local unique) t' Nothing)
-
-desugarBlock :: InnerToCoreC r => NonEmpty TypedExpr -> Eff r CoreExpr
-desugarBlock (a :| []) = toCore a
-desugarBlock _ = error "todo"

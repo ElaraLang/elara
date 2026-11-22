@@ -245,7 +245,7 @@ fixOperators = reassoc
       where
         assocLeft = do
             reassociated' <- reassoc' sr o1 e1 e2
-            let reassociated = Expr (wrap ExprNode sr) Nothing reassociated'
+            let reassociated = Expr (wrap ExprNode sr) () reassociated'
             pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression o2 reassociated e3)))
 
         assocRight = pure (EExtension (RenamedBinaryOperator (BinaryOperatorExpression o1 e1 r)))
@@ -271,65 +271,42 @@ shuntExpr ::
     (ShuntPipelineEffects r, HasOpLookup r) =>
     RenamedExpr ->
     Eff r ShuntedExpr
-shuntExpr (Expr loc meta e') = do
-    (shunted, meta') <- shuntExpr' (view sourceRegion loc) e'
-    pure $ Expr loc (phaseCoerce <$> meta <|> meta') shunted
+shuntExpr (Expr loc () e') = Expr loc () <$> shuntExpr' e'
   where
-    shuntExpr' :: SourceRegion -> RenamedExpr' -> Eff r (ShuntedExpr', Maybe ShuntedType)
-    shuntExpr' _ (EInt i) = pure (EInt i, Nothing)
-    shuntExpr' _ (EFloat f) = pure (EFloat f, Nothing)
-    shuntExpr' _ (EString s) = pure (EString s, Nothing)
-    shuntExpr' _ (EChar c) = pure (EChar c, Nothing)
-    shuntExpr' _ EUnit = pure (EUnit, Nothing)
-    shuntExpr' _ (EVar NoExtension v) = pure (EVar NoExtension v, Nothing)
-    shuntExpr' _ (ECon NoExtension v) = pure (ECon NoExtension v, Nothing)
-    shuntExpr' _ (ELam NoExtension (TypedLambdaParam v meta') e) = do
+    shuntExpr' :: RenamedExpr' -> Eff r ShuntedExpr'
+    shuntExpr' (EInt i) = pure (EInt i)
+    shuntExpr' (EFloat f) = pure (EFloat f)
+    shuntExpr' (EString s) = pure (EString s)
+    shuntExpr' (EChar c) = pure (EChar c)
+    shuntExpr' EUnit = pure EUnit
+    shuntExpr' (EVar NoExtension v) = pure (EVar NoExtension v)
+    shuntExpr' (ECon NoExtension v) = pure (ECon NoExtension v)
+    shuntExpr' (ELam NoExtension (TypedLambdaParam v meta') e) = do
         e' <- fixExpr e
-        let meta'' = phaseCoerce <$> meta'
-        pure (ELam NoExtension (TypedLambdaParam v meta'') e', Nothing)
-    shuntExpr' _ (EApp NoExtension f x) = do
-        f' <- fixExpr f
-        x' <- fixExpr x
-        pure (EApp NoExtension f' x', Nothing)
-    shuntExpr' _ (ETyApp e t) = do
-        e' <- fixExpr e
-        pure (ETyApp e' (phaseCoerce t), Nothing)
-    shuntExpr' _ (EIf cond then' else') = do
-        cond' <- fixExpr cond
-        then'' <- fixExpr then'
-        else'' <- fixExpr else'
-        pure (EIf cond' then'' else'', Nothing)
-    shuntExpr' _ (EMatch e cases) = do
+        pure (ELam NoExtension (TypedLambdaParam v (phaseCoerce <$> meta')) e')
+    shuntExpr' (EApp NoExtension f x) = EApp NoExtension <$> fixExpr f <*> fixExpr x
+    shuntExpr' (ETyApp e t) = (\e' -> ETyApp e' (phaseCoerce t)) <$> fixExpr e
+    shuntExpr' (EIf cond then' else') = EIf <$> fixExpr cond <*> fixExpr then' <*> fixExpr else'
+    shuntExpr' (EMatch e cases) = do
         e' <- fixExpr e
         cases' <- traverse (\(p, b) -> (,) <$> shuntPattern p <*> fixExpr b) cases
-        pure (EMatch e' cases', Nothing)
-    shuntExpr' _ (ELetIn NoExtension vn e body) = do
-        e' <- fixExpr e
-        body' <- fixExpr body
-        pure (ELetIn NoExtension vn e' body', Nothing)
-    shuntExpr' _ (ELet NoExtension vn e) = do
-        e' <- fixExpr e
-        pure (ELet NoExtension vn e', Nothing)
-    shuntExpr' _ (EBlock es) = do
-        es' <- traverse fixExpr es
-        pure (EBlock es', Nothing)
-    shuntExpr' _ (EAnn e t) = do
-        e' <- fixExpr e
-        pure (EAnn e' (phaseCoerce t), Nothing)
-    shuntExpr' _ (EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r))) = do
+        pure (EMatch e' cases')
+    shuntExpr' (ELetIn NoExtension vn e body) = ELetIn NoExtension vn <$> fixExpr e <*> fixExpr body
+    shuntExpr' (EAnn e t) = (\e' -> EAnn e' (phaseCoerce t)) <$> fixExpr e
+    shuntExpr' (EExtension (RenamedBinaryOperator (BinaryOperatorExpression operator l r))) = do
         -- turn the binary operator into 2 function calls
         -- (a `op` b) -> (op a) b
         l' <- fixExpr l
         r' <- fixExpr r
         let (opExpr', opLoc) = operatorToExpr operator
-        let opVar = Expr (wrap ExprNode opLoc) Nothing opExpr'
+        let opVar = Expr (wrap ExprNode opLoc) () opExpr'
         let callLoc = enclosingRegion opLoc (view sourceRegion (exprLoc l'))
-        let leftCall = Expr (wrap ExprNode callLoc) Nothing (EApp NoExtension opVar l')
-        pure (EApp NoExtension leftCall r', Nothing)
-    shuntExpr' _ (EExtension (RenamedInParens (InParensExpression e))) = do
+        let leftCall = Expr (wrap ExprNode callLoc) () (EApp NoExtension opVar l')
+        pure (EApp NoExtension leftCall r')
+    shuntExpr' (EExtension (RenamedInParens (InParensExpression e))) = do
         -- Remove parens and just return the inner expression
-        Expr _ _ inner <- fixExpr e
-        pure (inner, Nothing)
+        Expr _ () inner <- fixExpr e
+        pure inner
 
 -- | Convert an operator reference into an expression (for turning binary ops into function calls)
 operatorToExpr :: BinaryOperator SourceRegion Renamed -> (ShuntedExpr', SourceRegion)

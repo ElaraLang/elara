@@ -1,0 +1,8 @@
+[error E3011]: Type constructor mismatch
+     ╭──▶ test/test_resources/golden_inputs/error-annotation-mismatch.elr@4:21-4:22
+     │
+   4 │ let main = println (1 : String)
+     •                     ┬   ┬───── 
+     •                     ╰────╸ but found Int
+     •                         ╰╸ expected String
+─────╯

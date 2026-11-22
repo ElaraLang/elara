@@ -116,18 +116,6 @@ prettyExpr' = \case
                 <+> prettyExpr val
                 <> flatAlt (line <> "in" <+> prettyExpr body) (" in " <> prettyExpr body)
             )
-    ELet _ binder val ->
-        case val of
-            Expr _ _ (EBlock es) ->
-                "let"
-                    <+> prettyValueBinder @p @loc binder
-                    <+> line
-                    <> indent 2 (vsep (map prettyExpr (toList es)))
-            _ ->
-                "let" <+> prettyValueBinder @p @loc binder <+> "=" <+> prettyExpr val
-    EBlock exprs -> case exprs of
-        x :| [] -> prettyExpr x
-        x :| rest -> prettyExpr x <> line <> vsep (map prettyExpr rest)
     EAnn e t -> prettyExpr e <+> ":" <+> prettyType t
     EExtension ext -> prettyExpressionExtension @p @loc ext
   where
@@ -155,6 +143,25 @@ prettyExprAppFun e@(Expr _ _ node) = case node of
     EChar{} -> prettyExpr e
     EUnit{} -> prettyExpr e
     _ -> parens (prettyExpr e)
+
+prettyStatement :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Statement loc p -> Doc AnsiStyle
+prettyStatement (Statement _ node) = prettyStatement' @loc @p node
+
+prettyStatement' :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Statement' loc p -> Doc AnsiStyle
+prettyStatement' = \case
+    SLet binder pats val -> prettyBinding "let" binder (prettyValueDeclPatterns @p @loc pats) val
+    SLetBang binder val -> prettyBinding "let!" binder mempty val
+    SExpr e -> prettyExpr e
+  where
+    prettyBinding :: Doc AnsiStyle -> ValueBinder p loc -> Doc AnsiStyle -> Expr loc p -> Doc AnsiStyle
+    prettyBinding keyword binder pats val =
+        group
+            ( keyword
+                <+> prettyValueBinder @p @loc binder
+                <> pats
+                <+> "="
+                <> nest indentDepth (flatAlt (line <> prettyExpr val) (" " <> prettyExpr val))
+            )
 
 -- | Pretty-print a pattern
 prettyPattern :: forall loc p. (PrettyPhase p, PrettyExtensions p, PrettyPhaseLoc p loc) => Pattern loc p -> Doc AnsiStyle

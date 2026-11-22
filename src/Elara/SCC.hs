@@ -93,8 +93,6 @@ valueDependencies (New.Expr _ _ e') = case e' of
     New.EIf c t f -> valueDependencies c <> valueDependencies t <> valueDependencies f
     New.EMatch e cases -> valueDependencies e <> foldMap (\(_, b) -> valueDependencies b) cases
     New.ELetIn _ _ e1 e2 -> valueDependencies e1 <> valueDependencies e2
-    New.ELet _ _ e1 -> valueDependencies e1
-    New.EBlock exprs -> foldMap valueDependencies exprs
     New.EAnn e _ -> valueDependencies e
     New.EExtension v -> absurd v
 

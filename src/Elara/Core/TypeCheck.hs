@@ -249,7 +249,7 @@ equalUnderSubst x y =
 
 equalUnderSubst' :: Core.Type -> Core.Type -> Bool
 equalUnderSubst' x y | x == y = True
-equalUnderSubst' x y | x == unalias y = True
+equalUnderSubst' x y | unalias x == unalias y = True
 -- forall a. T and forall b. U are equal if T/[a=b] == U
 equalUnderSubst' (Core.ForAllTy tv1 t1) (Core.ForAllTy tv2 t2) =
     equalUnderSubst t1 (Core.substTypeVar tv2 (Core.TyVarTy tv1) t2)

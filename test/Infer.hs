@@ -158,7 +158,7 @@ mkStringExpr s = mkExpr' (New.EString s)
 
 -- | Helper to create a 'ShuntedExpr' from a 'ShuntedExpr''
 mkExpr' :: ShuntedExpr' -> ShuntedExpr
-mkExpr' = New.Expr (wrap ExprNode testRegion) Nothing
+mkExpr' = New.Expr (wrap ExprNode testRegion) ()
 
 -- | Helper to create a 'ShuntedExpr' from a constructor taking one argument
 mkExpr :: (a -> ShuntedExpr') -> a -> ShuntedExpr

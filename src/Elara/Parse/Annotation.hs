@@ -43,9 +43,7 @@ validateConstExpr e = validateConstExpr' e
     validateConstExpr'' lam (ELam{}) = customFailure (InvalidConstantExpression e lam)
     validateConstExpr'' if' (EIf{}) = customFailure (InvalidConstantExpression e if')
     validateConstExpr'' match (EMatch{}) = customFailure (InvalidConstantExpression e match)
-    validateConstExpr'' let' (ELet{}) = customFailure (InvalidConstantExpression e let')
     validateConstExpr'' let' (ELetIn{}) = customFailure (InvalidConstantExpression e let')
-    validateConstExpr'' block (EBlock{}) = customFailure (InvalidConstantExpression e block)
     validateConstExpr'' app (ETyApp{}) = customFailure (InvalidConstantExpression e app)
     validateConstExpr'' int (EInt{}) = pure (AnnotationArg int)
     validateConstExpr'' float (EFloat{}) = pure (AnnotationArg float)
@@ -60,8 +58,9 @@ validateConstExpr e = validateConstExpr' e
     validateConstExpr'' ext (EExtension extExpr) = case extExpr of
         FrontendBinaryOperator{} -> customFailure (InvalidConstantExpression e ext)
         FrontendMultiLam{} -> customFailure (InvalidConstantExpression e ext)
-        FrontendLetWithPatterns{} -> customFailure (InvalidConstantExpression e ext)
         FrontendLetInWithPatterns{} -> customFailure (InvalidConstantExpression e ext)
+        FrontendBlock{} -> customFailure (InvalidConstantExpression e ext)
+        FrontendLetBangIn{} -> customFailure (InvalidConstantExpression e ext)
         FrontendInParens (InParensExpression inner) -> do
             void $ validateConstExpr' inner
             pure (AnnotationArg ext)
