@@ -108,6 +108,7 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Run `nix fmt` - ([09dac05](https://github.com/ElaraLang/elara/commit/09dac05c0442d643a3d861e9ed4020b2863fcdf1)) 
 - Format - ([e0c5e98](https://github.com/ElaraLang/elara/commit/e0c5e98b19b15fd570524f6db17cbcbf0f80b82a)) 
 - Remove dead code reported by weeder ([#96](<REPO>/issues/96)) - ([a17776b](https://github.com/ElaraLang/elara/commit/a17776b9d87dce5248b6658fafd156468c3a307d)) 
+- Add portable macOS build and improve nix store caching - ([77340c4](https://github.com/ElaraLang/elara/commit/77340c43e9d97ca12a91a9a69733226e4a410384)) 
 
 ### Build
 
