@@ -87,7 +87,7 @@ tokens :-
       -- Literals
       \-? (
           @decimal 
-          | 0[o0] @octal
+          | 0[oO] @octal
           | 0[xX] @hexadecimal
           )
       { parametrizedTok TokenInt (read . toString) }
