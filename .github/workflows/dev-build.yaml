@@ -9,36 +9,60 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # `package` is the flake package that produces the binary
           - os: ubuntu-latest
             arch: x86_64-linux
+            package: elara-static
           - os: ubuntu-24.04-arm
             arch: aarch64-linux
+            package: elara-static
+          - os: macos-latest
+            arch: aarch64-darwin
+            package: elara-portable
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      actions: write # lets cache-nix-action purge superseded store caches
     steps:
-      - uses: actions/checkout@v7
-      - uses: wimpysworld/nothing-but-nix@main
-      - uses: DeterminateSystems/nix-installer-action@main
-        name: Install Nix
+      - name: Check out
+        uses: actions/checkout@v7
+      - name: Free disk space for the Nix store
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        uses: wimpysworld/nothing-but-nix@main
+      - name: Install Nix
+        uses: cachix/install-nix-action@v32
         with:
-          extra-conf: |
-            trusted-public-keys = elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-            substituters = https://elara.cachix.org https://cache.nixos.org/
+          # keep-outputs/keep-derivations stop the cache's GC from deleting the build-time closure containing GHC etc.
+          extra_nix_config: |
             accept-flake-config = true
-      - uses: ryanccn/attic-action@v0
+            keep-outputs = true
+            keep-derivations = true
+      # Restoring a cached /nix/store is much faster than pulling GHC and the libraries from attic on every run.
+      - name: Restore nix store cache
+        uses: nix-community/cache-nix-action@v7
+        with:
+          # Only key on the nix config so other changes don't invalidate cache
+          primary-key: nix-${{ matrix.arch }}-${{ hashFiles('flake.lock', 'flake.nix', 'nix/**') }}
+          restore-prefixes-first-match: nix-${{ matrix.arch }}-
+          gc-max-store-size: 8G
+          # replace superseded caches for this arch, but never the one that was just restored or saved
+          purge: true
+          purge-prefixes: nix-${{ matrix.arch }}-
+          purge-created: 0
+          purge-primary-key: never
+      # Set up after the cache restore, so that attic only receives what this run built
+      - name: Set up attic
+        uses: ryanccn/attic-action@v0
         with:
           endpoint: https://cache.bristermitten.me/
           cache: elara
           token: ${{ secrets.ATTIC_TOKEN }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: elara
-          installCommand: nix profile add github:NixOS/nixpkgs/nixpkgs-unstable#cachix
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - name: Build static elara
-        run: nix build ".#packages.${{ matrix.arch }}.elara-static" -L
+      - name: Build elara
+        run: nix build ".#packages.${{ matrix.arch }}.${{ matrix.package }}" -L
       - name: Rename binary
         run: cp result/bin/elara elara-${{ matrix.arch }}
-      - uses: actions/upload-artifact@v7
+      - name: Upload binary
+        uses: actions/upload-artifact@v7
         with:
           name: elara-${{ matrix.arch }}
           path: elara-${{ matrix.arch }}
