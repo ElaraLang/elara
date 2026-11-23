@@ -82,6 +82,9 @@
             // hixPkgs.lib.optionalAttrs hixPkgs.stdenv.hostPlatform.isLinux {
               elara-static = import ./nix/static.nix { inherit hixPkgs; };
             }
+            // hixPkgs.lib.optionalAttrs hixPkgs.stdenv.hostPlatform.isDarwin {
+              elara-portable = import ./nix/portable-darwin.nix { inherit hixPkgs; };
+            }
           ) (hixFlake.packages or { });
         };
     };
