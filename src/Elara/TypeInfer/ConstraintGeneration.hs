@@ -305,7 +305,7 @@ generateConstraints' expr' =
 
                     let eLoc = exprRegion e
 
-                    cases' <- for (zip [1 ..] cases) $ \(branchIdx, (pattern, body)) -> scoped @(LocalTypeEnvironment _) $ do
+                    cases' <- for (zip [1 ..] cases) $ \(branchIdx, (pattern, body)) -> scoped @(LocalTypeEnvironment SourceRegion) $ do
                         -- Q ; G |- p1 : t1
                         (typedPattern, _patternType) <- generatePatternConstraints pattern eType
 
@@ -436,7 +436,7 @@ simplifyConstraint given tch wanted = debugWithResult ("simplifyConstraint: " <>
     logDebug ("simplifyConstraint: givenSubst: " <> pretty givenSubst)
 
     -- try the simple solve first
-    fastResult <- runError @(UnifyError _) (runReader tch (solve (substituteAll givenSubst wanted)))
+    fastResult <- runError @(UnifyError SourceRegion) (runReader tch (solve (substituteAll givenSubst wanted)))
 
     case fastResult of
         Right (residual, unifier) ->
@@ -496,8 +496,8 @@ solveAccumulating ::
     Eff r (Constraint loc, Substitution loc)
 solveAccumulating constraint@Equality{eqLeft = a, eqRight = b} = do
     let ?constraint = Just constraint
-    catchError (unify a b) $ \_ err -> do
-        modify (err :)
+    catchError @(UnifyError SourceRegion) (unify a b) $ \_ err -> do
+        modify @[UnifyError SourceRegion] (err :)
         pure (constraint, mempty)
 solveAccumulating (Conjunction _loc a b) = do
     (c1, s1) <- solveAccumulating a

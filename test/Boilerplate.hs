@@ -40,7 +40,7 @@ import Elara.AST.Region
 import Elara.AST.VarRef
 import Elara.Data.Pretty (prettyToText)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
-import Elara.Desugar (desugarExpr)
+import Elara.Desugar (DesugarState, desugarExpr)
 import Elara.Desugar.Error (DesugarError)
 import Elara.Error
 import Elara.Error.Diagnose
@@ -84,12 +84,12 @@ loadShuntedExpr' ::
 loadShuntedExpr' source = runQueryEffects $ do
     let fp = "<tests>"
     tokens <- runErrorAsElaraError @LexerError $ readTokensWith (FileContents fp source)
-    parsed <- runErrorAsElaraError @(WParseErrorBundle _ _) $ do
+    parsed <- runErrorAsElaraError @(WParseErrorBundle TokenStream ElaraParseError) $ do
         parseResult <- inject $ parseExprWith exprParser fp source tokens
         case parseResult of
             Left err -> throwError err
             Right p -> pure p
-    newDesugared <- runErrorAsElaraError @DesugarError $ evalState mempty $ inject $ desugarExpr parsed
+    newDesugared <- runErrorAsElaraError @DesugarError $ evalState @DesugarState mempty $ inject $ desugarExpr parsed
 
     newRenamed <-
         runReader Nothing $
@@ -100,7 +100,7 @@ loadShuntedExpr' source = runQueryEffects $ do
 
     -- Shunt the expression using the fake operator table
     runErrorAsElaraError @ShuntError $
-        runWriterAsElaraWarning @ShuntWarning $
+        runWriterAsElaraWarning @ShuntWarning @_ @_ @Set $
             let ?lookup = fakeOpLookup
              in fixExpr newRenamed
 

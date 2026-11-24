@@ -4,7 +4,6 @@ module Golden (spec) where
 import Colog.Core (LogAction (..))
 import Data.Text (stripEnd)
 import Effectful (Eff)
-import Effectful.Colog (runLogAction)
 import Effectful.State.Static.Local (execState, modify)
 import Error.Diagnose (TabSize (..), WithUnicode (..), prettyDiagnostic')
 import Prettyprinter (defaultLayoutOptions, layoutSmart)
@@ -15,6 +14,7 @@ import Test.Syd (GoldenTest, Spec, describe, expectationFailure, goldenStringFil
 import Prettyprinter.Render.Text qualified as Text
 
 import Boilerplate (finaliseEffects, pipelineResShouldSucceed)
+import Effectful.Colog (runLogAction)
 import Elara.Data.Pretty (AnsiStyle, Doc)
 import Elara.Error.Diagnose
 import Elara.Settings (CompilerSettings (..), defaultSettings)

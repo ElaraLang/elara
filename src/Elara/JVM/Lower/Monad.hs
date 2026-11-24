@@ -20,8 +20,8 @@ type InnerLower r = (Lower r, InstructionWriter :> r)
 type InstructionWriter = Writer ([IR.Instruction], [IR.Block])
 
 emitInst :: InstructionWriter :> r => IR.Instruction -> Eff r ()
-emitInst i = tell ([i], [])
+emitInst i = tell @([IR.Instruction], [IR.Block]) ([i], [])
 
 -- | Emit a block to the "extra blocks" channel of the Writer
 emitBlock :: InstructionWriter :> r => IR.Block -> Eff r ()
-emitBlock block = tell ([], [block])
+emitBlock block = tell @([IR.Instruction], [IR.Block]) ([], [block])
