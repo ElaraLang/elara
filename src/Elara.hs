@@ -28,7 +28,6 @@ where
 
 import Data.Generics.Product (field')
 import Effectful (Eff, IOE, (:>))
-import Effectful.Colog
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Writer.Static.Local (Writer)
@@ -42,6 +41,7 @@ import Data.Dependent.HashMap qualified as DHashMap
 import Data.HashMap.Strict qualified as HashMap
 import Data.Set qualified as Set
 
+import Effectful.Colog
 import Elara.AST.Instances ()
 import Elara.AST.Location (stripTag)
 import Elara.AST.Name (ModuleName, nameText)
