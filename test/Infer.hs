@@ -27,9 +27,9 @@ import Elara.Data.Pretty (AnsiStyle)
 import Elara.Error
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.ConstraintGeneration (generateConstraints)
-import Elara.TypeInfer.Context (emptyContextStack)
+import Elara.TypeInfer.Context (ContextStack, emptyContextStack)
 import Elara.TypeInfer.Convert (TypeConvertError)
-import Elara.TypeInfer.Environment (InferError, emptyLocalTypeEnvironment)
+import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, emptyLocalTypeEnvironment)
 import Elara.TypeInfer.Error (UnifyError)
 import Elara.TypeInfer.Type (Constraint, Monotype (..))
 import Print (prettyToString)
@@ -53,7 +53,7 @@ runInfer =
         . runEff
         . runQueryEffects
         . evalState Kind.initialInferState
-        . evalState emptyLocalTypeEnvironment
+        . evalState @(LocalTypeEnvironment loc) emptyLocalTypeEnvironment
         . evalState fakeTypeEnvironment
         . runWriter @[ElaraWarning]
         . runErrorNoCallStack @ElaraError
@@ -62,7 +62,7 @@ runInfer =
         . runErrorAsElaraError @(InferError loc)
         . runErrorAsElaraError @(UnifyError loc)
         . runWriter @(Constraint loc)
-        . runReader emptyContextStack
+        . runReader @(ContextStack (Monotype loc)) emptyContextStack
 
 -- | Helper to check if a type is a specific primitive type constructor
 isPrimType :: Qualified TypeName -> Monotype loc -> Bool

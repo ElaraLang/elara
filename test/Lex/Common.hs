@@ -9,13 +9,14 @@ import Test.Syd
 import Elara.AST.Region (unlocated)
 import Elara.Lexer.Reader
 import Elara.Lexer.Token
+import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.ReadFile (FileContents (..))
 
 lex' :: Text -> [Lexeme]
 lex' contents = do
     case runPureEff $
-        runError $
+        runError @LexerError $
             ignoreStructuredDebug (readTokensWith (FileContents "<tests>" contents)) of
         Left (e, _) -> error $ toText ("lex fail: " ++ show e)
         Right tokens -> tokens

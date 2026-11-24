@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -35,4 +36,4 @@ locally f comp = do
 
 -- | Makes a 'State' effect scoped, so that any changes to the state are reverted after the computation finishes.
 scoped :: forall s r a. State s :> r => Eff r a -> Eff r a
-scoped = locally identity
+scoped = locally @s identity

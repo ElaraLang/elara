@@ -23,6 +23,7 @@ import Elara.AST.Phases.Frontend (Frontend)
 import Elara.AST.Phases.Frontend.Pretty ()
 import Elara.Lexer.Reader (readTokensWith)
 import Elara.Lexer.Token (Token (TokenEquals))
+import Elara.Lexer.Utils (LexerError)
 import Elara.Logging (ignoreStructuredDebug)
 import Elara.Parse.Error (ElaraParseError, WParseErrorBundle (..), unWParseErrorBundle)
 import Elara.Parse.Grammar (element)
@@ -68,7 +69,7 @@ lexAndParse parser source = do
     tokens <-
         evalEither $
             runPureEff $
-                runError $
+                runError @LexerError $
                     ignoreStructuredDebug $
                         readTokensWith (FileContents fp (toText source))
     let tokenStream =
