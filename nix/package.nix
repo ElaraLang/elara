@@ -65,7 +65,6 @@
       "binary"
       "bytestring"
       "co-log-core"
-      "co-log-effectful"
       "containers"
       "dependent-sum-template"
       "diagnose"

@@ -48,6 +48,7 @@ flag static
 
 library
   exposed-modules:
+      Effectful.Colog
       Effectful.Error.Extra
       Effectful.State.Extra
       Elara
@@ -213,7 +214,6 @@ library
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
-    , co-log-effectful >=0.0.0.1 && <0.1
     , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3
@@ -281,7 +281,6 @@ executable elara
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
-    , co-log-effectful >=0.0.0.1 && <0.1
     , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3
@@ -376,7 +375,6 @@ test-suite elara-test
     , binary >=0.8.9.3 && <0.9
     , bytestring >=0.12.2.0 && <0.13
     , co-log-core >=0.3.2.6 && <0.4
-    , co-log-effectful >=0.0.0.1 && <0.1
     , containers ==0.7.*
     , dependent-hashmap >=0.1.0.0 && <0.2
     , dependent-sum-template >=0.2.0.2 && <0.3

@@ -10,11 +10,11 @@ module Elara.Pipeline where
 
 import Colog.Core (LogAction (..))
 import Effectful (Eff, IOE, (:>))
-import Effectful.Colog (Log, runLogAction)
 
 import Data.Text.IO qualified as Text
 import System.IO qualified
 
+import Effectful.Colog (Log, runLogAction)
 import Elara.Data.Pretty
 import Print (printPretty)
 

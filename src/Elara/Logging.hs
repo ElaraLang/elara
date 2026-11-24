@@ -62,11 +62,11 @@ import GHC.Stack (srcLocFile, srcLocStartLine)
 import GHC.TypeLits (KnownSymbol (..), symbolVal)
 
 import Data.Text qualified as T
-import Effectful.Colog qualified as Log
 import Effectful.State.Static.Local qualified as S
 
 import Elara.Data.Pretty
 
+import Effectful.Colog qualified as Log
 import Elara.Data.Pretty.Styles qualified as Style
 
 {- | Log levels for structured debug messages
