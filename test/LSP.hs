@@ -71,8 +71,10 @@ properties = describe "Properties" $ do
         (lspPositionToElara text s, lspPositionToElara text e) === (lo, hi)
 
     it "normalises arbitrary LSP positions to a valid position idempotently" $ property $ do
-        ls <- forAll genLines
-        let text = unlines ls
+        generated <- forAll genLines
+        let text = unlines generated
+            -- 'unlines' ends the text with a newline, which starts one more (empty) line than we generated
+            ls = Text.splitOn "\n" text
         -- deliberately generate positions beyond the end of lines and the file
         lspLine <- forAll $ Gen.int (Range.constant 0 (length ls + 2))
         lspChar <- forAll $ Gen.int (Range.constant 0 20)
@@ -113,6 +115,17 @@ examples = describe "Examples" $ do
             regionToRange "ab\n" (region Nothing 1 3 1 3) <=> range 0 2 0 2
         it "clamps lines past the end of the file" $
             regionToRange "ab\ncd" (region Nothing 9 1 9 5) <=> range 1 2 1 2
+
+    describe "regionToRangeIn" $ do
+        let files path = if path == "a.elr" then Just "ab\ncdef" else Nothing
+        it "uses the text of the region's file" $
+            regionToRangeIn files (region (Just "a.elr") 2 2 2 4) <=> range 1 1 1 3
+        it "gives the zero range for a file it doesn't know" $
+            regionToRangeIn files (region (Just "other.elr") 2 2 2 4) <=> range 0 0 0 0
+        it "gives the zero range for a region with no file" $
+            regionToRangeIn files (region Nothing 2 2 2 4) <=> range 0 0 0 0
+        it "gives the zero range for a generated region, without consulting the lookup" $
+            regionToRangeIn (error "should not be called") (GeneratedRegion "<generated>") <=> range 0 0 0 0
 
     describe "lspPositionToElara" $ do
         it "shifts to 1-based" $

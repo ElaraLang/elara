@@ -17,7 +17,7 @@ regionToRange ::
     -- | The region to turn into a 'LSP.Range'
     SourceRegion ->
     LSP.Range
-regionToRange _ (GeneratedRegion _) = LSP.Range zeroPosition zeroPosition
+regionToRange _ (GeneratedRegion _) = zeroLSPRange
 regionToRange text (RealSourceRegion (UnsafeMkSourceRegion _ start end)) =
     LSP.Range (toLspPosition fileLines start) (toLspPosition fileLines end')
   where
@@ -54,6 +54,22 @@ utf16Width c = if ord c > 0xFFFF then 2 else 1
 
 zeroPosition :: LSP.Position
 zeroPosition = LSP.Position 0 0
+
+zeroLSPRange :: LSP.Range
+zeroLSPRange = LSP.Range zeroPosition zeroPosition
+
+{- | Like 'regionToRange', but looks up the contents of the region's file itself.
+If we can't find source text for any part of the region, we return 'zeroLSPRange', i.e. for regions with no paths or regions
+that can't be read.
+-}
+regionToRangeIn ::
+    -- | Look up the current contents of a file, if it is known
+    (FilePath -> Maybe Text) ->
+    SourceRegion ->
+    LSP.Range
+regionToRangeIn _ (GeneratedRegion _) = zeroLSPRange
+regionToRangeIn readFile region@(RealSourceRegion real) =
+    maybe zeroLSPRange (`regionToRange` region) (_sourceFile real >>= readFile)
 
 {- | Convert a 0-based, UTF-16-based LSP position into a 1-based, UTF-8-based Elara position.
 For a valid position, this is the inverse of 'toLspPosition'
