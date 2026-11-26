@@ -20,7 +20,6 @@ module Elara.AST.Phases.Renamed (
 where
 
 import Prettyprinter (Doc)
-import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Elara.AST.Extensions
 import Elara.AST.Location (AstNode (TypeNode, VarNode))
@@ -30,7 +29,7 @@ import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
 import Elara.AST.VarRef (VarRef)
-import Elara.Data.Pretty (Pretty (..))
+import Elara.Data.Pretty (Ann, Pretty (..))
 import Elara.Data.Unique (Unique)
 
 {- | Renamed AST stage. Key changes from Desugared:
@@ -137,7 +136,7 @@ instance PrettyExtensions Renamed where
     prettyTypeSyntaxExtension = absurd
     prettyDeclBodyExtension = absurd
 
-prettyRenamedExprExt :: forall loc. (PrettyPhase Renamed, PrettyPhaseLoc Renamed loc) => RenamedExpressionExtension loc -> Doc AnsiStyle
+prettyRenamedExprExt :: forall loc. (PrettyPhase Renamed, PrettyPhaseLoc Renamed loc) => RenamedExpressionExtension loc -> Doc Ann
 prettyRenamedExprExt = \case
     RenamedBinaryOperator ext -> prettyBinaryOperatorExt ext
     RenamedInParens ext -> prettyInParensExt ext

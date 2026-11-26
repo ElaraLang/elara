@@ -34,11 +34,12 @@ import Text.Show
 import Data.Dependent.HashMap qualified as DHashMap
 import Data.Map qualified as Map
 import Effectful.Writer.Static.Local qualified as Eff
+import Prettyprinter.Render.Terminal qualified as Terminal
 
 import Elara.AST.Name hiding (Name)
 import Elara.AST.Region
 import Elara.AST.VarRef
-import Elara.Data.Pretty (prettyToText)
+import Elara.Data.Pretty (defaultLayoutOptions, layoutSmart, reAnnotate)
 import Elara.Data.Unique.Effect (UniqueGen, uniqueGenToGlobalIO)
 import Elara.Desugar (DesugarState, desugarExpr)
 import Elara.Desugar.Error (DesugarError)
@@ -89,7 +90,11 @@ loadShuntedExpr' source = runQueryEffects $ do
         case parseResult of
             Left err -> throwError err
             Right p -> pure p
-    newDesugared <- runErrorAsElaraError @DesugarError $ evalState @DesugarState mempty $ inject $ desugarExpr parsed
+    newDesugared <-
+        runErrorAsElaraError @DesugarError $
+            evalState @DesugarState mempty $
+                inject $
+                    desugarExpr parsed
 
     newRenamed <-
         runReader Nothing $
@@ -143,7 +148,7 @@ pipelineResShouldSucceed m = do
 
     when hasErrors $ do
         diag <- reportsToDiagnostic reports
-        expectationFailure $ toString $ prettyToText $ prettyDiagnostic' WithUnicode (TabSize 4) diag
+        expectationFailure $ toString $ Terminal.renderStrict $ layoutSmart defaultLayoutOptions $ reAnnotate diagnoseStyle $ prettyDiagnostic' WithUnicode (TabSize 4) diag
 
     case x of
         Just ok -> pure ok

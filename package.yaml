@@ -38,6 +38,7 @@ dependencies:
     mixin: [hiding (Prelude)]
   - lsp>=2.8.0.0
   - lsp-types
+  - prettyprinter-ansi-terminal >=1.1.2 && <1.2
 library:
   source-dirs: src
   build-tools:

@@ -14,14 +14,13 @@ module Elara.AST.Phases.Frontend.Pretty (
 ) where
 
 import Prettyprinter hiding (Pretty (..))
-import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Elara.AST.Extensions
 import Elara.AST.Phase ()
 import Elara.AST.Phases.Frontend
 import Elara.AST.Pretty
 import Elara.AST.Types
-import Elara.Data.Pretty (Pretty (..), escapeChar)
+import Elara.Data.Pretty (Ann, Pretty (..), escapeChar)
 import Prelude hiding (group)
 
 import Elara.Data.AtLeast2List qualified as AtLeast2List
@@ -35,10 +34,10 @@ instance PrettyPhaseLoc Frontend loc => Pretty (Pattern loc Frontend) where
 instance PrettyPhaseLoc Frontend loc => Pretty (Type loc Frontend) where
     pretty = prettyType
 
-prettyExprRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Expr loc Frontend -> Doc AnsiStyle
+prettyExprRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Expr loc Frontend -> Doc Ann
 prettyExprRoundTrip (Expr _ _meta node) = prettyExprRoundTrip' node
 
-prettyExprRoundTrip' :: forall loc. PrettyPhaseLoc Frontend loc => Expr' loc Frontend -> Doc AnsiStyle
+prettyExprRoundTrip' :: forall loc. PrettyPhaseLoc Frontend loc => Expr' loc Frontend -> Doc Ann
 prettyExprRoundTrip' = \case
     EInt i -> pretty i
     EFloat f -> pretty f
@@ -70,7 +69,7 @@ prettyExprRoundTrip' = \case
     EAnn e t -> prettyExprRoundTrip e <+> ":" <+> prettyType t
     EExtension ext -> prettyFrontendExprExtRoundTrip ext
 
-prettyFrontendExprExtRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => FrontendExpressionExtension loc -> Doc AnsiStyle
+prettyFrontendExprExtRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => FrontendExpressionExtension loc -> Doc Ann
 prettyFrontendExprExtRoundTrip = \case
     FrontendMultiLam pats body ->
         parens ("\\" <> hsep (map prettyPatternRoundTrip pats) <+> "->" <+> parens (prettyExprRoundTrip body))
@@ -89,20 +88,20 @@ prettyFrontendExprExtRoundTrip = \case
     FrontendBlock stmts ->
         "{" <+> hsep (punctuate ";" (map prettyStatementRoundTrip (toList stmts))) <+> "}"
 
-prettyStatementRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Statement loc Frontend -> Doc AnsiStyle
+prettyStatementRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Statement loc Frontend -> Doc Ann
 prettyStatementRoundTrip (Statement _ node) = case node of
     SLet binder pats val -> hsep (["let", prettyValueBinder @Frontend @loc binder] <> map prettyPatternRoundTrip pats) <+> "=" <+> prettyExprRoundTrip val
     SLetBang binder val -> "let!" <+> prettyValueBinder @Frontend @loc binder <+> "=" <+> prettyExprRoundTrip val
     SExpr e -> prettyExprRoundTrip e
 
-prettyPatternRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Pattern loc Frontend -> Doc AnsiStyle
+prettyPatternRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => Pattern loc Frontend -> Doc Ann
 prettyPatternRoundTrip (Pattern _ meta node) =
     let pp = prettyPatternRoundTrip' node
      in case meta of
             Nothing -> pp
             Just t -> pp <+> ":" <+> prettyType t
 
-prettyPatternRoundTrip' :: forall loc. PrettyPhaseLoc Frontend loc => Pattern' loc Frontend -> Doc AnsiStyle
+prettyPatternRoundTrip' :: forall loc. PrettyPhaseLoc Frontend loc => Pattern' loc Frontend -> Doc Ann
 prettyPatternRoundTrip' = \case
     PVar v -> prettyValueBinder @Frontend @loc v
     PCon c [] -> prettyConstructorOccurrence @Frontend @loc c
@@ -119,7 +118,7 @@ prettyPatternRoundTrip' = \case
     PUnit -> "()"
     PExtension ext -> prettyListTuplePatternExtRoundTrip ext
 
-prettyListTuplePatternExtRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => ListTuplePatternExtension loc Frontend -> Doc AnsiStyle
+prettyListTuplePatternExtRoundTrip :: forall loc. PrettyPhaseLoc Frontend loc => ListTuplePatternExtension loc Frontend -> Doc Ann
 prettyListTuplePatternExtRoundTrip = \case
     ListPattern ps ->
         "[" <+> hsep (punctuate "," (map prettyPatternRoundTrip ps)) <+> "]"

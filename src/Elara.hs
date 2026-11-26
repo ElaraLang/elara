@@ -97,7 +97,7 @@ data CompileResult = CompileResult
 compile ::
     ( Error ElaraError :> es
     , Writer [ElaraWarning] :> es
-    , Log (Doc AnsiStyle) :> es
+    , Log (Doc Ann) :> es
     , UniqueGen :> es
     , IOE :> es
     ) =>
@@ -131,7 +131,7 @@ withCompilerEnv ::
     ( Error ElaraError :> es
     , Writer [ElaraWarning] :> es
     , IOE :> es
-    , Log (Doc AnsiStyle) :> es
+    , Log (Doc Ann) :> es
     , HasCallStack
     ) =>
     -- | The settings to run the compiler with

@@ -132,7 +132,7 @@ instance HasSourceRegion (TaggedLocate n SourceRegion a) where
     sourceRegion = nodeLoc % sourceRegion
 
 instance Pretty a => Pretty (TaggedLocate n loc a) where
-    pretty :: Pretty a => TaggedLocate n loc a -> Doc AnsiStyle
+    pretty :: Pretty a => TaggedLocate n loc a -> Doc Ann
     pretty (TaggedLocate _ a) = pretty a
 
 instance HasLocation (TaggedLocate n loc a) (NodeLoc n loc) where

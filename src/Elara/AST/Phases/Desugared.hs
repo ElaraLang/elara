@@ -3,7 +3,6 @@
 module Elara.AST.Phases.Desugared where
 
 import Prettyprinter (Doc, flatAlt, group, hsep, line, (<+>))
-import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Elara.AST.Extensions
 import Elara.AST.Location
@@ -12,7 +11,7 @@ import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
-import Elara.Data.Pretty (Pretty (..), punctuate)
+import Elara.Data.Pretty (Ann, Pretty (..), punctuate)
 import Prelude hiding (group)
 
 {- | Desugared AST stage. Key changes from Frontend:
@@ -126,7 +125,7 @@ instance PrettyExtensions Desugared where
     prettyTypeSyntaxExtension = prettyTupleTypeExt
     prettyDeclBodyExtension = absurd
 
-prettyDesugaredExprExt :: forall loc. (PrettyPhase Desugared, PrettyPhaseLoc Desugared loc) => DesugaredExpressionExtension loc -> Doc AnsiStyle
+prettyDesugaredExprExt :: forall loc. (PrettyPhase Desugared, PrettyPhaseLoc Desugared loc) => DesugaredExpressionExtension loc -> Doc Ann
 prettyDesugaredExprExt = \case
     DesugaredBinaryOperator ext -> prettyBinaryOperatorExt ext
     DesugaredInParens ext -> prettyInParensExt ext

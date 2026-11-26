@@ -1,58 +1,79 @@
 module Elara.Data.Pretty.Styles where
 
 import Prettyprinter
-import Prettyprinter.Render.Terminal as PP
+import Prettyprinter.Render.Terminal (AnsiStyle, Color (..), color, colorDull, underlined)
 
-keywordStyle, punctuationStyle, scalarStyle, builtinStyle, moduleNameStyle, typeNameStyle, varNameStyle, constructorStyle :: AnsiStyle
-keywordStyle = color Magenta
-punctuationStyle = PP.bold <> colorDull Green
-scalarStyle = colorDull Cyan
-builtinStyle = underlined
-moduleNameStyle = color Blue
-typeNameStyle = color Yellow
-varNameStyle = color Green
-constructorStyle = underlined <> colorDull Yellow
+import Prettyprinter.Render.Terminal qualified as PP
 
-warningStyle, errorStyle, boldStyle :: AnsiStyle
-warningStyle = PP.bold <> color Yellow
-errorStyle = PP.bold <> color Red
-boldStyle = PP.bold
+-- | What a document represents, agnostic from how specifically it should be styled.
+data Ann
+    = Keyword
+    | Punctuation
+    | Scalar
+    | Builtin
+    | ModuleName
+    | TypeName
+    | VarName
+    | Constructor
+    | GlobalVar
+    | LocalVar
+    | Warning
+    | Error
+    | Bold
+    deriving (Eq, Show)
 
-keyword :: Doc AnsiStyle -> Doc AnsiStyle
-keyword = annotate keywordStyle
+-- | How each kind of thing is shown in a terminal
+ansiStyle :: Ann -> AnsiStyle
+ansiStyle = \case
+    Keyword -> color Magenta
+    Punctuation -> PP.bold <> colorDull Green
+    Scalar -> colorDull Cyan
+    Builtin -> underlined
+    ModuleName -> color Blue
+    TypeName -> color Yellow
+    VarName -> color Green
+    Constructor -> underlined <> colorDull Yellow
+    GlobalVar -> color Green
+    LocalVar -> color Blue
+    Warning -> PP.bold <> color Yellow
+    Error -> PP.bold <> color Red
+    Bold -> PP.bold
 
-punctuation :: Doc AnsiStyle -> Doc AnsiStyle
-punctuation = annotate punctuationStyle
+keyword :: Doc Ann -> Doc Ann
+keyword = annotate Keyword
 
-label :: Doc AnsiStyle -> Doc AnsiStyle
-label = annotate mempty
+punctuation :: Doc Ann -> Doc Ann
+punctuation = annotate Punctuation
 
-scalar :: Doc AnsiStyle -> Doc AnsiStyle
-scalar = annotate scalarStyle
+label :: Doc Ann -> Doc Ann
+label = identity
 
-builtin :: Doc AnsiStyle -> Doc AnsiStyle
-builtin = annotate builtinStyle
+scalar :: Doc Ann -> Doc Ann
+scalar = annotate Scalar
 
-operator :: Doc AnsiStyle -> Doc AnsiStyle
+builtin :: Doc Ann -> Doc Ann
+builtin = annotate Builtin
+
+operator :: Doc Ann -> Doc Ann
 operator = punctuation
 
-moduleName :: Doc AnsiStyle -> Doc AnsiStyle
-moduleName = annotate moduleNameStyle
+moduleName :: Doc Ann -> Doc Ann
+moduleName = annotate ModuleName
 
-typeName :: Doc AnsiStyle -> Doc AnsiStyle
-typeName = annotate typeNameStyle
+typeName :: Doc Ann -> Doc Ann
+typeName = annotate TypeName
 
-varName :: Doc AnsiStyle -> Doc AnsiStyle
-varName = annotate varNameStyle
+varName :: Doc Ann -> Doc Ann
+varName = annotate VarName
 
-constructor :: Doc AnsiStyle -> Doc AnsiStyle
-constructor = annotate constructorStyle
+constructor :: Doc Ann -> Doc Ann
+constructor = annotate Constructor
 
-warning :: Doc AnsiStyle -> Doc AnsiStyle
-warning = annotate warningStyle
+warning :: Doc Ann -> Doc Ann
+warning = annotate Warning
 
-error :: Doc AnsiStyle -> Doc AnsiStyle
-error = annotate errorStyle
+error :: Doc Ann -> Doc Ann
+error = annotate Error
 
-bold :: Doc AnsiStyle -> Doc AnsiStyle
-bold = annotate boldStyle
+bold :: Doc Ann -> Doc Ann
+bold = annotate Bold

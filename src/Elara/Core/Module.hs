@@ -8,7 +8,7 @@ import Elara.AST.Name (ModuleName, Qualified)
 import Elara.Core (DataCon, Type, TypeVariable)
 import Elara.Core.Pretty (prettyTy, prettyTypeVariables)
 import Elara.Data.Kind (ElaraKind)
-import Elara.Data.Pretty (AnsiStyle, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
+import Elara.Data.Pretty (Ann, Doc, Pretty (pretty), bracedBlock, hardline, indentDepth, nest, (<+>))
 import Elara.Data.Pretty.Styles (keyword)
 import Elara.Pretty.Common (prettyCtorsInline)
 
@@ -58,7 +58,7 @@ instance Pretty CoreTypeDeclBody where
     pretty (CoreDataDecl _ []) = "{}"
     pretty (CoreDataDecl _ dcs) = prettyCtorsInline (pretty <$> dcs)
 
-prettyTdef :: CoreTypeDecl -> Doc AnsiStyle
+prettyTdef :: CoreTypeDecl -> Doc Ann
 prettyTdef (CoreTypeDecl name kind tvs body) =
     keyword "type" <+> pretty name <> prettyTypeVariables tvs <+> ":" <+> pretty kind <+> "=" <+> pretty body
 

@@ -284,6 +284,7 @@ executable elara
     , lsp >=2.8.0.0
     , lsp-types
     , opt-env-conf >=0.5.0.0 && <0.18
+    , prettyprinter-ansi-terminal >=1.1.2 && <1.2
     , relude
   mixins:
       base hiding (Prelude)
@@ -355,6 +356,7 @@ test-suite elara-test
     , megaparsec
     , neat-interpolation >=0.5.1.4 && <0.6
     , prettyprinter
+    , prettyprinter-ansi-terminal >=1.1.2 && <1.2
     , process
     , relude
     , sydtest >=0.18.0.0 && <0.34

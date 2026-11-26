@@ -3,7 +3,6 @@
 module Elara.AST.Phases.Frontend where
 
 import Prettyprinter (Doc, flatAlt, group, hsep, line, parens, (<+>))
-import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Elara.AST.Extensions
 import Elara.AST.Location
@@ -12,7 +11,7 @@ import Elara.AST.Phase
 import Elara.AST.Pretty
 import Elara.AST.Region (SourceRegion)
 import Elara.AST.Types
-import Elara.Data.Pretty (Pretty (..), punctuate)
+import Elara.Data.Pretty (Ann, Pretty (..), punctuate)
 import Prelude hiding (group)
 
 {- | The Frontend AST stage, produced by the parser.
@@ -148,7 +147,7 @@ instance PrettyExtensions Frontend where
     prettyTypeSyntaxExtension = prettyTupleTypeExt
     prettyDeclBodyExtension = prettyFrontendDeclBodyExt
 
-prettyFrontendExprExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendExpressionExtension loc -> Doc AnsiStyle
+prettyFrontendExprExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendExpressionExtension loc -> Doc Ann
 prettyFrontendExprExt = \case
     FrontendMultiLam pats body ->
         parens ("\\" <> hsep (map prettyPattern pats) <+> "->" <+> parens (prettyExpr body))
@@ -175,6 +174,6 @@ prettyFrontendExprExt = \case
     FrontendTuple ext -> prettyTupleExprExt ext
     FrontendBlock stmts -> "{" <+> hsep (punctuate ";" (map prettyStatement (toList stmts))) <+> "}"
 
-prettyFrontendDeclBodyExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendDeclBodyExtension loc -> Doc AnsiStyle
+prettyFrontendDeclBodyExt :: forall loc. PrettyPhaseLoc Frontend loc => FrontendDeclBodyExtension loc -> Doc Ann
 prettyFrontendDeclBodyExt (FrontendValueTypeDef name ty _annotations) =
     "def" <+> pretty name <+> ":" <+> prettyType ty

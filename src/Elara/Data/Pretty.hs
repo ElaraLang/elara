@@ -9,7 +9,7 @@ module Elara.Data.Pretty (
     Pretty (..),
     gpretty,
     module Pretty,
-    module Prettyprinter.Render.Terminal,
+    Ann,
     listToText,
     bracedBlock,
     renderStrict,
@@ -19,10 +19,8 @@ module Elara.Data.Pretty (
 )
 where
 
-import Error.Diagnose (Annotation, defaultStyle)
 import GHC.Generics
 import Prettyprinter as Pretty hiding (Pretty (..), pretty)
-import Prettyprinter.Render.Terminal (AnsiStyle)
 
 import Data.HashMap.Strict qualified as HM
 import Data.Map qualified as Map (toList)
@@ -30,6 +28,7 @@ import Prettyprinter qualified as PP
 import Prettyprinter.Render.Terminal qualified as Pretty.Terminal (renderStrict)
 import Prettyprinter.Render.Text qualified as Pretty.Text
 
+import Elara.Data.Pretty.Styles (Ann)
 import Prelude hiding (group)
 
 import Elara.Data.Pretty.Styles qualified as Styles
@@ -38,7 +37,7 @@ import Elara.Width qualified as Width
 indentDepth :: Int
 indentDepth = 4
 
-listToText :: forall a. Pretty a => [a] -> Doc AnsiStyle
+listToText :: forall a. Pretty a => [a] -> Doc Ann
 listToText elements =
     vsep (fmap prettyEntry elements)
   where
@@ -63,7 +62,7 @@ renderStrict highlight columns =
   where
     render =
         if highlight
-            then Pretty.Terminal.renderStrict
+            then Pretty.Terminal.renderStrict . reAnnotateS Styles.ansiStyle
             else Pretty.Text.renderStrict
 
 renderStrictUnannotated ::
@@ -86,7 +85,7 @@ layoutOptions columns =
 >>> bracedBlock ["foo", "bar"]
 { foo; bar }
 -}
-bracedBlock :: Pretty a => [a] -> Doc AnsiStyle
+bracedBlock :: Pretty a => [a] -> Doc Ann
 bracedBlock [] = "{}"
 bracedBlock b = do
     let open = "{ "
@@ -96,17 +95,14 @@ bracedBlock b = do
     group (align (encloseSep open close (flatAlt longSeparator shortSeparator) (pretty <$> b)))
 
 class Pretty a where
-    pretty :: a -> Doc AnsiStyle
-    default pretty :: (Generic a, GPretty (Rep a)) => a -> Doc AnsiStyle
+    pretty :: a -> Doc Ann
+    default pretty :: (Generic a, GPretty (Rep a)) => a -> Doc Ann
     pretty = gpretty
 
-gpretty :: (Generic a, GPretty (Rep a)) => a -> Doc AnsiStyle
+gpretty :: (Generic a, GPretty (Rep a)) => a -> Doc Ann
 gpretty = sep . gprettyPrec 0 . from
 
-instance Pretty (Doc (Annotation AnsiStyle)) where
-    pretty = pretty . reAnnotate defaultStyle
-
-instance Pretty (Doc AnsiStyle) where
+instance Pretty (Doc Ann) where
     pretty = identity
 
 instance Pretty () where
@@ -195,7 +191,7 @@ instance (Pretty k, Pretty v) => Pretty (HashMap k v) where
 instance Pretty k => Pretty (HashSet k) where
     pretty = group . encloseSep (flatAlt "{ " "{") (flatAlt " }" "}") ", " . fmap pretty . toList
 
-prettyStringExpr :: Text -> Doc AnsiStyle
+prettyStringExpr :: Text -> Doc Ann
 prettyStringExpr = dquotes . pretty
 
 -- Generic instances
@@ -205,7 +201,7 @@ prettyStringExpr = dquotes . pretty
 
 class GPretty f where
     -- | Pretty print a `Generic` value
-    gprettyPrec :: Int -> f a -> [Doc AnsiStyle]
+    gprettyPrec :: Int -> f a -> [Doc Ann]
 
 instance (GPretty f, GPretty g) => GPretty (f :+: g) where
     gprettyPrec p (L1 x) = gprettyPrec p x

@@ -21,10 +21,10 @@ import Print (printPretty)
 -- Create a co-log LogAction that prints to stdout and appends to a log file.
 -- Returns an IO action that constructs the LogAction so callers (e.g. `Main`) can
 -- pass it into `runLogAction` from `Effectful.Colog`.
--- An Effectful interpreter for the `Log (Doc AnsiStyle)` effect which
+-- An Effectful interpreter for the `Log (Doc Ann)` effect which
 -- writes prettified, annotated output to stdout and appends an unannotated
 -- textual form to `elara.log`.
-runLogToStdoutAndFile :: IOE :> es => Eff (Log (Doc AnsiStyle) : es) a -> Eff es a
+runLogToStdoutAndFile :: IOE :> es => Eff (Log (Doc Ann) : es) a -> Eff es a
 runLogToStdoutAndFile eff = do
     -- reset log file
     liftIO $ writeFileText "elara.log" ""

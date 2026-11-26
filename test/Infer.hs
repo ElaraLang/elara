@@ -23,7 +23,7 @@ import Elara.AST.Name (Qualified, TypeName)
 import Elara.AST.Phases.Shunted (ShuntedExpr, ShuntedExpr')
 import Elara.AST.Region (SourceRegion)
 import Elara.Data.Kind.Infer (KindInferError)
-import Elara.Data.Pretty (AnsiStyle)
+import Elara.Data.Pretty (Ann)
 import Elara.Error
 import Elara.Prim (KnownType (..), KnownTypeInfo (..), OpaquePrim (..), knownTypeInfo)
 import Elara.TypeInfer.ConstraintGeneration (generateConstraints)
@@ -141,7 +141,7 @@ additionalLiteralTests = describe "Additional Literal Type Inference" $ do
 -- | Helper to assert that inference succeeded
 shouldSucceed :: Either ElaraError b -> (b -> IO a3) -> IO a3
 shouldSucceed (Left err) _ =
-    withFrozenCallStack $ expectationFailure $ "Inference failed: " <> prettyToString ((\(ErrorCode x) -> x @AnsiStyle) <$> diagnosticCode err)
+    withFrozenCallStack $ expectationFailure $ "Inference failed: " <> prettyToString ((\(ErrorCode x) -> x @Ann) <$> diagnosticCode err)
 shouldSucceed (Right result) assertion = withFrozenCallStack $ assertion result
 
 -- | Create a 'ShuntedExpr' representing an integer literal

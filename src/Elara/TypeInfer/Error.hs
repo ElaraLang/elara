@@ -161,7 +161,7 @@ buildMainMessage ::
     (Pretty loc, Typeable loc) =>
     Map UniqueTyVar Text ->
     UnifyError loc ->
-    Doc AnsiStyle
+    Doc Ann
 buildMainMessage nameMap err = case err of
     UnifyError{..} ->
         let renamedContext = renameContext nameMap ueContext

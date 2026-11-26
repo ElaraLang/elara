@@ -16,7 +16,7 @@ import Prettyprinter.Render.Text qualified as Text
 
 import Boilerplate (finaliseEffects, pipelineResShouldSucceed)
 import Effectful.Colog (runLogAction)
-import Elara.Data.Pretty (AnsiStyle, Doc)
+import Elara.Data.Pretty (Ann, Doc)
 import Elara.Error.Diagnose
 import Elara.Settings (CompilerSettings (..), defaultSettings)
 
@@ -229,7 +229,7 @@ runInterpreterCapture compilerSettings = do
     output <-
         pipelineResShouldSucceed $
             finaliseEffects $
-                runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc AnsiStyle)) $
+                runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc Ann)) $
                     Elara.withCompilerEnv compilerSettings $
                         execState ([] :: [Text]) $
                             Interpreter.interpretInterpreterOutput (modify . (:)) $
@@ -243,7 +243,7 @@ runJVMCapture compilerSettings = do
     _ <-
         pipelineResShouldSucceed $
             finaliseEffects $
-                runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc AnsiStyle)) $
+                runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc Ann)) $
                     Elara.withCompilerEnv compilerSettings $
                         Elara.compile compilerSettings (Elara.CompileAndEmit Elara.JVM)
 
@@ -263,7 +263,7 @@ runGoldenError settings goldenName = do
     goldenStringFile ("test/test_resources/golden_outputs/" <> goldenName <> ".txt") $ do
         (reports, _result) <-
             finaliseEffects $
-                runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc AnsiStyle)) $
+                runLogAction (LogAction (const pass) :: LogAction (Eff _) (Doc Ann)) $
                     Elara.withCompilerEnv compilerSettings $
                         execState ([] :: [Text]) $
                             Interpreter.interpretInterpreterOutput (modify . (:)) $

@@ -311,7 +311,7 @@ instance Pretty Expr where
     pretty (ArrayLoad arr elemType index) = "arrayLoad" <+> parens (pretty arr <+> ":" <+> pretty elemType <+> "[" <+> pretty index <> "]")
     pretty (PrimitiveIntOp op l r) = parens $ pretty l <+> pretty op <> "_prim" <+> pretty r
 
-prettyCall :: CallType -> [Expr] -> Doc AnsiStyle
+prettyCall :: CallType -> [Expr] -> Doc Ann
 prettyCall type' args = pretty type' <> tupled (map pretty args)
 
 instance Pretty CallType where

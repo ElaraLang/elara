@@ -6,11 +6,11 @@ module Elara.Pretty.Common (
 where
 
 import Prettyprinter (Doc, flatAlt, group, hsep, indent, line, vsep, (<+>))
-import Prettyprinter.Render.Terminal (AnsiStyle)
 
+import Elara.Data.Pretty.Styles (Ann)
 import Prelude hiding (group)
 
-prettyCtorsInline :: [Doc AnsiStyle] -> Doc AnsiStyle
+prettyCtorsInline :: [Doc Ann] -> Doc Ann
 prettyCtorsInline = \case
     [] -> mempty
     [single] -> single
@@ -21,10 +21,10 @@ prettyCtorsInline = \case
                 (first <+> hsep (map ("| " <>) rest))
             )
 
-prettyMatchAlts :: Int -> [Doc AnsiStyle] -> Doc AnsiStyle
+prettyMatchAlts :: Int -> [Doc Ann] -> Doc Ann
 prettyMatchAlts n = \case
     [] -> mempty
     alts -> line <> indent n (vsep alts)
 
-prettyMatchAlt :: Doc AnsiStyle -> Doc AnsiStyle -> Doc AnsiStyle
+prettyMatchAlt :: Doc Ann -> Doc Ann -> Doc Ann
 prettyMatchAlt pat body = pat <+> "->" <+> body

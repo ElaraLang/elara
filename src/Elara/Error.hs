@@ -50,8 +50,8 @@ class Typeable e => ElaraDiagnostic e where
     diagnosticCode :: e -> Maybe ErrorCode
     diagnosticCode = const Nothing
 
-    diagnosticMessage :: e -> Doc AnsiStyle
-    default diagnosticMessage :: Pretty e => e -> Doc AnsiStyle
+    diagnosticMessage :: e -> Doc Ann
+    default diagnosticMessage :: Pretty e => e -> Doc Ann
     diagnosticMessage = pretty
 
     diagnosticMarkers :: e -> [ElaraMarker]
@@ -66,20 +66,20 @@ data ElaraSeverity = ErrorSeverity | WarningSeverity
 data ElaraMarker = ElaraMarker
     { markerRegion :: SourceRegion
     , markerType :: ElaraMarkerType
-    , markerMessage :: Doc AnsiStyle
+    , markerMessage :: Doc Ann
     }
     deriving (Generic, Show)
 
 data ElaraMarkerType = PrimaryMarker | SecondaryMarker | InfoMarker
     deriving (Eq, Show)
 
-data ElaraNote = Note (Doc AnsiStyle) | Hint (Doc AnsiStyle)
+data ElaraNote = Note (Doc Ann) | Hint (Doc Ann)
     deriving (Generic, Show)
 
 data ElaraReport = ElaraReport
     { reportSeverity :: ElaraSeverity
     , reportCode :: Maybe ErrorCode
-    , reportMessage :: Doc AnsiStyle
+    , reportMessage :: Doc Ann
     , reportMarkers :: [ElaraMarker]
     , reportNotes :: [ElaraNote]
     }

@@ -52,6 +52,6 @@ data Associativity
     | NonAssociative
     deriving (Eq, Ord, Show)
 
-prettyOp :: New.BinaryOperator SourceRegion NewR.Renamed -> Doc AnsiStyle
+prettyOp :: New.BinaryOperator SourceRegion NewR.Renamed -> Doc Ann
 prettyOp (New.SymOp _ opRef) = Style.operator $ pretty opRef
 prettyOp (New.InfixedOp _ vn) = Style.operator $ "`" <> pretty vn <> "`"
