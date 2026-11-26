@@ -24,7 +24,7 @@
 </span><a href="Elara.SCC.Type.html#edges"><span class="hs-identifier hs-var hs-var">edges</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HM.HashMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Elara.SCC.Type.html#BinderSet"><span class="hs-identifier hs-type">BinderSet</span></a></span><span>
 </span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ The edges between binders in this subgraph</span></span><span>
 </span><span id="line-23"></span><span>    </span><span class="hs-special">}</span><span>
-</span><span id="line-24"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680053504"><span id="local-6989586621680053506"><span class="annot"><span class="annottext">(forall x. ReachableSubgraph -&gt; Rep ReachableSubgraph x)
+</span><span id="line-24"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013923"><span id="local-6989586621680013925"><span class="annot"><span class="annottext">(forall x. ReachableSubgraph -&gt; Rep ReachableSubgraph x)
 -&gt; (forall x. Rep ReachableSubgraph x -&gt; ReachableSubgraph)
 -&gt; Generic ReachableSubgraph
 forall x. Rep ReachableSubgraph x -&gt; ReachableSubgraph
@@ -37,12 +37,12 @@ $cto :: forall x. Rep ReachableSubgraph x -&gt; ReachableSubgraph
 to :: forall x. Rep ReachableSubgraph x -&gt; ReachableSubgraph
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-25"></span><span>
-</span><span id="line-26"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680053512"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.SCC.Type.html#ReachableSubgraph"><span class="hs-identifier hs-type">ReachableSubgraph</span></a></span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680013931"><span class="annot"><a href="Elara.Data.Pretty.html#Pretty"><span class="hs-identifier hs-type">Pretty</span></a></span><span> </span><span class="annot"><a href="Elara.SCC.Type.html#ReachableSubgraph"><span class="hs-identifier hs-type">ReachableSubgraph</span></a></span></span><span>
 </span><span id="line-27"></span><span>
 </span><span id="line-28"></span><span class="annot"><span class="hs-comment">-- | Content-based, stable identifier for an SCC: canonical sorted unique member list</span></span><span>
 </span><span id="line-29"></span><span class="hs-keyword">newtype</span><span> </span><span id="SCCKey"><span class="annot"><a href="Elara.SCC.Type.html#SCCKey"><span class="hs-identifier hs-var">SCCKey</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="SCCKey"><span class="annot"><a href="Elara.SCC.Type.html#SCCKey"><span class="hs-identifier hs-var">SCCKey</span></a></span></span><span> </span><span class="hs-special">{</span><span id="members"><span class="annot"><span class="annottext">SCCKey -&gt; Set (Qualified VarName)
 </span><a href="Elara.SCC.Type.html#members"><span class="hs-identifier hs-var hs-var">members</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
-</span><span id="line-30"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680053572"><span id="local-6989586621680053578"><span class="annot"><span class="annottext">SCCKey -&gt; SCCKey -&gt; Bool
+</span><span id="line-30"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680013991"><span id="local-6989586621680013997"><span class="annot"><span class="annottext">SCCKey -&gt; SCCKey -&gt; Bool
 (SCCKey -&gt; SCCKey -&gt; Bool)
 -&gt; (SCCKey -&gt; SCCKey -&gt; Bool) -&gt; Eq SCCKey
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -50,7 +50,7 @@ $c== :: SCCKey -&gt; SCCKey -&gt; Bool
 == :: SCCKey -&gt; SCCKey -&gt; Bool
 $c/= :: SCCKey -&gt; SCCKey -&gt; Bool
 /= :: SCCKey -&gt; SCCKey -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680053590"><span id="local-6989586621680053592"><span class="annot"><span class="annottext">(forall x. SCCKey -&gt; Rep SCCKey x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680014009"><span id="local-6989586621680014011"><span class="annot"><span class="annottext">(forall x. SCCKey -&gt; Rep SCCKey x)
 -&gt; (forall x. Rep SCCKey x -&gt; SCCKey) -&gt; Generic SCCKey
 forall x. Rep SCCKey x -&gt; SCCKey
 forall x. SCCKey -&gt; Rep SCCKey x
@@ -60,7 +60,7 @@ $cfrom :: forall x. SCCKey -&gt; Rep SCCKey x
 from :: forall x. SCCKey -&gt; Rep SCCKey x
 $cto :: forall x. Rep SCCKey x -&gt; SCCKey
 to :: forall x. Rep SCCKey x -&gt; SCCKey
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680053597"><span id="local-6989586621680053603"><span id="local-6989586621680053608"><span id="local-6989586621680053613"><span id="local-6989586621680053618"><span id="local-6989586621680053623"><span id="local-6989586621680053628"><span class="annot"><span class="annottext">Eq SCCKey
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680014016"><span id="local-6989586621680014022"><span id="local-6989586621680014027"><span id="local-6989586621680014032"><span id="local-6989586621680014037"><span id="local-6989586621680014042"><span id="local-6989586621680014047"><span class="annot"><span class="annottext">Eq SCCKey
 Eq SCCKey =&gt;
 (SCCKey -&gt; SCCKey -&gt; Ordering)
 -&gt; (SCCKey -&gt; SCCKey -&gt; Bool)
@@ -97,7 +97,7 @@ $cmax :: SCCKey -&gt; SCCKey -&gt; SCCKey
 max :: SCCKey -&gt; SCCKey -&gt; SCCKey
 $cmin :: SCCKey -&gt; SCCKey -&gt; SCCKey
 min :: SCCKey -&gt; SCCKey -&gt; SCCKey
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680053650"><span id="local-6989586621680053657"><span id="local-6989586621680053661"><span class="annot"><span class="annottext">Int -&gt; SCCKey -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680014069"><span id="local-6989586621680014076"><span id="local-6989586621680014080"><span class="annot"><span class="annottext">Int -&gt; SCCKey -&gt; ShowS
 [SCCKey] -&gt; ShowS
 SCCKey -&gt; String
 (Int -&gt; SCCKey -&gt; ShowS)
@@ -112,30 +112,30 @@ $cshowList :: [SCCKey] -&gt; ShowS
 showList :: [SCCKey] -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680053671"><span id="local-6989586621680053678"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.SCC.Type.html#SCCKey"><span class="hs-identifier hs-type">SCCKey</span></a></span></span></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680014090"><span id="local-6989586621680014097"><span class="annot"><span class="hs-identifier hs-type">Hashable</span></span><span> </span><span class="annot"><a href="Elara.SCC.Type.html#SCCKey"><span class="hs-identifier hs-type">SCCKey</span></a></span></span></span><span>
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span class="annot"><span class="hs-comment">-- | Convert between 'SCCKey' and 'SCC (Qualified VarName)'</span></span><span>
 </span><span id="line-35"></span><span class="annot"><a href="Elara.SCC.Type.html#sccKeyToSCC"><span class="hs-identifier hs-type">sccKeyToSCC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Elara.SCC.Type.html#SCCKey"><span class="hs-identifier hs-type">SCCKey</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SCC</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.AST.Name.html#Qualified"><span class="hs-identifier hs-type">Qualified</span></a></span><span> </span><span class="annot"><a href="Elara.AST.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-36"></span><span id="sccKeyToSCC"><span class="annot"><span class="annottext">sccKeyToSCC :: SCCKey -&gt; SCC (Qualified VarName)
-</span><a href="Elara.SCC.Type.html#sccKeyToSCC"><span class="hs-identifier hs-var hs-var">sccKeyToSCC</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.SCC.Type.html#SCCKey"><span class="hs-identifier hs-type">SCCKey</span></a></span><span> </span><span id="local-6989586621680053692"><span class="annot"><span class="annottext">Set (Qualified VarName)
-</span><a href="#local-6989586621680053692"><span class="hs-identifier hs-var">ms</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Elara.SCC.Type.html#sccKeyToSCC"><span class="hs-identifier hs-var hs-var">sccKeyToSCC</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Elara.SCC.Type.html#SCCKey"><span class="hs-identifier hs-type">SCCKey</span></a></span><span> </span><span id="local-6989586621680014111"><span class="annot"><span class="annottext">Set (Qualified VarName)
+</span><a href="#local-6989586621680014111"><span class="hs-identifier hs-var">ms</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-37"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Set (Qualified VarName) -&gt; [Qualified VarName]
 forall a. Set a -&gt; [a]
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
 </span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">Set (Qualified VarName)
-</span><a href="#local-6989586621680053692"><span class="hs-identifier hs-var">ms</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680014111"><span class="hs-identifier hs-var">ms</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-38"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; SCC (Qualified VarName)
 forall a t. (HasCallStack, IsText t) =&gt; t -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;sccKeyToSCC: empty SCCKey&quot;</span></span><span>
-</span><span id="line-39"></span><span>        </span><span class="hs-special">[</span><span id="local-6989586621680053695"><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680053695"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Qualified VarName -&gt; SCC (Qualified VarName)
+</span><span id="line-39"></span><span>        </span><span class="hs-special">[</span><span id="local-6989586621680014114"><span class="annot"><span class="annottext">Qualified VarName
+</span><a href="#local-6989586621680014114"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Qualified VarName -&gt; SCC (Qualified VarName)
 forall vertex. vertex -&gt; SCC vertex
 </span><span class="hs-identifier hs-var">AcyclicSCC</span></span><span> </span><span class="annot"><span class="annottext">Qualified VarName
-</span><a href="#local-6989586621680053695"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-40"></span><span>        </span><span id="local-6989586621680053697"><span class="annot"><span class="annottext">[Qualified VarName]
-</span><a href="#local-6989586621680053697"><span class="hs-identifier hs-var">vs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Qualified VarName] -&gt; SCC (Qualified VarName)
+</span><a href="#local-6989586621680014114"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-40"></span><span>        </span><span id="local-6989586621680014116"><span class="annot"><span class="annottext">[Qualified VarName]
+</span><a href="#local-6989586621680014116"><span class="hs-identifier hs-var">vs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Qualified VarName] -&gt; SCC (Qualified VarName)
 forall vertex. [vertex] -&gt; SCC vertex
 </span><span class="hs-identifier hs-var">CyclicSCC</span></span><span> </span><span class="annot"><span class="annottext">[Qualified VarName]
-</span><a href="#local-6989586621680053697"><span class="hs-identifier hs-var">vs</span></a></span><span>
+</span><a href="#local-6989586621680014116"><span class="hs-identifier hs-var">vs</span></a></span><span>
 </span><span id="line-41"></span></pre></body></html>
