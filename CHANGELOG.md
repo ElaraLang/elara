@@ -66,6 +66,9 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Finally remove deprecated logging code usage - ([60f90de](https://github.com/ElaraLang/elara/commit/60f90ded599b38f79b85895fc04e65cdc037ebf2)) 
 - Throw missing-constructor error at the use site - ([f327cdb](https://github.com/ElaraLang/elara/commit/f327cdbe9a19abf61c4a57b674a9873653e56f93)) 
 - Remove unnecessary `unsafe` usage - ([951f79c](https://github.com/ElaraLang/elara/commit/951f79c2d4ef7f286d72df6592ead41b02fb39b3)) 
+- Remove most mentions and usages of `effectful-plugin` - ([2e53ab0](https://github.com/ElaraLang/elara/commit/2e53ab0cac73a8e98f4b50d0e2146cc6b8bc0015)) 
+- Replace `co-log-effectful` with in-house solution - ([26025bd](https://github.com/ElaraLang/elara/commit/26025bdbd597250bb3aba3d5e0b98a5f944819fc)) 
+- Add some CPP to make stuff wasm-safe - ([f64b347](https://github.com/ElaraLang/elara/commit/f64b3477ebfac1ba520703101987c3861fe5a9f8)) 
 
 ### 📚 Documentation
 
@@ -110,6 +113,9 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Format - ([e0c5e98](https://github.com/ElaraLang/elara/commit/e0c5e98b19b15fd570524f6db17cbcbf0f80b82a)) 
 - Remove dead code reported by weeder ([#96](<REPO>/issues/96)) - ([a17776b](https://github.com/ElaraLang/elara/commit/a17776b9d87dce5248b6658fafd156468c3a307d)) 
 - Add portable macOS build and improve nix store caching - ([77340c4](https://github.com/ElaraLang/elara/commit/77340c43e9d97ca12a91a9a69733226e4a410384)) 
+- Replace hix bounds jobs with dependency-update job - ([6cd1094](https://github.com/ElaraLang/elara/commit/6cd10940668cfdc8e416dcf77896b9b879e973a1)) 
+- Check that static binaries don't depend on anything from nix store - ([cd8c8a8](https://github.com/ElaraLang/elara/commit/cd8c8a8cfd4615216667597a8129868f79cb5a7c)) 
+- Tweak comment - ([b7dac81](https://github.com/ElaraLang/elara/commit/b7dac814a57cedfbda5aa28d7cc82dfe1548b60e)) 
 
 ### Build
 
@@ -137,6 +143,8 @@ As such, breaking changes may occur between minor versions until a stable releas
 - Add weeder - ([b4004a8](https://github.com/ElaraLang/elara/commit/b4004a87128cd76c6ad72b36d229cbe346b68ac3)) 
 - Relax diagnose version bounds - ([78ea4aa](https://github.com/ElaraLang/elara/commit/78ea4aadc833b1a52bced6994debe7c2e12d42d6)) 
 - Make .envrc accept-flake-config - ([8bcf034](https://github.com/ElaraLang/elara/commit/8bcf034d3ad88484b7baa424cdb56b12a82dfa03)) 
+- Migrate from hix to haskell.nix - ([6976820](https://github.com/ElaraLang/elara/commit/6976820a224c7d4eb422dc47f03c84ed1451ec3f)) 
+- Add `just bump-index-state` - ([07a7f2c](https://github.com/ElaraLang/elara/commit/07a7f2c2b4b18863870c5f08c6cb53ce1f8efe8d)) 
 
 ### Stdlib
 
