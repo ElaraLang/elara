@@ -1,6 +1,5 @@
 name: Update dependencies
-# Moves to the newest haskell.nix and Hackage snapshot and opens a pull request; CI on that pull request checks the new
-# versions build and pass
+# Moves to the newest haskell.nix and Hackage snapshot and opens a pull request
 on:
   workflow_dispatch:
   schedule:
