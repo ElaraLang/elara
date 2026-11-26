@@ -1,43 +1,58 @@
 module Elara.Data.Pretty.Styles where
 
 import Prettyprinter
-import Prettyprinter.Render.Terminal
+import Prettyprinter.Render.Terminal as PP
+
+keywordStyle, punctuationStyle, scalarStyle, builtinStyle, moduleNameStyle, typeNameStyle, varNameStyle, constructorStyle :: AnsiStyle
+keywordStyle = color Magenta
+punctuationStyle = PP.bold <> colorDull Green
+scalarStyle = colorDull Cyan
+builtinStyle = underlined
+moduleNameStyle = color Blue
+typeNameStyle = color Yellow
+varNameStyle = color Green
+constructorStyle = underlined <> colorDull Yellow
+
+warningStyle, errorStyle, boldStyle :: AnsiStyle
+warningStyle = PP.bold <> color Yellow
+errorStyle = PP.bold <> color Red
+boldStyle = PP.bold
 
 keyword :: Doc AnsiStyle -> Doc AnsiStyle
-keyword = annotate (color Magenta)
+keyword = annotate keywordStyle
 
 punctuation :: Doc AnsiStyle -> Doc AnsiStyle
-punctuation = annotate (Prettyprinter.Render.Terminal.bold <> colorDull Green)
+punctuation = annotate punctuationStyle
 
 label :: Doc AnsiStyle -> Doc AnsiStyle
 label = annotate mempty
 
 scalar :: Doc AnsiStyle -> Doc AnsiStyle
-scalar = annotate (colorDull Cyan)
+scalar = annotate scalarStyle
 
 builtin :: Doc AnsiStyle -> Doc AnsiStyle
-builtin = annotate underlined
+builtin = annotate builtinStyle
 
 operator :: Doc AnsiStyle -> Doc AnsiStyle
 operator = punctuation
 
 moduleName :: Doc AnsiStyle -> Doc AnsiStyle
-moduleName = annotate (color Blue)
+moduleName = annotate moduleNameStyle
 
 typeName :: Doc AnsiStyle -> Doc AnsiStyle
-typeName = annotate (color Yellow)
+typeName = annotate typeNameStyle
 
 varName :: Doc AnsiStyle -> Doc AnsiStyle
-varName = annotate (color Green)
+varName = annotate varNameStyle
 
 constructor :: Doc AnsiStyle -> Doc AnsiStyle
-constructor = annotate (underlined <> colorDull Yellow)
+constructor = annotate constructorStyle
 
 warning :: Doc AnsiStyle -> Doc AnsiStyle
-warning = annotate (Prettyprinter.Render.Terminal.bold <> color Yellow)
+warning = annotate warningStyle
 
 error :: Doc AnsiStyle -> Doc AnsiStyle
-error = annotate (Prettyprinter.Render.Terminal.bold <> color Red)
+error = annotate errorStyle
 
 bold :: Doc AnsiStyle -> Doc AnsiStyle
-bold = annotate Prettyprinter.Render.Terminal.bold
+bold = annotate boldStyle
