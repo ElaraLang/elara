@@ -6,16 +6,39 @@ package *
 source-repository-package
     type: git
     location: https://github.com/ElaraLang/h2jvm
+    tag: 22755bc5642f82269c809ce30d85380ea260deda
+    --sha256: sha256-R4hvvIdyvzf2umFlVKhr7jqwSDQ/lHde3fmQh3AIuuw=
 
 source-repository-package
     type: git
     location: https://github.com/ElaraLang/dependent-hashmap
+    tag: 4ebb9e2af2e5a83cf03e9f0098bae4b5acbcc3d7
+    --sha256: sha256-AfMfkm3d64cOx/bu9h5ypT8TlNHz0PvvUtVJVJcN7KM=
 
 source-repository-package
     type: git
     location: https://github.com/ElaraLang/diagnose
+    tag: d86419d886012e87f12fd46ce40b6f1f6c458c8f
+    --sha256: sha256-Y9D5HpE+LNGimu8ZKlyhV/N1l6hwWXhZKmfQtQSjjT8=
+
+source-repository-package
+    type: git
+    location: https://github.com/ElaraLang/safe-coloured-text
+    tag: dd3e6573f4086e8569c99fd9cd6de16ca28b7c1e
+    --sha256: sha256-n5LhwJUZn4NZDmV3W1FMsp/vmuDQrhbVy/WPx+3Dbvs=
+    subdir: safe-coloured-text-terminfo
 
 package elara
     haddock-options: --source-module="https://github.com/ElaraLang/elara/tree/main/%F" --source-entity="https://github.com/ElaraLang/elara/tree/main/%F#L%L"
     optimization: False
     ghc-options: -fdefer-typed-holes -fwrite-ide-info -hiedir=.hie
+
+-- the hackage snapshot to solve dependencies against
+-- bump it to upgrade dependencies, with `just bump-index-state`
+-- DO NOT REMOVE! haskell.nix starts doing very strange things without this, including trying to build nix from source!!!!
+index-state: 2026-11-21T00:00:00Z
+
+if arch(wasm32)
+  -- Template Haskell on wasm loads dependencies as shared libraries
+  package *
+    shared: True
