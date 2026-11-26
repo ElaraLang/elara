@@ -105,13 +105,13 @@ typeCheckCoreModule (CoreModule _moduleName m) = do
     let initialState = TcState{scope = mempty}
 
     _ <- evalState initialState $ for_ m $ \case
-        CoreValue (NonRecursive (v, e)) -> scoped $ do
-            modify (addToScope v)
+        CoreValue (NonRecursive (v, e)) -> scoped @TcState $ do
+            modify @TcState (addToScope v)
             typeCheck e
             pass
-        CoreValue (Recursive bs) -> scoped $ do
+        CoreValue (Recursive bs) -> scoped @TcState $ do
             for_ bs $ \(v, _e) -> do
-                modify (addToScope v)
+                modify @TcState (addToScope v)
 
             for_ bs $ \(_v, e) -> typeCheck e
         CoreType _ -> pass
@@ -128,9 +128,9 @@ typeCheck (ANF.Let bind in') = case bind of
         typeCheckC e
         locally (addToScope v) $
             typeCheck in'
-    Recursive binds -> scoped $ do
+    Recursive binds -> scoped @TcState $ do
         let vars = map fst binds
-        for_ vars $ \v -> modify (addToScope v)
+        for_ vars $ \v -> modify @TcState (addToScope v)
         for_ binds $ \(_, e) -> typeCheckC e
         typeCheck in'
 typeCheck (ANF.CExpr cExp) = typeCheckC cExp
@@ -155,12 +155,12 @@ typeCheckC (ANF.App f x) = do
                 else throwError $ CoreTypeMismatch argType xType (fromANFAtom f, fromANFAtom x)
         other -> throwError $ CoreTypeMismatchIncompleteExpected (prettyToText $ pretty xType <+> "-> something") other (fromANFAtom f, fromANFAtom x)
 typeCheckC (ANF.AExpr aExp) = typeCheckA aExp
-typeCheckC match@(ANF.Match scrutinee of' alts) = scoped $ do
+typeCheckC match@(ANF.Match scrutinee of' alts) = scoped @TcState $ do
     scrutineeType <- typeCheckA scrutinee -- the type of the scrutinee
     logDebug $ "scrutineeType: " <> pretty scrutineeType
-    whenJust of' $ \v -> modify (addToScope v)
+    whenJust of' $ \v -> modify @TcState (addToScope v)
     altTypes <- for alts $ \(con, bs, altExpr) -> do
-        for_ bs $ \v -> modify (addToScope v)
+        for_ bs $ \v -> modify @TcState (addToScope v)
         case con of
             Core.DEFAULT -> do
                 typeCheck altExpr

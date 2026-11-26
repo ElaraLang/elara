@@ -104,7 +104,7 @@ qualifyTypeName locName = do
             ensureExistsAndExposed moduleName (Located sr (NameType n))
             pure $ Qualified n m <$ locName
         MaybeQualified n Nothing -> do
-            typeNames' <- use' (field' @"typeNames")
+            typeNames' <- use' (field' @"typeNames" @RenameState)
             m <- Eff.ask
             case Map.lookup n typeNames' of
                 Nothing -> throwError $ UnknownName (Located sr (NameType n)) m typeNames'
@@ -158,7 +158,7 @@ lookupTypeName n = do
 
 lookupTypeVar :: _ => LowerAlphaName -> Eff r (Maybe (Unique LowerAlphaName))
 lookupTypeVar n = do
-    typeVars' <- use' (field' @"typeVars")
+    typeVars' <- use' (field' @"typeVars" @RenameState)
     pure $ Map.lookup n typeVars'
 
 uniquify :: UniqueGen :> r => TaggedLocate n loc name -> Eff r (TaggedLocate n loc (Unique name))
@@ -330,8 +330,8 @@ addDeclarationToContext decl@(Declaration _dloc (Declaration' declMN body)) = do
              in Global (Qualified vn mn `withLocationOf` nameLoc)
 
     case declarationName decl of
-        DeclVar vn -> Eff.modify $ over (the @"varNames") $ insertMerging vn (global vn)
-        DeclType tn -> Eff.modify $ over (the @"typeNames") $ insertMerging tn (global tn)
+        DeclVar vn -> Eff.modify @RenameState $ over (the @"varNames") $ insertMerging vn (global vn)
+        DeclType tn -> Eff.modify @RenameState $ over (the @"typeNames") $ insertMerging tn (global tn)
 
     logDebug $ "Added declaration to context: " <> pretty (declarationName decl)
 
@@ -339,7 +339,7 @@ addDeclarationToContext decl@(Declaration _dloc (Declaration' declMN body)) = do
         -- Add all the constructor names to context
         TypeDeclarationBody _ _ (ADT ctors) _ _ _ -> for_ ctors $ \(cn, _) ->
             let tn = cn ^. unlocated
-             in Eff.modify $ over (the @"typeNames") $ insertMerging tn (global tn)
+             in Eff.modify @RenameState $ over (the @"typeNames") $ insertMerging tn (global tn)
         _ -> pass
 
 -- | Ensure that a name exists in the context and is exposed
@@ -389,7 +389,7 @@ renameDeclaration (Declaration dloc (Declaration' mn body)) = do
     renameDeclarationBody (DeclarationBody bloc body') = DeclarationBody bloc <$> renameDeclarationBody' body'
 
     renameDeclarationBody' :: (InnerRename r, Rock.Rock Elara.Query.Query :> r) => DeclarationBody' SourceRegion Desugared -> Eff r RenamedDeclarationBody'
-    renameDeclarationBody' (ValueDeclaration name val _pats _mTy mTypeMeta anns) = scoped $ do
+    renameDeclarationBody' (ValueDeclaration name val _pats _mTy mTypeMeta anns) = scoped @RenameState $ do
         mTypeMeta' <- traverse renameSimpleTypeAllowNewVars mTypeMeta
         val' <- renameExpr val
         anns' <- traverse renameAnnotation anns
@@ -407,7 +407,7 @@ renameDeclaration (Declaration dloc (Declaration' mn body)) = do
                     s
                     varAliases
         let declModuleName = mn ^. unlocated
-        locally addAllVarAliases $ do
+        locally @RenameState addAllVarAliases $ do
             thisModule <- askCurrentModule
             let Module _ thisMod = thisModule
             let qualifiedName =
@@ -472,7 +472,7 @@ renameType allowNewTypeVars (TVar (TaggedLocate l n)) = do
         Nothing
             | allowNewTypeVars -> do
                 uniqueN <- makeUnique n
-                Eff.modify $ over (the @"typeVars") $ Map.insert n uniqueN
+                Eff.modify @RenameState $ over (the @"typeVars") $ Map.insert n uniqueN
                 pure (TVar $ TaggedLocate l uniqueN)
             | otherwise -> throwError $ UnknownTypeVariable n
 renameType antv (TFun t1 t2) = TFun <$> renameSimpleTypeWith antv t1 <*> renameSimpleTypeWith antv t2
@@ -530,7 +530,7 @@ renameExpr (Expr loc () e') = Expr loc () <$> renameExpr' e'
         pure (EMatch e' cases')
     renameExpr' (ELetIn NoExtension vn e body) = do
         vn' <- uniquify vn
-        locally (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local (stripTag vn'))) $ do
+        locally @RenameState (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local (stripTag vn'))) $ do
             exp' <- renameExpr e
             body' <- renameExpr body
             pure (ELetIn NoExtension vn' exp' body')
@@ -643,7 +643,7 @@ renamePattern (Pattern loc meta p') = do
     renamePattern' _ PUnit = pure PUnit
     renamePattern' _ (PVar vn) = do
         vn' <- uniquify vn
-        Eff.modify (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local (stripTag vn')))
+        Eff.modify @RenameState (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ Local (stripTag vn')))
         pure $ PVar vn'
     renamePattern' _ (PCon cn ps) = do
         cn' <- qualifyTypeName cn
@@ -722,7 +722,7 @@ patternToMatch (Pattern _ _ (PVar vn)) body = do
     -- Special case, no match needed
     -- vn :: Located VarName
     uniqueVn <- uniquify vn
-    body' <- locally (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ (Local :: Located (Unique VarName) -> VarRef VarName) (stripTag uniqueVn))) $ renameExpr body
+    body' <- locally @RenameState (the @"varNames" %~ Map.insert (vn ^. unlocated) (one $ (Local :: Located (Unique VarName) -> VarRef VarName) (stripTag uniqueVn))) $ renameExpr body
     pure (uniqueVn, body')
 patternToMatch pat body = do
     let vn = patternToVarName pat
@@ -766,7 +766,7 @@ renameBlock ::
 renameBlock (Statement l stmt :| rest) final = case stmt of
     SLet n () val -> do
         n' <- uniquify n
-        locally (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local (stripTag n'))) $ do
+        locally @RenameState (the @"varNames" %~ Map.insert (n ^. unlocated) (one $ Local (stripTag n'))) $ do
             val' <- renameExpr val
             Expr l () . ELetIn NoExtension n' val' <$> renameRest
     SLetBang name val -> renameLetBang l name val renameRest
@@ -803,7 +803,7 @@ renameLetBang ::
 renameLetBang loc name val renameBody = do
     val' <- renameExpr val -- outside the binder's scope
     name' <- uniquify name
-    body' <- locally (the @"varNames" %~ Map.insert (name ^. unlocated) (one $ Local (stripTag name'))) renameBody
+    body' <- locally @RenameState (the @"varNames" %~ Map.insert (name ^. unlocated) (one $ Local (stripTag name'))) renameBody
     pure (mkBind loc name' val' body')
 
 -- | Checks if a type is recursive with respect to a target type, returning the use of the target type if so

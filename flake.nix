@@ -1,91 +1,96 @@
 {
   description = "Elara Programming Language";
   inputs = {
-    hix = {
-      url = "github:tek/hix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    haskellNix.url = "github:ican-group/haskell.nix";
+    nixpkgs.follows = "haskellNix/nixpkgs-unstable";
     git-hooks-nix = {
       url = "github:cachix/pre-commit-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    h2jvm.url = "github:ElaraLang/h2jvm";
-    diagnose = {
-      url = "github:ElaraLang/diagnose";
-      flake = false;
-    };
-
-    # hackage latest version is broken but this github fork works
-    dependent-hashmap = {
-      url = "github:ElaraLang/dependent-hashmap";
-      flake = false;
-    };
-
-    weeder-nix = {
-      url = "github:NorfairKing/weeder-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.pre-commit-hooks.follows = "git-hooks-nix";
-    };
   };
 
   nixConfig = {
+    # haskell.nix computes the cabal plan during evaluation
+    allow-import-from-derivation = true;
     extra-substituters = [
       "https://elara.cachix.org"
       "https://cache.bristermitten.me/elara"
+      "https://cache.zw3rk.com"
     ];
     extra-trusted-public-keys = [
       "elara.cachix.org-1:d129AMaRCJ6Q86oVUvIccZ1NsRZ6kyL5IkceevfQDWI="
       "elara:6GWLPsvcEXZFVCx4J8I8sB4jjppOB2/ISjt5oGXXkLo="
+      "loony-tools:pr9m4BkM/5/eSTZlkQyRt57Jz7OMBxNSUiMC4FkcNfk="
     ];
   };
 
   outputs =
-    { self, flake-parts, ... }@inputs:
+    { flake-parts, ... }@inputs:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
+      # the newest Hackage snapshot the locked haskell.nix can solve against, e.g. "2026-11-24T04:43:20"
+      # `just bump-index-state` reads this to bump the `index-state` in `cabal.project
+      flake.lib.latestIndexState = inputs.nixpkgs.lib.last (
+        builtins.attrNames (import "${inputs.haskellNix.inputs.hackage}/index-state.nix")
+      );
       imports = [ ./nix/formatting.nix ];
-      flake =
+      perSystem =
+        {
+          config,
+          system,
+          lib,
+          ...
+        }:
         let
-          hixFlake = inputs.hix.lib.flake (import ./nix/hix.nix { inherit inputs self; });
-          weederReport = import ./nix/weeder.nix { inherit (inputs) weeder-nix; };
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            config = inputs.haskellNix.config // {
+              # sydtest has a custom license which nixpkgs counts as unfree
+              allowUnfreePredicate = pkg: lib.hasPrefix "sydtest" (lib.getName pkg);
+            };
+            overlays = [ inputs.haskellNix.overlay ];
+          };
+          project = import ./nix/project.nix { inherit pkgs; };
+          flake = project.flake { crossPlatforms = p: [ p.wasi32 ]; };
+          exes = p: p.hsPkgs.elara.components.exes;
+          inherit (exes project) elara;
+          # the musl cross target for this machine's architecture
+          muslCross = if pkgs.stdenv.hostPlatform.isAarch64 then "aarch64-multiplatform-musl" else "musl64";
         in
-        # non-standard hix outputs fail flake-parts' schema check; gen-overrides fails cross-platform
-        builtins.removeAttrs hixFlake [
-          "debug"
-          "lib"
-          "overrides"
-        ]
-        // {
-          apps = builtins.mapAttrs (_system: apps: builtins.removeAttrs apps [ "gen-overrides" ]) (
-            hixFlake.apps or { }
-          );
-
-          # strip elara's lib output -- its .dyn_hi files drag GHC+docs into the closure
-          packages = builtins.mapAttrs (
-            system: pkgs:
-            let
-              # the dev env's nixpkgs, with hix's overlay (and so its package set) applied
-              hixPkgs = hixFlake.legacyPackages.${system}.env.dev.pkgs;
-            in
-            pkgs
-            // {
-              weeder-report = weederReport hixPkgs;
-            }
-            // hixPkgs.lib.optionalAttrs hixPkgs.stdenv.hostPlatform.isLinux {
-              elara-static = import ./nix/static.nix { inherit hixPkgs; };
-            }
-            // hixPkgs.lib.optionalAttrs hixPkgs.stdenv.hostPlatform.isDarwin {
-              elara-portable = import ./nix/portable-darwin.nix { inherit hixPkgs; };
-            }
-          ) (hixFlake.packages or { });
+        {
+          _module.args.pkgs = pkgs;
+          devShells = {
+            default = flake.devShells.default.overrideAttrs (old: {
+              # (re)install the pre-commit hook
+              shellHook = (old.shellHook or "") + config.pre-commit.installationScript;
+            });
+            wasm = project.projectCross.wasi32.shellFor {
+              # cabal builds build-tool-depends (i.e. alex) with the native ghc on PATH
+              nativeBuildInputs = [ pkgs.haskell-nix.compiler.${project.args.compiler-nix-name} ];
+            };
+          };
+          inherit (flake) checks;
+          packages = {
+            default = elara;
+            inherit elara;
+            weeder-report = import ./nix/weeder.nix { inherit pkgs project; };
+            elara-wasm = import ./nix/wasm.nix {
+              inherit pkgs;
+              inherit (exes project.projectCross.wasi32) elara;
+            };
+          }
+          // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+            elara-static = (exes project.projectCross.${muslCross}).elara;
+          }
+          // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+            elara-portable = import ./nix/portable-darwin.nix { inherit project; };
+          };
         };
     };
 }

@@ -175,10 +175,10 @@ instance ElaraDiagnostic KindInferError where
     diagnosticNotes _ = []
 
 declareTypeVar :: State InferState :> r => Unique LowerAlphaName -> KindVar -> Eff r ()
-declareTypeVar var kindVar = modify (over (field @"env") (Map.insert (Right var) kindVar))
+declareTypeVar var kindVar = modify @InferState (over (field @"env") (Map.insert (Right var) kindVar))
 
 declareNamedType :: State InferState :> r => Qualified TypeName -> KindVar -> Eff r ()
-declareNamedType name kindVar = modify (over (field @"env") (Map.insert (Left name) kindVar))
+declareNamedType name kindVar = modify @InferState (over (field @"env") (Map.insert (Left name) kindVar))
 
 -- | Pass 1: Register a type name with a fresh kind variable (the "hole").
 preRegisterType ::
@@ -328,7 +328,7 @@ lookupKindVarMaybe key = do
     pure $ Map.lookup key env
 
 newEqualityConstraint :: State InferState :> r => ElaraKind -> ElaraKind -> ConstraintOrigin -> Eff r ()
-newEqualityConstraint a b origin = modify (over (field @"constraints") ((a, b, origin) :))
+newEqualityConstraint a b origin = modify @InferState (over (field @"constraints") ((a, b, origin) :))
 
 elaborateType :: KindInfer r => NewS.ShuntedType -> Eff r NewM.MidKindedType
 elaborateType (New.Type loc () t') = do
@@ -423,7 +423,7 @@ solveConstraints = do
         case constraints of
             [] -> pure Nothing
             (a, b, origin) : rest -> do
-                modify (set (field @"constraints") rest)
+                modify @InferState (set (field @"constraints") rest)
                 pure $ Just (a, b, origin)
 
     case constraint of

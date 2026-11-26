@@ -43,7 +43,7 @@ import Elara.Rules.Generic
 import Elara.SCC.Type (SCCKey, sccKeyToSCC)
 import Elara.Shunt ()
 import Elara.TypeInfer.ConstraintGeneration
-import Elara.TypeInfer.Context (emptyContextStack)
+import Elara.TypeInfer.Context (ContextStack, emptyContextStack)
 import Elara.TypeInfer.Convert (TypeConvertError, astTypeToGeneralisedInferType, astTypeToInferType, astTypeToInferTypeWithKind, kindedToTypedType)
 import Elara.TypeInfer.Environment (InferError, LocalTypeEnvironment, TypeEnvKey (..), TypeEnvironment, addConstructorType, addTermType, emptyLocalTypeEnvironment, emptyTypeEnvironment, schemeOrThrow)
 import Elara.TypeInfer.Error (UnifyError (..))
@@ -218,14 +218,14 @@ runInferEffects ::
         a ->
     Eff r (a, Constraint loc)
 runInferEffects =
-    runErrorAsElaraError @(InferError _)
-        . runErrorAsElaraError @(UnifyError _)
+    runErrorAsElaraError @(InferError loc)
+        . runErrorAsElaraError @(UnifyError loc)
         . runErrorAsElaraError @KindInferError
         . runErrorAsElaraError @TypeConvertError
-        . evalState emptyTypeEnvironment
-        . evalState emptyLocalTypeEnvironment
+        . evalState @(TypeEnvironment loc) emptyTypeEnvironment
+        . evalState @(LocalTypeEnvironment loc) emptyLocalTypeEnvironment
         . runWriter @(Constraint SourceRegion)
-        . runReader emptyContextStack
+        . runReader @(ContextStack (Monotype loc)) emptyContextStack
         . inject
 
 runInferSCCQuery ::

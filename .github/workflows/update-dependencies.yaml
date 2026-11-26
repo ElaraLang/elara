@@ -1,0 +1,31 @@
+name: Update dependencies
+# Moves to the newest haskell.nix and Hackage snapshot and opens a pull request
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 6 * * 6"
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: update-dependencies
+  cancel-in-progress: true
+jobs:
+  pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@main
+        name: Install Nix
+        with:
+          extra-conf: |
+            accept-flake-config = true
+      - name: Bump haskell.nix and index-state
+        run: nix shell --inputs-from . nixpkgs#just -c just bump-index-state
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          branch: update-dependencies
+          commit-message: "chore(deps): update haskell.nix and index-state"
+          title: "chore(deps): update haskell.nix and index-state"
+          body: Automated by the `update-dependencies` workflow.
+          delete-branch: true

@@ -8,6 +8,7 @@ import Effectful.Temporary (Temporary, runTemporary, withSystemTempDirectory)
 import H2JVM.JVMVersion
 import Relude.Extra.Bifunctor (firstF)
 import System.FilePath ((</>))
+import System.Info (arch)
 import Test.Syd
 
 import Data.ByteString qualified as BS
@@ -24,10 +25,11 @@ spec = do
         onDisk <- readDirRecursive "stdlib"
         embeddedStdlib `shouldBe` onDisk
 
-    it "embeds the JVM stdlib as class files for the target Java version" $ do
-        map fst jvmStdlibClasses `shouldContain` ["Elara/IO.class"]
-        for_ jvmStdlibClasses $ \(_, bytes) ->
-            BS.take 8 bytes `shouldBe` BS.pack [0xCA, 0xFE, 0xBA, 0xBE, 0, 0, 0, fromIntegral (unwrapMajor (getMajor targetJavaVersion))]
+    unless (arch == "wasm32") $ -- no javac available to pack the class files
+        it "embeds the JVM stdlib as class files for the target Java version" $ do
+            map fst jvmStdlibClasses `shouldContain` ["Elara/IO.class"]
+            for_ jvmStdlibClasses $ \(_, bytes) ->
+                BS.take 8 bytes `shouldBe` BS.pack [0xCA, 0xFE, 0xBA, 0xBE, 0, 0, 0, fromIntegral (unwrapMajor (getMajor targetJavaVersion))]
 
     it "ejects a copy of the bundled stdlib" $ do
         ejected <- succeeds $ runStdlib $ withSystemTempDirectory "eject" $ \tmp -> do
