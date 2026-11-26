@@ -59,6 +59,10 @@ jobs:
           token: ${{ secrets.ATTIC_TOKEN }}
       - name: Build elara
         run: nix build ".#packages.${{ matrix.arch }}.${{ matrix.package }}" -L
+      - name: Check the static binary doesn't depend on the Nix store
+        run: |
+          nix path-info --recursive ./result
+          [ "$(nix path-info --recursive ./result | wc -l)" -eq 1 ]
       - name: Rename binary
         run: cp result/bin/elara elara-${{ matrix.arch }}
       - name: Upload binary
