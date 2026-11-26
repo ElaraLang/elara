@@ -16,6 +16,7 @@ module Elara.Error (
     ElaraMarkerType (..),
     ElaraNote (..),
     ElaraReport (..),
+    dedupeReports,
     reportElaraWarning,
     runErrorAsElaraError,
     runWriterAsElaraWarning,
@@ -60,7 +61,7 @@ class Typeable e => ElaraDiagnostic e where
     diagnosticNotes = const []
 
 data ElaraSeverity = ErrorSeverity | WarningSeverity
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 data ElaraMarker = ElaraMarker
     { markerRegion :: SourceRegion
@@ -83,6 +84,21 @@ data ElaraReport = ElaraReport
     , reportNotes :: [ElaraNote]
     }
     deriving (Generic, Show)
+
+{- | Remove duplicate reports, needed since one compiler run can potentially report the same error
+multiple times, e.g. once when it is thrown and once when a memoised failure is rethrown.
+
+TODO: revisit and evaluate if this is really necessary
+-}
+dedupeReports :: [ElaraReport] -> [ElaraReport]
+dedupeReports = ordNubOn key
+  where
+    key r =
+        ( reportSeverity r
+        , prettyToUnannotatedText <$> reportCode r
+        , prettyToUnannotatedText (reportMessage r)
+        , markerRegion <$> reportMarkers r
+        )
 
 -- | A type-erased error that implements 'ElaraDiagnostic' and 'Exception'.
 data ElaraError = forall e. (Exception e, ElaraDiagnostic e) => ElaraError e
