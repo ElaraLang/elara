@@ -27,3 +27,12 @@ test *args:
 [arg('target', long='target', pattern='interp|jvm')]
 run file target='interp':
     cabal run {{ ghc_flags }} elara -- run {{ file }} --target {{ target }}
+
+# Move to the newest haskell.nix and the newest Hackage snapshot it knows about
+bump-index-state:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    nix flake update haskellNix
+    state=$(nix eval --raw .#lib.latestIndexState)
+    sed -i.bak "s/^index-state: .*/index-state: $state/" cabal.project
+    rm cabal.project.bak
