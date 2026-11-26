@@ -8,6 +8,7 @@ import Effectful.State.Static.Local (execState, modify)
 import Error.Diagnose (TabSize (..), WithUnicode (..), prettyDiagnostic')
 import Prettyprinter (defaultLayoutOptions, layoutSmart)
 import System.Exit (ExitCode (..))
+import System.Info (arch)
 import System.Process (readProcessWithExitCode)
 import Test.Syd (GoldenTest, Spec, describe, expectationFailure, goldenStringFile, it)
 
@@ -22,10 +23,14 @@ import Elara.Settings (CompilerSettings (..), defaultSettings)
 import Elara qualified
 import Elara.Interpreter qualified as Interpreter
 
+availableBackends :: [Elara.Backend]
+availableBackends
+    | arch == "wasm32" = [Elara.Interpreter] -- WASI can't spawn java
+    | otherwise = [Elara.Interpreter, Elara.JVM]
+
 spec :: Spec
 spec = describe "Golden tests" $ do
-    let backends = [Elara.Interpreter, Elara.JVM]
-    forM_ backends $ \backend -> describe ("Success tests on backend: " <> show backend) $ do
+    forM_ availableBackends $ \backend -> describe ("Success tests on backend: " <> show backend) $ do
         it "Runs hello world" $ do
             runGolden defaultSettings backend "simple-1"
 
@@ -173,7 +178,7 @@ spec = describe "Golden tests" $ do
 
     describe "Type inference characterisation" $ do
         describe "Generalises where it should" $ do
-            forM_ backends $ \backend -> describe ("On backend " <> show backend) $ do
+            forM_ availableBackends $ \backend -> describe ("On backend " <> show backend) $ do
                 it "A let-bound identity is usable at two types" $
                     runGolden defaultSettings backend "inferred-polymorphism"
 
