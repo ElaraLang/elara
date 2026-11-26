@@ -121,6 +121,7 @@ library
       Elara.Lexer.Token
       Elara.Lexer.Utils
       Elara.Logging
+      Elara.LSP.Position
       Elara.ModuleIndex
       Elara.Parse
       Elara.Parse.Annotation
@@ -309,6 +310,7 @@ test-suite elara-test
       Lex.Indents
       LiftClosures
       Logging
+      LSP
       Normalise
       Orphans
       Parse

@@ -3,6 +3,7 @@ import Test.Syd (Spec, describe, sydTest)
 import CoreToCore qualified
 import Golden qualified
 import Infer qualified
+import LSP qualified
 import Lex qualified
 import LiftClosures qualified
 import Logging qualified
@@ -27,4 +28,5 @@ spec = do
 
     describe "Golden Test" Golden.spec
     describe "Logging Test" Logging.spec
+    describe "LSP Test" LSP.spec
     describe "Stdlib Test" Stdlib.spec
