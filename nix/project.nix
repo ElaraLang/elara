@@ -69,6 +69,8 @@ pkgs.haskell-nix.cabalProject' (
         mdbook-variables
         d2
         nixd
+        nodejs
+        bun
 
         zlib
       ];
