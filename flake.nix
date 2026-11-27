@@ -75,7 +75,9 @@
               nativeBuildInputs = [ pkgs.haskell-nix.compiler.${project.args.compiler-nix-name} ];
             };
           };
-          inherit (flake) checks;
+          checks = flake.checks // {
+            editors-typecheck = (import ./nix/editors.nix { inherit pkgs; }).typecheck;
+          };
           packages = {
             default = elara;
             inherit elara;
