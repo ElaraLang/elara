@@ -16,10 +16,11 @@ import Effectful.FileSystem (FileSystem, runFileSystem)
 import Effectful.Process (Process, runProcess)
 import Effectful.Temporary (Temporary, runTemporary)
 import Effectful.Writer.Static.Local (Writer, runWriter)
-import Error.Diagnose (TabSize (..), WithUnicode (..), defaultStyle, printDiagnostic')
+import Error.Diagnose (TabSize (..), WithUnicode (..), printDiagnostic')
 import OptEnvConf
 import System.CPUTime
-import System.IO (hSetEncoding, utf8)
+import System.Exit (ExitCode (..))
+import System.IO (hPutStrLn, hSetEncoding, utf8)
 import Text.Printf
 
 import Data.Set qualified as Set
@@ -28,8 +29,9 @@ import Elara.Data.Pretty
 import Elara.Data.Unique (resetGlobalUniqueSupply)
 import Elara.Data.Unique.Effect (uniqueGenToGlobalIO)
 import Elara.Error
-import Elara.Error.Diagnose (reportsToDiagnostic)
+import Elara.Error.Diagnose (diagnoseStyle, reportsToDiagnostic)
 import Elara.JVM.Run (runJVMOutput)
+import Elara.LSP (runLanguageServer)
 import Elara.Pipeline (runLogToStdoutAndFile)
 import Elara.Settings (CompilerSettings (..), DumpTarget (..))
 import Print (printPretty)
@@ -117,6 +119,7 @@ data Dispatch
     | DispatchRun !FilePath !RunTarget
     | DispatchStdlibPath
     | DispatchStdlibEject !FilePath
+    | DispatchLsp
     deriving (Eq, Show)
 
 data RunTarget = TargetInterpreter | TargetJVM
@@ -155,6 +158,14 @@ instance HasParser Dispatch where
                             , metavar "MAIN_FILE"
                             ]
                         <*> targetParser
+                , command "lsp" "Start the Elara Language Server" $
+                    DispatchLsp
+                        <$ setting
+                            [ help "Mostly useful for editor compatibility"
+                            , switch True
+                            , long "stdio"
+                            , value False
+                            ]
                 , command "stdlib" "Inspect or customise the standard library" $
                     commands
                         [ command "path" "Print the directory the standard library is loaded from" $
@@ -174,11 +185,11 @@ instance HasParser Dispatch where
 instance HasCodec RunTarget where
     codec = stringConstCodec $ (TargetInterpreter, "interp") :| [(TargetJVM, "jvm")]
 
-toCompilerSettings :: FilePath -> FilePath -> Settings -> CompilerSettings
+toCompilerSettings :: Maybe FilePath -> FilePath -> Settings -> CompilerSettings
 toCompilerSettings mainFile resolvedStdlibDir Settings{..} =
     CompilerSettings
         { dumpTargets = Set.fromList dumpTargets
-        , mainFile = Just mainFile
+        , mainFile = mainFile
         , sourceDirs = sourceDirs
         , programArgs = programArgs
         , outputDir = buildDir
@@ -199,6 +210,16 @@ main = do
     case dispatch of
         DispatchBuild mainFile target -> compile mainFile (Elara.CompileAndEmit (targetToBackend target)) settings
         DispatchRun mainFile target -> compile mainFile (Elara.CompileAndRun (targetToBackend target)) settings
+        DispatchLsp -> do
+            -- we don't use 'runReporting' here since that prints to stdout, which would confuse the LSP client
+            resolvedStdlib <- runEff . runTemporary . runFileSystem . runError @ElaraError $ Stdlib.resolveStdlibDir settings.stdlibDir
+            case resolvedStdlib of
+                Left (_, err) -> do
+                    hPutStrLn stderr ("elara lsp: could not find the standard library: " <> toString (prettyToUnannotatedText err))
+                    exitFailure
+                Right stdlibDir -> do
+                    code <- runLanguageServer (toCompilerSettings Nothing stdlibDir settings)
+                    exitWith (if code == 0 then ExitSuccess else ExitFailure code)
         DispatchStdlibPath -> void $ runReporting $ do
             dir <- Stdlib.resolveStdlibDir settings.stdlibDir
             liftIO $ putStrLn dir
@@ -218,7 +239,7 @@ compile mainFile action settings = run `finally` cleanup
         start <- getCPUTime
         mResult <- runReporting $ do
             stdlibDir <- Stdlib.resolveStdlibDir settings.stdlibDir
-            let compilerSettings = toCompilerSettings mainFile stdlibDir settings
+            let compilerSettings = toCompilerSettings (Just mainFile) stdlibDir settings
             result <- uniqueGenToGlobalIO $ runLogToStdoutAndFile $ Elara.compile compilerSettings action
             when (action == Elara.CompileAndRun Elara.JVM) $
                 runJVMOutput compilerSettings.outputDir
@@ -257,8 +278,8 @@ runReporting action = do
             Right r -> pure (warnReports, Just r)
 
     unless (null reports) $ do
-        diag <- reportsToDiagnostic reports
-        printDiagnostic' stdout WithUnicode (TabSize 4) defaultStyle diag
+        diag <- reportsToDiagnostic (dedupeReports reports)
+        printDiagnostic' stdout WithUnicode (TabSize 4) diagnoseStyle diag
 
     pure mResult
 

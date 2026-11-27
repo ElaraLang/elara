@@ -121,8 +121,13 @@ library
       Elara.Lexer.Token
       Elara.Lexer.Utils
       Elara.Logging
+      Elara.LSP
+      Elara.LSP.Check
       Elara.LSP.Diagnostics
+      Elara.LSP.Hover
+      Elara.LSP.Markdown
       Elara.LSP.Position
+      Elara.LSP.Utils
       Elara.ModuleIndex
       Elara.Parse
       Elara.Parse.Annotation

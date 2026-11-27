@@ -1,9 +1,15 @@
 module LSP (spec) where
 
+import Effectful (runEff)
+import Effectful.Temporary (runTemporary, withSystemTempDirectory)
 import Hedgehog (Gen, annotateShow, assert, forAll, property, (===))
+import NeatInterpolation (text)
+import Prettyprinter (Doc, hardline, (<+>))
+import System.FilePath ((</>))
 import Test.Syd (Spec, describe, it)
 import Test.Syd.Hedgehog ()
 
+import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
@@ -11,12 +17,22 @@ import Language.LSP.Protocol.Types qualified as LSP
 
 import Common ((<=>))
 import Elara.AST.Region (RealPosition (..), RealSourceRegion (..), SourceRegion (..))
+import Elara.Data.Pretty (Ann)
+import Elara.LSP (snapshotDiagnostics)
+import Elara.LSP.Check (FileSnapshot (..), checkDocument)
+import Elara.LSP.Markdown (docToMarkdown)
 import Elara.LSP.Position
+import Elara.Settings (CompilerSettings (..), defaultSettings)
+
+import Elara.Data.Pretty.Styles qualified as Style
 
 spec :: Spec
-spec = describe "Position conversion" $ do
-    examples
-    properties
+spec = do
+    describe "Position conversion" $ do
+        examples
+        properties
+    describe "Checking documents" checking
+    describe "Rendering documents as Markdown" markdown
 
 -- | Characters of a variety of UTF-16 widths
 genChar :: Gen Char
@@ -33,7 +49,7 @@ genLines = Gen.list (Range.linear 1 6) (toText <$> Gen.list (Range.linear 0 8) g
 
 -- | Every position inside the text
 allPositions :: [Text] -> [RealPosition]
-allPositions ls = [Position n col | (n, l) <- zip [1 ..] ls, col <- [1 .. Text.length l + 1]]
+allPositions ls = concatMap (\(n, l) -> Position n <$> [1 .. Text.length l + 1]) (zip [1 ..] ls)
 
 -- | Arbitrary text with at least two distinct positions, and two distinct positions in it
 genTextAndTwoPositions :: Gen ([Text], RealPosition, RealPosition)
@@ -158,3 +174,138 @@ examples = describe "Examples" $ do
             regionContains (Position 2 4) z <=> False
         it "contains nothing if generated" $
             regionContains (Position 1 1) (GeneratedRegion "<generated>") <=> False
+
+-- | Write some files into a temporary directory, and run an action with its path.
+withProject :: [(FilePath, Text)] -> (FilePath -> IO a) -> IO a
+withProject files act = runEff . runTemporary $ withSystemTempDirectory "elara-lsp-test" $ \dir -> liftIO $ do
+    for_ files $ \(name, contents) -> writeFileText (dir </> name) contents
+    act dir
+
+-- | The diagnostics that the editor would be given for one file of a project.
+diagnosticsFor :: FilePath -> [FilePath] -> FilePath -> IO (FileSnapshot, [LSP.Diagnostic])
+diagnosticsFor projectDir allFiles file = do
+    snapshot <- checkDocument defaultSettings{stdlibDir = "stdlib", sourceDirs = [projectDir]} (projectDir </> file)
+    texts <- for allFiles $ \name -> (projectDir </> name,) . decodeUtf8 <$> readFileBS (projectDir </> name)
+    pure (snapshot, snapshotDiagnostics (`Map.lookup` Map.fromList texts) snapshot)
+
+checking :: Spec
+checking = do
+    let header =
+            [text|
+            import Elara.Prim
+            import Prelude
+            |]
+        -- a module with a type error in it
+        brokenB =
+            ( "B.elr"
+            , [text|
+              module B
+              $header
+
+              let f = 1 + "oops"
+              |]
+            )
+        goodB =
+            ( "B.elr"
+            , [text|
+              module B
+              $header
+
+              let f = 1
+              |]
+            )
+        mainUsing =
+            ( "Main.elr"
+            , [text|
+              module Main
+              import B
+              $header
+
+              let main = println B.f
+              |]
+            )
+        mainNotUsing =
+            ( "Main.elr"
+            , [text|
+              module Main
+              import B
+              $header
+
+              let main = println "hi"
+              |]
+            )
+        files = ["B.elr", "Main.elr"]
+        blockedMessage = "This module could not be checked because of errors in other modules"
+
+    describe "a module that uses something from a module with a type error" $ do
+        it "produces one diagnostic saying it couldn't be checked and pointing at the real error" $
+            withProject [brokenB, mainUsing] $ \dir -> do
+                (snapshot, diagnostics) <- diagnosticsFor dir files "Main.elr"
+                isNothing (snapshotTyped snapshot) <=> True
+                map (._message) diagnostics <=> [blockedMessage]
+                let related = concat (mapMaybe (._relatedInformation) diagnostics)
+                map (\r -> Text.takeWhileEnd (/= '/') (LSP.getUri r._location._uri)) related <=> ["B.elr"]
+                map (Text.isInfixOf "Type mismatch" . (._message)) related <=> [True]
+                -- the error is on line 5 of B.elr, `let f = 1 + "oops"`, 0-based 4
+                map (\r -> r._location._range._start._line) related <=> [4]
+
+        it "has the real error in the module that contains it, and no 'couldn't be checked' diagnostic" $
+            withProject [brokenB, mainUsing] $ \dir -> do
+                (_, diagnostics) <- diagnosticsFor dir files "B.elr"
+                map (\d -> (d._code, d._range._start._line)) diagnostics <=> [(Just (LSP.InR "E3011"), 4)]
+                any ((== blockedMessage) . (._message)) diagnostics <=> False
+
+    describe "a module that uses a module without errors" $
+        it "has no diagnostics" $
+            withProject [goodB, mainUsing] $ \dir -> do
+                (snapshot, diagnostics) <- diagnosticsFor dir files "Main.elr"
+                isJust (snapshotTyped snapshot) <=> True
+                diagnostics <=> []
+
+    describe "a module that imports a module with a type error but doesn't use it" $
+        it "has no diagnostics" $
+            withProject [brokenB, mainNotUsing] $ \dir -> do
+                (_, diagnostics) <- diagnosticsFor dir files "Main.elr"
+                diagnostics <=> []
+
+markdown :: Spec
+markdown = do
+    let render :: Doc Ann -> Text
+        render = docToMarkdown
+
+    describe "plain text" $ do
+        it "is left alone" $
+            render "hello world" <=> "hello world"
+        it "has Markdown formatting escaped, so that it is shown as written" $
+            render "a*b_c" <=> "a\\*b\\_c"
+        it "keeps line breaks" $
+            render ("one" <> hardline <> "two") <=> "one  \ntwo"
+        it "ignores styles that aren't about what something is" $
+            render (Style.label "x") <=> "x"
+
+    describe "code" $ do
+        it "is used for types, names and so on" $
+            render ("expected" <+> Style.typeName "Int" <+> "but found" <+> Style.typeName "String")
+                <=> "expected `Int` but found `String`"
+        it "keeps surrounding punctuation outside" $
+            render ("found" <+> Style.typeName "String" <> ".") <=> "found `String`."
+        it "keeps quotes outside" $
+            render ("'" <> Style.varName "x" <> "'") <=> "'`x`'"
+        it "can't contain backticks" $
+            render (Style.varName "a`b") <=> "`ab`"
+        it "keeps spaces outside the delimiters, as Markdown requires" $
+            render (Style.typeName " Int ") <=> " `Int` "
+
+    describe "neighbouring code" $ do
+        it "is one piece when only separated by spaces, like a function type" $
+            render (Style.typeName "Int" <+> Style.operator "->" <+> Style.typeName "Int") <=> "`Int -> Int`"
+        it "is one piece across a qualified operator, including its brackets" $
+            render (Style.moduleName "Elara.Prim" <> "." <> "(" <> Style.operator "+" <> ")") <=> "`Elara.Prim.(+)`"
+        it "is one piece across a type application with brackets" $
+            render (Style.typeName "List" <+> "(" <> Style.typeName "Int" <> ")") <=> "`List (Int)`"
+        it "stays separate when words are between" $
+            render (Style.typeName "Int" <+> "and" <+> Style.typeName "String") <=> "`Int` and `String`"
+
+    describe "bold" $
+        it "stays bold" $
+            render (Style.bold "careful") <=> "**careful**"

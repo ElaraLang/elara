@@ -24,7 +24,7 @@ regionToRange text (RealSourceRegion (UnsafeMkSourceRegion _ start end)) =
     fileLines = Text.splitOn "\n" text
 
     end'
-        | start == end = end{_column = _column end + 1} -- widen an identical start + end to be 1-wide
+        | start == end = over column (+ 1) end -- widen an identical start + end to be 1-wide
         | otherwise = end
 
 -- | Convert a 1-based, UTF-8-based Elara position into a 0-based, UTF-16-based LSP position.
@@ -107,3 +107,8 @@ regionContains _ (GeneratedRegion _) = False
 regionContains p (RealSourceRegion (UnsafeMkSourceRegion _ start end))
     | start == end = p == start
     | otherwise = start <= p && p < end
+
+-- | Does this 'LSP.Range' contain this 'LSP.Position'?
+rangeContains :: LSP.Range -> LSP.Position -> Bool
+rangeContains (LSP.Range (LSP.Position startLine startChar) (LSP.Position endLine endChar)) (LSP.Position line char) =
+    (startLine, startChar) <= (line, char) && (line, char) < (endLine, endChar)

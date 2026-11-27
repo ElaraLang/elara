@@ -20,6 +20,11 @@ Compiles the Elara source code.
 By default, this runs in interpreted mode. You can use `--target jvm` to compile to JVM bytecode instead.
 For example, `elara run source.elr --target jvm`. This needs Java 8 or newer on your `PATH` to run the compiled bytecode.
 
+- `lsp`
+  Starts the language server, implementing the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) over stdin and stdout.
+
+  It takes the same `--stdlib-dir` and `--source-dirs` options as the other commands. Use `--source-dirs` if your program is split over several modules, for example `elara lsp --source-dirs src`.
+
 - `stdlib path`
   Prints the directory the standard library is loaded from.
 
