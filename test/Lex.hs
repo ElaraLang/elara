@@ -49,6 +49,11 @@ literals = describe "Lexes literals" $ do
             lexUL "-0o1" <=> [TokenInt (-0o1)]
             lexUL "-0o123" <=> [TokenInt (-0o123)]
             lexUL "0o0" <=> [TokenInt 0]
+            lexUL "0O0" <=> [TokenInt 0]
+            lexUL "0O1" <=> [TokenInt 1]
+            lexUL "0O123" <=> [TokenInt 0o123]
+            lexUL "-0O1" <=> [TokenInt (-0o1)]
+            lexUL "-0O123" <=> [TokenInt (-0o123)]
 
     describe "Lexes float literals" $ do
         it "Lexes decimal float literals" $ do
