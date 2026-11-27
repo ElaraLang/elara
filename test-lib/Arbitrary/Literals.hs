@@ -1,5 +1,6 @@
 module Arbitrary.Literals where
 
+import Data.Char (isPrint)
 import Hedgehog
 import Text.Printf
 
@@ -64,7 +65,12 @@ genStringLiteral :: Gen StringLiteral
 genStringLiteral = StringLiteral . show <$> Gen.list (Range.linear 0 10) Gen.unicode
 
 genCharLiteral :: Gen CharLiteral
-genCharLiteral = CharLiteral . show <$> Gen.unicode
+genCharLiteral = CharLiteral <$> Gen.choice [plain, show <$> Gen.unicode]
+  where
+    -- a plain character that won't need to be escaped by 'show'
+    plain =
+        (\c -> "'" <> one c <> "'")
+            <$> Gen.filter (\c -> isPrint c && c `notElem` ['\'', '\\']) (Gen.choice [Gen.ascii, Gen.unicode])
 
 safelyPrintInt :: Integer -> Text
 safelyPrintInt d = fromString (printf "%d" d)
