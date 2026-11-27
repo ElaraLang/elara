@@ -52,9 +52,9 @@ appendToStringWith f len inp = do
     pure Nothing
 
 endString :: LexAction
-endString len _ = do
+endString _len _ = do
     s <- get
-    endPos <- getPosition len
+    endPos <- getPosition 0
     let buf = s ^. stringBuf
     let startPos = s ^. pendingPosition
     region <- createRegion startPos endPos

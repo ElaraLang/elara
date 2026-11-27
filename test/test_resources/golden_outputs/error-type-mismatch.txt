@@ -1,8 +1,8 @@
 [error E3011]: Type mismatch in call to 'Elara.Prim.(+)': Int is not compatible with String
-     ╭──▶ test/test_resources/golden_inputs/error-type-mismatch.elr@4:25-4:31
+     ╭──▶ test/test_resources/golden_inputs/error-type-mismatch.elr@4:25-4:32
      │
    4 │ let main = println (1 + "hello")
-     •                     ┬── ┬───── 
+     •                     ┬── ┬────── 
      •                     ╰────╸ expected argument 2 to have type Int
      •                         ├╸ but it has type String
      •                         ╰╸ expected Int but found String
