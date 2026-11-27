@@ -258,6 +258,35 @@ library
     build-depends:
         terminal-size >=0.3.0 && <0.4
 
+library arbitrary
+  exposed-modules:
+      Arbitrary.Literals
+      Arbitrary.Names
+  hs-source-dirs:
+      test-lib
+  default-extensions:
+      OverloadedStrings
+      OverloadedRecordDot
+      TypeFamilies
+      LambdaCase
+      ImportQualifiedPost
+      DeriveDataTypeable
+      DataKinds
+      DeriveFunctor
+      TypeApplications
+      PartialTypeSignatures
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fno-show-valid-hole-fits
+  build-depends:
+      base >=4.21.1.0 && <4.22
+    , containers
+    , elara
+    , hedgehog
+    , relude
+    , text
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2024
+
 executable elara
   main-is: Main.hs
   other-modules:
@@ -339,7 +368,8 @@ test-suite elara-test
       QuasiQuotes
   ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fno-show-valid-hole-fits
   build-depends:
-      base >=4.21.1.0 && <4.22
+      arbitrary
+    , base >=4.21.1.0 && <4.22
     , bytestring
     , co-log-core
     , containers

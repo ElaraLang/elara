@@ -1,14 +1,14 @@
 -- | Lexer tests
 module Lex (spec) where
 
-import Arbitrary.Literals (genCharLiteral, genFloatLiteral, genIntLiteral, genStringLiteral, unCharLiteral, unFloatLiteral, unIntLiteral, unStringLiteral)
-import Arbitrary.Names (genLowerAlphaText, genOpText, genUpperAlphaText)
 import Hedgehog (forAll, property, (===))
 import NeatInterpolation (text)
 import Relude.Unsafe (read)
 import Test.Syd (Spec, SpecWith, describe, it)
 import Test.Syd.Hedgehog ()
 
+import Arbitrary.Literals (genCharLiteral, genFloatLiteral, genIntLiteral, genStringLiteral, unCharLiteral, unFloatLiteral, unIntLiteral, unStringLiteral)
+import Arbitrary.Names (genLowerAlphaText, genOpText, genUpperAlphaText)
 import Common ((<=>))
 import Elara.AST.Name (ModuleName (..))
 import Elara.Lexer.Token (Token (..))

@@ -105,6 +105,16 @@ executables:
       # wasm has no threaded RTS
       - condition: "!arch(wasm32)"
         ghc-options: [-threaded, -rtsopts, -with-rtsopts=-N]
+# hedgehog generators shared by the test suites
+internal-libraries:
+  arbitrary:
+    source-dirs: test-lib
+    dependencies:
+      - containers
+      - elara
+      - hedgehog
+      - relude
+      - text
 tests:
   elara-test:
     main: Spec.hs
@@ -112,6 +122,7 @@ tests:
     default-extensions: [QuasiQuotes]
     dependencies:
       - elara
+      - arbitrary
       - bytestring
       - co-log-core
       - containers

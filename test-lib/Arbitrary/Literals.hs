@@ -41,8 +41,8 @@ genIntLiteral :: Gen IntLiteral
 genIntLiteral = IntLiteral <$> Gen.choice [genDecimal, genHex, genOct]
   where
     genDecimal = show <$> genInteger
-    genHex = ("0x" <>) <$> genHexString
-    genOct = ("0o" <>) <$> arbitraryOctString
+    genHex = (<>) <$> Gen.element ["0x", "0X"] <*> genHexString
+    genOct = (<>) <$> Gen.element ["0o", "0O"] <*> arbitraryOctString
 
 genFloatLiteral :: Gen FloatLiteral
 genFloatLiteral = FloatLiteral <$> Gen.choice [normalFloat, scientificIntFloat, scientificFloat]

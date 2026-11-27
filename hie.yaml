@@ -4,5 +4,7 @@ cradle:
       component: "lib:elara"
     - path: "app/Main.hs"
       component: "elara:exe:elara"
+    - path: "test-lib"
+      component: "elara:lib:arbitrary"
     - path: "test"
       component: "elara:test:elara-test"
