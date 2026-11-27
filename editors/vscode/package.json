@@ -1,0 +1,97 @@
+{
+  "name": "elara-lsp",
+  "displayName": "Elara",
+  "description": "Syntax highlighting and language server support for Elara",
+  "version": "0.0.1",
+  "publisher": "ElaraLang",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ElaraLang/elara",
+    "directory": "editors/vscode"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "mkdir -p syntaxes && bun ../textmate/grammar.ts > syntaxes/elara.tmLanguage.json && cp ../../LICENSE . && bun build src/extension.ts --outdir dist --target node --format cjs --external vscode",
+    "check": "tsc",
+    "package": "npm run build -- --minify && vsce package --no-dependencies",
+    "publish": "npm run build -- --minify && vsce publish --no-dependencies"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "elara",
+        "aliases": [
+          "Elara"
+        ],
+        "extensions": [
+          ".elr"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "elara",
+        "scopeName": "source.elara",
+        "path": "./syntaxes/elara.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "Elara",
+      "properties": {
+        "elara.serverPath": {
+          "type": "string",
+          "default": "elara",
+          "description": "The elara executable's location. If absent, the binary is assumed to be on PATH."
+        },
+        "elara.serverArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "lsp",
+            "--stdio"
+          ],
+          "description": "Arguments to start the language server, e.g. add \"--source-dirs\", \"/path/to/project\"."
+        },
+        "elara.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "messages",
+          "description": "What level of messages between VS Code and the Language Server to log."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "elara.restartServer",
+        "title": "Elara: Restart Language Server"
+      },
+      {
+        "command": "elara.showLog",
+        "title": "Elara: Show Log"
+      }
+    ]
+  },
+  "dependencies": {
+    "vscode-languageclient": "^11.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/vscode": "~1.91.0",
+    "@vscode/vsce": "^4.1.1",
+    "typescript": "^7.0.2"
+  }
+}
