@@ -3,8 +3,6 @@
 
 module Elara.Core.Pretty where
 
-import Prettyprinter.Render.Terminal qualified as Style
-
 import Elara.AST.Name (unqualified)
 import Elara.AST.VarRef
 import Elara.Core
