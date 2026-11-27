@@ -36,3 +36,7 @@ bump-index-state:
     state=$(nix eval --raw .#lib.latestIndexState)
     sed -i.bak "s/^index-state: .*/index-state: $state/" cabal.project
     rm cabal.project.bak
+
+# Install the `elara` binary locally for testing, e.g. for the LSP server.
+install:
+  cabal install {{ ghc_flags }} --overwrite-policy=always
