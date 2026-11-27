@@ -40,3 +40,8 @@ bump-index-state:
 # Install the `elara` binary locally for testing, e.g. for the LSP server.
 install:
   cabal install {{ ghc_flags }} --overwrite-policy=always
+
+# Test the TextMate grammar against the real lexer
+test-grammar:
+  npm ci --prefix editors/textmate
+  cabal test {{ ghc_flags }} --test-show-details=streaming elara-grammar

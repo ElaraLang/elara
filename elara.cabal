@@ -323,6 +323,45 @@ executable elara
   if !arch(wasm32)
     ghc-options: -threaded -rtsopts -with-rtsopts=-N
 
+test-suite elara-grammar
+  type: exitcode-stdio-1.0
+  main-is: Conformance.hs
+  hs-source-dirs:
+      editors/textmate
+  default-extensions:
+      OverloadedStrings
+      OverloadedRecordDot
+      TypeFamilies
+      LambdaCase
+      ImportQualifiedPost
+      DeriveDataTypeable
+      DataKinds
+      DeriveFunctor
+      TypeApplications
+      PartialTypeSignatures
+  ghc-options: -W -Wno-name-shadowing -Wno-partial-type-signatures -Widentities -optP-Wno-nonportable-include-path -fno-show-valid-hole-fits
+  build-depends:
+      aeson
+    , arbitrary
+    , base >=4.21.1.0 && <4.22
+    , bytestring
+    , containers
+    , effectful-core
+    , elara
+    , generic-data
+    , hedgehog
+    , optics
+    , process
+    , relude
+    , text
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2024
+  if arch(wasm32)
+    buildable: False
+  if !arch(wasm32)
+    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+
 test-suite elara-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs

@@ -138,4 +138,6 @@ const grammar = defineGrammar({
 
 export default grammar;
 
-if (import.meta.main) console.log(JSON.stringify(grammar, null, 2));
+export const grammarJson = JSON.stringify(grammar, null, 2)
+
+if (import.meta.main) console.log(grammarJson);

@@ -6,5 +6,7 @@ cradle:
       component: "elara:exe:elara"
     - path: "test-lib"
       component: "elara:lib:arbitrary"
+    - path: "editors/textmate"
+      component: "elara:test:elara-grammar"
     - path: "test"
       component: "elara:test:elara-test"

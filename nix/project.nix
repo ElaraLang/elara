@@ -16,6 +16,13 @@ pkgs.haskell-nix.cabalProject' (
           packages.elara.components.library.build-tools = [ pkgs.pkgsBuildBuild.jdk_headless ];
           # the JVM golden tests run the compiled classes with java
           packages.elara.components.tests.elara-test.build-tools = [ pkgs.pkgsBuildBuild.jdk_headless ];
+
+          packages.elara.components.tests.elara-grammar = {
+            build-tools = [ pkgs.pkgsBuildBuild.bun ]; # we need bun to run the tests
+            preCheck = "ln -s ${
+              (import ./editors.nix { pkgs = pkgs.pkgsBuildBuild; }).nodeModules.textmate
+            }/node_modules editors/textmate/node_modules";
+          };
         }
       )
       (

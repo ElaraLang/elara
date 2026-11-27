@@ -149,3 +149,25 @@ tests:
       # wasm has no threaded RTS
       - condition: "!arch(wasm32)"
         ghc-options: [-threaded, -rtsopts, -with-rtsopts=-N]
+  elara-grammar:
+    main: Conformance.hs
+    source-dirs: editors/textmate
+    dependencies:
+      - aeson
+      - arbitrary
+      - bytestring
+      - containers
+      - effectful-core
+      - elara
+      - generic-data
+      - hedgehog
+      - optics
+      - process
+      - relude
+      - text
+    when:
+      # no bun on wasm and this is platform independent anyway
+      - condition: arch(wasm32)
+        buildable: false
+      - condition: "!arch(wasm32)"
+        ghc-options: [-threaded, -rtsopts, -with-rtsopts=-N]
