@@ -5,9 +5,10 @@
 //      - a "tuple" of lexed tokens [startIndex, endIndex, [scopes]], with `startIndex` _always_ starting from 0 (i.e. each line is independent)
 // The input must be encoded as a JSON string rather than a raw string to properly handle escapes
 // For compatibilty we output the indexes in terms of UTF-8/codepoints, despite vscode-textmate treating them as UTF-16
-import { INITIAL, Registry, parseRawGrammar, type StateStack } from 'vscode-textmate';
-import { OnigScanner, OnigString, loadWASM } from 'vscode-oniguruma';
-import {grammarJson} from './grammar.ts';
+
+import { loadWASM, OnigScanner, OnigString } from 'vscode-oniguruma';
+import { INITIAL, parseRawGrammar, Registry, type StateStack } from 'vscode-textmate';
+import { grammarJson } from './grammar.ts';
 
 await loadWASM(await Bun.file(Bun.resolveSync('vscode-oniguruma/release/onig.wasm', import.meta.dir)).arrayBuffer());
 
@@ -18,8 +19,7 @@ const registry = new Registry({
   }),
   loadGrammar: async () => parseRawGrammar(grammarJson, 'elara.tmLanguage.json'),
 });
-const grammar = await registry.loadGrammar('source.elara')
-
+const grammar = await registry.loadGrammar('source.elara');
 
 function tokenizeFile(text: string): [number, number, string[]][][] {
   if (!grammar) throw new Error('grammar.ts has no source.elara grammar');

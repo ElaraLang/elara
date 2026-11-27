@@ -6,7 +6,12 @@
     inputs.git-hooks-nix.flakeModule
   ];
   perSystem =
-    { config, pkgs, ... }:
+    {
+      config,
+      pkgs,
+      lib,
+      ...
+    }:
     {
       treefmt = {
         programs.actionlint.enable = true;
@@ -17,6 +22,11 @@
         programs.hlint.package = pkgs.haskell.packages.ghc912.hlint;
         programs.yamlfmt.enable = true;
         programs.toml-sort.enable = true;
+        programs.biome = {
+          enable = true;
+          settings = lib.importJSON ../biome.json;
+          includes = [ "*.ts" ];
+        };
       };
       pre-commit.settings.hooks.treefmt.enable = true;
       devShells.pre-commit = config.pre-commit.devShell;

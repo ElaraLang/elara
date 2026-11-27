@@ -58,7 +58,9 @@ const definitionKeyword = anyOf('let!', exactly('let'), exactly('def'));
 const operatorDefinition = r`\(${capture(operator)}\)`;
 // a variable name in the context of a definition that can start with `_`, cannot be a keyword, but otherwise can be any variableIdentifier
 
-const variableDefinition = capture(notFollowedBy(exactly('_')) + notFollowedBy(exactly(allKeywords)) + variableIdentifier);
+const variableDefinition = capture(
+  notFollowedBy(exactly('_')) + notFollowedBy(exactly(allKeywords)) + variableIdentifier,
+);
 
 // TextMate scope
 type Scope = `${string}.elara`;
@@ -138,6 +140,6 @@ const grammar = defineGrammar({
 
 export default grammar;
 
-export const grammarJson = JSON.stringify(grammar, null, 2)
+export const grammarJson = JSON.stringify(grammar, null, 2);
 
 if (import.meta.main) console.log(grammarJson);

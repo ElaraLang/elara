@@ -1,4 +1,4 @@
-import { type ExtensionContext, type LogOutputChannel, commands, window, workspace } from 'vscode';
+import { commands, type ExtensionContext, type LogOutputChannel, window, workspace } from 'vscode';
 import { type Executable, LanguageClient, State } from 'vscode-languageclient/node';
 
 let client: LanguageClient | undefined;
@@ -14,15 +14,13 @@ async function startClient(): Promise<void> {
 
   log.info(`Starting the language server: ${server.command} ${server.args?.join(' ')}`);
 
-  client = new LanguageClient('elara', 'Elara', server,
-    {
-      documentSelector: [{ language: 'elara' }],
-      outputChannel: log
-    });
+  client = new LanguageClient('elara', 'Elara', server, {
+    documentSelector: [{ language: 'elara' }],
+    outputChannel: log,
+  });
 
-  client.onDidChangeState(({ newState }) =>
-    log.info(`Language server ${State[newState].toLowerCase()}`));
-  
+  client.onDidChangeState(({ newState }) => log.info(`Language server ${State[newState].toLowerCase()}`));
+
   try {
     await client.start();
   } catch (error) {
@@ -39,7 +37,7 @@ async function restartClient(): Promise<void> {
   log.info('Restarting the language server');
   const old = client;
   client = undefined;
-  if (old && old.isRunning()) {
+  if (old?.isRunning()) {
     await old.stop();
   }
   await startClient();
